@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Rework on Accruals</h1>
+  This enhancement introduces a dedicated transaction type to represent posted interest within the accrual workflow. The change targets clearer classification of posting events, improved auditability, and more accurate reconciliation between accruals, postings, and repayments. The reference material describes accrual activity, accrual posting use cases, and how these events flow into repayment schedules and loan balances. The new approach allows the system to distinguish interest that has accrued from interest that has already been posted to the customer ledger, which supports clearer reporting and easier reconciliation during operations.
+
+<h3>What changed and why it matters</h3>
+<ul>
+<li>A distinct transaction type for posted interest is introduced to represent interest that has been formally posted from the accrual ledger to the loan's interest ledger. This separation improves traceability for operations staff when reviewing posted interest versus daily accruals and repayments.</li>
+<li>The rework aligns posted interest events with existing accrual and repayment workflows, so that the repayment schedule, loan balance, and interest postings stay in lockstep and are easier to reconcile at period end.</li>
+<li>The changes accommodate the scenarios documented in the accrual reference material, including on-time and early payments, as well as reversals and replays of accrual entries that occur when the timing of repayments changes.</li>
+
+</ul>
+<h3>Updated workflow and interaction model</h3>
+
+<p>Operations staff interact with accruals and postings through a coordinated sequence of actions that preserves the integrity of the repayment schedule and the loan balance.</p>
+
+1. Daily accrual runs generate accrual entries that reflect the accumulated interest portion for each day in the period.
+2. When interest for a given installment is posted to the customer ledger, the system creates a dedicated posted interest transaction entry to represent this posting event, in addition to the existing accrual and repayment entries.
+3. If a payment arrives before the scheduled installment date (early payment) or if a reversal/replay of accrual is required due to business rules, the system adjusts the repayment schedule and the associated accrual postings according to the accrual posting use cases. This may involve reversing or replaying accrual entries to reflect the updated timing and amounts.
+4. The repayment schedule and loan balance are updated to reflect the posted interest and any principal and interest allocations from repayments, so that opening balances, repayments, and closing balances reconcile period by period.
+5. Reconciliations and reports reflect the dedicated posted interest entries alongside accruals and repayments, improving visibility into how much interest has accrued, how much has been posted, and how remaining balances evolve over time.
+
+<h3>Updated user-facing rules and constraints</h3>
+<ul>
+<li>Posted interest must be recorded using the new dedicated transaction type, separate from daily accrual entries and from repayment entries. This verifies clear categorization in the customer ledger and in operational reports.</li>
+<li>All posted interest amounts are subject to the same foundational rounding and precision rules that apply to other monetary postings in accrual workflows. Amounts are represented with two decimals in the reference figures.</li>
+<li>When an early payment or reversal/replay of accrual occurs, the accrual posting adjustments (reversals and replays) must be applied so that the repayment schedule and loan balance remain consistent with the updated accruals and postings.</li>
+<li>Journal entries (when available in the downstream accounting flow) must balance, with debits equaling credits, across the posted interest, accrual, and repayment postings.</li>
+
+</ul>
+<h3>Migration and compatibility considerations for operations</h3>
+<ul>
+<li>The introduction of a dedicated posted interest transaction type changes how postings are categorised in ledgers and reports. Operations teams should review the new type in existing reconciliation workflows to confirm visibility and traceability of posted interest events.</li>
+<li>Reports and statements that previously grouped accrued interest and posted interest under broader categories may now separate posted interest entries, improving auditability and period-end reconciliation.</li>
+<li>No code or schema changes are described here; the guidance focuses on operational behavior and the visible outcomes in posting flows, schedules, and balances. Validate that the updated workflow follows local policy and product configuration.</li>
+
+</ul>
+<h3>Calculation references and representative outcomes</h3>
+The following excerpts illustrate how accruals and postings interact under the rework, using the reference scenarios described in the accrual calculation materials. Amounts are shown with two decimals and reflect the patterns in the reference data.
+<ul>
+<li>Scenario 1: On-time payment (posted interest participates in the standard repayment flow)</li>
+<li>Opening balance (Disbursement): 1,200.00 on 1-Jan-22.</li>
+<li>Daily accrual on 1-Feb-22: 0.67 accumulated per day over the period.</li>
+<li>Repayment on 2-Feb-22 (Installment Date 2/1/22): Principal 200.00, Interest 20.00, EMI 220.00. Postings on this date include a posted interest component of 20.00 and a principal payment of 200.00, resulting in a new loan balance of 1,000.00.</li>
+<li>The EMI is the sum of the principal and interest components (200.00 + 20.00 = 220.00).</li>
+<li>This example demonstrates how a posted interest entry follows the repayment and reduces the loan balance .</li>
+<li>Scenario 2: Early payment (adjust to next installment)</li>
+<li>Opening balance: 1,200.00 on 1-Jan-22.</li>
+<li>Daily accrual on 1-Feb-22: 0.67 per day across the period.</li>
+<li>Repayment on 2-Feb-22: Principal 210.00, Interest 10.00, EMI 220.00. This results in a new balance of 990.00 after applying 210.00 principal and 10.00 interest, with EMI equal to 220.00.</li>
+<li>The early payment shifts the principal and interest allocation within the same EMI amount, and the balance reflects the reduced principal.</li>
+<li>Scenario 3: Early part payment reversal (illustrative for reversal handling)</li>
+<li>The reference demonstrates a progression where daily accrual entries and repayments can be reversed and re-posted as needed to accommodate timing changes. While the exact balance progression depends on reversal timing, the workflow remains: post accruals, post payments, and apply any required reversals/replays to adjust the accrual postings and the repayment schedule, keeping balances and due amounts aligned with the updated postings.</li>
+
+</ul>
+<div class="param-grid">
+ <div class="param-card">
+ <span class="param-label">Scenario 1 – Key values</span>
+ <span class="param-value">Opening balance 1,200.00; Principal 200.00; Interest 20.00; EMI 220.00; New balance 1,000.00</span>
+ </div>
+</div>
+
+<div class="param-grid">
+ <div class="param-card">
+ <span class="param-label">Scenario 2 – Key values</span>
+ <span class="param-value">Opening balance 1,200.00; Principal 210.00; Interest 10.00; EMI 220.00; New balance 990.00</span>
+ </div>
+</div>
+
+<blockquote><p>Note: The figures above illustrate the interaction patterns described in the accrual calculation references and are aligned with the example schedules shown in the reference material. They demonstrate how posted interest and principal allocations relate to the repayment schedule and the evolving loan balance.</p></blockquote>
+
+<h3>Diagram: accrual posting workflow</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Daily accrual runs] --> B[Accrual postings are generated]
+ B --> C[Posted interest transaction created]
+ C --> D{Early payment occurs?}
+ D -->|Yes| E[Apply reversal/replay as needed]
+ D -->|No| F[Repayment posted]
+ E --> G[Update repayment schedule and loan balance]
+ F --> G
+ G --> H[Reports and statements updated]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Calculation references (selected excerpts)</h3>
+
+The reference materials include several calculation references that illustrate accrual activity, accrual posting use cases, and detailed examples of how postings affect the repayment schedule and loan balances. The patterns show daily accruals, posting events, repayments, and the handling of reversals and replays as timing changes occur. The examples and numbers are provided with the intent of documenting verified behavior and verifying consistency across schedules, postings, and reconciliations.
+<ul>
+<li>Accrual activity scenarios (Scenario 1–3) demonstrate how daily accruals contribute to a repayment schedule and how repayments allocate to principal and interest, including cases where early payments adjust the next installment and scenarios involving reversals or replays of accruals.</li>
+<li>Accrual posting use cases (Scenario 1–3) illustrate reverse replay of accrual when early payments arrive, backdated reversals, and backdated early payments with associated adjustments to the repayment schedule and loan balance.</li>
+
+</ul>
+<h3>Appendix: alignment with posted interest concept</h3>
+
+The rework positions posted interest as a distinct posting event that follows accruals and precedes or accompanies repayments, depending on timing. This separation supports clearer audit trails and reconciliations by isolating the posting action from daily accruals and principal/interest repayments. The resulting sequences preserve period integrity, so that each period’s opening balance equals the prior period’s closing balance, and that allocations reconcile to the transaction amounts and the outstanding due.
+</ac:document>

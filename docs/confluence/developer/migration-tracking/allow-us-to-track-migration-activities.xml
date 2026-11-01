@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Allow us to track migration activities</h1>
+  This page documents the architecture, data modeling, and behavioral rules for tracking migration activities within the Pepper-Soup deployment of the Fineract-based lending platform. The feature focuses on differentiating migration-era events and real-time API calls from post-migration activity, verifying migration context is carried through loan creation, events, and post-migration processing. It uses the existing datatable infrastructure for loan-related migration state and introduces optional extension points for custom behavior in a modular fashion.
+
+<h3>Conceptual role and module boundaries</h3>
+The migration-tracking capability lives at the intersection of loan lifecycle processing, event emission, and data enrichment. Its core responsibilities include:
+<ul>
+<li>Representing migration state for loans using a dedicated data record, and exposing that state to downstream processing.</li>
+<li>Propagating a migration flag through loan creation and related events, so downstream consumers can distinguish migration-time activity from post-migration activity.</li>
+<li>Providing a pluggable mechanism to determine whether external events are posted during migration, allowing customization in a modular extension.</li>
+<li>Emitting a specialized completion event when a loan migration is marked as complete, enabling downstream systems to snapshot loan account state.</li>
+<li>Offering an optional, COB-driven consolidation path for finalizing migration-day results in a controlled, test-friendly manner.</li>
+
+</ul>
+<p>The design avoids introducing standalone API contracts or new public endpoints for migration tracking. Instead, it enhances existing loan and event surfaces through data enrichment and configurable behavior, using the datatable and customData mechanisms already available in the platform.</p>
+
+<h3>State and lifecycle overview</h3>
+ supports a lightweight migration-state model represented in a dedicated datatable with at least two status values:
+<ul>
+<li>MIGRATION_IN_PROGRESS</li>
+<li>MIGRATION_COMPLETED</li>
+
+</ul>
+A migration state transition occurs when a datatable entry is created or updated to MIGRATION_COMPLETED for a given loan. When a MIGRATION_COMPLETED entry is created, the system emits a LoanAccountSnapshot-like event to record a snapshot of the loan’s account state at migration completion. This sequence formalizes the migration lifecycle as follows:
+<ul>
+<li>Migration starts: an entry for the loan indicates MIGRATION_IN_PROGRESS.</li>
+<li>Migration progresses: ongoing activity is recorded, with the flag indicating current migration status.</li>
+<li>Migration completes: a datatable entry with MIGRATION_COMPLETED is created, which triggers a LoanAccountSnapshot-like event.</li>
+
+</ul>
+<p>The above transitions are driven by business logic that reacts to datatable state changes and by design can be augmented in a custom module to tailor behavior for specific deployment needs.</p>
+
+<h3>Data model and persistence</h3>
+Key data structures introduced or repurposed for migration tracking include:
+<ul>
+<li>dt_loan_migration: a new datatable to store migration state information for loans. Values stored represent migration status, with MIGRATION_IN_PROGRESS and MIGRATION_COMPLETED cited as example statuses.</li>
+<li>By default, the datatable records carry audit information, so no additional fields are required beyond the status value for standard usage.</li>
+<li>Custom data at loan and loan transaction level: a new customData field is introduced to carry migration-related metadata in a flexible, serialized form. The data type for this field is Map<String, byte[]> to maximize expressiveness and portability.</li>
+<li>This allows embedding the migration flag or related details into the core loan and transaction events without altering their primary schemas.</li>
+<li>Optional serializer beans can be injected to populate the customData field, controlled by application properties. If the serializer bean is not enabled, the field remains unused.</li>
+
+</ul>
+<p>These data-model choices preserve existing persistence patterns (datatables and customData) while providing a controlled extension point for migration-related information.</p>
+
+<h3>Eventing, posting, and extensibility</h3>
+Migration-aware eventing introduces several extensibility points that are intentionally pluggable to accommodate PP-specific requirements:
+<ul>
+<li>External event posting configurator: a notifier mechanism determines whether a business event should be posted to external listeners. The default behavior consults the existing persistence-backed configuration to decide posting. In a custom module, this decision logic can be overridden to alter external posting behavior during migration.</li>
+<li>Migration-datatable listener: by default, adding a new entry to the dt_loan_migration table can trigger internal signals (listeners) that may drive further migration-related processing. A custom module may register listeners to implement domain-specific reactions to migration state changes.</li>
+<li>MIGRATION_COMPLETED trigger: when a MIGRATION_COMPLETED entry is created, a LoanAccountSnapshot-like business event is emitted. This allows downstream components to capture a consistent loan state at the end of migration for reporting or reconciliation purposes.</li>
+<li>External-event-filtering capability: a configuration mechanism allows filtering of external events during migration (for example, restricting external postings to loan transactions only, while omitting account-details events). This capability supports targeted data exposure during the migration window.</li>
+
+</ul>
+<p>Collectively, these extensibility points allow a custom module to tailor the migration-tracking behavior while preserving a safe, upgrade-friendly default implementation.</p>
+
+<h3>COB (Close Of Business) handling for migrations</h3>
+A capability exists to configure and run a COB process for the final day of migrations. The COB result is intended to affect all income up to the final run date in a single consolidated operation. This behavior is described as primarily intended for testing and preparation, with the implication that per-day accrual events may be consolidated rather than emitted for every day in the migration window. The COB path provides a deterministic, end-of-migration financial alignment when migration activity must reflect a single closing point.
+
+<h3>Workflow illustrations</h3>
+Mermaid diagrams help illustrate the migration state transitions and key event triggers without exposing internal implementation details.
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[MIGRATION_IN_PROGRESS] --> B[MIGRATION_COMPLETED]
+ B --> C[LoanAccountSnapshotBusinessEvent emitted]]]></ac:plain-text-body></ac:structured-macro>
+
+<p>This diagram captures the core transition: a loan migrates from in-progress to completed, and that completion triggers a snapshot event that external systems may rely on for reconciliation and reporting.</p>
+
+<h3>Practical guidance for implementation and configuration</h3>
+<ul>
+<li>Loan creation flow: when a loan is created in the migration context, the system should record the migration information in the dt_loan_migration table with an initial MIGRATION_IN_PROGRESS status. The default audit information on the datatable verifies traceability without requiring additional fields.</li>
+<li>CustomData enrichment: allows the optional serializer to populate customData on the loan and related loan-transaction events with migration details. This data is stored as Map<String, byte[]> and can be consumed by downstream processes that understand the serialized migration payload.</li>
+<li>Event-notification extension: if your deployment requires alternative behavior for posting events during migration, implement a custom module that overrides the decision logic for external posting. The default behavior reads the configuration from the database to decide whether to post.</li>
+<li>Completion handling: verify that creating a MIGRATION_COMPLETED entry in dt_loan_migration triggers the LoanAccountSnapshot-like event, enabling downstream systems to capture and persist a coherent snapshot of the loan state at the moment migration completes.</li>
+<li>Migration event filtering: configure an external-event filter to restrict or tailor the set of external events emitted during migration. For example, you may choose to emit loan-transaction events only and suppress other external event types.</li>
+<li>COB strategy: if you allows the COB final-day processing, verify that the resulting consolidated financial effects are applied consistently up to the final run date and that per-day accruals do not appear as separate, daily events in the migration window.</li>
+
+</ul>
+<h3>Answering the stakeholder needs</h3>
+<ul>
+<li>Differentiation of events during migration: migration-aware events and API calls are marked with the migration context, enabling downstream consumers to distinguish migration-time activity from post-migration activity.</li>
+<li>Minimal schema impact: migration state is tracked via the existing dt_loan_migration datatable and a new customData field on loan-related events, avoiding the need for standalone tables or new public APIs.</li>
+<li>Extensibility: the system provides clear extension points for custom behavior in a module, including event posting decisions and handling of migration completions.</li>
+<li>Observability and snapshot readiness: the migration-completed pathway emits a LoanAccountSnapshot-like event to support reconciliation and reporting after a loan has finished migrating.</li>
+
+</ul>
+<h3>Important considerations and constraints</h3>
+<ul>
+<li>All migration-tracking changes are designed to operate alongside the existing loan and event surfaces, using the datatable and customData extensions already present in the platform.</li>
+<li>The approach is intended to be patch-level, PP-specific, and implemented as a custom module on a feature branch; no standalone migration-tracking API surface is introduced by default.</li>
+<li>Internal implementation details, such as specific class names or internal method hooks, should be treated as implementation details. Public-facing behavior is described in terms of the data structures (dt_loan_migration, customData) and the observable eventing outcomes (internal signals, LoanAccountSnapshotEvent).</li>
+
+</ul>
+If you are integrating with external systems, consider how migration context is surfaced in your consumer logic and verify that any event filtering follows your reconciliation and auditing requirements. This design provides a structured, auditable migration window with clear points for extension, snapshotting, and controlled data exposure.
+</ac:document>

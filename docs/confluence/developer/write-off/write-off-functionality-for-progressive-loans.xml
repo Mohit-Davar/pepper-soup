@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Write-off functionality for Progressive loans</h1>
+  This epic collects bug tickets and enhancement stories required to support Write-off functionality for Progressive loans and to address contemporary business requirements around write-offs. The objective is to provide a structured program for capturing, prioritizing, and implementing improvements that allows Progressive loan write-offs within the broader write-off workflow.
+
+<h3>Technical summary</h3>
+
+<p>The write-off effort for Progressive loans is positioned within the Charge-off, Write-off and Settlement area of the product. The navigation path explicitly places this work item under: Charge-off, Write-off and Settlement → Write-off → Write-off functionality for Progressive loans. The reference description identifies this epic as a collection point for bugs and enhancements related to Progressive loan write-offs, rather than a single, finalized implementation detail. The specification notes indicate the existence of nine child items focused on progressive loan write-off.</p>
+
+<h3>and scope</h3>
+<ul>
+<li>Navigation path: Charge-off, Write-off and Settlement > Write-off > Write-off functionality for Progressive loans. This anchors the epic within the broader write-off workflow and confirms its placement in the product's lifecycle.</li>
+<li>Specification notes: 9 children; progressive loan write-off. This indicates the scope comprises nine distinct items or stories related to progressive loan write-off work.</li>
+<li>Audience and classification: Audience — contributor | Classification — feature. This frames the epic as a feature-oriented initiative intended for contributors and backend engineers who participate in the write-off domain.</li>
+
+</ul>
+<h3>Observations and design guarantees</h3>
+
+<p>The reference does not provide concrete implementation details such as REST API contracts, event payloads, accounting journal entries, state machines, or specific calculation formulas. As a result, there are no documented design guarantees, algorithms, or processing workflows to reproduce here. This page records the high-level objective and scope as evidenced in the reference, without asserting implementation specifics.</p>
+
+<h3>Next steps (informing future development)</h3>
+
+Future iterations should define concrete requirements, including:
+<ul>
+<li>REST endpoints and request/response contracts applicable to Progressive loan write-offs (if described in subsequent specifications).</li>
+<li>Validation guards, preconditions, and error codes specific to progressive loan write-off scenarios.</li>
+<li>Domain events and their payloads, if Progressive write-offs emit events within the loan lifecycle.</li>
+<li>Accounting implications and journal entry patterns (debits/credits) associated with write-off actions for Progressive loans.</li>
+<li>Scheduling or COB batch behaviors that trigger write-off processing and any required replay or recalculation logic.</li>
+
+</ul>
+This page intentionally documents only the verified, high-level scope from the current reference. Detailed behavioral and architectural specifications should be captured in subsequent iterations as they are defined and validated.
+</ac:document>

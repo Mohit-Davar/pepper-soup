@@ -1,0 +1,94 @@
+# Re-Amortization / Re-Aging
+
+Pepper-Soup provides two interrelated mechanisms to address loans with delinquency or duress: re-amortization and re-aging. This page summarizes the verified objectives, architectural decisions, and deliverables for the work item, and documents the behavior that is implemented or confirmed by the reference material. It explains how the system should process and preserve data integrity when re-amortizing or re-aging a loan, what changes to schedules occur, and how undo scenarios behave. The material adheres to the documented requirements and limitations, and presents the behavior that is implemented or planned for implementation surface areas.
+
+### Goals and scope
+
+- Re-amortization is designed to relieve customers with past-due payments by redistributing the past-due principal over the remaining installments. Only principal is re-amortized; any outstanding charges or penalties remain with their respective installments.
+- Re-aging (Settlement Plan) creates a new set of installments from the current outstanding principal balance, to assist customers in dire repayment situations. The new schedule starts from the current date and uses provided re-aging parameters to generate future installments.
+- Both mechanisms operate with explicit constraints, such as timing relative to maturity, effects on schedule and maturity, and the handling of N+1 installments. These rules are described below and are reflected in the reference use cases.
+- The reference material includes detailed calculation examples and resulting repayment schedules, illustrating how re-amortization and re-aging modify principal, EMI, and balances across dates.
+
+### Core concepts and constraints
+
+- Only principal can be re-amortized; charges and interest remain in their respective installments unless otherwise stated by the re-aging flow. Re-amortization cannot be applied to installments that occur on the same day as the re-amortization action.
+- Re-amortization cannot be applied after the loan maturity date. Re-amortization is performed as of the current business date only.
+- The maturity date does not change as a result of re-amortization.
+- Re-aging is performed on the full principal outstanding balance as of the current date and can be initiated after the existing maturity date or after the N+1 date. Re-aging updates the loan's schedule and may update the maturity date .
+- Re-amortization and re-aging are applicable in the context of progressive repayment schedules or advanced/accelerated strategies; they are not described to non-progressive (e.g., purely irregular) schemes in the reference material.
+- N+1 installments are not re-amortized or re-aged as part of these processes.
+- Delinquency calculation is triggered when either re-amortization or re-aging is applied to the loan account.
+- Undo and replay behavior is supported: undoing a re-amortization or re-aging reverses the effects and replays the schedule against the new outstanding balance, subject to the rule that undo is allowed only if there are no future payments after the operation (non-reversed payments only).
+
+### What changes in the data and schedules
+
+- Re-amortization creates a new re-amortized amount and applies it to future installments while zero-ing unpaid principal for installments up to the re-amortization date. A new transaction type, typically referred to as a re-amortized amount, is introduced to maintain traceability of this operation.
+- Re-aging generates a new set of installments starting from the current date, derived from the principal outstanding as of that date. The new schedule replaces the old one for future installments and updates the loan’s maturity date to reflect the new plan.
+- Charges and interest remain in their existing installments during re-aging; any unpaid charges or interest can be paid or waived before re-aging. If not paid, future payments will first collect the old pending interest/fees before applying to the new schedule.
+
+### Related reference data and use cases
+
+The reference material includes multiple calculation references that illustrate how re-amortization and re-aging interact with repayment schedules, disbursements, down-payments, charges, and reversals. These use cases show the evolution of principal, interest, EMI, and due balances across dates under different scenarios (including re-amortization, re-aging, chargebacks, undo operations, and reverse replay paths). They are provided as concrete examples to verify expected outcomes and to guide implementation decisions:
+- Re-aging use cases (Settlement scenarios) show how the principal is reallocated and how the schedule and payments are reflected across dates.
+- Re-amortization use cases (v2 and v3) illustrate how a past-due balance is redistributed into future installments, including the handling of charges and resulting schedule adjustments.
+
+### New artifacts and integration points
+
+- New transaction type: re-amortized. This transaction records the amount that has been re-amortized and serves as an auditable marker in the loan’s history.
+- Re-amortization applies only to future installments; installments occurring on the re-amortization date are not re-amortized.
+- Re-aging parameters must be provided to generate the new installment set: Frequency, re-age start date, and number of installments. The calculation uses the principal outstanding as of the current date.
+
+### Processing flows (high-level)
+
+- Re-Amortization Flow
+ 1. Validate that the loan has not reached maturity.
+ 2. Identify the past-due balance and the current date due amount. If the installment date coincides with the re-amortization date, include that amount in the re-amortization calculation.
+ 3. Compute the re-amortized amount as the sum of past-due principal and the current date due amount (if on the same day).
+ 4. Zero the unpaid principal for installments up to and including the re-amortization date; future installments are re-amortized.
+ 5. Create a new transaction of type re-amortized to represent the allocated amount.
+ 6. Apply the re-amortization to the remaining future installments; N+1 installment is excluded from re-amortization impact.
+ 7. Recalculate delinquency as the schedule changes.
+ 8. Allow undo, subject to rules about future payments after re-amortization; replay the schedule with the new balance.
+
+- Re-Aging Flow
+ 1. Validate that the loan is eligible for re-aging (date after maturity or N+1 date).
+ 2. Determine the principal outstanding balance as of the current date.
+ 3. Generate a new installment schedule using the provided re-aging parameters (Frequency, re-age start date, number of installments) starting from the current date.
+ 4. Update the loan’s maturity date to reflect the new schedule.
+ 5. Preserve existing unpaid charges and interest within their respective installments; pending items may be paid or waived before re-aging; otherwise, old pending amounts are collected before/alongside the new installments.
+ 6. Recalculate delinquency based on the new schedule.
+ 7. Allow undo, replaying the new schedule against the updated outstanding balance.
+
+### Architectural and implementation considerations
+
+- Data model and persistence: Implementers must verify that re-amortization introduces a new re-amortized amount record and that the subsequent repayment schedule reflects the updated principal allocations without altering the maturity date. Re-aging introduces a new installment set and updates the maturity date .
+- Scheduling and scheduling integrity: The system must guarantee that each period’s opening balance equals the previous period’s closing balance, and that payment allocations reconcile with the transaction amounts.
+- Accounting and GL integration: When actual journal entries are available, they should reflect the events (re-amortization, re-aging) with standard debit/credit entries. The reference data focuses on loan schedule, principal allocations, and EMI changes; explicit journal entry details depend on the live accounting configuration.
+- Edge cases: Undo paths are allowed only when there are no future payments after re-amortization/re-aging; otherwise, the operation may be constrained to preserve data integrity.
+- Testing and verification: The reference data provides extensive use-case tables that illustrate the expected outcomes for various scenarios. Implementers should validate that the resulting schedules, balances, and repayments follows the reference expectations for the tested cases.
+
+### Diagrammatic overview (Mermaid)
+
+flowchart TD
+ A[Re-Amortization Trigger] --> B{Maturity reached?}
+ B -->|Yes| C[Not allowed after maturity]
+ B -->|No| D[Identify past-due + current date due]
+ D --> E[Compute re-amortized amount (past-due + current date due on same day)]
+ E --> F[Zero unpaid principal for installments up to re-amortization date]
+ F --> G[Create transaction: re-amortized]
+ G --> H[Apply to future installments (N+1 excluded)]
+ H --> I[Recalculate delinquency]
+ I --> J[End]
+ %% Note: N+1 is not re-amortized; this is part of the behavior
+ N[Note] -->|N+1 installment unaffected| J
+
+flowchart TD
+ A2[Re-Aging Trigger] --> B2{Eligible after maturity or N+1?}
+ B2 -->|No| C2[Not eligible for re-aging]
+ B2 -->|Yes| D2[Compute principal outstanding as of current date]
+ D2 --> E2[Generate new schedule using: Frequency, Re-age start date, No of installments]
+ E2 --> F2[Update maturity date to new schedule]
+ F2 --> G2[Preserve unpaid charges/interest in existing installments unless waived/paid]
+ G2 --> H2[Recalculate delinquency]
+ H2 --> I2[Undo replay path available]
+ I2 --> J2[End]

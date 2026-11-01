@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Loan origination details (Merchant BNPL Checkout Capabilities)</h1>
+  This page documents the loan origination capabilities that attribute loan revenue to a loan originator (merchant, broker, affiliate, platform, or channel) to support revenue sharing and reporting. The feature is designed as an optional module with its own data model, API surface, event enrichment, and reporting extensions. The originator information is stored at the loan level as metadata and is designed to be retrievable and consumable by downstream reporting and event consumers. The key design guarantees are that the module remains optional, supports 1:N (or N:M) originator associations per loan, and preserves backward compatibility through optional fields in events and reports.
+
+<h3>Conceptual boundaries and guarantees</h3>
+<ul>
+<li>Optional module: the originator capability is disabled by default and activated via configuration. When disabled, standard loan behavior remains unchanged.</li>
+<li>Loan-level metadata: the Originator ID (also referred to as Revenue Share ID) is stored at the loan level as part of the originator association and is exposed in loan retrieval when requested.</li>
+<li>Non-transformative: no automatic transformations or validations are applied to the Originator ID beyond existence checks and registration validations.</li>
+<li>1:N/N:M association: the design supports multiple originators per loan, even though typical usage attaches a single originator.</li>
+<li>Backward compatibility: the originator field is modeled as optional in events and associations to avoid breaking existing consumers.</li>
+<li>Reporting and events: originator information is propagated to all relevant events and included in the Transaction Summary and Trial Balance reports for revenue sharing calculations by PayPal and merchant partners.</li>
+
+</ul>
+<h3>Scope and optionality</h3>
+<ul>
+<li>The module is optional and encapsulated under a distinct component that can be registered conditionally.</li>
+<li>The module’s schema, events, and reporting extensions are enabled only when configured to do so.</li>
+<li>The originator feature is designed to be non-disruptive for tenants not using it, with optional registry and association wiring.</li>
+
+</ul>
+<h2>Data model (conceptual)</h2>
+Two core concepts underpin the data model: a registry of canonical originator partner records and an association between loans and originators. The registry stores canonical partner data; the association represents which originators are linked to a given loan.
+
+<h3>A) Originator registry (canonical partner records)</h3>
+<ul>
+<li>id: PK</li>
+<li>originator_name: nullable</li>
+<li>originator_external_id: required, unique</li>
+<li>originator_type_cv_id: nullable; code value</li>
+<li>origination_channel_type_cv_id: nullable; code value</li>
+<li>status: ACTIVE/PENDING/INACTIVE (LLD mentions status)</li>
+<li>audit columns</li>
+
+</ul>
+<h3>B) Association (loan ↔ originator)</h3>
+Because the loan API returns a list originators, the association is designed for 1:N (or N:M) usage.
+<ul>
+<li>id: PK or composite (loan_id, originator_id)</li>
+<li>loan_id: FK to m_loan</li>
+<li>originator_id: FK to m_loan_originator</li>
+<li>audit columns</li>
+
+</ul>
+<h3>C) Metadata placement</h3>
+<ul>
+<li>The Originator ID (Revenue share id) is stored as metadata at the loan level and is linked via the originator association list on loan retrievals and events.</li>
+
+</ul>
+<h2>API design</h2>
+The following API surfaces support registry management, loan association, and enriched loan retrieval. All endpoints are designed to be optional and backward-compatible where indicated.
+
+<h3>Originator registry APIs</h3>
+<ul>
+<li>POST /loan-originators — create a new originator</li>
+<li>GET /loan-originators — fetch originators</li>
+<li>PUT /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} — update status/fields</li>
+<li>DELETE /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} — delete originator</li>
+
+</ul>
+Validations
+<ul>
+<li>originator_external_id must be unique</li>
+<li>Provided originator type and channel type code values must exist when supplied</li>
+
+</ul>
+Response
+<ul>
+<li>Returns both resourceId and resourceExternalId</li>
+
+</ul>
+<h3>Attach/detach originator to loan</h3>
+<ul>
+<li>POST /loans/{loanId}/originators/{originatorId}</li>
+<li>DELETE /loans/{loanId}/originators/{originatorId}</li>
+<li>GET /loans/{loanId}/originators (and external-id variants)</li>
+
+</ul>
+Validations
+<ul>
+<li>Attach/detach allowed only while the loan is in the CREATED state (i.e., before approval)</li>
+<li>Cannot attach the same originator twice; cannot detach an originator that is not attached</li>
+
+</ul>
+<h3>Retrieve Loan API extension</h3>
+<ul>
+<li>Extension: associations=originators or associations=all</li>
+<li>Response includes originators: [{ id, name, status, typeId, externalId, channelTypeId }]</li>
+
+</ul>
+<h3>Create and attach during loan creation flow</h3>
+<ul>
+<li>During loan creation, originators can be supplied as a field originators (LIST) with the following possible fields:</li>
+<li>externalId, id, name, typeId, channelTypeId</li>
+<li>If id is provided, the existing originator is attached to the loan; if externalId is provided, an originator with that externalId is attached or created (depending on global configuration) and attached to the loan; other fields are optional and may create a new originator if externalId is not existing yet.</li>
+
+</ul>
+Global configuration
+<ul>
+<li>enable_originator_creation_during_loan_application: default false</li>
+
+</ul>
+<h3>Global data exposure in loan details</h3>
+<ul>
+<li>When the association originators is requested, the loan details response can include originators with fields such as id, name, status, originatorTypeId, externalId, channelTypeId, and any partner-type synonyms as defined in the model.</li>
+
+</ul>
+<h2>Event propagation and enrichment</h2>
+The system enriches loan and loan transaction events with originator data to allows downstream consumers to compute revenue sharing. The event model uses an optional field originators (array of records) in external business events (Avro). This extension preserves backward compatibility by defaulting the new field to null if not populated.
+
+Enrichment timing
+<ul>
+<li>On loan-related events (e.g., disbursement, repayment), the event publisher constructs the base loan event payload and the originator module enriches this payload by mapping the loan to originator(s) via the registry and association. The enriched event is then emitted to consumers.</li>
+
+</ul>
+Payload considerations
+<ul>
+<li>The originators field in the event payload is optional and defaulted to null when not used by the tenant.</li>
+
+</ul>
+<h2>Reporting extensions</h2>
+Two reporting outputs are extended to reveal originator information:
+<ul>
+<li>Transaction Summary Report</li>
+<li>Trial Balance Report</li>
+
+</ul>
+<p>In both reports, the MerchantOriginator external id is exposed to support revenue sharing calculations by PayPal and partner merchants.</p>
+
+<h2>End-to-end flows</h2>
+<h3>Flow A: Create originator + attach to loan</h3>
+1) Partner is created via POST /loan-originators with an externalId.
+2) The loan is created as part of the normal loan flow.
+3) The originator is attached to the loan via POST /loans/{loanId}/originators/{originatorId} (or external-id variant).
+4) Retrieve the loan with associations=originators to confirm attachment and view originator details.
+
+<h3>Flow B: Loan event publication with originator enrichment</h3>
+1) A loan lifecycle action occurs (e.g., disbursement, repayment).
+2) The event publisher constructs the base loan event payload.
+3) The originator module enriches the payload with originator(s) by mapping the loan to originator records.
+4) The enriched event is emitted to consumers who can compute revenue sharing externally.
+
+<h3>Flow C: Reporting integration</h3>
+1) Reports are generated with originator data joined from the originator registry and mapping.
+2) The outputs include merchantOriginatorId in the Trial Balance and Transaction Summary exports.
+
+<h2>State and lifecycle considerations</h2>
+Attach and detach operations are governed by loan state: they are allowed only while the loan is in the CREATED state and before approval. Once the loan is approved, attachments cannot be added or removed using the attach/detach endpoints. Idempotency checks prevent double-attach or double-detach attempts.
+
+<h2>Security, auditing, and governance</h2>
+Access to originator management and loan-originator associations is guarded by permissions:
+<ul>
+<li>CREATE_LOAN_ORIGINATOR, UPDATE_LOAN_ORIGINATOR, DELETE_LOAN_ORIGINATOR</li>
+<li>ATTACH_LOAN_ORIGINATOR, DETACH_LOAN originator</li>
+</ul>
+Audit fields on originator records and mappings are auto-filled to maintain traceability of changes.
+
+<h2>Low-level design</h2>
+A dedicated module is introduced to house the originator capability:
+<ul>
+<li>New module: fineract-loan-origination</li>
+<li>New entity m_loan_originator</li>
+<li>id: PK, auto-generated</li>
+<li>originator_name: string, optional</li>
+<li>originator_type_cv_id: code value (MERCHANT / BROKER / AFFILIATE / PLATFORM), optional</li>
+<li>originator_external_id: string, unique, required</li>
+<li>origination_channel_type_cv_id: code value (ONLINE / IN_STORE / API / AGGREGATOR), optional</li>
+<li>created_on, created_by, last_modified_on, last_modified_by: audit fields, auto-filled</li>
+<li>New entity m_loan_originator_mapping</li>
+<li>id: PK</li>
+<li>loan_id: FK to m_loan, required</li>
+<li>originator_id: FK to m_loan_originator, required</li>
+<li>created_on, created_by, last_modified_on, last_modified_by: audit fields, auto-filled</li>
+
+</ul>
+<h3>API surface (summary)</h3>
+<ul>
+<li>POST /loan-originators — create originator (returns resourceId and resourceExternalId)</li>
+<li>PUT /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} — update originator</li>
+<li>DELETE /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} — delete originator</li>
+<li>GET /loan-originators — fetch registry entries</li>
+<li>Attach originator to loan: POST /loans/{loanId}/originators/{originatorId} (or external-id variant)</li>
+<li>Detach originator from loan: DELETE /loans/{loanId}/originators/{originatorId} (or external-id variant)</li>
+<li>GET /loans/{loanId}/originators — fetch originators attached to a loan (or external-id variants)</li>
+<li>Retrieve Loan API extension: add associations=originators or associations=all to include originator lists in loan payloads</li>
+<li>Create loan with originators: during loan creation, provide originators array with fields such as id, externalId, name, typeId, channelTypeId</li>
+
+</ul>
+<h3>Configuration and deployment</h3>
+<ul>
+<li>Module packaging: fineract-loan-origination</li>
+<li>Conditional bean wiring: @ConditionalOnProperty(name="fineract.module.loan-origination.enabled", havingValue="true")</li>
+<li>Property: fineract.module.loan-origination.enabled=false (default)</li>
+<li>Global flag to allows on-the-fly originator creation during loan application: enable_originator_creation_during_loan_application (default false)</li>
+
+</ul>
+<h2>Example payload shapes (high level)</h2>
+<ul>
+<li>Originator registry create (excerpt)</li>
+<li>externalId: unique string, required for creation</li>
+<li>name, status, originatorTypeId, channelTypeId: optional</li>
+<li>Loan creation with originators (excerpt)</li>
+<li>originators: [ { id, externalId, name, typeId, channelTypeId } ]</li>
+<li>If id is provided, the originator is attached to the loan; if externalId is provided, an originator with that externalId is attached or created and attached according to global configuration</li>
+
+</ul>
+<h2>Reporting and external consumers</h2>
+<ul>
+<li>The originator external id (merchantOriginatorId) is surfaced in the Transaction Summary Report and Trial Balance Report to supports revenue sharing calculations for merchant partners.</li>
+<li>External business events carry an optional originators field to allows downstream revenue attribution without breaking existing consumers.</li>
+
+</ul>
+<h2>Diagrammatic views</h2>
+Flow and state transitions related to originator attachment are governed by the loan’s lifecycle. The following Mermaid diagrams illustrate the high-level relationships and gating rules.
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+ [*] --> CREATED
+ CREATED --> APPROVED : approve
+ APPROVED --> [*]
+
+ %% Originator actions are allowed only in CREATED state
+ CREATED --> CREATED : attach originator
+ CREATED --> CREATED : detach originator]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Flow A (sequence): Create originator + attach to loan</h3>
+sequenceDiagram
+ participant Partner as Partner
+ participant Originator as LoanOriginatorService
+ participant Loan as LoanService
+ Partner->>Originator: POST /loan-originators (externalId)
+ Originator-->>Partner: 200 OK (resourceId, resourceExternalId)
+ Partner->>Loan: create loan
+ Loan-->>Partner: loanId
+ Partner->>Loan: POST /loans/{loanId}/originators/{originatorId}
+ Loan-->>Partner: 200 OK with mapping
+ Partner->>Loan: GET /loans/{loanId}?associations=originators
+ Loan-->>Partner: originator details included
+<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[]]></ac:plain-text-body></ac:structured-macro>mermaid
+sequenceDiagram
+ participant Loan as Loan
+ participant Event as EventPublisher
+ participant Originator as OriginatorEnricher
+ Loan->>Event: emit loan event
+ Event->>Originator: enrich with originator data
+ Originator-->>Event: enriched payload
+ Event-->>Loan: publish enriched event
+```
+
+<h2>Important validations and invariants</h2>
+<ul>
+<li>Originator external id must be unique within the registry.</li>
+<li>Location-based validations verify code values exist for originator type and channel type when provided.</li>
+<li>Attach/detach operations are permitted only while the loan is in the CREATED state; once the loan progresses to APPROVED, changes to originator associations are not allowed via these endpoints.</li>
+<li>Duplicate attachments are rejected; removing a non-attached originator is rejected.</li>
+<li>The Originator ID field is optional in loan records and events; when absent, no originator association is reported.</li>
+
+</ul>
+<h2>Impact and governance</h2>
+<ul>
+<li>Access to all originator management and loan-originator association operations is controlled by dedicated permissions.</li>
+<li>Audit fields track creation and modification of originator records and their mappings to loans.</li>
+
+</ul>
+This publication conveys the verified design and behavior for the Merchant BNPL Checkout Capability to track loan originators within Pepper-Soup’s loan origination framework. It follows the referenced feature description, its optional deployment model, and the enrichment and reporting extensions required for revenue sharing with merchants.
+</ac:document>

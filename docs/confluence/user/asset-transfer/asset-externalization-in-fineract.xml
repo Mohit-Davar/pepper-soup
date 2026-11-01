@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Asset Externalization in Fineract</h1>
+  Asset externalization is a modular capability that allows the transfer of loan ownership from an internal portfolio to an external investor (the asset owner). The feature records and enforces the lifecycle of ownership transfers, from initiation through settlement, including sale and buyback scenarios, and tracks the resulting accounting and reporting implications. It provides visibility to operations staff, loan officers, branch managers, and credit agents about who owns a given asset, under what conditions, and when changes take effect on the customer’s loan. The function is designed to support reporting and analytics for downstream systems by exposing a transfer record with an external owner and related identifiers, while preserving a clear audit trail of status changes and dates. 
+
+Roles that benefit include:
+<ul>
+<li>Investors (external asset owners) who gain visibility into loan ownership and related events.</li>
+<li>Business Managers who manage investor relationships, decide on asset sales or buybacks, and oversee related journal activity and reporting.</li>
+<li>Operations staff and loan officers who execute and monitor asset transfers, validate eligibility, and verify COB handling rules are applied consistently.</li>
+
+</ul>
+<blockquote><p>Note: This page describes verified product behavior, its business purpose, and how users observe results in day-to-day operations. It does not document internal design decisions or development history.</p></blockquote>
+
+<p>---</p>
+
+<h2>Key concepts</h2>
+<ul>
+<li>Asset Owner (external): The external party identified by a unique external identifier who owns a given loan after a transfer.</li>
+<li>Settlement Date: The date at which ownership becomes effective (the end of day that closes the transfer). For buyback and sale, the settlement date is treated as the date on which the transfer outcome is finalized in COB processing.</li>
+<li>Effective Date Range: The active period during which the transfer is considered valid for ownership; from a start date to an end date, inclusively.</li>
+<li>Purchase Price Ratio: The percentage of ownership acquired by the external owner, expressed as a number between 0 and 100 (for example, 100% implies full ownership transfer).</li>
+<li>Transfer Status: The current state of an asset transfer. Implemented statuses include PENDING, ACTIVE, BUYBACK, DECLINED, and CANCELLED.</li>
+<li>Transfer Type: SALE (asset sale to an external owner) or BUYBACK (asset repurchased by the original owner or related party).</li>
+<li>External identifiers: External transfer IDs and related sales transaction identifiers used to correlate records in downstream systems.</li>
+<li>Journal entry relationship: An accounting linkage exists between asset ownership transfers and journal entries to support auditing and reporting for external ownership. The precise mapping and journal definitions are subject to implementation decisions and are described at a high level in public design materials, with actual entries Defined in product configuration .</li>
+
+</ul>
+<p>These concepts are used consistently across all workflows described in the Use Cases and Rules sections.</p>
+
+---
+
+<h2>How asset externalization works (Lifecycle overview)</h2>
+
+The lifecycle consists of initiation, COB processing, and potential follow-on events such as buyback or cancellation. The system enforces business rules to verify only eligible loans can be transferred and that settlement timing follows COB processing. A transfer progresses through a small set of discrete statuses, and each transition is observable via events that propagate to downstream systems.
+<ul>
+<li>Initiation (SALE or BUYBACK): A transfer request is created for a loan currently in an eligible state (typically ACTIVE). The transfer request includes the asset owner (external), an optional sales transaction identifier, the purchase price ratio, and the settlement date. The transfer begins in a PENDING state.</li>
+<li>COB Processing: At COB (end of business day), the system evaluates the transfer against business rules (for example, balance conditions). If the loan balance is greater than zero, the transfer becomes ACTIVE. If the balance is zero or negative, the transfer is DECLINED. A user can cancel a PENDING transfer before COB, in which case the transfer becomes CANCELLED.</li>
+<li>Buyback and further actions: If a transfer is BUYBACK, the same COB timing rules apply, and the transfer can transition through ACTIVE to BUYBACK depending on the balance and timing. Transfers cannot be initiated when a previous transfer is still in PENDING without COB resolution; the system enforces rules analogous to those governing monetary activities.</li>
+<li>Freedom of cancellation: A transfer that is in PENDING may be cancelled by the user prior to COB. Cancels do not alter completed COB outcomes and do not apply to transfers that have progressed to ACTIVE or BUYBACK.</li>
+<li>Observability: Events are emitted to inform downstream systems about ownership changes. The design includes events that carry asset owner information and transfer context, enabling reporting and analytics in downstream systems.</li>
+
+</ul>
+<p>The following diagram summarizes the asset ownership status flow and the key transitions.</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+ [*] --> PENDING
+ PENDING --> ACTIVE: Settlement date reached and loan balance > 0
+ PENDING --> DECLINED: Settlement date reached and loan balance <= 0
+ PENDING --> CANCELLED: USER_REQUESTED
+ ACTIVE --> BUYBACK: Buyback executed
+ BUYBACK --> [*]
+ DECLINED --> [*]
+ CANCELLED --> [*]]]></ac:plain-text-body></ac:structured-macro>
+
+<p>---</p>
+
+<h2>Functional lifecycle: Use cases and rules</h2>
+
+<h3>UC1: Initiate asset transfer</h3>
+1. A user (with standard permissions) initiates an asset transfer for a loan. The request must specify the external asset owner, a purchase price ratio, and a settlement date. The system requires the following validations: the Asset Owner Identifier must be provided and limited to 100 characters; the Settlement Date cannot be in the past; the Purchase Price Ratio must be provided and valid as a numeric value. The transaction is created in a PENDING state and is associated with the loan. If a transfer for the same loan is already in a PENDING state, the new request is rejected.
+2. If the loan is eligible (for sale) and the request passes validations, the system returns a transfer record with a new internal transfer id and an externally visible transfer id if provided. The initial status shown to users is PENDING or a associated pending indication.
+3. If the loan balance or other eligibility conditions would prevent transfer at initiation, the system reports the NOK condition with an explanatory reason.
+
+<h3>UC1.1 OK and UC1.2 NOK (initiation scenarios)</h3>
+<ul>
+<li>OK: Initiation proceeds for eligible loans and available asset owners with required information supplied.</li>
+<li>NOK - pending conflict: If there is already a pending transfer for the same loan, initiation is rejected with a conflict condition.</li>
+
+</ul>
+<h3>UC1.3 NOK - loan balance conditions</h3>
+<ul>
+<li>If the loan balance is closed or overpaid, initiation is rejected because there is no balance to transfer to an external owner.</li>
+
+</ul>
+<h3>UC2: Execute asset transfer</h3>
+<h4>UC2.1: OK - Sale</h4>
+<ul>
+<li>If the transfer is initiated as a SALE and the COB window and balance conditions are satisfied, the transfer can be finalized as ACTIVE at COB, making the asset ownership change effective for the asset owner and enabling downstream reporting.</li>
+</ul>
+<h4>UC2.2: OK - Buyback</h4>
+<ul>
+<li>If the transfer is initiated as a BUYBACK, the system follows the same COB timing, and the transfer can become ACTIVE or proceed to BUYBACK according to the balance and COB rules.</li>
+</ul>
+<h4>UC2.3: OK - Pending → Buyback on the same day</h4>
+<ul>
+<li>The design supports a scenario where a transfer remains PENDING and then transitions to BUYBACK within the same business day if conditions allow.</li>
+</ul>
+<h4>UC2.4 DEPRECATED: NOK - Declined sale due to already closed loan</h4>
+<ul>
+<li>Previously documented behavior that a sale could be declined if the loan balance had already been fully settled is deprecated as a supported pathway in favor of current COB-based rules, which evaluate balance at settlement.</li>
+
+</ul>
+<h3>UC3: Loan got closed</h3>
+<h4>UC3.1 OK - Buyback executed when the loan got closed</h4>
+<ul>
+<li>If a loan closes while a BUYBACK transfer is pending, the system may complete the buyback according to the COB process and close the transfer , per policy.</li>
+</ul>
+<h4>UC3.2 NOK - Sale declined when the loan got closed</h4>
+<ul>
+<li>If a sale attempt would result in no balance because the loan is closed, the transfer is declined.</li>
+</ul>
+<h4>UC3.3 NOK - Buyback and sale cancelled when the loan got closed</h4>
+<ul>
+<li>If there is a conflicting state at close, the system may cancel pending actions in alignment with the COB and policy rules.</li>
+
+</ul>
+<p>These use cases describe verified behavioral pathways for initiating and executing asset transfers, handling buybacks, and addressing loan closure scenarios. They are designed to verify that asset ownership transitions are traceable, auditable, and compliant with settlement timing.</p>
+
+---
+
+<h2>Rules, constraints, and edge cases</h2>
+<ul>
+<li>Initiation is captured by API interactions; the actual transfer completion occurs at COB. This separation verifies that the COB process correctly finalizes ownership changes and related accounting implications.</li>
+<li>Settlement date is mandatory for buyback requests and for many sale requests. Transfers include a settlement date and owner information; some fields may be optional in certain contexts, but settlement timing governs state transitions.</li>
+<li>Asset Owner Identifier is required for SALE operations and has a maximum length (up to 100 characters) to maintain data integrity and uniqueness guarantees for external ownership records. The Sales Transaction ID is optional but, if provided, must be a string with a practical length limit.</li>
+<li>Transfer state transitions are governed by COB processing: PENDING advances to ACTIVE when settlement conditions are met and the loan balance is greater than zero; if the balance is zero or negative, the transfer is DECLINED. Cancellations are permitted only while a transfer remains in PENDING.</li>
+<li>Only transfers in TRANSFER_IN_PROGRESS or TRANSFER_ON_HOLD loan statuses are eligible for ownership movement through the API; transfers are restricted by the same policy constraints as monetary activities for timing and risk management.</li>
+<li>The system supports assets with pending ownership transfers being cancelled. If a cancellation occurs, the transfer status becomes CANCELLED and no journal entries are created for that transfer.</li>
+<li>Journal entry behavior and mapping to external investors are described at a high level. Specific journal entry definitions and mappings to external owners are Defined in product configuration in the current design, with the intent to allows auditing and reporting of investor-related entries.</li>
+<li>An external event stream is extended to include asset owner information, allowing downstream systems to respond to ownership changes with richer context. A new event, Loan Ownership Transfer, carries key fields describing the transfer and the asset ownership context so that third-party systems can react .</li>
+
+</ul>
+<p>---</p>
+
+<h2>Events and observability</h2>
+
+<p>New and extended events are designed to inform external systems about asset ownership changes. The events carry data about the transfer type (SALE or BUYBACK), the external transfer identifiers, the involved loan, the asset owner, and the balance context at the time of the transfer. In addition to asset ownership context, the design supports an AccountChangedEvent and a loan snapshot to supports reconciliation and reporting at the time of ownership transitions. The precise event schema is aligned with the asset externalization design and is intended to support downstream analytics and auditing requirements.</p>
+
+Key externally observable pieces include:
+<ul>
+<li>Transfer identifiers (internal and external)</li>
+<li>The asset owner’s external identifier</li>
+<li>The loan’s external identifier and balance context at the time of transfer</li>
+<li>The date of the transfer and the settlement date</li>
+<li>The transfer status and sub-status ()</li>
+
+</ul>
+<p>The goal of these events is to provide visibility into ownership movements and to support reporting and analytics in downstream systems while preserving data integrity and an auditable trail.</p>
+
+---
+
+<h2>Data persistence and mapping (high level)</h2>
+
+At a high level, the system maintains:
+<ul>
+<li>A record of asset ownership transfers, including the loan, external owner, purchase price ratio, settlement date, and effective date range. The record tracks current status (PENDING, ACTIVE, BUYBACK, DECLINED, CANCELLED) and historical transitions.</li>
+<li>History of externalization requests and outcomes to support auditing and reconciliation.</li>
+<li>A linkage between journal entries and external investors to support investor-related reporting, with the understanding that precise journal-entry-to-transfer mappings may be refined as the design matures.</li>
+<li>A mapping between journal entries and the external asset transfer context to supports post-transaction reporting and traceability.</li>
+
+</ul>
+<p>The data model is designed to allows auditing of ownership transfers and easy retrieval of ownership state and related financial context for a given loan and asset owner. The COB processing boundary governs the actual completion of ownership changes and the associated accounting implications.</p>
+
+---
+
+<h2>Glossary (selected terms)</h2>
+<ul>
+<li>Asset Owner ID: An external identifier identifying the asset owner (investor) for a loan.</li>
+<li>Sales Transaction ID: An external identifier for the sale transaction (optional).</li>
+<li>Purchase Price Ratio: The percentage of ownership represented by the external owner in the loan, expressed as a value between 0 and 100.</li>
+<li>Settlement Date: The date on which ownership transfer is settled; the switch to Active typically occurs at COB on this date.</li>
+<li>Effective Date From / To: The date range during which the ownership transfer is considered valid and in effect.</li>
+<li>Transfer Status: Current lifecycle stage of the transfer (PENDING, ACTIVE, BUYBACK, DECLINED, CANCELLED).</li>
+<li>Transfer Type: SALE or BUYBACK; represents the direction of the ownership movement.</li>
+<li>External Transfer ID: The external identifier for the transfer used by external systems.</li>
+<li>Asset Externalization Events: Observability points that inform downstream systems about ownership changes and related context.</li>
+
+</ul>
+<p>---</p>
+
+<h2>Use cases in practice</h2>
+The asset externalization feature is designed to support a disciplined, auditable flow for moving loan ownership to external investors, while maintaining strict COB-based settlement rules, clear state transitions, and reliable observability through events. The lifecycle supports sale and buyback scenarios, with standard handling for loan closure events and cancellation of pending transfers. Operations staff, loan officers, branch managers, and credit agents should use these rules as the basis for validating transfer requests, monitoring COB outcomes, and reconciling balances and ownership in customer accounts.
+
+<p>---</p>
+
+<h2>Test and validation guidance (summary)</h2>
+<ul>
+<li>Validate initiation rules: required fields, length constraints, and eligibility checks for SALE vs BUYBACK. verify a pending transfer is not created if there is an existing pending transfer for the same loan.</li>
+<li>Validate COB processing: balance-based evaluation at COB to determine ACTIVE vs DECLINED statuses; verify cancellation paths are allowed only for PENDING transfers.</li>
+<li>Validate buyback handling: same-day COB semantics for sale and buyback, with proper status transitions and any applicable cancellation rules.</li>
+<li>Validate loan-closed scenarios: verify that buyback execution is possible when the loan closes and that sale is declined in such a case.</li>
+<li>Validate event emission: confirm that asset ownership changes emit the new ownership-aware events and that downstream consumers can correlate transfers to loans and external owners.</li>
+<li>Validate observability: confirm that the system exposes transfer records with status, effective range, and external identifiers to allows reporting and auditing.</li>
+
+</ul>
+<p>---</p>
+
+<h2>Related considerations and policy notes</h2>
+<ul>
+<li>Access control: A new permission is required for external investor module actions; only users with that permission and super user status should perform these actions.</li>
+<li>Data quality: Asset Owner IDs must be provided for SALE actions; the length and uniqueness constraints help verify reliable externalization references and reporting.</li>
+<li>Compliance with COB timing: The system applies COB-based processing rules to verify ownership changes follows daily settlement, preserving consistency with related monetary activities and reporting.</li>
+
+</ul>
+<p>---</p>
+
+If you need to reference this page in training or procedures, use the concept phrases introduced here (Asset Owner, Settlement Date, Purchase Price Ratio, Effective Date Range, Transfer Status, Sale, Buyback) and align your operational steps with the lifecycle and rules described above.
+</ac:document>

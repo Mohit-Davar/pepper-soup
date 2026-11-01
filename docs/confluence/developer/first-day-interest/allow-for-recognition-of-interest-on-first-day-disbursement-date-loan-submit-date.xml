@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>First-Day Interest Recognition on Disbursement</h1>
+  This topic documents the implementation and behavior of first-day interest recognition on loan disbursement within Pepper-Soup. The feature allows customization of how interest accrues on the actual disbursement date (the first day) versus subsequent days, using the standard Fineract accrual model as the baseline. The reference material anchors the behavior to a rate of 7% annualized with a 360-day year and the associated day-count conventions, and presents working schedules and ledger entries that illustrate how first-day accrual interacts with subsequent accruals and repayments.
+
+<h3>Conceptual scope and observed references</h3>
+The reference data collect several sheets under the feature class of "First-Day Interest Recognition on Disbursement." Core observations include:
+<ul>
+<li>The accrual engine can recognize interest starting on the disbursement date (the first day of the period) and continue accruing on subsequent days.</li>
+<li>The calculations rely on a fixed annual interest rate (7%) with a 360-day year, which yields a daily rate of 7% divided by 360 days per year (0.07 / 360 ≈ 0.000194444).</li>
+<li>The documented schedules show daily accrual entries of type Accrual on successive business dates beginning with the disbursement date, and a separate Disbursement event that initializes the loan balance.</li>
+<li>The reference sequences include detailed columns for payable interest, principal, interest, loan balance, business date, and day counters, illustrating how daily accruals contribute to the overall loan accounting and balance evolution.</li>
+
+</ul>
+From the reference sheets, the following constants are used in calculations and schedules:
+<ul>
+<li>Interest Rate: 7% per annum</li>
+<li>Days In Year: 360</li>
+<li>Day-count convention: implied by the 360-day year and daily accruals leading from the disbursement date onward</li>
+<li>Currency-facing amounts are represented with two-decimal rounding in the sample entries, consistent with typical currency accounting in the accrual ledger.</li>
+
+</ul>
+<p>These details establish the baseline for how first-day recognition is calculated and how it propagates through the daily accruals, repayments, and the resulting balances.</p>
+
+<h3>Day-count conventions and rate basis</h3>
+<ul>
+<li>Daily accrual is computed from the annual rate using the 360-day year, i.e., dailyRate = APR / DaysInYear = 0.07 / 360 ≈ 0.000194444.</li>
+<li>The first-day accrual follows the same daily rate, applied to the outstanding principal amount disbursed on the loan’s business date.</li>
+<li>Currency values are posted with standard two-decimal rounding; the reference samples show two-decimal representations for accrual and related postings on the accrual ledger.</li>
+
+</ul>
+<p>These rules define the precise numerical basis for first-day recognition and subsequent accrual on the loan.</p>
+
+<h3>How the first-day recognition flows through the system</h3>
+The reference material demonstrates a sequence in which the loan is disbursed on a given business date and an accrual entry is generated for that same date (the first day). On the following days, accrual entries continue to accumulate according to the daily rate, until the schedule is interrupted by repayments or other events. The flow can be described as follows:
+1) Disbursement event on the loan business date initializes the loan balance and posts the initial principal amount. A first-day accrual entry is produced to recognize interest that accrues on the disbursed amount for the first day.
+2) On each subsequent business date, an Accrual entry is posted with payable interest amounts computed using the daily rate and the remaining principal exposure, updating the loan balance as part of the accrual ledger.
+3) When repayments occur, the system allocates the payments across the accrued interest and principal according to the prevailing repayment policy, updating the loan balance and continuing accruals from the new balance onward.
+4) The postings maintain integrity constraints observed in the reference data: each period’s opening balance follows the previous period’s closing balance, and accrual postings reconcile with the transaction amounts.
+
+<p>The reference sequences include fields such as Type, payable Interest, Amount, Principal, Interest, repayment interest, Penalty, Loan balance, business date, and days, illustrating how day-by-day accruals are recorded and how they interact with repayments and the running balance.</p>
+
+<h3>Example calculation pattern (illustrative and aligned with the reference inputs)</h3>
+Calculation setup used in the reference is:
+<ul>
+<li>APR = 7% per year</li>
+<li>Days in year = 360</li>
+<li>Principal (example) = 2,000</li>
+<li>Daily rate = APR / DaysInYear = 0.07 / 360 ≈ 0.000194444</li>
+<li>First-day accrual (before rounding) = Principal × Daily rate = 2,000 × 0.000194444 ≈ 0.388888...</li>
+<li>With currency rounding to two decimals, the first-day accrual would be rounded to 0.39 in a straightforward application of currency rounding rules.</li>
+
+</ul>
+<p>The reference material documents first-day accrual values on the order of a few tenths of a currency unit per day for modest principal levels (for example, entries labeled as Accrual on the first day). The exact per-day accrual figures in the sample schedules vary due to rounding practices and specific schedule definitions across the sheets, but the underlying calculation consistently follows the daily rate multiplied by the outstanding principal for the day in question.</p>
+
+Note: In the reference example, some immediate first-day values appear around 0.38–0.40 for very large principal amounts, reflecting the same underlying calculation with the same daily rate but different rounding and balance treatment in the provided sample. The mathematically derived first-day accrual for 2,000 principal at 7% APR with a 360-day year is 0.388888..., which rounds to 0.39 under two-decimal currency rounding. The observed two-decimal values in the sample are consistent with standard currency rounding, though slight variations can appear due to sample-specific rounding or schedule conventions.
+
+<h3>Data structures observed in accrual scheduling (verified from reference data)</h3>
+The reference material uses a ledger-style presentation for accrual events, including the following fields on accrual and related postings:
+<ul>
+<li>Type: Accrual</li>
+<li>payable Interest: the portion of interest recognized on the day</li>
+<li>Amount: total per-day accrual amount (currency amount)</li>
+<li>Principal: outstanding principal portion affected on the day</li>
+<li>Interest: interest component within the daily posting</li>
+<li>repayment interest: cumulative interest repaid or allocated through repayments</li>
+<li>Penalty: any penalties applicable on the day</li>
+<li>Loan balance: the scheduled loan balance after the day’s postings</li>
+<li>business date: the date of the posting</li>
+<li>days: the day counter for the period ()</li>
+
+</ul>
+<p>These fields appear across several sheets in the reference data under the accrual workflow, illustrating how the day-by-day accruals are recorded and reconciled with repayments and the evolving loan balance.</p>
+
+<h3>Architecture and processing implications (high level)</h3>
+<ul>
+<li>Accrual engine behavior: The first-day recognition is integrated into the accrual engine, which emits daily Accrual events for the loan’s business days when the policy is enabled for first-day recognition.</li>
+<li>Balance management: Each day’s accrual updates the loan balance to reflect the accruing interest (and any other ledger effects shown in the reference). The integrity requirement that opening balances equal the prior closing balances remains a governing constraint for each accrual period.</li>
+<li>Payment allocation: Repayments are allocated to the accrued interest and principal according to the repayment schedule, affecting subsequent accruals through the updated balance.</li>
+<li>GL and accounting implications: Accrual postings include currency-valued entries that must balance with associated debits/credits when actual journal entries are available or when integration with general ledger components is active.</li>
+
+</ul>
+<p>The reference patterns emphasize that the first-day accrual integrates with the ongoing accrual cycle and repayment events, producing a coherent, auditable sequence of daily postings that preserve the expected relationship between opening balances, daily accruals, and closing balances across periods.</p>
+
+<h3>Diagram: first-day recognition flow (Mermaid)</h3>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Disbursement on business date] --> B{First-day recognition enabled?}
+ B -- Yes --> C[Post day-0 Accrual for disbursement day]
+ B -- No --> D[No day-0 accrual; start accrual next business day]
+ C --> E[For each subsequent business day: Post Accrual entry using dailyRate × outstandingPrincipal]
+ E --> F[On repayments: allocate payment across accrued interest and principal]
+ F --> G[Update loan balance and continue accrual cycle]
+ G --> H[GL postings and journals ()]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Financial integrity and verification notes</h3>
+<ul>
+<li>The integrity rules observed in the reference data include that each period’s opening balance must equal the previous period’s closing balance, and that accrual postings reconcile with the associated transaction amounts.</li>
+<li>Accrual postings are shown with per-day accrual values in the two-decimal currency format in the samples, demonstrating currency-level precision for each day’s accrual.</li>
+<li>When repayments occur, the system allocates the repayment against the accrued interest and principal, updating the outstanding balance and continuing the accrual process from the updated balance.</li>
+<li>Journal entries (when captured) are expected to balance between debit and credit lines consistent with the accrual and repayment postings; the reference data illustrates the structure of fields used in such postings when available.</li>
+
+</ul>
+<p>These are the verified patterns in the reference data for first-day recognition and the subsequent accrual workflow.</p>
+
+<h3>Practical considerations for integration and testing</h3>
+<ul>
+<li>Validate a disbursement flow with first-day recognition enabled by inspecting the first-day Accrual posting on the loan’s business date and confirming that the daily accruals thereafter follows the daily rate and the changing balance.</li>
+<li>Verify that the opening balance of any accrual period matches the closing balance of the prior period, and that successive days post accruals maintain the expected running balance sequence.</li>
+<li>verify rounding behavior conforms to currency conventions used by the system (the reference samples show two-decimal representations; the exact rounding policy should be consistent with the platform’s currency rounding rules).</li>
+<li>If you allows/disable first-day recognition, confirm that the accrual timeline shifts (i.e., accrual does not occur on day 0 when disabled and begins on the next business day or as configured).</li>
+
+</ul>
+<h3>Summary of observed numbers and patterns (from reference samples)</h3>
+<ul>
+<li>APR: 7% per annum; Days in year: 360; daily rate ≈ 0.000194444</li>
+<li>Disbursement event initializes loan balance with the principal amount on the business date</li>
+<li>First-day accrual postings occur for the disbursement day when the policy permits</li>
+<li>Daily accruals continue on subsequent business days, generating entries with fields such as payable Interest, Amount, Principal, Interest, and Loan balance</li>
+<li>Repayments reduce the outstanding principal and re-baseline future accruals on the remaining balance</li>
+<li>The reference samples illustrate how these postings manifest in a daily ledger-like record with two-decimal currency amounts</li>
+
+</ul>
+This page captures the verified behavior and the documented scheduling pattern for first-day interest recognition on disbursement, anchored to the reference data’s rate, day-count convention, and accrual workflow. It describes what the feature does, how it behaves in the accrual engine, and what to expect in schedules and postings when first-day recognition is enabled.
+</ac:document>

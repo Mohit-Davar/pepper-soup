@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Origination fee -&gt; Capitalized income</h1>
+  Capitalized income refers to origination fees that are introduced at loan product level, added to the loan balance at disbursement, and amortized over the life of the loan. This asset-like balance is treated as a liability up front (deferred income) and progressively recognized as income through a structured amortization process. The feature is designed to improve income recognition accuracy and align accounting with regulatory expectations. It is available to users who administer loan products and loans, including operations staff, loan officers, branch managers, and credit agents. The configuration and behavior described here reflect the verified product implementation and its documented rules.
+
+<h3>What this feature does and why it matters</h3>
+<ul>
+<li>A capitalized income amount (often referred to as an origination fee) is configurable at the loan product level and can be introduced as FLAT (the default) or, in future, as a percentage of the disbursement amount. In the current verified implementation, the supported calculation mode is FLAT. The capitalized income is added to the loan principal at or after the first disbursement date, and it is treated as part of the principal for repayment and interest calculations. This allows the lender to defer a portion of the income rather than recognizing it upfront.</li>
+<li>The capitalized income amount becomes the basis for daily amortization. Daily recognition moves the amount from Deferred Income (liability) to Income from Capitalization (income) through a defined amortization schedule.</li>
+<li>The amortization pattern is based on a daily, equal allocation across the remaining days of the loan, using the configured amortization strategy. The current implementation supports the Equal Amortization strategy.</li>
+<li>The accounting treatment debits the loan portfolio (asset) when capitalized income is created and credits Deferred Income (liability). As amortization progresses, entries move from Deferred Income to Income from Capitalization. When the loan is closed early or charged off, amortization may stop and remaining balances are handled according to policy rules.</li>
+
+</ul>
+<h3>Who benefits from capitalized income</h3>
+<ul>
+<li>Loan officers and branch managers gain a mechanism to structure fees in a deferred manner, aligning with income recognition practices.</li>
+<li>Operations staff observe and validate amortization flows, balances, and reconciliations in loan portfolios.</li>
+<li>Credit agents and financial controllers benefit from clearer separation of capitalized income (as a liability) and recognized income, with auditable journal entries and a traceable balance history.</li>
+
+</ul>
+<h2>How capitalized income is configured and managed (loan product level)</h2>
+
+Capitalized income is configured at the loan product level and becomes available for loans created from that product. The verified configuration options include:
+<ul>
+<li>allows Capitalized Income: Boolean toggle (default: disabled).</li>
+<li>Calculation Type: FLAT (the current supported mode).</li>
+<li>Amortization Strategy: EQUAL_AMORTIZATION (daily equal portions over the life of the loan).</li>
+<li>Income Type: FEE (default; defines which balance category is used for the amortization process; alternatives such as INTEREST are supported by other configurations).</li>
+<li>GL Mapping: Deferred Income (Liability) and Income from Capitalization (Income).</li>
+
+</ul>
+<div class="param-grid">
+ <div class="param-card"><span class="param-label">Capitalized Income</span><span class="param-value">Enabled/Disabled</span></div>
+ <div class="param-card"><span class="param-label">Calculation Type</span><span class="param-value">FLAT</span></div>
+ <div class="param-card"><span class="param-label">Amortization Strategy</span><span class="param-value">EQUAL_AMORTIZATION</span></div>
+ <div class="param-card"><span class="param-label">Income Type</span><span class="param-value">FEE</span></div>
+ <div class="param-card"><span class="param-label">GL Mapping (Deferred Income)</span><span class="param-value">Liability</span></div>
+ <div class="param-card"><span class="param-label">GL Mapping (Income from Capitalization)</span><span class="param-value">Income</span></div>
+</div>
+
+<h3>Step-by-step: enabling capitalized income on a loan product</h3>
+1. Open the loan product configuration screen for the target product.
+2. Find the setting labeled <strong>allows Capitalized Income</strong> and set it to <strong>On</strong>. The system confirms the feature is active for this product.
+3. Set the field labeled <strong>Capitalized Income Calculation Type</strong> to <strong>FLAT</strong>. This selects flat-amount capitalization for the initial amount added to the loan principal.
+4. Set the field labeled <strong>Capitalized Income Strategy</strong> to <strong>EQUAL_AMORTIZATION</strong>. This configures daily, equal portions to be recognized until the balance is fully amortized.
+5. Set the field labeled <strong>Capitalized Income Type</strong> to <strong>FEE</strong>. This defines the balance category used for capitalization and amortization logic.
+6. Verify the GL mappings:
+<ul>
+<li>Deferred Income (Liability)</li>
+<li>Income from Capitalization (Income)</li>
+</ul>
+7. Save the product configuration. The product is now eligible to apply capitalized income when a loan is created from this product.
+
+<h3>How capitalized income interacts with a loan lifecycle</h3>
+<ul>
+<li>When a loan is disbursed using a product with capitalization enabled, the system adds the capitalized income amount to the loan principal. The amount is recorded as a capitalized transaction that increases the loan’s outstanding balance for repayment and interest purposes, while also creating a liability entry (Deferred Income).</li>
+<li>The amortization process begins from the date the capitalized income is added and runs daily, moving amounts from Deferred Income to Income from Capitalization according to the configured equal-amortization schedule.</li>
+<li>If a loan prepays or is closed early, the final amortization step accounts for any remaining unrecognized balance, per the preclosure rules. If the loan is charged off, amortization stops and the remaining balance is charged off according to policy.</li>
+<li>Adjustments to capitalized income are possible via a dedicated adjustment pathway; however, automatic reversal of the original capitalized income is not a default feature. Reversals require the standard adjustment transactions to restore balances and recognize any changes in amortization.</li>
+
+</ul>
+<h3>Important rules, validations, and edge cases</h3>
+<ul>
+<li>Validation at disbursement: (Disbursement Amount + Capitalized Income) must be less than or equal to the approved loan amount. This verifies capitalization does not exceed the loan’s approved capacity.</li>
+<li>Daily amortization is calculated and posted during the COB process, moving funds from Deferred Income to Income from Capitalization.</li>
+<li>Preclosure handling: Remaining capitalized income balance is recognized in full on the preclosure date.</li>
+<li>Charge-off handling: Amortization stops; any remaining unrecognized capitalized income is handled as part of the charge-off calculation.</li>
+<li>Reversal behavior: If the Capitalized Income transaction is reversed, amortization adjustment entries are generated to reverse already recognized portions. A dedicated automatic reversal path (Capitalized Income Amortization Adjustment) is system-generated to maintain accounting integrity.</li>
+<li>Backdating: Capitalized income transactions support backdating, but adjustments cannot predate the original capitalization transaction.</li>
+
+</ul>
+<h2>Calculation mechanics: what changes in the loan schedule and accounting</h2>
+
+<p>Capitalized income is added to the loan principal at the time of capitalization, and it is treated as part of the principal for amortization and interest calculations. The result is an updated amortization and interest schedule that includes the capitalized amount in the outstanding balance. The deferment of income is reflected as a liability until amortization converts it into recognized income.</p>
+
+<h3>How daily amortization is performed</h3>
+<ul>
+<li>The system recognizes daily amortization of the capitalized income as a portion of the original amount, moving it from Deferred Income (liability) to Income from Capitalization (income).</li>
+<li>The only currently supported amortization method is Equal Amortization. This divides the total capitalized income evenly across the remaining days of the loan term.</li>
+<li>The daily amortization process runs as part of the Close of Business (COB) routine and persists as a daily amortization transaction. If the loan closes early or a reversal occurs, the final amortization step adjusts the remaining unrecognized balance or reverses previously recognized income, respectively.</li>
+
+</ul>
+<h3>Journal entries commonly observed (verified behavior)</h3>
+<ul>
+<li>Capitalized Income creation:</li>
+<li>Debit Loan Portfolio (Asset)</li>
+<li>Credit Deferred Income (Liability)</li>
+<li>Capitalized Income amortization (daily):</li>
+<li>Debit Deferred Income (Liability)</li>
+<li>Credit Income from Capitalization (Income)</li>
+<li>Capitalized Income Adjustment (to correct past capitalization):</li>
+<li>Debit Deferred Income (Liability) / Income from Capitalization (Income) </li>
+<li>Credit Loan Portfolio (Asset)</li>
+<li>Capitalized Income Amortization Adjustment (reversal of amortization portions):</li>
+<li>Debit Income from Capitalization (Income) / Credit Deferred Income (Liability)</li>
+
+</ul>
+Notes:
+<ul>
+<li>The system does not perform automatic reversal of the Capitalized Income transaction itself; instead, dedicated adjustments reverse already recognized amortization as needed.</li>
+<li>All capitalized income adjustments must reference the original capitalized income transaction and cannot predate it.</li>
+
+</ul>
+<h2>Worked example: conceptual walkthrough (using verified configuration concepts)</h2>
+
+The reference model provides concrete numbers for a simple scenario, where a loan product allows capitalized income with flat calculation and equal amortization. The core numbers involved are:
+<ul>
+<li>Capitalized Income amount: 50 (added to the loan principal at disbursement)</li>
+<li>Disbursement amount: 100</li>
+<li>Total loan balance after capitalization: 150</li>
+<li>Interest rate: 7% per annum (0.000194444 daily rate when using a 360-day year)</li>
+<li>Days in year: 360; Days in month: 30</li>
+<li>Amortization method: Equal Amortization (daily portions recognized over the life of the loan)</li>
+
+</ul>
+Key sequence and outcomes you will see in the system:
+1) Disbursement event: The system records the disbursement of 100 as the loan principal and creates a Capitalized Income transaction of
+
+50. The accounting entries are:
+<ul>
+<li>Debit Loan Portfolio (Asset) 50</li>
+<li>Credit Deferred Income (Liability) 50</li>
+ </ul>
+This increases the reported loan balance to reflect the capitalized amount while recognizing that the income is not yet recognized.
+2) Amortization entry(s): Each day (at COB) the system generates an amortization entry for the capitalized amount, moving from Deferred Income to Income from Capitalization. The exact daily amount is derived from the Equal Amortization schedule and the remaining days until loan maturity. In a representative daily pattern from the reference, a daily amortization amount is posted from Deferred Income to Income from Capitalization.
+3) Full recognition: Amortization continues daily until the entire capitalized amount has been recognized as income, at which point the Capitalized Income balance becomes zero.
+4) Reversal handling: If the original Capitalized Income transaction is reversed, a Capitalized Income Amortization Adjustment is generated to reverse all previously recognized amortization to restore the liability and income balances aligned with the reversal.
+
+<p>The example illustrates the end-to-end lifecycle from capitalization to amortization and eventual recognition of income, with all steps reflected in the ledger as described above. The exact timing and amounts of daily amortization depend on the loan’s term and the daily equal-amortization calculation, but the mechanism and accounting impact are consistent with the verified behavior described here.</p>
+
+<h3>Visual overview: lifecycle diagram (Mermaid)</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+ [*] --> CapitalizedIncomeCreated: Capitalized Income added at disbursement
+ CapitalizedIncomeCreated --> DailyAmortization: Daily COB amortization postings
+ DailyAmortization --> IncomeRecognized: Portion moved to Income from Capitalization
+ IncomeRecognized --> FullyAmortized: Balance reaches zero
+ [*] --> Preclosure: Preclosure event occurs
+ Preclosure --> FullyAmortized: Remaining balance recognized
+ FullyAmortized --> [*]
+ [*] --> ChargeOff: Charge-off occurs
+ ChargeOff --> [*]
+ CapitalizedIncomeCreated --> CapitalizedIncomeAdjustment: Adjustment made
+ CapitalizedIncomeAdjustment --> CapitalizedIncomeCreated: Re-apply adjustments]]></ac:plain-text-body></ac:structured-macro>
+
+<h2>Summary of key rules and outcomes</h2>
+<ul>
+<li>Capitalized income is introduced at the loan product level and added to the loan balance at disbursement, creating a deferred income liability.</li>
+<li>The daily amortization process moves amounts from Deferred Income to Income from Capitalization, using the Equal Amortization strategy.</li>
+<li>Preclosure handling recognizes the remaining balance in full on the preclosure date; charge-offs halt amortization and reflect the remaining balance in the charge-off process.</li>
+<li>Adjustments can reduce the capitalized income balance and may adjust future amortization, but they must not predate the original capitalization transaction. Automatic reversal of the capitalization itself is not supported; specialized adjustments reverse related amortization when needed.</li>
+<li>All changes are reflected in both the loan balance and the related general ledger mappings (Deferred Income and Income from Capitalization).</li>
+
+</ul>
+<h3>When and how to verify the outcomes</h3>
+<ul>
+<li>Validate that (Disbursement + Capitalized Income) <= Approved Amount for the loan.</li>
+<li>Confirm that the initial capitalization entry debits the Loan Portfolio and credits Deferred Income.</li>
+<li>Review daily amortization postings to verify they move amounts correctly from Deferred Income to Income from Capitalization and that the cumulative amortization matches the capitalized income amount by the end of the amortization period.</li>
+<li>If a capitalization is reversed, verify that the amortization adjustment has reversed all recognized portions and that the loan balance reflects the reversal appropriately.</li>
+
+</ul>
+If you need drilled steps for a specific loan product or a concrete calculation run, provide the product settings and loan term, and the system-generated amortization schedule will reflect the configured flat capitalization and equal daily amortization as described above. The behavior documented here captures the verified rules, calculations, and outcomes of the Origination fee -> Capitalized income feature as implemented.
+</ac:document>

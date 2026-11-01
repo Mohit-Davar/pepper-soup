@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Journal entry aggregation</h1>
+  The Journal entry aggregation enhancement introduces a two-step data path for the Trial Balance reporting flow. A Journal Entry Aggregation batch job is created to produce a summarized, pre-baked dataset (the Journal Entry Aggregation Summary). The Trial Balance Report is then wired to consume data from this pre-built summary, eliminating the need to perform journal entry aggregation during every Trial Balance run. This change improves report responsiveness and verifies the Trial Balance reflects a consistent aggregation snapshot rather than on-the-fly calculations.
+
+<h3>What changed and why it matters</h3>
+
+<p>Previously, the Trial Balance Report could perform journal entry aggregation as part of its data preparation workflow. With this enhancement, the system now first creates a Journal Entry Aggregation Summary via a dedicated batch job, and the Trial Balance Report is updated to read from this summary table. The effect is a shift from on-demand aggregation to a pre-aggregated data path. The benefits include reduced processing time for Trial Balance generation and improved consistency across reports that rely on aggregated journal entries. The outcome aligns the Trial Balance with a stabilized aggregation state rather than a live, potentially variable, daily aggregation process.</p>
+
+<h3>Updated workflow (step-by-step)</h3>
+
+<p>1) Access the Journal Entry Aggregation configuration in the user interface at Reporting and Accounting > Journal entries > Journal entry aggregation.</p>
+
+2) Create and configure a Journal Entry Aggregation batch job to produce the Journal Entry Aggregation Summary table. This dataset is the summarized representation of journal entries intended for downstream reporting.
+
+<p>3) Hook up the Journal Entry Aggregation Summary table to the Trial Balance Report. After this change, the Trial Balance Report reads from the pre-baked aggregation data instead of performing journal entry aggregation as part of its own processing.</p>
+
+4) Run or refresh the Trial Balance Report. The report retrieves data from the Journal Entry Aggregation Summary and presents results based on the pre-baked data path.
+
+<p>5) Validate the results. Confirm that the Trial Balance includes the asset owner dimension and the two child components described in the report’s data structure, and verify that totals and allocations reconcile with the aggregation data.</p>
+
+<h3>Data model and scope</h3>
+<ul>
+<li>The enhancement centers on the Journal Entry Aggregation Summary table, which serves as the source for the Trial Balance Report.</li>
+<li>The Trial Balance report is designed to present a view that includes an asset owner dimension, with two child groupings in its reporting structure.</li>
+<li>Daily on-the-fly journal entry aggregation for the Trial Balance is replaced by consuming the pre-baked data from the Aggregation Summary table when generating the Trial Balance.</li>
+
+</ul>
+<h3>Migration and compatibility considerations</h3>
+<ul>
+<li>Deployment should include the Journal Entry Aggregation feature and its integration with the Trial Balance Report. The new data path relies on the presence of the Journal Entry Aggregation Summary table.</li>
+<li>After upgrade or deployment, operators should verify the Journal Entry Aggregation batch job is configured and enabled so that aggregation data exists for reporting periods.</li>
+<li>The Trial Balance Report must be configured to read from the Journal Entry Aggregation Summary table rather than performing day-to-day aggregation.</li>
+<li>For initial rollout, seed the aggregation data for current and prior periods as needed so the Trial Balance can render from the pre-baked dataset without gaps.</li>
+
+</ul>
+<h3>Validation and reconciliation</h3>
+<ul>
+<li>Validate that the Trial Balance Report uses the Journal Entry Aggregation Summary data by comparing a period’s Trial Balance against the associated aggregated data path for that period.</li>
+<li>Verify the asset owner dimension appears correctly in the Trial Balance output and that the two child components are present and follows the aggregation structure.</li>
+<li>verify that totals and allocations reconcile with the aggregation dataset, and that there are no discrepancies between the pre-baked data path and the resulting Trial Balance figures.</li>
+
+</ul>
+<h3>Diagram: data flow</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Journal Entry Aggregation Batch Job] --> B[Journal Entry Aggregation Summary Table]
+ B --> C[Trial Balance Report]
+ C --> D[User View: Trial Balance with Asset Owner and two children]]]></ac:plain-text-body></ac:structured-macro>
+</ac:document>

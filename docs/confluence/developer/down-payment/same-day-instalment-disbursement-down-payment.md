@@ -1,0 +1,99 @@
+<!-- Labels: developer, down-payment -->
+# Same day Instalment & Disbursement (down-payment)
+
+This feature allows configuring a down-payment on disbursements at the loan product level, allowing the down-payment amount to be collected at the time of disbursement. It is implemented as part of the disbursement and repayment scheduling flow and interacts with multi-disbursement use cases, backdated start scenarios, and distribution of second disbursement amounts across remaining installments. The reference content documents representative flows, calculations, and accounting mappings that govern how the down-payment is computed, recorded, and reconciled within the repayment schedule and GL accounting.
+
+### Concept and component boundaries
+
+- Role and scope: The down-payment capability sits in the loan product configuration governing how disbursements are performed and how the repayment schedule is generated. It affects the amount collected at disbursement (the down-payment) and how the remaining balance is scheduled for repayment.
+- Primary flows evidenced in the reference material center on disbursement events, the generation of a repayment schedule (including instalments and any down-payment portions), and the distribution of disbursement amounts across future installments when multiple disbursements occur.
+- No formal, published state machine is described in the reference data. The material records discrete events (Disbursement, Repayment, instalment dates) and their effects on the outstanding balance, but it does not enumerate a formal lifecycle with named states and triggers.
+
+### Configuration and prerequisites
+
+- Configuration occurs at the loan product level. The down-payment option is configured as part of the disbursement-related settings for the product, and the exact percentage observed in examples is 25% (as in the representative single-disbursement scenario).
+- When a down-payment is configured, the down-payment amount is derived from the principal amount being financed by the loan. For example, a 25% down-payment on a 1000 principal results in a down-payment amount of 250.
+
+### Calculations and example patterns (down-payment behavior)
+
+The reference demonstrates a straightforward calculation pattern for down-payments: the down-payment amount is a fixed percentage of the loan principal, collected at disbursement, with the remainder scheduled for repayment according to the instalment structure documented in the scenarios.
+
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> <code>Down-payment = downPaymentPct × principal</code></div>
+ <div class="calc-step"><strong>Substitution:</strong> <code>Down-payment = 0.25 × 1000 = 250</code></div>
+ <div class="calc-step calc-result"><strong>Result:</strong> <code>Down-payment amount = 250</code></div>
+</div>
+
+In the single-disbursement pattern shown in the reference, the scenario is labeled as a 30-day loan with a 25% down-payment. The representative flow includes a disbursement of 1000 and a down-payment of 250, followed by a repayment schedule with instalments representing the financed balance across subsequent dates. The exact dates and instalment counts are part of the scenario data, and the pattern illustrates how the down-payment is recorded alongside the ongoing instalment plan.
+
+Notes about the instalment structure in the evidenced pattern:
+- The scenario is described as having four instalments following the initial disbursement, consistent with the 30-day loan example in the reference set.
+- The down-payment portion is tracked separately in the repayment schedule as a down-payment principal component, and the remaining balance is scheduled for repayment according to the instalment dates.
+
+### Backdated disbursement use cases and down-payment interaction
+
+The reference includes several backdated use-case variants to illustrate how the repayment start date can relate to the disbursement date and how distributions behave when second disbursements occur.
+
+- When the repayment start date is set to the disbursement date, the repayment schedule includes the disbursement and subsequent repayments in a way that follows the disbursement date.
+- When the repayment start date is set to the loan submitted date, the schedule reflects this alternative alignment and demonstrates consistent balance progression across the instalments.
+- In backdated use cases that involve a second disbursement, the reference shows scenarios where the second disbursement amount is allocated to later instalments. For example, a note indicates that if an instalment is already fully paid, the second disbursement amount may be allocated to the remaining installments (e.g., “last two installments”), while other scenarios show allocation across all remaining installments.
+
+These patterns illustrate how down-payment handling coexists with multi-disbursement timing, repayment start alignment, and dynamic allocation of subsequent disbursements within the repayment schedule.
+
+### Disbursement amount distribution across installments
+
+The reference provides an example-focused view of how a second or subsequent disbursement can be distributed when repayments occur. The central idea is that the distribution of the additional disbursed amount can be allocated to remaining instalments based on the current state of the repayment schedule.
+
+- If a second disbursement occurs and instalments remain, the distribution can be applied to the last several installments, or to all remaining instalments, depending on the scenario and timing. The reference notes explicit statements like:
+ - "since this installment is fully paid, the second disbursement amount will be allocated to last two installments only".
+ - "even though the installment is fully paid, the second disbursement amount will be allocated for all 3 remaining future installments".
+
+These patterns demonstrate that the system supports flexible allocation of additional disbursement amounts across future instalments, subject to the current repayment state.
+
+### Example patterns across multiple disbursements (summary)
+
+- Single disbursement with down-payment: a 1000 principal loan with 25% down-payment demonstrates a down-payment of 250 collected at disbursement, followed by instalments for the remaining balance.
+- Double disbursement with down-payment: the reference documents flows where two disbursements occur and each may include a down-payment portion, with instalment schedules continuing after each disbursement date.
+- Backdated start and multi-disbursement cases: repayment starts can follows different dates (disbursement date or loan submission date), affecting the placement of instalments and the accounting implications.
+
+### GL accounting and validation references
+
+The down-payment flows participate in the same accounting framework as other disbursement and repayment events. The reference data includes a dedicated accounting reference set with a chart of accounts and mappings used to record lending activity and related movements:
+
+- Chart of Accounts (GL types):
+ - 112601 Loans Receivable — Asset
+ - 145023 Suspense/Clearing account — Suspense/clearing account
+ - 112603 Fee Receivable — Asset
+ - 245000 Other Credit liability — Liability
+ - 404001 Interest income — Income
+ - 404007 Fee Income — Income
+ - 404008 Fee Charge off — Income
+ - 744003 Principal bal adjustment — Expense
+ - 744007 Credit Loss/Bad Debt — Expense
+ - 744037 Credit Loss/Bad Debt Fraud — Expense
+
+- The referenced accounting sheets describe the mappings that connect transaction types (Disbursement, Principal Payment, Interest Payment, Fees, Unallocated Credit, etc.) to these GL accounts. They illustrate how debit/credit pairs are expected to balance when journal entries are available, and how the down-payment portion is intended to flow through the standard accounting channels (Loans Receivable, Suspense, Interest/Fee income, and related adjustments).
+
+Note: The exact debit/credit sequence for every specific down-payment event is defined by the detailed mapping in the accounting references. The COA provides the accounts and their types, and the accounting sheets show how those accounts are used across the various transaction lines.
+
+### Architecture and implementation considerations (summary)
+
+- The down-payment feature is implemented as part of the disbursement and schedule subsystem and is activated at the loan product level. It influences how the disbursement amount is reflected in the repayment schedule and how subsequent instalments are calculated and allocated.
+- The system supports multiple disbursement flows (single and double disbursement patterns) with down-payment handling, including scenarios where a second disbursement occurs after the initial one. Allocation rules for second disbursement amounts across remaining instalments are evidenced in the reference use cases and are dependent on the repayment state at the time of the second disbursement.
+- The component operates without a published, formal state machine in the reference materials; its behavior is described in terms of events (Disbursement, Repayment), instalment dates, and the interaction between down-payment accounting and the remaining loan balance.
+- Validation and invariants observed in the references emphasize consistency in balance progression (opening balances equal previous closing balances), alignment of payment allocations with the transaction totals, and reconciliation with GL accounting entries when available.
+
+### Procedures and representative flows
+1) Configure a loan product with a down-payment percentage (for example, 25%).
+2) Initiate a loan disbursement. Collect the down-payment amount at the moment of disbursement (e.g., 250 for a 1000 principal at 25%).
+3) Generate the repayment schedule that covers the remaining balance according to the instalment plan evidenced in the reference scenarios (the patterns show instalments following the disbursement with DP reflected in the schedule).
+4) If a second disbursement occurs, determine how the second disbursement amount should be allocated across remaining instalments, based on the current repayment state. The reference demonstrates both allocation to the last two instalments and allocation across all remaining instalments, depending on the scenario.
+5) When recording journal entries, map the events to the GL accounts as described in the accounting references (Loans Receivable, Suspense, Interest Income, Fee Income, and related adjustments).
+
+### Edge cases and observations
+- Backdated start options are supported, with repayment start aligned to disbursement date or loan submission date, affecting how instalments appear in the repayment schedule.
+- Multi-disbursement patterns (double disbursement) are documented with examples that show how down-payments can be applied to each disbursement and how instalment schedules progress thereafter.
+- The down-payment flow interacts with the standard accounting framework; the exact journal entry sequences depend on the transaction type and the mapping defined in the COA and accounting sheets.
+
+If you need deeper references to a particular pattern (for example, a specific double disbursement scenario or a precise accounting mapping), I can extract the exact sequence and lay it out in a focused subsection.

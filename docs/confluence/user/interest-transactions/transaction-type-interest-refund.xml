@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Transaction type - Interest refund</h1>
+  This feature handles the calculation and posting of interest refunds whenever a merchant refund posts against a loan. When a merchant refund is posted, the system computes the associated interest refund, allocates it to the interest accrual first, and, if any refund remains after reducing interest, applies the remainder to principal. The behavior is defined to maintain a consistent and auditable progression of a loan’s balance and accrued interest. The feature supports a variety of real-world refund patterns, including refunds on single disbursements, multiple disbursements on the same or different days, and partial refunds across different points in the repayment schedule. It is visible to operations staff, loan officers, branch managers, and credit agents through the loan servicing workflow and the interest transaction results on the loan’s ledger.
+
+<h3>Core concepts and business purpose</h3>
+<ul>
+<li>Interest refunds are triggered by merchant refunds and are calculated to restore the loan’s accrued interest to a correct state after the refund is posted. The calculation follows a day-by-day exam of the loan's disbursements and the refund application.</li>
+<li>The default allocation order is intimate with the loan’s disbursement history: refunds are applied to the oldest disbursement first, then proceeding forward in time as needed.</li>
+<li>After determining the amount of interest to refund, the system applies the refund to interest accrual first. If there is any over-refund relative to accrued interest, the surplus is applied to principal.</li>
+<li>The rules are demonstrated across a set of reference scenarios (UC01 through UC18), which illustrate single and multi-disbursement cases, same-day and different-day refunds, full refunds at various points in the schedule, and partial refunds within and after installment periods.</li>
+
+</ul>
+<h3>How the system determines the interest refund (high level)</h3>
+<ul>
+<li>Identify the merchant refund amount that must be refunded to the loan.</li>
+<li>Apply the refund to the OLDEST disbursement, working forward in time, as needed, until the refund is exhausted.</li>
+<li>Recalculate the total interest to date for the loan by re-simulating daily accruals with the updated principal on each day.</li>
+<li>For each day, compute: </li>
+<li>NewPrincipal_d = Disbursements up to day d minus RefundAppliedToDisbursements up to day d</li>
+<li>NewInterestAccrual_d = NewPrincipal_d × DailyPeriodicRate</li>
+<li>Determine the total original interest accrual (before the refund) and the total new interest accrual (after applying the refund). The difference is the InterestRefund amount.</li>
+<li>Apply the InterestRefund to interest accrual first. Any remainder from the refund, after reducing interest, is applied to principal.</li>
+
+</ul>
+<blockquote><p>Note: In some scenarios, the guidance in the reference materials explicitly states when an InterestRefund is applied to interest accrual (for example, the line “INTEREST REFUND IS APPLIED TO INTEREST ACCRUED” appears in several examples). Where this applies, the allocation proceeds as described above.</p></blockquote>
+
+<h3>Calculation reference and representation</h3>
+The following representation mirrors the approach used in the reference calculations. It shows the method and a concrete numeric example to illustrate the data-driven rules. The calculations use the daily periodic rate and the disbursement history to derive new principal balances and new interest accruals day by day, then determine the interest refund as the difference between the original and new accruals.
+
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> <code>InterestRefund = OriginalInterestAccrual - NewInterestAccrual</code></div>
+ <div class="calc-step"><strong>Per-day substitutions:</strong> <code>NewPrincipal_d = Sum(Disbursements up to day d) - Sum(Refunds applied to disbursements up to day d)</code></div>
+ <div class="calc-step"><strong>Per-day accrual:</strong> <code>NewInterestAccrual_d = NewPrincipal_d × DailyPeriodicRate</code></div>
+ <div class="calc-step"><strong>Rounding/precision:</strong> <code>HALF_UP</code> daily calculations, , with running totals maintained to the same precision as the system uses for interest accruals.
+ </div>
+ <div class="calc-step calc-result"><strong>Result (example).</strong> See UC01 below for a concrete instantiation: OriginalInterestAccrual (to 21-Jan) = 5.75; NewPrincipal after refund = 0.00; NewInterestAccrual = 0.00; InterestRefund = 5.75; After posting, InterestRefund is applied to interest accrual, leaving principal and interest accrual at 0.00.</div>
+</div>
+
+<h3>Example: UC01 — Single disbursement, full refund within the first installment period</h3>
+
+Reference data for UC01 uses a 12-month installment loan with daily period rate 0.0002736986 and monthly payments of 91.67. In this scenario, a single disbursement of 1,000.00 is posted on 1-Jan, and a full refund of 1,000.00 is posted on 22-Jan (within the first installment period).
+<ul>
+<li>Daily periodic rate: 0.0002736986</li>
+<li>Disbursement: 1,000.00 on 1-Jan</li>
+<li>Interest accrued to 21-Jan: 5.75</li>
+<li>Refund posted: 22-Jan, amount: 1,000.00</li>
+<li>Interest refund: 5.75 (closing the accrual for the refund period)</li>
+<li>Resulting balances after processing:</li>
+<li>Principal Balance: 0.00</li>
+<li>Interest accrued PTD: 0.00</li>
+<li>Interest refund posting: -5.75</li>
+
+</ul>
+Illustrative data excerpts from the reference flow (simplified):
+<ul>
+<li>1-Jan: Disbursement 1,000.00; Interest accrued PTD progresses through 0.27, 0.55, ..., 5.75 by 21-Jan.</li>
+<li>22-Jan: Refund -1,000.00; Interest refund -5.75; Principal balance 0.00; Interest accrual 0.00.</li>
+
+</ul>
+<p>This UC01 sequence demonstrates the core behavior: the refund is applied to the oldest disbursement first, the interest accrual is recalculated, and the net effect is a refund of the accrued interest plus a return of principal in the same operation when the refund equals the disbursed amount.</p>
+
+<h3>Related scenarios and behaviors (high level)</h3>
+
+The reference data documents many combinations of disbursement timing and refund patterns. In short:
+<ul>
+<li>UC02 demonstrates a single disbursement refund after the first installment period, resulting in a different alignment of interest refunds and subsequent repayments.</li>
+<li>UC03 shows a single disbursement refund after all installments are paid, with commodity adjustments to the remaining accruals.</li>
+<li>UC04 through UC07 cover multi-disbursement cases with varying day patterns and timing of refunds, illustrating how the system re-applies refunds to the oldest balances and recalculates accruals across subsequent days.</li>
+<li>UC08 through UC16 illustrate partial refunds within or after installment periods, including partial refunds across multiple disbursements and the associated allocation between interest accrual and principal.</li>
+<li>UC11, UC12, UC13, UC14, UC15, UC16, UC17, and UC18 introduce explicit notes such as “INTEREST REFUND IS APPLIED TO INTEREST ACCRUED” and show the effect of partial refunds on both interest and principal balances.</li>
+
+</ul>
+<p>These examples collectively define the implemented behavior for the interest refund transaction type and its interaction with daily accruals, refund allocations, and resulting balances.</p>
+
+<h3>Operational procedures (UI navigation and data entry)</h3>
+The following steps describe how an operations user would interact with the system to post a merchant refund and observe the resulting interest refund calculations. Boldface items indicate visible UI controls or data fields; outcomes describe what the system displays after each step.
+
+1. Access the loan account where the merchant refund is being posted.
+<ul>
+<li>Action: open the loan and navigate to the transaction entry area titled <strong>Merchant Refund</strong>.</li>
+<li>Expected system outcome: the system accepts the refund amount and records it against the loan’s disbursement history.</li>
+</ul>
+2. Post the merchant refund: enter the refund amount as the merchant refund value.
+<ul>
+<li>Action: input the refund amount in the <strong>Refund Amount</strong> field and confirm with <strong>Post Refund</strong>.</li>
+<li>Expected system outcome: the system logs the refund against the loan and triggers the interest refund calculation.</li>
+</ul>
+3. View the computed interest refund and updated balances.
+<ul>
+<li>Action: open the loan’s <strong>Interest Transactions</strong> view and locate the newly created <strong>Interest refund</strong> entry.</li>
+<li>Expected system outcome: the ledger shows the calculated InterestRefund amount (negative in the interest category) and the updated balances for principal and interest accrual.</li>
+<li>Example outcome (UC01): Interest refund shows -5.75; Principal Balance shows 0.00; Interest accrued PTD shows 0.00.</li>
+</ul>
+4. Validate the overall reconciliation of the transaction.
+<ul>
+<li>Action: confirm that the sum of the refund and the interest refund equals the original refund amount, and that the resulting opening and closing balances reconcile.</li>
+<li>Expected system outcome: Opening balance of the period equals the prior closing balance; the period’s closing balances reflect the post-refund state.</li>
+</ul>
+5. Optionally review the detailed calculation path.
+<ul>
+<li>Action: inspect the calculation trace (per-day reconstructions) used to determine the NewPrincipal_d and NewInterestAccrual_d values, and compare the OriginalInterestAccrual with NewInterestAccrual to verify the computed InterestRefund.</li>
+<li>Expected system outcome: a calculational trace demonstrates how the refund applied to the oldest disbursement propagates through the daily accruals to arrive at the final InterestRefund value.</li>
+
+</ul>
+<blockquote><p>Observed outcomes may vary by scenario. Use the standard UC scenario as a reference when validating a given merchant refund and its impact on interest and principal balances.</p></blockquote>
+
+<h3>Visual workflow (high level)</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Merchant Refund Posted] --> B[Apply Refund to Oldest Disbursement]
+ B --> C[Recalculate Daily Interest Accruals]
+ C --> D{Is there remaining refund after interest accruals?}
+ D -- Yes --> E[Apply remainder to Principal]
+ D -- No --> F[Post Interest Refund only]
+ E --> G[Update Loan Balances (Principal, Interest)]
+ F --> G
+ G --> H[Ledger Reflects New State]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Integrity and validation rules</h3>
+<ul>
+<li>Each period's opening balance must equal the previous period's closing balance after the interest refund posting.</li>
+<li>Payment allocations must reconcile with the transaction amount, verifying the refund and any subsequent allocations follows the original refund value.</li>
+<li>Remaining cash and outstanding dues must reconcile after applying the interest refund and any principal adjustment.</li>
+<li>When actual journal entries are available, they must balance (debits equal credits) and reflect the event, accounts, and amounts; where such entries are shown in the reference data, align the public documentation with those conventions.</li>
+<li>Rounding and precision follow the reference expectations for financial calculations (HALF_UP or HALF_EVEN as evidenced by the reference data). When intermediate steps show rounding, document the method used and the resulting values.</li>
+<li>Where the reference shows explicit statements (for example, “INTEREST REFUND IS APPLIED TO INTEREST ACCRUED”), reproduce those behavior notes to guide expectations in similar scenarios.</li>
+<li>Do not introduce values or scenarios that are not supported by the reference data.</li>
+
+</ul>
+<h3>Key takeaways</h3>
+<ul>
+<li>Interest refunds are calculated automatically when a merchant refund posts and are applied first to interest accrual, then to principal if there is any remainder.</li>
+<li>The allocation order starts with the oldest disbursement and proceeds forward in time, recalculating daily accruals to determine the final interest refund amount.</li>
+<li>The behavior is demonstrated across multiple UC scenarios to cover common real-world refund patterns encountered in loan servicing.</li></ul>
+
+</ac:document>

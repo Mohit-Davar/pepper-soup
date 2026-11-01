@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Interest Accrual Handling for Charge-off loans</h1>
+  This publication describes the enhanced behavior for handling interest accrual on charge-off loans. The core change is to suspend interest accrual once a loan is charged off, so that only income which will actually be realized is recognized. Specifically, interest is accrued up to the charge-off date and a charge-off amount is composed of the outstanding principal portion plus the accrued interest up to that date. From the day after the charge-off date, no further interest accrues on that loan. The documented behavior applies to all charge-off events, with special handling when repayments, reversals, or accelerated maturity options occur. The examples illustrate how the new rules apply in practice and what operators will see in the system.
+
+What changed and why it matters
+<ul>
+<li>Before: Interest continued to accrue on a loan that had been written off, potentially recognizing income that would not be realized. This could distort reported income and the true financial impact of the charge-off.</li>
+<li>Now: Interest accrual stops on the day after the charge-off date. Interest accrues only up to the charge-off date and is recognized as the charge-off interest portion. From the next day onward, no additional accrual occurs, and the remaining balance is written off.</li>
+<li>Why it matters in operations: Staff can close and settle charged-off loans with a clearly defined timing of interest recognition, reducing noise from accruals that would not be realized. This affects daily reconciliations, profitability reporting on charged-off loans, and the timing of journal entries related to charge-offs.</li>
+
+</ul>
+Scope and applicability
+<ul>
+<li>The change applies to interest-bearing products and progressive loans where charge-offs are supported. Accelerate maturity is available for interest-bearing, progressive loan products. For non-interest-bearing, progressive loan products, charge-off options are optional.</li>
+<li>The charge-off date can be any date as long as it is the latest transaction on the loan account. The charge-off date cannot be a future date.</li>
+<li>If a repayment or reversal is backdated to a date before the charge-off, the system performs the reverse replay of all transactions and the charge-off transaction. This verifies the accounting and balance history remain consistent.</li>
+<li>N+1 installments (i.e., installments beyond the charge-off date) do not impact charge-off activity. They are not accrued or incorporated into the charge-off calculation after the charge-off date.</li>
+
+</ul>
+Calculation model and example patterns
+<ul>
+<li>Core principle: Interest accrual uses a daily rate derived from the loan’s annual rate and the defined calendar (for the reference scenario, Days In Year is 360; Days In Month is 30). The daily rate is applied to the outstanding balance for the number of days in each period prior to charge-off.</li>
+<li>Charge-off amount composition: when a charge-off occurs, the total charge-off amount equals the outstanding principal at the moment of charge-off plus the interest accrued up to the charge-off date. The remaining balance after charge-off is zero.</li>
+<li>Post-charge-off behavior: no further interest accrues after the charge-off date, and the loan balance remains zero unless a reversal or reconstruction occurs.</li>
+
+</ul>
+Example: charge-off on the date after a scheduled payment (S1 scenario)
+<ul>
+<li>Assumptions used in the reference scenario: Interest rate 7% per year, Days In year 360, Days In month</li>
+
+</ul>
+30. Principal at start: 100. Repayment frequency: 1 month. A payment is made on the 1st of February.
+<ul>
+<li>Pre-charge-off state (illustrative values from the reference data): On 1 February 2024, the loan balance is 83.57 after a payment, with an installment of 17.01 and an interest portion of 0.58 for that period. The balance reduces to 83.57 by that date.</li>
+<li>Charge-off event: on 29 February 2024, a charge-off is recorded. The charge-off contains a principal portion of 83.57 and an interest portion of 1.47, for a total charge-off amount of 84.04. The balance becomes 0.00 after the charge-off.</li>
+<li>Post-charge-off state: on 1 March 2024 the balance is 0.00, and no further interest accrual occurs because the charge-off has occurred.</li>
+
+</ul>
+<table><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody><tr><td>Original balance prior to charge-off</td></tr></tbody></table>
+ 83.57 (after 2/1 payment) |
+| Charge-off date | 29 February 2024 |
+| Charge-off principal portion | 83.57 |
+| Charge-off interest portion | 1.47 |
+| Total charge-off amount | 84.04 |
+| Balance after charge-off | 0.00 |
+| Post-charge-off interest accrual | Stopped from the day after charge-off |
+
+<p>In this example, the total charge-off amount equals the principal outstanding at the moment of charge-off plus the interest accrued up to the charge-off date. The system then stops accruing interest as of the day after the charge-off date, and the remaining balance is written off.</p>
+
+Workflow: how the system handles charge-off events (operational steps)
+
+1) Verify charge-off eligibility and timing
+<ul>
+<li>verify the charge-off date is not in the future and is the latest transaction date on the loan account.</li>
+<li>Confirm that the loan type supports charge-off options (including acceleration for eligible interest-bearing, progressive products).</li>
+
+</ul>
+2) Initiate the charge-off
+<ul>
+<li>In the loan account, initiate a charge-off and select the standard charge-off reason code (for example, FRAUD). The system will map this event to the charge-off processing workflow.</li>
+<li>The system will determine the charge-off amount as the sum of the outstanding principal at the moment of charge-off and the interest accrued up to the charge-off date. This amount is posted as the charge-off value.</li>
+
+</ul>
+3) Apply the charge-off and stop accrual
+<ul>
+<li>The system records the charge-off amount and immediately stops interest accrual starting the day after the charge-off date.</li>
+<li>The loan balance is written off, and no further interest accrues unless a reversal occurs.</li>
+
+</ul>
+4) Handle backdated repayments or reversals
+<ul>
+<li>If a repayment posted on a date earlier than the charge-off date or a reversal is backdated, the system performs a reverse replay of all transactions and the charge-off transaction to restore consistency in the balance history and accounting.</li>
+
+</ul>
+5) Validate post-charge-off state
+<ul>
+<li>Confirm that the installment schedule after the charge-off date does not reintroduce accrued interest or new charges, consistent with the N+1 rule.</li>
+<li>If accelerated maturity is used, verify the loan remains in a consistent state with the new maturity and interest accrual rules up to the charge-off date.</li>
+
+</ul>
+6) Accounting considerations (high level)
+<ul>
+<li>The charge-off event affects the loan balance and recognizes the charge-off income via the charge-off interest portion. The exact journal entries are determined by product configuration and accounting mappings.</li>
+<li>The system maintains journal entries that balance when debit and credit data are available and preserves the integrity of the balance history, including any reversals.</li>
+
+</ul>
+Additional notes on policy and interactions
+<ul>
+<li>Accelerate Maturity: This option should be available for interest-bearing, progressive loan products as part of the charge-off workflow.</li>
+<li>Non-Interest Bearing Progressive Loans: Charge-off options may be available but are optional (deferred) for these products.</li>
+<li>Charges after charge-off date: If amounts are due after the charge-off date, accrual is not recognized beyond the charge-off date, and any subsequent postings follow the established reverse-replay rules if backdated events occur.</li>
+<li>Compatibility and migration: The enhanced behavior relies on the charge-off workflow and date validations described above. Operational staff should be trained on the updated flow, including how charge-off dates are chosen, how the charge-off amount is calculated, and how backdated traffic (payments or reversals) affects the charge-off record.</li>
+
+</ul>
+<p>Diagram: Charge-off lifecycle (high level)</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+ [*] --> Active
+ state Active {
+ [*] --> Accrues
+ Accrues --> ChargedOff : charge-off initiated
+ }
+ ChargedOff --> PostChargeOff : accrual stopped
+ PostChargeOff --> Reversal : backdated repayment or reversal
+ Reversal --> Active : reversal applied
+ ChargedOff --> Finalize : settlement complete]]></ac:plain-text-body></ac:structured-macro>
+
+Glossary (quick reference)
+<ul>
+<li>Charge-off: The formal write-off of outstanding principal and accrued interest when a loan is deemed uncollectible.</li>
+<li>Interest accrual: The process of accumulating interest on the outstanding principal over time.</li>
+<li>Accrual stop: The point at which the system ceases to accumulate further interest for a loan after a charge-off date.</li>
+<li>Reversal: An operation that undoes a prior posting, which may trigger reverse-replays of related charge-off events to restore consistency.</li>
+<li>Accelerate Maturity: A feature that allows shortening the loan’s remaining tenor, potentially affecting how the remaining balance is settled.</li>
+
+</ul>
+This publication reflects verified product behavior for interest accrual handling on charge-off loans. It presents the rules, the operational workflow, representative calculation patterns, and the expected outcomes for daily operations, reconciliations, and reporting. It intentionally avoids internal development details and private materials while providing precise guidance on how the system behaves today under the published rules.
+</ac:document>

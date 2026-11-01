@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Payment strategy by timely order</h1>
+  The Payment strategy by timely order is a repayment allocation design that governs how a loan’s incoming money is distributed across the components of an installment when multiple charges, penalties, and fees exist. Its business purpose is to provide predictable, auditable income recognition and to verify that charges and fees allocated to a loan are paid in a defined priority sequence. This feature benefits operations staff, loan officers, branch managers, and credit agents by clarifying how repayments are applied and by enabling consistent handling of charges and in-advance payments across loan servicing activities.
+
+Key concepts andpractices
+<ul>
+<li>Buckets and priorities: The strategy introduces distinct buckets for allocation, including:</li>
+<li>Due charges</li>
+<li>In advance principal</li>
+<li>Penalty</li>
+<li>Fee</li>
+<li>Interest</li>
+<li>Principal</li>
+<li>Allocation order: When a repayment transaction is executed, the system distributes the available amount according to the following order: due charges first, then in-advance principal, followed by penalty, fee, interest, and finally principal. This order applies to all eligible repayments and is designed to reflect the income and cost structure for the loan while respecting charge due dates.</li>
+<li>Charge handling: Charges are associated with a due date and are paid by repayments created after the charge due date. The allocation rules apply to any charge that attaches to the installment, including penalties and fees charged to the loan.</li>
+<li>Time sensitivity and correctness: Charges use the due date for allocation, while repayments use the transaction date. This distinction affects how funds are applied when charges become due or when repayments occur before or after due dates.</li>
+<li>Reverse-replay behavior: When a repayment transaction occurs or a charge is added, the system may reverse and replay the repayment allocations to recalculate the installment balances. The process starts from the first disbursement and rebuilds balances by re-applying repayments according to the active strategy. If there are differences in balances before and after a transaction, the original transaction may be reversed and replaced by a replay that preserves the transaction properties while updating balances.</li>
+<li>New buckets in practice: The design explicitly supports two helpers for timing and allocation: due charges and in-advance principal. These buckets allows paying a charge on or after its due date and allow some repayments to target the charge portion even if the charge is not yet due.</li>
+
+</ul>
+Faculty notes on implementation details
+<ul>
+<li>The described behavior is anchored in the established order: due charges, in-advance principal, penalties, fees, interest, then principal. This ordering is intended to reflect the income- and debt-tracking needs of loan servicing while preserving precise balances and schedules for auditing.</li>
+<li>The system reprocesses repayment allocations when a new charge is added or when repayments occur, which may alter previously recorded allocations to verify the current state respects the strategy. The reprocessing starts from the earliest disbursement and progresses forward, adjusting installment balances .</li>
+
+</ul>
+<p>High-level workflow (conceptual diagram)</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Disbursement] --> B[Repayment]
+ B --> C[Charge]
+ C --> D[Reverse-Replay] --> E[Replay]
+ E --> F[Installment Balances Updated]]]></ac:plain-text-body></ac:structured-macro>
+
+Conceptual rules by scenario
+<ul>
+<li>Fee and charge behavior: A fee added to an installment is paid by a payment created after the fee is due. This rule applies to any income source associated with the loan.</li>
+<li>Transaction date vs due date: Repayment transactions use the transaction date; charges use the due date (disbursement fee uses the disbursal date; installment fees use the installment due date; overdue penalties use the date the penalty was added).</li>
+<li>Reverse-replay mechanics: When a new charge is added or a repayment is posted, the system may reverse and replay earlier repayments to reallocate funds according to the current strategy. If a transaction before and after the replay no longer align, the system reverses the original transaction and replays it with updated balances.</li>
+
+</ul>
+<p>Worked examples: New behaviour scenarios</p>
+
+New behaviour #1
+<ul>
+<li>Context: New Repayment strategy orders are: Due charges, in advance Principal, Penalty, Fee, Interest, Principal. In this scenario, after a charge is added, the first repayment is not reverse-replayed.</li>
+<li>Sequence and results:</li>
+
+</ul>
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Charges</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 450 | 450 | 0 | 100 | Not paying the charge, it is not due yet |
+| 5 | Repayment | 21/01/2022 | 21/01/2022 | 50 | 0 | 50 | 50 | Paying the charge, it is already due |
+
+<p>Installment due date: 31/01/2022</p>
+
+New behaviour #2
+<ul>
+<li>Context: In the same policy, after initial charge(s), repayments may be allocated across the new buckets, including paying the first charge before it is due and then applying the remainder to in-advance principal.</li>
+<li>Sequence and results:</li>
+
+</ul>
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Charges</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 100 | 100 | 0 | 450 | Not paying the charge, it is not due yet |
+| 5 | Charge | 19/01/2022 | 23/01/2022 | 10 | 0 | 10 | 460 | |
+| 6 | Repayment | 20/01/2022 | 20/01/2022 | 100 | 50 | 50 | 360 | Paying the 1st charge, it is due on the day and the remaining amount goes to the in advance principal Not paying the 2nd charge, it is not due yet |
+
+<p>Installment due date: 31/01/2022</p>
+
+New behaviour #3
+<ul>
+<li>Context: A full repayment before the charge due date can be allocated first to in-advance principal, followed by the remaining amount to the charge portion if applicable.</li>
+<li>Sequence and results:</li>
+
+</ul>
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Fees</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | Not paying the charge, it is not due yet |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 550 | 500 | 50 | 0 | Paying the charge, it is not due yet, but paying in advance |
+
+<p>Installment due date: 31/01/2022</p>
+
+Application and impact on accounting and balance integrity
+<ul>
+<li>Allocation integrity: For every period, the opening balance must equal the previous period’s closing balance. The allocation rules described preserve this invariant by applying repayments to the defined buckets in order and by reprocessing as needed when charges or repayments are posted.</li>
+<li>Balance reconciliation: The system maintains accurate running balances for principal, charges, penalties, and fees in accordance with the chosen strategy. In New Behaviour scenarios, the balances reflect the moved allocations according to the new priority order and the timing of charges.</li>
+<li>Reporting and auditing: Because fees added to a loan are treated as income, the allocation order and reverse/replay logic support auditable tracking of how income was recognized across installments and dates. When charges are paid after their due date, the system applies repayments to the due-charge bucket first, followed by in-advance principal, and then subsequent buckets, verifying consistency with the time-respective strategy.</li>
+
+</ul>
+<p>Operational procedures: how to use the feature in servicing workflows</p>
+
+1. allows and select the strategy
+<ul>
+<li>In the loan servicing solution, open the loan product or the specific loan’s servicing configuration.</li>
+<li>Navigate to the allocation settings and select the option named Payment strategy by timely order. This option applies the priority sequence described above.</li>
+<li>Confirm the bucket order: Due charges, In advance principal, Penalty, Fee, Interest, Principal. Save the configuration.</li>
+
+</ul>
+2. Create or adjust charges with explicit due dates
+<ul>
+<li>When a new charge is added to a loan, the system uses the charge’s due date for allocation (e.g., Disbursement fee uses disbursal date; installment fee uses installment due date; overdue penalties use the date the penalty was added).</li>
+<li>If a new charge is created on a date after the loan’s initial repayment, the allocation remains governed by the new priority, and charge amounts may be paid from later repayments according to the strategy.</li>
+
+</ul>
+3. Post repayments and observe allocation behavior
+<ul>
+<li>When you post a repayment, the system allocates the available amount to the buckets in the configured order.</li>
+<li>If there are due charges, the repayment amount first reduces the charges, then applies to in-advance principal, then penalties, fees, interest, and finally principal, in that sequence.</li>
+<li>If a charge becomes due and a repayment is made, allocations reflect the charge as a due item in the current cycle and are paid in the order defined by the strategy.</li>
+
+</ul>
+4. Review and reconcile repayment schedules
+<ul>
+<li>Inspect the installment schedule to verify that the sum of opening balance for a period equals the sum of the previous period’s closing balance (Integrity requirement).</li>
+<li>Confirm that payments allocated to charges follows the due dates and that the remaining allocation funds reduce principal .</li>
+<li>Validate that running totals, rounding, and balance states are consistent with the documented rules and the strategy’s order.</li>
+
+</ul>
+<p>Appendix: reference calculation patterns (illustrative only)</p>
+
+The following worked examples illustrate the allocation behavior under New Behaviour scenarios. All figures come from the verified scenarios described in the reference design for this feature; they are not placeholders.
+
+<p>New Behaviour #1 (illustrative sequence with a single charge and pre-due repayment)</p>
+
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Charges</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 450 | 450 | 0 | 100 | Not paying the charge, it is not due yet |
+| 5 | Repayment | 21/01/2022 | 21/01/2022 | 50 | 0 | 50 | 50 | Paying the charge, it is already due |
+
+<p>Installment due date: 31/01/2022</p>
+
+New Behaviour #2 (illustrative sequence with multiple charges and partial repayments)
+
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Charges</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 100 | 100 | 0 | 450 | Not paying the charge, it is not due yet |
+| 5 | Charge | 19/01/2022 | 23/01/2022 | 10 | 0 | 10 | 460 | |
+| 6 | Repayment | 20/01/2022 | 20/01/2022 | 100 | 50 | 50 | 360 | Paying the 1st charge, it is due on the day and the remaining amount goes to the in advance principal Not paying the 2nd charge, it is not due yet |
+
+<p>Installment due date: 31/01/2022</p>
+
+New Behaviour #3 (illustrative sequence showing full repayment before due date)
+
+<table><thead><tr><th>Transaction ID</th><th>Transaction Type</th><th>Business date</th><th>Transaction date / Due date</th><th>Amount</th><th>Principal</th><th>Fees</th><th>Outstanding</th><th>Notes</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>
+ Disbursement | 01/01/2022 | 01/01/2022 | 1000 | | | 1000 | |
+| 2 | Repayment | 10/01/2022 | 10/01/2022 | 500 | 500 | 0 | 500 | ← NO REVERSE-REPLAY |
+| 3 | Charge | 15/01/2022 | 20/01/2022 | 50 | 0 | 50 | 550 | Not paying the charge, it is not due yet |
+| 4 | Repayment | 17/01/2022 | 17/01/2022 | 550 | 500 | 50 | 0 | Paying the charge, it is not due yet, but paying in advance |
+
+<p>Installment due date: 31/01/2022</p>
+
+This page reflects the verified behavior of the Payment strategy by timely order, including the new allocation buckets and reverse-replay mechanics, and provides concrete worked examples derived from the reference scenarios. It is intended to be used by operations staff, loan officers, branch managers, and credit agents to understand how repayments and charges are allocated under this design and how the system behaves when charges are added or repayments are posted.
+</ac:document>

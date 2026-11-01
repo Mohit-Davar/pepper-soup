@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Interest Calculation Products Requirement gathering</h1>
+  This publication documents the verified scope and characteristics of the Interest Calculation Products Requirement gathering work item within Pepper-Soup. The item is categorized as a work item and is positioned under the Interest and Accrual domain, within the Requirements subtree. The reference data indicates that this item is focused on gathering requirements rather than delivering a runnable capability, i.e., it does not describe an implementable feature by itself.
+
+<h3>Verified facts</h3>
+<ul>
+<li>Classification: work_item</li>
+<li>Navigation path: Interest and Accrual > Requirements > Interest Calculation Products Requirement gathering</li>
+<li>Content type: page</li>
+<li>Feature ID: interest-calculation-products-requirement-gathering</li>
+
+</ul>
+<h3>Specification Notes</h3>
+<blockquote><p>Requirements for item 45; not a capability</p></blockquote>
+
+<h3>Observations</h3>
+Based on the specification note, this work item does not define an implementable capability. It serves to gather and document requirements that may inform future design and implementation.
+
+<h3>Implications for future work</h3>
+Because no implementation details are present in the reference data, this page cannot specify interfaces, data models, or integration points. The outcome of this work item will be a requirements artifact to guide subsequent development.
+
+<h3>Relation to architecture and persistence</h3>
+At present, no architectural decisions, component mappings, or persistence structures are described for this work item.
+
+<h3>Reference</h3>
+Source data indicates: Interest and Accrual > Requirements > Interest Calculation Products Requirement gathering with Specification Notes stating: "Requirements for item 45; not a capability."
+</ac:document>

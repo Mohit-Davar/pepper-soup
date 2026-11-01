@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Buy-Down fees</h1>
+  Buy-Down fees provide an amortization mechanism for 0% interest loans where a merchant fee or processor expense is collected at disbursement and is subsequently amortized into interest income over the life of the loan. This feature operates within the loan accounting domain to recognize the up-front fee as an expense, establish a Deferred Income liability, and gradually recognize revenue from amortization as the loan progresses. The behavior is evidenced by allocations, accrual entries, and daily amortization schedules described in the reference material, including entries that move amounts from Deferred Income to Interest/Fees Income and the associated impact on loan balances and repayments.
+
+<h2>Conceptual overview and scope</h2>
+
+The Buy-Down flow centers on three interacting pieces of the accounting model:
+<ul>
+<li>Up-front recognition of the buy-down fee as an expense and the concurrent establishment of a Deferred Income liability for the same amount.</li>
+<li>Daily amortization of the Deferred Income liability, transferring amounts to Income (Interest/Fees Income) over the loan term.</li>
+<li>Integration with standard loan cash flows (disbursement, repayments, payoff, and potential charge-offs) so that the amortization revenue is recognized in parallel with or during the loan's amortization schedule.</li>
+
+</ul>
+<p>Key invariants verified by the reference data include the following: the opening balance of a period equals the prior period's closing balance, and the sum of cash flows, amortization, and allocations reconciles with the transaction amount. All amounts shown in the examples are grounded in the provided reference data and explicit calculations (e.g., daily rate conventions and daily amortization units).</p>
+
+<h2>Design anchors and accounting model</h2>
+<ul>
+<li>Day-count conventions and rate inputs: The reference calculations use a 360-day year and a 30-day month. An annual rate of 7% corresponds to a daily rate of 0.07 / 360 = 0.000194444. These conventions drive the loan interest accrual and underpin the amortization scheduling interplay with the buy-down flow.</li>
+<li>Core ledger mappings (as evidenced in the calculations):</li>
+<li>Buy Down fees (expense) is recorded at disbursement as a debit to Buy Down Fees Expense and a credit to Deferred Income.</li>
+<li>Buy Down fees amortization reduces Deferred Income and increases Income from amortization (Interest/fees Income).</li>
+<li>If the loan later progresses to payoff or charge-off, related entries affect Deferred Income and the relevant expense or income accounts according to the observed patterns in the reference schedules.</li>
+<li>Opening balances and destruction of the deferred amount: Each day or accounting interval reduces the Deferred Income balance by the amortization amount and increases Income , until the Deferred Income balance reaches zero or until the loan ends.</li>
+
+</ul>
+<h2>Journal entry flows (verified patterns)</h2>
+
+<p>The reference data describes explicit debit/credit patterns for buy-down accounting events. The following sequences reflect the verified flows.</p>
+
+1) On loan disbursement (recognition of buy-down fee)
+<ul>
+<li>Debit: Buy Down fees (Expense) for the fee amount</li>
+<li>Credit: Deferred Income (Liability) for the same amount</li>
+</ul>
+Example: a Buy Down fee of 50 yields Debit Buy Down Fees Expense 50 and Credit Deferred Income 50.
+
+2) Daily amortization of the buy-down item (recognition of amortized income)
+<ul>
+<li>Debit: Deferred Income (Liability) by the daily amortization amount</li>
+<li>Credit: Interest/fees Income (Income)</li>
+</ul>
+Example: daily amortization of 0.55 reduces Deferred Income by 0.55 and increases Income from amortization by 0.55. After the first amortization on 1/1/2024, Deferred Income balance decreases from 50 to 49.45.
+
+3) On payoff (final settlement while amortization continues)
+<ul>
+<li>The payoff settles the loan balance and recognizes the remaining accrued income/interest following the existing pattern of entries in the payoff scenario, including recognition of Interest Income associated with the amortization through the payoff date.</li>
+
+</ul>
+4) On charge-off (credit losses interaction)
+<ul>
+<li>The record reflects continuation of amortization flows against Deferred Income, and recognition of credit-loss related adjustments per the documented patterns, so that the amortization revenue follows the status of the loan (charged-off, still accruing, etc.).</li>
+
+</ul>
+5) Adjustment (reallocation or reclassification)
+<ul>
+<li>Buy Down Fees Adjustment entries reclassify amounts between Deferred Income and Buy Down Fees Expense as observed in the example set, altering the balance of Deferred Income and the timing of expense vs. income.</li>
+
+</ul>
+<blockquote><p>Note: The exact ledger accounts used in the patterns above reflect the mapping shown in the reference data, including Deferred Income, Buy Down Fees Expense, and Interest/Fees Income, along with standard loan-related balances such as Loan Receivable and the related income lines.</p></blockquote>
+
+<h2>Calculation reference and illustrative schedules</h2>
+
+<p>The reference data provides several concrete scenarios that demonstrate the mechanics of Buy-Down fee amortization. Two representative examples are shown below to illustrate the interpretation of inputs, schedules, and resulting cash flow impacts. All numbers are taken from the reference sheets and are reproduced here to document verified behavior.</p>
+
+<h3>Calculation context: common inputs</h3>
+<ul>
+<li>Interest rate: 7% per year, with daily rate r_d = 0.07 / 360 = 0.000194444</li>
+<li>Days in year: 360; Days in month: 30</li>
+<li>Disbursement amount: 100</li>
+<li>Buy Down fees collected at disbursement: 50</li>
+<li>Repaid every: 1 month (for the UC-1 simple loan scenario)</li>
+<li>The amortization period for the buy-down fee in the UC-1 example proceeds on a daily basis, with a daily amortization amount of 0.55 (see the daily amortization entries in the reference). This reduces the Deferred Income by 0.55 per day and increases Income from amortization by 0.55 per day until the Deferred Income balance reaches zero.</li>
+
+</ul>
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> <code>r_daily = annual_rate / days_in_year</code></div>
+ <div class="calc-step"><strong>Amortization rule:</strong> <code>Deferred Income balance decreases by daily amortization amount A; Income increases by A per day</code></div>
+ <div class="calc-step calc-result"><strong>Example result (UC-1):</strong> <code>Deferred Income starts at 50; after 1 day: 49.45; daily amortization A = 0.55; Income from amortization increases by 0.55</code></div>
+</div>
+
+<h4>UC-1: Simple loan with Buy-Down on the same day as disbursement</h4>
+<ul>
+<li>Inputs (as evidenced in the sheet):</li>
+<li>Interest rate: 7% (0.000194444 daily)</li>
+<li>Days in year: 360; Days in month: 30</li>
+<li>Disbursement: 100</li>
+<li>Buy Down fees: 50</li>
+<li>Repaid every: 1 month</li>
+<li>Amortization mechanics (evidenced):</li>
+<li>At disbursement, the Buy Down fee is recognized as an expense and Deferred Income is created for 50.</li>
+<li>Daily amortization reduces Deferred Income by 0.55 and recognizes Income from amortization by 0.55 (the 0.55 daily amount is the verified value observed in the daily amortization entries).</li>
+<li>The loan repayment schedule continues with standard principal and interest components, while the amortization revenue adds to Interest/Fees Income over time.</li>
+
+</ul>
+Example excerpt from the calculation pattern (illustrative subset):
+<ul>
+<li>Beginning balance at disbursement: 100</li>
+<li>Buy Down fee: 50 (recorded as expense; Deferred Income liability: 50)</li>
+<li>Daily amortization (1/1/24 onward): 0.55 per day</li>
+<li>On 1/1/24 (first amortization day): Deferred Income reduces to 49.45; Income from amortization increases by 0.55</li>
+<li>On 2/1/24 (first payment date): Loan balance reduces through the standard EMI (~33.72) and the amortization continues to accrue; the second day onward pattern continues with the same daily amortization until the Deferred Income is exhausted or the loan ends.</li>
+
+</ul>
+<p>The reference shows a reiteration of these steps across multiple days and payments, with the following outcomes in the UC-1 flow: the loan fully amortizes with a total EMI of 33.72 (on the first period), a total interest component that includes the amortized income, and a final payoff that settles the outstanding balance while recognizing the accumulated amortization in the Income lines.</p>
+
+<h3>Calculation context: UC-2 and UC-3 variants</h3>
+<ul>
+<li>UC-2 (Early payoff): The structure remains the same for the buy-down amortization, but the loan is repaid early. The amortized buy-down income continues to be recognized up to the payoff date, and the payoff entry closes the loan with the remaining balances settled. The reference calculations show an example payoff on 3/1/24 where the payoff amount equals the outstanding balance, and the income recognition includes the amortization revenue accumulated through the payoff date.</li>
+<li>UC-3 (Charge-off): When a loan is charged off, the pattern preserves the amortization of the buy-down as an income item while recognizing the charge-off pattern for the loan balance. The reference sequence shows the charge-off posting with the associated recognition of amortized income and the related charge-off accounting entries.</li>
+
+</ul>
+<h2>Integrity checks and -based expectations</h2>
+<ul>
+<li>Opening and closing balances: Each period’s opening balance equals the prior period’s closing balance, verifying consistent balance propagation through the amortization and regular loan cash flows.</li>
+<li>Allocation integrity: The sum of the EMI components, the daily amortization, and the deferred income movements balance against the observed cash flows and the initial buy-down fee amount.</li>
+<li>Rounding and precision: The examples are expressed with two-decimal monetary precision where shown in the reference data; the underlying conventions use standard rounding consistent with the provided figures (HALF_UP/HALF_EVEN in the context in the ledger entries).</li>
+<li>Journal entry balance: Where ledger entries are provided (Dr/Cr mappings for the various events), the entries balance within each event (debit total equals credit total).</li>
+
+</ul>
+<h2>Operational notes for implementation teams</h2>
+<ul>
+<li>Data model alignment: The buy-down flow relies on a dedicated Deferred Income liability that is populated at disbursement and amortized over time. Implementations should verify that the lifecycle of Deferred Income follows the loan’s lifecycle and interacts coherently with the loan’s repayment schedule.</li>
+<li>Scheduling and processing: The daily amortization requires a regular processing path that updates Deferred Income and Income from amortization on each processing cycle. The reference demonstrates daily amortization steps (e.g., 1/1/24 onward) that progressively reduce the liability balance.</li>
+<li>Boundary conditions and adjustments: Include support for Buy Down Fees Adjustment to reclassify amounts between Deferred Income and Buy Down Fees Expense, updating the related balances and the resulting income recognition.</li>
+<li>Edge cases: Early payoff reduces the amortization horizon but continues to recognize the portion of amortized income accrued up to payoff. Charge-off preserves amortization streams against the Deferred Income while applying the standard charge-off accounting pattern.</li>
+
+</ul>
+<h2>Quick reference: representative figures from the reference data</h2>
+<ul>
+<li>Daily rate example: 7% annual rate => 0.000194444 daily rate (0.07 / 360)</li>
+<li>Days: 360-day year, 30-day month</li>
+<li>Disbursement example: 100 principal, Buy Down fees collected 50 at disbursement</li>
+<li>Amortization: daily amortization amount observed in the reference is 0.55 in the UC-1 simple loan example, reducing Deferred Income from 50 to 49.45 after the first day</li>
+<li>Payments: EMI around 33.72 (for the simple loan in UC-1) with principal and interest components that include the amortized buy-down income, resulting in a total of 101.17 over three payments in the example set</li>
+<li>Payoff and charge-off flows: payoff date can occur while amortization continues; charge-off flows preserve amortization revenue allocation alongside the charge-off pattern</li>
+
+</ul>
+<h2>Appendix: terminology and excerpts from the reference flows</h2>
+<ul>
+<li>Buy Down fees (expense): Debit; Buy Down Fees Expense</li>
+<li>Deferred Income (liability): Credit at recognition, Debit during amortization</li>
+<li>Income from amortization / Interest and fees income: Credit during amortization</li>
+<li>Loan Receivable / Fund source / Suspense accounts: Standard loan accounting balances that interact with the Buy-Down flow</li>
+<li>Buy Down fees amortization (daily): The verified daily entry that reduces Deferred Income and increases Income from amortization by the same amount (e.g., 0.55 per day in UC-1 example)</li>
+
+</ul>
+If you need a narrower excerpt or a larger portion of the sample schedules translated into a machine-readable format (e.g., a JSON-driven test fixture), I can provide a compact representation that preserves the exact numbers and mappings from the reference data.
+</ac:document>

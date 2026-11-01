@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Chargeback amount distribution</h1>
+  This page documents the behavior and operational guidance for distributing chargeback amounts across loan components and installments. The feature is designed to allocate a chargeback against the repayment that is being charged back, apply any resulting new charges, and observe whether a chargeback creates a new delinquency due date. The configuration is product-level and governs the order in which principal, interest, penalties, and fees are allocated during chargeback. Note that interest associated with chargebacks is out of scope for the current implementation and is not allocated as part of chargeback distributions.
+
+<h3>What the feature does and who benefits</h3>
+<ul>
+<li>The system distributes the chargeback amount from the repayment being charged back, using the repayment’s original allocation as the basis for the distribution. This means the chargeback is not applied in a vacuum; it follows the components that composed the repayment being reversed (principal, interest, penalties, fees).</li>
+<li>A new charge may be created at the moment the chargeback is initiated. The due date and delinquency evaluation start from the chargeback date, not from the original repayment date. This verifies the customer’s delinquency status reflects the chargeback action immediately.</li>
+<li>The allocation order is configurable at the product level through the Advanced allocation rules for the chargeback transaction type. By default, the system considers the allocation order Principal, then Interest, then Penalty, then Fee, but it can be reordered per product configuration.</li>
+<li>The feature does not allocate interest on chargeback under the current allocation strategy. This is explicitly noted in the reference design.</li>
+<li>The design supports partial chargebacks and the creation of new charges when the chargeback amount includes or necessitates new fee components. The reference scenarios illustrate several variations, including chargebacks that touch principal, penalties, and fees, and scenarios where a new charge is created at chargeback.</li>
+
+</ul>
+<h3>How chargeback distributions are determined (key rules)</h3>
+<ul>
+<li>Chargeback amount distribution is performed from the repayment being chargebacked. The repayment’s original components inform how the chargeback amount is allocated to the associated components in the next periods. This verifies consistency with how the repayment was originally structured.</li>
+<li>If a chargeback results in a portion that cannot be fully absorbed by an existing component, the remaining portion may be handled as a newly created charge (for example, a new fee) that becomes due at the chargeback initiation date.</li>
+<li>The due date for any new charge created by the chargeback starts at the chargeback date, and delinquency evaluation for that charge begins from that same date.</li>
+<li>The system supports advanced allocation configurations at the product level, describing the order in which Principal, Interest, Penalty, and Fee are to be charged back. The default ordering is Principal, Interest, Penalty, Fee, but customers may configure a different sequence per product.</li>
+<li>Interest on chargeback is out of scope for the current design. The allocation logic does not include interest in chargeback distributions under the current rules.</li>
+
+</ul>
+<h3>Design reference statements (evidenced rules)</h3>
+<ul>
+<li>Chargeback amount portioning is performed from the repayment that is being chargebacked. Example: if the repayment of 100 includes 90 in principal and 10 as a charge, and the chargeback amount is 50, the distribution behavior follows the documented pattern; the next installment receives the associated charge portion and principal portion per the example described in the reference rules. </li>
+<li>If the chargeback amount is 95 with an original breakdown of 90 principal and 5 as a new charge, then the chargeback portion will be the principal 90 and a new fee of 5 (new fee created as of the chargeback date).</li>
+<li>A new charge is created at the initiation of the chargeback, and the due date for that new charge begins on the chargeback date; delinquency evaluation starts from that date.</li>
+<li>No accrual entry is passed for the new charge associated with charge-off in certain use cases; see the reference scenarios for such behavior in related charts.</li>
+<li>Interest on chargebacks is not supported by the current allocation approach and is considered out of scope.</li>
+
+</ul>
+<h3>Operational path: navigation and configuration</h3>
+<ul>
+<li>Navigation path: Chargeback > Distribution rules > Chargeback amount distribution. This is where product-level rules for chargeback allocation are defined and managed.</li>
+<li>The allocation order that governs how a chargeback is distributed is configurable at the product level. The default order is Principal, Interest, Penalty, Fee, but customers may adjust it as part of product configuration.</li>
+<li>When configuring, staff should select the product, adjust the allocation sequence, and save. The system will apply the configured order to future chargebacks initiated for repayments associated with that product.</li>
+
+</ul>
+<h3>Step-by-step operational instructions</h3>
+
+1) Access the Chargeback amount distribution configuration:
+<ul>
+<li>Open the main navigation and select <strong>Chargeback</strong> > <strong>Distribution rules</strong> > <strong>Chargeback amount distribution</strong>. </li>
+<li>System outcome: The page loads showing the current distribution rules for the selected product, including the allocation order if defined.</li>
+
+</ul>
+2) Select the product to configure:
+<ul>
+<li>In the product selector, choose the loan product for which you want chargeback distribution rules to apply. </li>
+<li>System outcome: The page displays the current rule set for the chosen product.</li>
+
+</ul>
+3) Configure the advanced allocation order (if needed):
+<ul>
+<li>In the Allocation Order area, arrange the sequence of components for chargeback application. The default sequence is Principal, Interest, Penalty, Fee, but you may reorder to reflect product policy.</li>
+<li>System outcome: The chosen order is stored as the product’s chargeback allocation policy.</li>
+
+</ul>
+4) Save the configuration:
+<ul>
+<li>Click <strong>Save</strong> (or the associated save action in the UI) to persist the product-level chargeback rules.</li>
+<li>System outcome: The new allocation policy is active for all future chargebacks initiated against repayments for this product. A confirmation message is shown if applicable.</li>
+
+</ul>
+5) Initiate a chargeback against a repayment (operational workflow):
+<ul>
+<li>Navigate to the repayment that is being chargebacked and select the chargeback action, or open the Chargeback entry for the relevant repayment according to your institution’s workflow.</li>
+<li>Enter the chargeback amount on the chargeback form and select the repayment being chargebacked as the source.</li>
+<li>System outcome: The system computes a distribution of the chargeback amount across the repayment’s original components according to the configured allocation order. A new charge is created if required by the distribution rules, and it becomes due on the chargeback initiation date. Delinquency evaluation for that new charge begins from the chargeback date.</li>
+
+</ul>
+6) Review post-chargeback results:
+<ul>
+<li>Review the customer’s updated installment schedule and loan balance. The new charge may appear in the customer’s schedule as a separate due item, and principal/fee components on subsequent installments may adjust according to the distribution rules.</li>
+<li>System outcome: The loan’s outstanding balance, future installment amounts, and any newly created charges reflect the chargeback effects as described by the policy. Interest on chargebacks is not allocated under the current rules.</li>
+
+</ul>
+<h3>Worked example: distribution when a chargeback differs from the original repayment composition</h3>
+<ul>
+<li>Given: An original repayment is composed of a principal component of 90 and a charge component of 10 (the repayment total is 100).</li>
+<li>Chargeback amount: 95.</li>
+<li>Observed rule (as documented): the distribution assigns the principal portion of 90 and a new fee portion of 5, resulting in the following observed outcome: Principal portion remains 90 (as the principal component of the original repayment dictates), and a new fee component of 5 is created and recorded as the chargeback’s fee component; a new charge is created for the 5 at the chargeback date.</li>
+<li>Result: The chargeback reduces the uncollected balance by distributing 90 toward principal and creates a new fee of 5 that is due at the chargeback initiation date. The overall chargeback amount is</li>
+
+</ul>
+<p>95. Interest components are not allocated as part of the chargeback under the current rules.</p>
+
+This example illustrates the principle that chargebacks are anchored to the repayment’s original allocation and that new charges may be created when a portion of the chargeback cannot be absorbed by existing components in the repayment’s structure.
+
+<h3>Diagram: chargeback flow (high level)</h3>
+
+flowchart TD
+ A[Chargeback Initiated] --> B[Determine Source Repayment]
+ B --> C{Is there a due component?}
+ C -->|Yes| D[Distribute chargeback by configured order]
+ C -->|No| E[Create New Charge at chargeback date]
+ D --> F[Update Next Installment(s) and Balances]
+ E --> F
+ F --> G[Record Accounting Entries ()]
+ G --> H[Delinquency Evaluation starts from chargeback date]
+ style A fill:#f9f,stroke:#333,stroke-width:1px
+ style H fill:#fff,stroke:#333,stroke-width:1px
+
+<h3>Important notes and edge cases</h3>
+<ul>
+<li>The system uses the repayment’s allocation to determine how the chargeback is distributed. In cases where the chargeback amount is larger than the available portion of the repayment components, a new charge may be created to absorb the excess. This follows the documented scenarios where a new charge is created at chargeback time.</li>
+<li>The default allocation order is Principal, then Interest, then Penalty, then Fee, and may be reordered at the product level via Advanced allocation rules. The allocation order dictates how the chargeback is mapped to subsequent installments.</li>
+<li>Interest On chargeback is currently out of scope and is not allocated as part of the chargeback distribution.</li>
+<li>The policy requires that the due date and delinquency evaluation for any new charge created by a chargeback start from the chargeback date.</li>
+<li>Separate ledger entries may be created for new charges (e.g., fees) as part of the chargeback process, reflecting the new charge at the chargeback date. In some use cases, there may be no accrual entry passed for the new charge related to charge-off, depending on the scenario.</li>
+
+</ul>
+<h3>Glossary (quick reference)</h3>
+<ul>
+<li>Chargeback: The reversal of a repayment against a loan, initiated by an external or internal trigger, which is distributed across the repayment’s components and may create a new charge due.</li>
+<li>Allocation order: The sequence in which loan components (Principal, Interest, Penalty, Fee) are applied when distributing a chargeback.</li>
+<li>New charge: A charge created as a result of a chargeback, due on the chargeback initiation date and subject to delinquency evaluation from that date.</li>
+<li>Delinquency evaluation: The process by which the system assesses whether a loan is past due, taking into account chargeback-derived charges and their due dates.</li>
+
+</ul>
+If you need additional worked examples aligned to other reference scenarios (partial chargebacks, overpayments, or penalties), we can extend this page with additional detailed walkthroughs using the exact figures from the provided reference datasets.
+</ac:document>

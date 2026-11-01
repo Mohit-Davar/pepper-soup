@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Loan lifecycle changes with extra dates</h1>
+  This feature introduces a custom module that records additional, business-relevant dates whenever a loan's lifecycle changes. The primary purpose is to allows richer business analysis and reporting by preserving the exact business date on which a status transition occurred. Operations staff, loan officers, branch managers, and credit agents benefit from improved visibility into when key lifecycle events happened, which supports more accurate decision-making, reconciliation, and reporting.
+
+<h3>What the feature does and why it matters</h3>
+
+<p>When a loan's lifecycle changes (for example, when a loan becomes overpaid or reaches maturity), the system captures the actual business date of that change and stores it as an extra data point associated with the loan and the new status. This allows downstream reporting and business-step workflows that rely on precise dating of lifecycle events, independent of the general accounting or CoB (close of business) processing.</p>
+
+The module is designed to be configurable so that organizations can decide which status changes they want to track. By default, the configuration option tracks every status change, but it can be limited to a subset of statuses to focus on events that matter most to a given operation.
+
+<p>A central use case for this capability is handling backdated events. For example, when an overpayment arrives with a backdated effective date, the extra-dates mechanism provides a record of that event’s business date for reporting and internal steps. It is noted that backdated events are not distributed to other systems by CoB, which highlights the importance of this internal tracking for reconciliation and reporting purposes.</p>
+
+<h3>How it works at a high level</h3>
+<ul>
+<li>The system listens for loan lifecycle changes through a dedicated listener.</li>
+<li>When a status change occurs, the listener retrieves the actual business date of the change.</li>
+<li>The system stores an extra-date record linked to the loan and the new status, including who triggered the change and the timestamps of the action.</li>
+<li>The stored extra dates can be used to drive business steps, reports, and any processes that rely on the precise dating of lifecycle transitions.</li>
+
+</ul>
+<p>The following diagram illustrates the flow of the event and data capture:</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Loan status changed] --> B[LoanStatusChangedBusinessEvent fired]
+ B --> C[Listener retrieves business date]
+ C --> D[Record extra-date for loan and status]
+ D --> E[Extra dates available for business steps and reports]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Configuring which changes to track</h3>
+
+Configuration is controlled via a single key:
+<ul>
+<li><strong>custom.module.loan.lifecycle.allowed.status.codes</strong></li>
+
+</ul>
+This key defines the list of status codes for which the system should capture extra dates. The value can be:
+<ul>
+<li>ALL — Track every status change (default option)</li>
+<li>A comma-separated list of statuses, e.g. OVERPAID, CLOSED_OBLIGATIONS_MET — Track only when the loan is overpaid or when the loan is fully paid and closed in the indicated states.</li>
+
+</ul>
+Examples:
+<ul>
+<li>Value = ALL → Track every status change</li>
+<li>Value = OVERPAID, CLOSED_OBLIGATIONS_MET → Track only specific transitions of interest</li>
+
+</ul>
+<p>The configuration allows organizations to tailor the feature to their governance, reporting requirements, and operational workflows.</p>
+
+<h3>Data visible to users and operational impact</h3>
+
+The extra dates are stored as part of a historical record associated with each loan and the associated status. Each record reflects:
+<ul>
+<li>The loan reference</li>
+<li>The new status code</li>
+<li>The business date when that status change occurred</li>
+<li>The user who triggered the action</li>
+<li>Timestamps for when the change occurred (created and updated times)</li>
+
+</ul>
+<p>This data is intended to support business steps and reports that require precise dating of lifecycle events. It provides you with a verifiable timeline of when changes happened, independently from settlement or accounting timestamps.</p>
+
+<h3>Scenarios and behavior</h3>
+<ul>
+<li>Default tracking (ALL): The system records an extra date for every status transition that occurs on a loan. This maximizes visibility into the full lifecycle timeline.</li>
+<li>Targeted tracking (specific statuses): The system records extra dates only for the statuses listed in the configuration. This reduces data volume and focuses reporting on events deemed critical by the organization.</li>
+<li>Backdated events: When an overpayment arrives with a backdated business date, the extra-date mechanism captures that date for historical accuracy. CoB does not distribute backdated events to other systems, reinforcing the need for internal tracking to reflect true business timing.</li>
+
+</ul>
+<h3>Operational considerations</h3>
+<ul>
+<li>The feature is implemented as a background capability that relies on a listener reacting to loan status change events. It does not require changes to user-initiated workflows beyond the initial configuration step and does not introduce new UI navigation paths for data entry.</li>
+<li>Reports and business steps that reference lifecycle dates can incorporate the extra dates to provide a more precise chronology of events.</li>
+<li>The extra-date records are intended to be strictly informational for the purposes of business analysis and reconciliation; they support internal controls and visibility around lifecycle timing.</li>
+
+</ul>
+<h3>What you should verify during adoption</h3>
+<ul>
+<li>Confirm the configuration for custom.module.loan.lifecycle.allowed.status.codes reflects the desired tracking scope (ALL or a subset of statuses).</li>
+<li>Validate that, upon a loan status change, an extra-date record is created and associated with the correct loan and status.</li>
+<li>verify that the recorded business date corresponds to the actual business date of the status change and that created_by and timestamps reflect the triggering user and action time.</li>
+<li>If backdated events are relevant to your reporting, verify that the extra dates follows your internal reconciliation needs and that no external CoB distribution affects these records.</li>
+
+</ul>
+<h3>Summary of benefits</h3>
+<ul>
+<li>Improved traceability of lifecycle events through precise business-dated records.</li>
+<li>Flexible configuration to follows governance, risk, and reporting requirements.</li>
+<li>Enhanced ability to generate business-step reports and analyses that rely on accurate event dating.</li>
+<li>Clear handling of backdated events with internal provenance suitable for reconciliation.</li></ul>
+
+</ac:document>

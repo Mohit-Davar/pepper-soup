@@ -1,0 +1,131 @@
+# Payment Holidays
+
+Payment Holidays provide a controlled mechanism to pause or suspend loan payments for selected accounts when market or borrower circumstances warrant a temporary relief. The feature is designed to support BNPL-style products and operates across markets with variant schedules while preserving the integrity of the loan’s repayment plan. When a Payment Holiday (PH) is approved, future payment due dates are moved forward by the holiday duration, and the overall loan maturity date is extended . Installments that were already due do not shift; only future installments are rescheduled. The system exposes an API pathway to apply a PH and update the repayment schedule, remaining due dates, and the maturity date. This page documents the verified behavior, rules, and observable outcomes that operations staff, loan officers, branch managers, and credit agents should rely on when using the feature.
+
+### Conceptual view and business purpose
+
+A Payment Holiday temporarily suspends scheduled payments for a loan while keeping the loan active. The business purpose is to provide borrower relief in circumstances such as market disruption, promotional BNPL constructs, or other borrower-specific events, without terminating the loan or cancelling its terms. The operation is constrained to future installments; payments already due or past due are not extended by the PH. The feature is available for the Disbursement and Schedule domain under Payment Holidays, and it affects the following observable items on the loan account:
+
+- Next payment due dates for remaining installments
+- The loan’s maturity date
+- Any fees or penalties whose due dates are in the future
+
+The documented behavior below reflects verified implementation, including constraints and edge cases described in the referenced use cases.
+
+### Eligibility, constraints, and policy considerations
+
+- No Payment Holiday may be applied to a date that is backdated or already past at the point the holiday is requested. If the system detects a backdated PH request, it returns an error.
+- A PH may be requested on an installment due date, in which case future installments are adjusted while the installment due on that date is handled per existing policy (typically not extended).
+- No Payment Holiday may be applied after the loan’s maturity date.
+- In multi-disbursement loans, policy behavior regarding down payments and future disbursement timing affects when the PH applies and how the schedule is adjusted. See the applicable use cases for precise sequencing (multi-disbursement cases moved to the date of the second disbursement when applicable).
+- When penalties or fees have future due dates, those dates are moved forward to follows the next payment due date after the PH, per the documented rules for fee/penalty adjustments.
+- If the account has auto‑payments enabled, automation will attempt to process due installments according to the updated schedule after the PH takes effect. See the scenario descriptions for observed outcomes.
+- The system uses a precise rule set to extend only future installments; existing due installments retain their original due dates and are not extended.
+
+### Use cases and observed behavior
+The following use cases illustrate how Payment Holidays modify repayment schedules, maturities, and related observations. Each case starts from an initial four-installment loan with a 25% down payment, mirroring the structure documented in the reference data.
+
+#### UC1-1M Pay Hol: 1-month Payment Holiday
+
+- Initial state: Four installments due monthly, with a down payment of 25% and a maturity date of 1-Nov. Principal balance is 1000; after the down payment, the balance aligns to 750 (as shown in the reference table).
+- Action: A 1-month Payment Holiday is approved.
+- Observed changes:
+ - NEW Maturity Date becomes 1-Dec.
+ - Installment due dates update as follows: Install 2 NOW due 10/1, Install 3 NOW due 11/1, Install 4 NOW due 12/1.
+ - Installment 1 remains due as originally scheduled (8/1) and is not displaced by the PH.
+- Ongoing payments: Autopay events reduce outstanding amounts on scheduled dates when they occur within the adjusted schedule (for example, autopay on 1-Oct, 1-Nov, etc., as shown in the reference).
+- Important constraint: Future installments are extended; installments that have already been due prior to the PH are not extended. This behavior is evidenced by the transition of due dates for future installments only.
+
+#### UC2-2M Pay Hol: 2-month Payment Holiday
+
+- Initial state: Same four-installment structure with a 25% down payment and a maturity date of 1-Nov; balance and due dates configured similarly to UC1.
+- Action: A 2-month Payment Holiday is approved.
+- Observed changes:
+ - NEW Maturity Date becomes 1-Jan.
+ - Installment due dates update as follows: Install 2 NOW due 11/1, Install 3 NOW due 12/1, Install 4 NOW due 1/1.
+- Ongoing payments: Autopay events occur on the adjusted schedule (for example, 1-Oct, 1-Nov), with remaining installments continuing as scheduled in the extended horizon.
+- Important constraint: As with UC1, only future installments are extended; installments already due before the PH are not moved.
+
+#### UC3- 2M Pay Hol Past Due: PH with past-due condition
+
+- Initial state: Similar four-installment loan, with a past-due event prior to the PH request (e.g., down payment or initial payments not fully completed as expected).
+- Action: A 2-month Payment Holiday is approved.
+- Observed changes:
+ - NEW Maturity Date becomes 1-Jan.
+ - Installment due dates update as follows: Install 2 NOW due 11/1, Install 3 NOW due 12/1, Install 4 NOW due 1/1.
+- Constraint: Installments already due do NOT get extended; only future installments are extended.
+- Ongoing payments: Autopay events proceed according to the adjusted schedule, with remaining due dates reflecting the PH.
+
+#### UC4-1M Pay Hol with Fees: PH with fee/penalty considerations
+
+- Initial state: Four-installment loan with a down payment of 25% and any applicable penalties/fees (e.g., NSF fees) recorded during the cycle, with a mature date of 1-Nov in the base scenario.
+- Action: A 1-month Payment Holiday is approved.
+- Observed changes:
+ - NEW Maturity Date becomes 1-Dec.
+ - Installment due dates update as follows: Install 2 NOW due 10/1, Install 3 NOW due 11/1, Install 4 NOW due 12/1.
+ - Penalty and fee due dates in the future move forward to the next payment due date, aligning with the new schedule.
+- Ongoing payments: Autopay adjustments apply to the updated schedule, with penalties and fees carried forward to the next due date as described.
+- Important constraint: The PH logic applies similarly to UC1, with the additional effect that future-fee/penalty due dates are normalized to the next payment due date.
+
+> Note: The reference set includes several operational details, including explicit statements that future installments are extended while already-due installments are not, and that penalties or fees with future due dates are moved to the next payment due date. These rules govern all PH scenarios described above and are applied consistently by the system upon PH approval.
+
+### Calculation and scheduling representation
+To illustrate the calculations and resulting schedules, the following representative representation mirrors the structure described in the reference data. All figures come from the documented use cases and reflect the verified behavior.
+
+<div class="param-grid">
+ <div class="param-card"><span class="param-label">Principal</span><span class="param-value">1000</span></div>
+ <div class="param-card"><span class="param-label">Down payment</span><span class="param-value">750</span></div>
+ <div class="param-card"><span class="param-label">Balance after DP</span><span class="param-value">750</span></div>
+ <div class="param-card"><span class="param-label">Original Maturity</span><span class="param-value">1-Nov</span></div>
+ <div class="param-card"><span class="param-label">New Maturity (UC1)</span><span class="param-value">1-Dec</span></div>
+</div>
+
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> Replace future installment due dates by the PH duration; adjust maturity date by PH duration; do not extend installments already due. If penalties/fees have future due dates, move them to the next due date.</div>
+ <div class="calc-step"><strong>Substitution:</strong> For UC1,PH = 1 month; Install 2-4 due dates shift from 9/1, 10/1, 11/1 to 10/1, 11/1, 12/1; Maturity from 1-Nov to 1-Dec.</div>
+ <div class="calc-step calc-result"><strong>Result:</strong> New schedule reflects the extended horizon with future installments moved forward by one month; past installments remain on their original dates.</div>
+</div>
+
+### Observing and verifying results
+- After applying a PH, verify that the next due date(s) for remaining installments follows the expected extended horizon and that the maturity date reflects the PH duration.
+- If a PH includes penalties or fees with future due dates, confirm that those dates have moved to the next payment due date and that the updated due-date chain remains consistent with the opening balance and the remaining installments.
+- Verify that opening balances and closing balances for each period reconcile, and that the sum of allocated payments matches the transaction amounts in the period, with standard rounding per policy.
+- verify that future-dated journal entries (if applicable) balance at the period-end when debit/credit data are available, and that the accounting impact reflects the PH adjustment (see the financial integrity section).
+
+### Operational procedures (applying a Payment Holiday)
+1. Initiate a Payment Holiday request for the target loan account with the desired duration in months (1 month or 2 months).
+ - The system validates the request against backdating rules and against the loan’s maturity. If the requested PH date is in the past, the system returns an error and the PH is not applied.
+ - If the loan has multiple disbursements, verify that the effective date and affected installments conform to the policy described in the reference use cases.
+2. Approve the Payment Holiday.
+ - Upon approval, the system updates the repayment schedule by moving future installment due dates forward by the PH duration and extending the maturity date correspondingly.
+ - The first installment due date remains as originally scheduled if it has not been displaced by the PH, while subsequent future installments are shifted.
+3. Confirm the updated schedule and maturation timeline.
+ - The next due date(s) for remaining installments should reflect the PH-adjusted horizon (e.g., 1-month PH shifts Install 2-4 due dates by one month; maturity date advances by one month).
+ - If penalties or fees had future due dates, confirm they now follows the next due date.
+4. Monitor autopay and manual payments against the updated schedule.
+ - If autopayment is configured, payments that fall on the updated due dates are processed according to the new schedule.
+5. After the PH period ends, resume normal payment activity according to the revised schedule.
+
+> The reference material notes that applying a PH is enabled via an API call that updates the repayment next due date, the remaining due dates, and the maturity date. Operational use should follows that behavior when configuring PH through supported interfaces.
+
+### Edge cases and exceptional scenarios
+- Backdated PH requests are not permitted. If the PH effective date is in the past at the moment of processing, the system returns an error.
+- PHs on installment due dates are supported, but future installments are the ones that shift; installments due on the PH date may be treated in line with standard payment processing rules.
+- No PH may be applied after a loan’s maturity date.
+- In multi-disbursement loans, the interaction of down payments and future disbursements with a PH must follow the sequencing rules demonstrated in UC1–UC4; the PH is not applied to already-due installments.
+
+### Data integrity and reconciliation expectations
+- The opening balance for each period must equal the preceding period’s closing balance, reflecting the updated schedule after a PH.
+- Payment allocations must reconcile with the total transaction amount posted for the period, including any adjustments for PH-affected installments and applied penalties/fees.
+- Remaining cash and outstanding dues must reconcile against the updated schedule totals and the associated principal balances.
+- Where available, journal entries (debits and credits) must balance, reflecting the PH-related adjustments when the data is captured in the accounting system.
+- All intermediate calculations, running balances, and totals must reflect the defined rounding method (HALF_UP or HALF_EVEN ) per policy.
+
+### Glossary (key terms)
+- Payment Holiday (PH): A temporary pause on scheduled loan payments, extending the timeline for future installments and maturity date while preserving the loan’s overall term.
+- Installment: A scheduled periodic payment that reduces the loan principal; in PH scenarios, future installments may be moved to later dates.
+- Maturity Date: The date the loan is scheduled to be fully repaid if no further adjustments occur; PH can extend this date to reflect the holiday period.
+- Penalty/Fees: Additional charges associated with the loan that may have future due dates; these dates move forward to follows the next due date after a PH.
+
+This page presents the verified behavior for Payment Holidays as implemented, including the rules, scenarios, and observable outcomes that operations staff and loan officers use in day-to-day servicing. The behavior described here is grounded in the documented use cases and their associated observations, with all figures taken from the source data and presented without modification.

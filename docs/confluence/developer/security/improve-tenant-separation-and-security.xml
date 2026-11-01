@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Improve tenant separation and security</h1>
+  This page documents the verified product behavior for enhancing tenant separation and security in Pepper-Soup. The initiative aims to prevent tenants from accessing other tenants’ data and to remove plain text password storage. The proposed solution introduces per-tenant authentication with credentials retrieved from an external secret store. It is a breaking change; credentials are encoded and not available to non-authorised access. Old plain text passwords are removed from the database. Tenants have been migrated in development and test environments, and a migration plan is available.
+
+<h3>Overview of the verified changes</h3>
+The reference scope confirms four core pillars of the enhancement:
+<ul>
+<li>Per-tenant authentication: authentication is scoped to individual tenants.</li>
+<li>External secret store: tenant database credentials are retrieved from an external secret store rather than being stored in plain text locally.</li>
+<li>Credential encoding and access control: credentials are encoded and not accessible to unauthorized components or users.</li>
+<li>Password deprecation and migration: old plain text passwords are removed from the database, and tenants have been migrated in development and test environments with a formal migration plan.</li>
+
+</ul>
+<p>This is identified as a breaking change. The verified acceptance criteria include that credentials are encoded and not available to non-authorised access, old passwords are removed from the database, and tenants have been migrated in dev/test environments with a migration plan in place.</p>
+
+<h3>Technical scope and changes (verified)</h3>
+The reference describes the following areas as modified or introduced to achieve improved tenant separation and security. Exact implementation details (such as concrete class names, module boundaries, or API surfaces) are not specified in the reference data; the statements below capture the confirmed behavioral changes and architectural intent.
+<ul>
+<li>Per-tenant authentication model</li>
+<li>Authentication behavior is scoped to individual tenants. Each tenant operates within its own authentication context, preventing cross-tenant data access during authentication and authorization checks.</li>
+<li>Access to backend resources is performed using tenant-specific credentials fetched from a secret store, rather than relying on globally shared credentials.</li>
+<li>External secret store integration</li>
+<li>Tenant database credentials are retrieved from an external secret store per tenant. The secret store acts as the source of truth for the credentials used to connect to each tenant’s database.</li>
+<li>Retrieval occurs in the authentication flow prior to establishing a connection to the tenant’s data store.</li>
+<li>Credential encoding and access controls</li>
+<li>Credentials are encoded and not available for non-authorised access. Components that do not possess the proper authorization context or permissions should not be able to view or retrieve raw credentials.</li>
+<li>This reduces exposure risk and limits the potential for credential leakage within the system.</li>
+<li>Password handling and migration</li>
+<li>Old plain text passwords present in the database are removed as part of the effort to eliminate plain text storage.</li>
+<li>New per-tenant authentication relies on credentials stored in the external secret store, rather than plain text entries in the local database.</li>
+<li>Tenants have been migrated on development and test environments to validate the end-to-end flow before any production rollout.</li>
+<li>Migration planning and verification</li>
+<li>A migration plan exists and is available for coordination and execution. The reference confirms that a migration plan is available and that migrations have occurred in dev/test environments.</li>
+
+</ul>
+<h3>What changed in the security model</h3>
+Before this change, tenant data could be associated with credentials stored in a less restricted manner, potentially exposing less isolation between tenants. The verified changes establish a per-tenant authentication boundary and rely on an external secret store for credentials, which is not exposed to unauthorized components. Credentials are encoded to reduce risk of exposure, and access to raw credentials is restricted to authorized operations only.
+
+<h3>Data persistence and schema considerations (high level)</h3>
+<ul>
+<li>The system no longer relies on plain text passwords stored within the local database for tenant authentication. Instead, credentials are retrieved from an external secret store as part of the authentication flow.</li>
+<li>The reference does not include specific DDL or database schema details. It notes the removal of old passwords from the database and the shift to secret-store-based credentials.</li>
+
+</ul>
+<h3>Migration plan and environment status</h3>
+<ul>
+<li>Tenants have been migrated in development and test environments as part of the rollout.</li>
+<li>A migration plan is available to guide production rollout, sequencing, and rollback considerations when moving beyond development and testing.</li>
+
+</ul>
+<h3>Public API surface</h3>
+The reference data does not specify changes to public REST or internal service APIs. No API surface details are documented in the provided material. Any public-facing API changes would be captured in the migration plan and accompanying implementation guidance.
+
+<h3>Acceptance criteria (verified)</h3>
+<ul>
+<li>Credentials are encoded and not available for non-authorised access.</li>
+<li>Old passwords are removed from the database.</li>
+<li>Tenants have been migrated on dev/test environments.</li>
+<li>A migration plan is available to support broader rollout.</li>
+
+</ul>
+<h3>Architecture flow (per-tenant authentication using external secret store)</h3>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Client/Application] --> B[Authentication Layer]
+ B --> C[Tenant Context Manager]
+ C --> D[External Secret Store]
+ D --> E[Tenant Credentials Retrieved]
+ E --> F[Database Access Layer]
+ F --> G[Tenant Database]
+ %% Access is restricted to authorized components; credentials are encoded and not exposed]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Why this matters</h3>
+Isolating authentication per tenant and moving credential storage to an external secret store reduces the blast radius of credential leakage and strengthens privacy boundaries between tenants. Encoding of credentials further mitigates exposure risk in case of data access anomalies. The migration to per-tenant authentication also lays groundwork for more granular access controls and auditability at the tenant level.
+<ul>
+<li>Credentials encoded and not available for non-authorised access.</li>
+<li>Old passwords removed from database.</li>
+<li>Tenants migrated on dev/test environments.</li>
+<li>Migration plan is available.</li>
+<li>This is a breaking change.</li></ul>
+
+</ac:document>

@@ -1,0 +1,35 @@
+<!-- Labels: developer, ci-cd -->
+# CI/CD improvment
+
+The Pepper-Soup project has undergone CI/CD enhancements focused on Jenkins-based pipelines, the introduction of testing pipelines that operate outside automation, and the adoption of semantic versioning for release management. This publication documents what changed at the tooling and process level, how it affects release discipline, and what remains unchanged from a public-facing interface perspective.
+
+### Overview
+
+The initiative targets the Continuous Integration and Deployment layer by refining Jenkins usage, expanding the testing workflow to include non-automation testing pipelines, and instituting semantic versioning to govern release numbering. The scope intentionally centers on CI/CD tooling and release practices rather than application code changes, and it is described here to aid contributors, integrators, and platform operators in understanding the verified scope of work.
+
+Key elements referenced in the specification notes are the Jenkins-based pipeline configurations and the introduction of semantic versioning. The specification explicitly enumerates these areas as the scope of enhancement, underpinning release discipline and pipeline orchestration improvements.
+
+### Technical scope and touched components
+
+- Jenkins-based CI/CD configurations and pipelines: The enhancement centers on improving the Jenkins workflow that orchestrates build, test, and release activities. The changes involve refining pipeline logic and structure to support broader testing phases alongside existing automation, thereby increasing visibility and control over the verification steps prior to release.
+- Testing pipelines (excluding automation): New or revised pipelines were introduced to accommodate testing activities that are not part of automated test execution. These pipelines provide dedicated pathways for verification steps that may require manual review or supplementary checks beyond automated test suites.
+- Semantic versioning adoption: A semantic versioning scheme has been adopted to govern release numbering. Version identifiers follow the major.minor.patch semantics, providing a standardized mechanism to convey compatibility and change scope in each release.
+- Release tagging and traceability: Releases are associated with semantic version tags in the release process, enabling clearer traceability of artifacts, builds, and release notes across environments.
+
+Note: No documented changes to public APIs, data contracts, or external service interfaces are described as part of this enhancement. The scope focuses on the CI/CD tooling layer and release management practices.
+
+### Behavioral and process implications
+
+- Build and release traceability: With semantic versioning in place, each release carries a version identifier that communicates the extent of changes. This improves consumer predictability and supports more precise rollback and auditing policies.
+- Verification workflow: The added non-automation testing pipelines create a distinct verification path within CI/CD, allowing teams to perform additional checks before an artifact progresses to subsequent environments.
+- Change management: Versioning provides a clear signal to downstream consumers about compatibility and risk, aiding integration efforts and release planning.
+
+### API, database, or contract changes
+
+- Public APIs and data contracts: No changes are documented as part of this enhancement.
+- Database schema or migrations: No database schema changes are documented in conjunction with this CI/CD improvement.
+- Service interfaces and integration contracts: No modifications to external service interfaces are documented.
+
+### Implementation context for contributors
+
+This page documents observed and verified scope at the tooling and process level. Engineers integrating with Pepper-Soup should treat the Jenkins pipeline adjustments as the primary touchpoints for CI/CD behavior, with semantic versioning informing release planning and artifact tagging. If further changes to APIs, data models, or integration contracts arise in future work, they will be captured with explicit details in a separate publication.

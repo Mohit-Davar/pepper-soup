@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>EIR / PPWC new scope</h1>
+  This document describes the EIR-based Working Capital (PPWC) scope added to the Pepper-Soup product, capturing the objectives, architectural decisions, and expected deliverables associated with the initiative. It documents the verified product behavior and design decisions that follow the Working Capital product requirements, verifying a clear boundary between implementation surface and future planning items.
+
+<h2>Overview</h2>
+
+<p>The scope introduces a dedicated Working Capital loan product, implemented as a separate module with its own configuration and lifecycle. The design centers on an Effective Interest Rate (EIR) based calculation model for revenue-based or fixed-payment configurations, aligning with PayPal’s Working Capital financing concepts. The objective is to provide accurate income recognition, regulatory-compliant amortization, and flexible repayment structures while avoiding accrual-type transactions and traditional term-loan schedules for this instrument.</p>
+
+Key characteristics reflected in the scope include:
+<ul>
+<li>A zero-interest loan product with no accrual or accrual-type transactions required for these loan accounts.</li>
+<li>A single-disbursement model, with no traditional, static amortization schedule defined by standard term loans.</li>
+<li>Support for repayments and reversals, with the capacity to handle charges and fees via configurable allocation rules.</li>
+<li>Delinquency management features (delinquency buckets and related handling) and the ability to apply fee or penalty charges on a regional basis.</li>
+<li>Full and partial charge adjustments are supported, with the current emphasis on full charge adjustments for initial implementation, and partial adjustments available in alignment with the product rules.</li>
+<li>The actual repayment transaction computes and posts the Actual Amortization (Income) on the payment date and triggers related amortization tracking and revenue recognition steps.</li>
+<li>A two-path LP configuration strategy to support diverse business models:</li>
+ </ul>
+1) Revenue-based configuration, storing derived values at the loan account level
+ 2) Fixed payment amount configuration, where some values are provided and others calculated
+ 3) A third path for Fix EIR which provides a provided EIR while calculating other fields.
+<ul>
+<li>The system automatically generates and maintains a projected amortization schedule that evolves with approvals, disbursements, and repayments, applying EIR-based income recognition logic and updating deferred income .</li>
+<li>Accounting integration is provided via journal entries driven by transactions, with GL mappings defined at the loan product level and transaction-level GL entries verifying traceability.</li>
+
+</ul>
+<h2>Scope and Deliverables</h2>
+
+The new scope delivers a modular Working Capital product and supporting capabilities. The main deliverables include:
+<ul>
+<li>New Product Module and Configuration:</li>
+<li>A dedicated Working Capital product configuration with UI and API access for creation and management.</li>
+<li>Core fields include product name, short name, currency, decimal places, and currency multiples, as well as configuration for amortization, NPV day count, and payment allocation.</li>
+<li>Amortization method configuration with options for EIR or Flat; if Flat is selected, a separate field for the flat percentage is available (though currently not supported in the implementation surface referenced here).</li>
+<li>Delinquency bucket classification, NPV day count, and payment allocation rules.</li>
+<li>Loan Life Cycle enhancements:</li>
+<li>Create Loan Account: copy essential configuration from the loan product, with fields allowed to be overridden such as disbursement amount, period payment rate, total payment value, and discount amount.</li>
+<li>Approve Loan Account: provide overridable values for principal and discount, plus required fields for approval metadata.</li>
+<li>Disburse Loan Account: support single disbursement, with backdating support, and automatic application of disbursement charges where configured.</li>
+<li>Reversals: complete reversal support for major transaction types, with linked reversal transactions and replay of subsequent transactions and accounting entries.</li>
+<li>Amortization and Calculations:</li>
+<li>Two supported amortization methodologies with Declining Amortization (EIR-Based) as the primary path and Flat Amortization as a low-priority option.</li>
+<li>Projected Amortization Schedule: a per-period dataset containing installment numbers, dates, expected/actual payments, discount factors, NPVs, balances, and related income recognition metrics, designed to be recalculated dynamically as events occur.</li>
+<li>Dynamic recalculation: amortization schedule recalculation on repayments and adjustments, including backdated processing where supported.</li>
+<li>Backdated &amp; reprocessing behavior: backdated payments trigger schedule recalculation, balance updates, and replay of subsequent transactions and accounting entries.</li>
+<li>Transaction model and accounting:</li>
+<li>A complete transaction framework covering monetary and non-monetary transaction types, aligned with term-loan concepts but adapted for WCP. Monetary transactions include Disbursement, Repayment, Discount Fees, Charge Adjustments, Credit Balance Refunds, Goodwill Credits, and Payout Refunds, among others; non-monetary transactions cover adjustments and reversals.</li>
+<li>Every transaction triggers (or participates in) Journal Entries (JE) per product configuration, with GL mappings defined at the loan product level.</li>
+<li>Discount fee amortization is tracked as a system-generated, non-monetary transaction for reporting and auditing purposes, without impacting balances; actual accounting entries occur during the creation of discount fees and on repayment through amortization of the deferred income.</li>
+<li>Reporting and data capture:</li>
+<li>The system stores calculated and stored values at the loan account level (e.g., Period Payment Amount, Total Days, Daily EIR, Calc Annual EIR) for Revenue-based configurations; and analogous values for Fixed and EIR-based configurations.</li>
+<li>The projected amortization schedule provides visibility into anticipated income recognition, deferred balances, and future amortization lines.</li>
+
+</ul>
+<p>All design choices above reflect the verified reference data and are implemented to cooperate with existing term-loan machinery where standard, while introducing WCP-specific behavior for non-accrual, single-disbursement, EIR-based income recognition, and delinquency handling.</p>
+
+<h2>Architectural and Design Decisions</h2>
+<ul>
+<li>Module separation and product configuration</li>
+<li>The Working Capital loan product is implemented as a separate module with its own product configuration surface, distinct from traditional term loans. This separation allows WCP-specific rules—such as single disbursement, non-accrual accounting, and EIR-based amortization—to be encapsulated without impacting existing loan products.</li>
+<li>Product configuration is exposed via both UI and API to support internal administration and external integrations.</li>
+<li>Amortization strategy and configuration paths</li>
+<li>The system supports multiple configuration strategies (LP configurations) to accommodate varying business requirements. The Revenue-based configuration stores derived values (e.g., Period Payment Amount, Total Days, Daily EIR, Calc Annual EIR) along with amortization metadata. The Fixed Payment Amount configuration provides a fixed payment amount (provided) and derives the rest (Total Days, Daily EIR, Annual EIR). The Fix EIR configuration provides a provided Annual EIR while computing other fields. These strategies allows flexible deployment of WCP products while maintaining consistent accounting and reporting semantics.</li>
+<li>Declining Amortization (EIR-based) is the primary approach for amortization calculation, aligning income recognition with actual cash flows and enabling recalculation in response to repayments and other changes. Flat amortization remains a low-priority option and is not the default path in the current implementation surface.</li>
+<li>Schedule generation and recalculation</li>
+<li>A Projected Amortization Schedule is generated automatically during loan lifecycle events (creation, approval, disbursement) and recalculated on repayment or other applicable transactions. The schedule records per-period amortization and income recognition data and is updated to reflect the latest cash flows and outstanding balances.</li>
+<li>Recalculations propagate forward from the current business date, preserving historical amortization entries while recomputing future periods. This verifies historical accuracy and forward-looking consistency.</li>
+<li>Transaction mechanics and accounting integration</li>
+<li>The transaction model follows a structure similar to term loans, but the WCP surface introduces additional transaction types and constraints (e.g., Discount Fees Amortization as a non-monetary, system-generated transaction used for tracking only). All monetary transactions trigger standard journal entries as defined in the product’s GL mappings, while non-monetary amortization tracking follows the same processing path as related payments.</li>
+<li>Allocation priorities for repayments and charge-related transactions are configurable at the transaction level and can be defined at the loan product level to verify consistent treatment of principal, fees, and penalties in line with WCP accounting requirements.</li>
+<li>Delinquency, charges, and adjustments</li>
+<li>Delinquency management includes bucket classification and pause mechanics, as well as a framework for charging and waiving fees in certain regions. Fee and penalty charges are allocated prior to principal in accordance with the WCP rules, and charges can be configured to apply at disbursement or as due-date charges.</li>
+<li>Discount fee adjustments are supported, including linked adjustments and reprocessing of amortization and balances. Reprocessing recalculates amortization, updates discount balances, and replays subsequent transactions and accounting entries as required. The system emits a business event when a discount fee adjustment transaction is created.</li>
+<li>Reversals and backdating</li>
+<li>Reversals are supported for major transaction types, producing linked reversal transactions and reversing both the financial impact and the associated accounting entries. Backdated processing is supported for most transaction types, with schedule reprocessing and accounting recalculation to maintain consistency with historical cash flows.</li>
+<li>Data persistence and integrity</li>
+<li>All derived and stored values required for WCP operation (Period Payment Amount, Total Days, Daily EIR, Calc Annual EIR, etc.) are persisted as part of the loan account data model. The projected amortization schedule is maintained over time with a traceable linkage to repayments and other events for auditability and reporting purposes.</li>
+
+</ul>
+<h2>Calculation and Scheduling Concepts (without embedded numerics)</h2>
+<ul>
+<li>Calculation inputs and outputs</li>
+<li>Core inputs include the total deferred income (discounts/fees), current outstanding balance, repayment cash flows, and the loan term, together with the applicable EIR value for the current configuration. The system uses these inputs to generate the projected amortization schedule and compute the income recognition profile.</li>
+<li>The amortization schedule records, for each installment, the expected payment amount, discount factor, NPV value, remaining balance, and the net amortization amount, alongside actual payments and any income modification that arises from revised cash flows.</li>
+<li>Schedule structure</li>
+<li>Each amortization line comprises: Installment Number, Installment Date, Expected Payment Amount, Discount Factor, NPV Value, Balance, Net Amortization Amount, Actual Payment Amount, Actual Amortization Amount, Income Modification, Deferred Balance.</li>
+<li>Backdating and reprocessing rules</li>
+<li>When backdated payments or adjustments occur, the system recalculates the amortization plan from the affected date forward, replays subsequent transactions, and updates related accounting entries as required by the transaction flow and product rules.</li>
+
+</ul>
+<p>These concepts are reflected in the implemented behavior of the Working Capital module and are designed to verify consistency between projected income recognition, actual cash flows, and the associated accounting consequences.</p>
+
+<h2>Transaction and Processing Semantics</h2>
+<ul>
+<li>Monetary and non-monetary transactions follow a common processing path, aligned with term-loan conventions but extended to cover WCP-specific cases. Disbursement, Repayment, Discount Fees, and Charge-related transactions participate in the standard journal entry flow, with a dedicated set of accounting mappings per loan product.</li>
+<li>Discount Fees Amortization is a system-generated, non-monetary transaction intended for tracking and reporting only. It is created in response to qualifying payments and linked to the parent payment transaction. No separate accounting entries are created for this transaction alone; accounting consequences arise from the related payment and the amortization logic.</li>
+<li>Payout Refund, Credit Balance Refund (CBR), Goodwill Credit, and other credit-oriented transactions are supported with standard allocation and recalculation semantics. Reversals create linked reversal transactions and trigger schedule reprocessing as necessary.</li>
+<li>Disbursement can be reversed, with associated schedule and balance adjustments, and re-entry into an approved state if required by the reversal flow.</li>
+
+</ul>
+<h2>Edge Cases and Handling Rules</h2>
+<ul>
+<li>Overpayments and refunds</li>
+<li>Overpayments may trigger a credit balance on the loan account. Credit Balance Refund (CBR) moves funds from the credit balance back to the customer and adjusts loan balances , without triggering a separate amortization recalculation unless the system explicitly requires it due to other events.</li>
+<li>Delinquency and bucket transitions</li>
+<li>Delinquency buckets classify the delinquency state and influence the application of late charges and related rules. Delinquency pause and range schedule logic are used to model and manage these transitions.</li>
+<li>Prepayment and foreclosures</li>
+<li>Prepayment or early settlement proceeds follow the same repayment flow as standard repayments, but with payoff computation derived from the current loan state and the payoff date. The system recalculates the payoff amount and adjusts all related balances .</li>
+<li>Charge handling and adjustments</li>
+<li>Charges can be applied at disbursement or as due-date charges. Charge adjustments are monetary transactions that reduce already paid charges or reallocate amounts according to the configured allocation priority. Backdating of charge adjustments is supported, with reprocessing of balances and the amortization plan.</li>
+<li>Reconciliation and reporting</li>
+<li>All GL interactions, accounting events, and amortization lines are designed to provide traceable reconciliation and reporting. The loan product level GL mapping verifies consistent accounting posture across all WCP transactions.</li>
+
+</ul>
+<h2>Acceptance Criteria (high level)</h2>
+<ul>
+<li>A new Working Capital transaction type Payout Refund is available for WCP loans and behaves similarly to a repayment transaction, including backdating and reversal support.</li>
+<li>The new scope supports zero-interest, non-accrual loans with single disbursement and no traditional term loan schedule, and no monetary transactions after full payoff except permitted adjustments and reversals.</li>
+<li>The system supports both Revenue-based LP configuration and Fixed-payment LP configuration, as well as a Fix-EIR variant, storing and calculating the required fields at the loan-account level as described in the configuration rules.</li>
+<li>The actual repayment transaction computes and posts the Actual Amortization (Income) on the payment date and triggers amortization tracking, with Discount Fees Amortization tracked as a non-monetary, system-generated artifact for reporting purposes.</li>
+<li>A dynamically recalculating projected amortization schedule exists, updated in response to repayments, prepayments, delinquencies, and other eligible events; backdated processing replays subsequent transactions and rebalances the ledger .</li>
+<li>All relevant transactions trigger accounting entries per the product’s GL mappings, with standard handling of charge payments, adjustments, and reversals.</li>
+
+</ul>
+<h2>Diagrams (conceptual)</h2>
+
+flowchart TD
+ A[Working Capital Product] --> B[Create Loan Account (LP parameters copied)]
+ B --> C{Disbursement}
+ C --> D[Generate Amortization Schedule (Projected)]
+ D --> E[Post-Disbursement Balances &amp; Charges]
+ E --> F{Repayment / Adjustments}
+ F --> G[Update Amortization Schedule]
+ G --> H[Discount Fees Amortization (non-monetary)]
+ F --> I[Trigger Journal Entries on Payment]
+ I --> J[Accounting Journal Entries]
+ H --> K[Reporting &amp; Audit Trail]
+
+stateDiagram-v2
+ [*] --> Active
+ Active --> Delinquent : Delinquency occurs
+ Delinquent --> ChargedOff : Delinquency threshold reached
+ ChargedOff --> Recovery : Recovery transaction
+ Recovery --> Closed : Close after recovery
+ Active --> Overpaid : Overpayment detected
+ Overpaid --> Closed : Obligations met or refunded
+
+<h2>Glossary of terms (selected)</h2>
+<ul>
+<li>EIR: Effective Interest Rate, the basis for amortizing income over the loan horizon in the declining amortization approach.</li>
+<li>NPVs: Net Present Value values used in the amortization schedule calculations.</li>
+<li>Deferred income: Income that is recognized over time via amortization, not immediately upon receipt.</li>
+<li>Amortization schedule: The projected plan for recognizing income and reducing the balance, recalculated as repayments occur.</li>
+<li>LP configuration: Loan Product configuration strategies that determine how period payments and related fields are stored and calculated.</li>
+<li>Payout Refund (CBR): A specialized WCP transaction to recover disbursed funds when fraud or over-disbursement occurs, potentially leading to overpayment states.</li>
+<li>Discount Fees Amortization: A system-tracked, non-monetary record of deferred income recognition tied to repayments.</li>
+<li>Delinquency buckets: Classifications that represent the aging of arrears and guide delinquency management.</li>
+
+</ul>
+This page presents a consolidated, publication-ready view of the EIR / PPWC new scope, reflecting the verified product behavior and architectural decisions derived from the reference material. It is intended as a technical reference for backend Java engineers, system integrators, and open-source contributors working on the Pepper-Soup working capital initiative. The content focuses on architecture, APIs, algorithms, processing behavior, persistence, accounting, state transitions, and edge cases, with emphasis on verifiable behavior and rules.
+</ac:document>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>For when Pepper Soup support staff are more active in system and need to integrate with PP user directory</h1>
+  <h3>Overview</h3>
+
+<p>This enhancement is described as security-focused, aiming to allow Pepper Soup support staff to interact with the PP user directory more actively. The reference notes a phrase representing the access intent: "Support-staff access; 1 child". However, it does not provide detailed design, implementation guidance, or concrete changes to components, APIs, data models, or integration contracts. As such, the exact technical scope and how the integration would be realized are not specified within the supplied material.</p>
+
+<h3>Verified scope and limitations (as evidenced in the reference)</h3>
+<ul>
+<li>The feature is categorized as an enhancement within the security domain.</li>
+<li>The stated objective is to allows support staff to access or participate in interactions with the PP user directory.</li>
+<li>The only explicit content related to the change is the terse note: "Support-staff access; 1 child"; there is no elaboration of modified components, services, APIs, database schemas, or contracts.</li>
+
+</ul>
+<p>The reference does not enumerate the precise surface area of change. No component names, service interfaces, parameter lists, or data model details are documented. No migration, rollout, or validation procedures are described.</p>
+
+<h3>API surface and integration contracts</h3>
+No documented API surface changes, new endpoints, parameter additions/removals, or behavioral differences are described in the reference data. Consequently, there is no verified surface-level contract to enumerate or compare against the prior state.
+
+<h3>Data model and persistence</h3>
+There are no documented database schema modifications or persistence-layer changes associated with this enhancement in the provided reference.
+
+<h3>Security model and access control</h3>
+The reference mentions "support staff access" but does not provide specifics about roles, permissions, ACLs, or how access would be granted, revoked, or audited in relation to the PP user directory.
+
+<h3>Unknowns and gaps</h3>
+<ul>
+<li>Exact components, services, and APIs modified or introduced are not documented.</li>
+<li>No data model or schema changes are described.</li>
+<li>No integration contracts or new service interfaces are specified.</li>
+<li>No changes to authentication, authorization flows, or logging/audit behavior are described.</li>
+<li>No migration or rollout guidance is provided.</li>
+
+</ul>
+<blockquote><p>Given the absence of concrete technical detail in the reference, any concrete implementation would require a separate design/implementation specification to capture the exact components, interfaces, and data mappings involved in integrating Pepper Soup support staff with the PP user directory.</p></blockquote>
+</ac:document>

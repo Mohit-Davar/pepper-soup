@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>EIR Calculation Phase 2 - Accounting</h1>
+  This page documents the accounting behavior that accompanies of the Economic Interest Rate (EIR) calculation, focusing on the mapping of loan lifecycle events to General Ledger (GL) postings. The content captures the confirmed posting rules for principal, interest, fees, penalties, and related adjustments as assets, liabilities, or income/expense, verifying the correct financial treatment across disbursement, repayment, amortization, and post-life events such as write-offs and charge-offs. The material is written for operations staff, loan officers, branch managers, and credit agents who observe, validate, and audit postings within loan servicing. The mappings shown here are intended to be applied consistently across lifecycle events to preserve financial integrity and traceability.
+
+<blockquote><p>Note: All postings are exact as evidenced in the reference data. The representations below use the same GL codes and account names, and describe the observed debit/credit directions and the allocation contexts relevant to each transaction type. Where a single transaction type drives multiple credits or debits (to reflect principal, overpayments, and ancillary receivable components), the primary postings are listed first, with follow-on bullets indicating additional credits or debits observed in the source.</p></blockquote>
+
+<h3>Key concepts and observable outcomes</h3>
+<ul>
+<li>The accounting model links economic events in the EIR workflow to specific GL accounts. Principal-related movements typically affect the Loans Receivable Principal asset account, while timing-related elements (such as deferred interest) move to liability accounts (Deferred Interest) and income components (Interest income) are recognized when earned.</li>
+<li>Fee and penalty components are tracked separately through Fee Receivable (Penalty Receivable) and Fees Receivable, and are allocated according to the defined mapping type (for example, Prin, Fees, and Penalty or penalties and fees-specific allocations).</li>
+<li>The system uses a Suspense/clearing account to reconcile disbursements and certain interim movements before permanent allocation to principal or other components.</li>
+<li>Overpayments create an Overpayment Liability (a separate reserve/clearing liability) that can be released or offset by future transactions and payout refunds.</li>
+<li>Post-charge-off events (including write-offs and charge-offs) involve dedicated expense and income lines (such as Charge off expense and Credit loss-bad dept) and may trigger goodwill-related adjustments and further allocations to penalties or fees as evidenced in the data.</li>
+<li>Payout refunds on active loan accounts have explicit mappings to Penalties, Fees, Principal, and Overpayment Liability, reflecting the distribution of refunds to various components.</li>
+
+</ul>
+<h3>Regular accounting mappings (observed postings)</h3>
+The following postings summarize the observed debit/credit relationships for standard lifecycle events. Each item shows the primary debit and credit directions and the associated allocation context.
+<ul>
+<li>Discount fees</li>
+<li>Debit: 112601 — Loans Receivable Principal (Asset) — Loan Portfolio</li>
+<li>Credit: 240005 — Deferred Interest (Liability) — Prin, Fees, and Penalty</li>
+<li>Allocation context: Principal-related impact with deferral of related interest income.</li>
+<li>Disbursement</li>
+<li>Debit: 112601 — Loans Receivable Principal (Asset) — Loan Portfolio</li>
+<li>Credit: 145023 — Suspense/clearing account (Asset/Liability) — Prin</li>
+<li>Allocation context: Initial funding to the loan, with interim clearing of funds.</li>
+<li>Repayment (principal, and associated components)</li>
+<li>Debit: 145023 — Suspense/clearing account (Asset/Liability) — Prin, Fees, and Penalty and excess</li>
+<li>Credit: 112601 — Loans Receivable Principal (Asset) — Loan Portfolio</li>
+<li>Credit: 245000 — Other Credit liability (Overpayment Liability) — excess</li>
+<li>Credit: 112603 — Fee Receivable (Penalty Receivable) — Penalty</li>
+<li>Credit: 112603 — Fee Receivable (Fees Receivable) — Fees</li>
+<li>Allocation context: Principal repayment reduces the loan balance; any excess is recorded to overpayment liability; ancillary components (penalties and fees) are posted to their receivable accounts.</li>
+<li>Repayment Reversal</li>
+<li>Debit: 112601 — Loans Receivable Principal (Asset) — Loan Portfolio</li>
+<li>Debit: 245000 — Other Credit liability (Overpayment Liability) — excess</li>
+<li>Debit: 112603 — Fee Receivable (Fees Receivable) — Fees</li>
+<li>Debit: 112603 — Fee Receivable (Penalty Receivable) — Penalty</li>
+<li>Credit: 145023 — Suspense/clearing account (Asset/Liability) — excess</li>
+<li>Allocation context: Reverses the principal and associated receivable allocations from a prior repayment, returning funds to the suspense/clearing context.</li>
+<li>Amortization (deferral release to income)</li>
+<li>Debit: 240005 — Deferred Interest (Liability) — Deferred Interest</li>
+<li>Credit: 404000 — Interest income (Income)</li>
+<li>Allocation context: Recognizes interest income as amortized from the deferred interest balance over the period.</li>
+<li>Amortization (charge-off context)</li>
+<li>Debit: 240005 — Deferred Interest (Liability) — Deferred Interest</li>
+<li>Credit: 744007/744037 — Credit loss-bad debt / credit loss-bad debt- fraud (Expense)</li>
+<li>Allocation context: Allocates amortized interest against credit losses associated with charge-off events.</li>
+<li>Write-off</li>
+<li>Debit: 744008 — recoveries (Expense) — Losses Written-off</li>
+<li>Credit: 112603 — Fee Receivable (Fees Receivable) — Fees</li>
+<li>Credit: 112603 — Fee Receivable (Penalty Receivable) — Penalty</li>
+<li>Additional lines show principal adjustments and reallocation related to the write-off event; these lines reflect the interaction of principal write-off with associated fees/penalties and related overpayments.</li>
+<li>Allocation context: Recognizes charged-off amounts as losses and clears associated fee/penalty receivables where standard.</li>
+<li>CBR (Credit Balance Reversal) and CBR Reversal</li>
+<li>Debit: 245000 — Other Credit liability (Overpayment Liability) — excess</li>
+<li>Credit: 145023 — Suspense/clearing account (Asset/Liability) — excess</li>
+<li>Reversal: Debit 145023 — Suspense/clearing account; Credit 245000 — Overpayment Liability</li>
+<li>Allocation context: Moves funds into or out of the overpayment-related liability depending on the CBR event state.</li>
+<li>Goodwill Credit (principal balance adjustment and related effects)</li>
+<li>Debit: 744003 — Principal bal adjustment (Expense) — Prin,excess</li>
+<li>Debit: 404008 — Fee Charge off (Income) — Fees and Penalty</li>
+<li>Credit: 404008 — Fee Charge off (Income) — Fees and Penalties (as observed across the Goodwill scenario)</li>
+<li>Allocation context: Adjusts principal balance and captures any associated goodwill-related impacts to fees/penalties as part of the adjustment flow.</li>
+<li>Charge addition and adjustments (fees and penalties tracking)</li>
+<li>Debit: 112603 — Fee Receivable (Fees Receivable) — Fees</li>
+<li>Credit: 404007 — Fee Income (Income) — Fees</li>
+<li>Allocation context: Records additional charges to fees receivable and recognizes associated fee income.</li>
+<li>Charge Adjustment Reversal (from fees)</li>
+<li>Debit: 404007 — Fee Income (Income) — Fees</li>
+<li>Credit: 112601 — Loans Receivable Principal (Asset) — Prin</li>
+<li>Allocation context: Reverses prior fee-based adjustments against principal.</li>
+<li>Charge Adjustment Reversal (from Penalty)</li>
+<li>Debit: 404008 — Fee Charge off (Income) — Penalty</li>
+<li>Credit: 245000 — Overpayment Liability (Liability) — excess</li>
+<li>Allocation context: Reverses prior penalty-related adjustments affecting the overpayment liability.</li>
+
+</ul>
+<blockquote><p>Important: The postings above are exact as evidenced in the reference data. Each transaction type’s observed postings may comprise multiple lines to reflect principal, interest, fees, penalties, and overpayments. The primary lines listed here are representative; the complete set of lines includes supporting adjustments and reversals as shown in the source.</p></blockquote>
+
+<h3>Payout refunds on active loan accounts</h3>
+Payout refunds for active loans follow a dedicated mapping that allocates the refunded amounts across penalties, fees, principal, and overpayments, with the fund-source accounts guiding where the cash flows are recorded. The observed mappings include:
+<ul>
+<li>Penalty refunds on active loans (Cash in)</li>
+<li>Fund source and Penalties Receivable are affected; cash is recorded as a debit to the fund source and a credit to Penalties Receivable (with the associated reversal path defined in the sheet).</li>
+<li>Fees refunds on active loans (Cash in)</li>
+<li>Fund source and Fees Receivable are affected; cash inflows are recorded against Fees Receivable.</li>
+<li>Principal refunds (Cash in)</li>
+<li>Fund source and Loan portfolio are affected; refunds reduce the principal balance via the loan account postings.</li>
+<li>Overpayment refunds (Cash in)</li>
+<li>Over payment liability is credited, UNC (Unallocated Credit) and UNC-related posts are reflected in the fund source and Overpayment Liability accounts.</li>
+<li>Penalty refunds (Cash out)</li>
+<li>Penalties Receivable is debited when refunds are disbursed, reducing the related receivable; the fund source accounts reflect the cash outflow.</li>
+<li>Fees refunds (Cash out)</li>
+<li>Fees Receivable is debited, reducing the associated receivable; the fund source accounts reflect the cash outflow.</li>
+<li>Principal refunds (Cash out)</li>
+<li>The ChargeOff expense/Charge Off Fraud expense category is used for refunds related to charge-off contexts; the postings map to the respective fund source accounts.</li>
+<li>Overpayment refunds (Cash out)</li>
+<li>The Overpayment Liability is debited as refunds are processed and cash flows out of the fund source.</li>
+
+</ul>
+<p>These mappings verify refunds are allocated consistently to the same components as the original postings, preserving the integrity of the customer’s account and the institution’s financial records.</p>
+
+<h3>Observation and audit considerations</h3>
+<ul>
+<li>Each period’s opening balance must equal the previous period’s closing balance after accounting for all postings in that period. This requires reconciling the principal, interest, fees, penalties, and overpayment components across the lifecycle events documented above.</li>
+<li>Payment allocations must reconcile to the transaction amount being posted, with the sum of debits and credits balancing for each event.</li>
+<li>Remaining cash, outstanding dues, and overpayment liabilities must reconcile after every lifecycle event (disbursement, repayment, refunds, and adjustments).</li>
+<li>Where journal entries are available, verify that debits equal credits for each event, with precise rounding and a clearly defined day-count convention .</li>
+
+</ul>
+<h3>Diagram: high-level flow of accounting postings</h3>
+
+flowchart TD
+ A[Disbursement] --> B[Dr 112601 Loans Receivable Principal]
+ A --> C[Cr 145023 Suspense/clearing account]
+ D[Repayment] --> E[Dr 145023 Suspense/clearing account]
+ D --> F[Cr 112601 Loans Receivable Principal]
+ D --> G[Cr 245000 Overpayment Liability]
+ D --> H[Cr 112603 Fee Receivable (Penalty)]
+ D --> I[Cr 112603 Fee Receivable (Fees)]
+ J[Amortization] --> K[Dr 240005 Deferred Interest]
+ J --> L[Cr 404000 Interest income]
+
+<h3>Appendix: Key GL accounts referenced in this phase</h3>
+<ul>
+<li>112601 Loans Receivable Principal — Loan Portfolio (Asset)</li>
+<li>240005 Deferred Interest — Deferred Income (Liability)</li>
+<li>145023 Suspense/clearing account — Fund source (Asset/Liability)</li>
+<li>245000 Other Credit liability — Overpayment Liability (Liability)</li>
+<li>112603 Fee Receivable — Penalty Receivable (Asset) and Fees Receivable (Asset)</li>
+<li>404000 Interest income — Income</li>
+<li>404007 Fee Income — Income</li>
+<li>404008 Fee Charge off — Asset (and related Income adjustments)</li>
+<li>744003 Principal bal adjustment — Expense</li>
+<li>744007/744037 Credit loss-bad dept/credit loss-bad dept- fraud — Expense</li>
+<li>744008 Recoveries — Expense</li>
+<li>Royalties and goodwill cleanse lines appear in Goodwill Credit pathways and are captured under the Goodwill Credit postings in the reference data. See the main postings above for context.</li>
+
+</ul>
+<h3>Glossary</h3>
+<ul>
+<li>EIR (Economic Interest Rate) Calculation : The second phase of the EIR workflow that translates the economic terms of a loan (principal, interest, fees, penalties) into accounting entries.</li>
+<li>Principal Receivable (Loans Receivable Principal): The nominal outstanding balance of the loan principal as an asset on the loan portfolio.</li>
+<li>Deferred Interest (Deferred Income): A liability reflecting interest that has been accrued, but not yet recognized as income.</li>
+<li>Suspense/clearing account: A temporary account used to accumulate funds during interim steps of a transaction before final allocation.</li>
+<li>Overpayment Liability: A liability that records amounts paid by customers in excess of amounts due, until allocated or refunded.</li>
+<li>Fee Receivable and Penalty Receivable: Asset accounts capturing fees and penalties billed but not yet received or allocated; used in conjunction with Fee Income and related postings.</li>
+<li>Charge off and credit loss postings: Expense accounts used to recognize losses and the related effects on the income statement.</li>
+<li>Goodwill Balance Adjustments: Adjustments that affect the principal balance and related fee treatment in goodwill-related scenarios.</li>
+
+</ul>
+If you require a more granular view of every line in the reference mappings (including every column’s labeled fields for each row), we can provide an itemized appendix that reproduces the exact multi-line postings for each transaction type. The representations above reflect the verified, observable behavior and the principal postings that agencies in operations should expect when observing accounting for EIR.
+</ac:document>

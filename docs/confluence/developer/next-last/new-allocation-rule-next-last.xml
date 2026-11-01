@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>New Allocation rule - Next/Last</h1>
+  This document describes the New Allocation rule - Next/Last as part of the Repayment and Allocation capability. The material references a dedicated configuration named allocation rule, which governs how a payment is allocated when performing Next/Last installments. The enhancement is described as an enhancement to GPL credit management workflows, with a configuration option to select the Next/Last Installment operation.
+
+<h3>Concept and scope</h3>
+
+<p>The Next/Last allocation operation relies on a defined sequence of components to receive payment within an allocation cycle. The reference material provides an explicit allocation rule sequence, which determines the order in which portions of a payment are applied to loan components during a Next/Last operation. The sequence defined in the reference data is:</p>
+
+<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[overdue int -> overdue prin -> overdue fees -> due int -> due prin -> due fees -> advance prin -> advance int -> advance fees]]></ac:plain-text-body></ac:structured-macro>
+
+<p>This rule encodes the priorities for applying a payment across outstanding and due components, and across overdue and forward-due items, during a Next/Last installment operation. The presence of this allocation rule in the reference data confirms that the system supports a configurable, ordered application of payment components for Next/Last processing, consistent with what is described in the topic context.</p>
+
+<h3>Configuration details and observed usage</h3>
+<ul>
+<li>The feature is named New Allocation rule - Next/Last in the navigation path Repayment and Allocation > Next/Last > New Allocation rule - Next/Last, indicating the rule is selected as part of the Next/Last workflow.</li>
+<li>The reference data shows an explicit allocation rule string, implying a dedicated configuration knob or field that captures the exact sequence above. This supports a model where the allocation engine applies payments according to the configured order when performing a Next/Last installment operation.</li>
+<li>In the provided reference calculations, the rule appears alongside sample scenarios labeled S1 and S2 (payment before installment date and payment on installment date). The rule line is presented in the context of an allocation workflow, validating that Next/Last behavior is driven by this configured sequence.</li>
+
+</ul>
+<h3>Calculation context and baseline values (from reference data)</h3>
+
+The reference material utilizes a standard loan setup to illustrate allocation behavior under the Next/Last rule. The baseline parameters include:
+<ul>
+<li>Interest Rate: 7% (daily factor shown as 0.000194444)</li>
+<li>Days In year: 360</li>
+<li>Days In month: 30</li>
+<li>Principal: 100</li>
+<li>Repayment cadence: 1.00 month</li>
+
+</ul>
+These values are used in the accompanying tables to demonstrate how principal and interest portions are allocated over time under the Next/Last rule. The material presents two scenarios:
+<ul>
+<li>S1: payment timing before the installment date</li>
+<li>S2: payment timing on the installment date</li>
+
+</ul>
+<p>Within those scenarios, the summary references an allocation rule and shows how repayment components (overdue vs due, principal vs interest) progress over subsequent periods. While the tables themselves are part of the reference data, the key takeaway for Next/Last is that the allocation order is governed by the explicit sequence above, and the calculations are performed with the specified baseline parameters.</p>
+
+<h3>Diagram: allocation sequence under Next/Last</h3>
+
+<p>The following diagram illustrates the verified allocation order defined by the Next/Last rule. It shows the sequential flow from the first component to the last as payments are allocated.</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[overdue int] --> B[overdue prin]
+ B --> C[overdue fees]
+ C --> D[due int]
+ D --> E[due prin]
+ E --> F[due fees]
+ F --> G[advance prin]
+ G --> H[advance int]
+ H --> I[advance fees]]]></ac:plain-text-body></ac:structured-macro>
+
+<p>This diagram captures the precise, -based sequence that the Next/Last rule employs to allocate a payment across loan components. The order is the authoritative detail for implementation and integration tests related to Next/Last allocations.</p>
+
+<h3>Financial calculations and integrity considerations</h3>
+
+The reference data embeds a baseline calculation context that informs how the rule is exercised in practice. For the purpose of a Next/Last allocation, the numbers in the reference material are provided to illustrate the effect of applying a payment according to the defined order, using the stated interest rate, day-count conventions, and monthly cadence. Important integrity constraints observed in the reference material include:
+<ul>
+<li>Each period’s opening balance corresponds to the prior period’s closing balance, forming a consistent running balance across the schedule.</li>
+<li>Allocation results reconcile with the transaction amount; the sum of allocations to all components equals the payment amount processed in the period.</li>
+<li>Rounding in calculations follows evidenced conventions noted in the material. When rounding is specified in the reference data, it references common conventions such as HALF_UP or HALF_EVEN.</li>
+
+</ul>
+<p>Because the reference data presents concrete values and sample schedules, the exact intermediate figures (principal, interest, and remaining balances) depend on the loan inputs and the allocation rule. The key point for Next/Last is that the allocation engine uses the explicit sequence to distribute the payment across components in the order shown above, with calculation details adhering to the outlined day-count and rate parameters in the given scenarios.</p>
+
+<h3>APIs, surface contracts, and data model implications</h3>
+
+<p>The provided reference data does not document new REST endpoints, request/response payloads, or changes to surface contracts. indicates the change is primarily about configuring a Next/Last allocation rule and applying it during the allocation process. Consequently, there is no documented API surface change within this material; the emphasis is on the configuration of the allocation sequence and its use in calculation flows.</p>
+
+<h3>Edge cases and behavior notes (as evidenced)</h3>
+<ul>
+<li>The rule defines an explicit fixed sequence; behavior in cases where a component is fully settled within a period would be governed by how the allocation engine traverses the sequence, as illustrated by the sample scenarios. The reference data confirms the sequence is the controlling factor for allocation order in Next/Last operations.</li>
+<li>The Material presents the allocation rule in the context of both pre-installment and on-installment-date scenarios, showing consistent application of the rule under different payment timings.</li>
+
+</ul>
+<h3>What changed (-based summary)</h3>
+<ul>
+<li>A new configuration capability named allocation rule exists, intended to drive Next/Last installment allocations.</li>
+<li>The rule’s exact sequence is explicitly defined and documented in the reference material: overdue int -> overdue prin -> overdue fees -> due int -> due prin -> due fees -> advance prin -> advance int -> advance fees.</li>
+<li>The material associates this rule with the Next/Last operation path, indicating the rule is the mechanism by which allocations are ordered during Next/Last processing.</li>
+
+</ul>
+<h3>Important caveats</h3>
+<ul>
+<li>This document reflects the behavior and data present in the reference material. It does not introduce new internal implementation details beyond what is evidenced (the sequence and the existence of a Next/Last rule).</li>
+<li>No external API signatures or database schemas are described here; if you require API or persistence changes, those would need to be verified against updated, authoritative specifications beyond the provided reference data.</li>
+
+</ul>
+<h3>Related observations from the reference data</h3>
+<ul>
+<li>The reference calculations use a consistent baseline: 7% annual rate, 360-day year, 30-day month, 100 principal, monthly repayments. These values appear in the S1 and S2 scenarios used to illustrate how the Next/Last rule affects the allocation of a payment across loan components.</li>
+<li>The examples label components as overdue and due, and they illustrate the distinction between principal and interest portions for each component in the allocation flow.</li>
+
+</ul>
+If further details are required, such as explicit API changes, DDL adjustments, or persistence semantics, they would need to be derived from updated specifications beyond the current reference data.
+</ac:document>

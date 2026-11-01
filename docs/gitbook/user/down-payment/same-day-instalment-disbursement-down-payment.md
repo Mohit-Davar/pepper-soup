@@ -1,0 +1,88 @@
+# Same day Instalment & Disbursement (down-payment)
+
+The Same day Instalment & Disbursement (down-payment) feature lets you configure a down-payment option for disbursements at the loan product level. When enabled, the down-payment amount is collected at the time of disbursement and the remaining funded amount is disbursed or allocated to the borrower’s installment schedule according to the product’s configuration. This feature benefits operations staff, loan officers, branch managers, and credit agents by making the down-payment visible in the disbursement flow and by aligning the repayment schedule with the funded amount. It supports single and multiple disbursement patterns, including backdated disbursement use cases, and tracks the down-payment portion within the loan servicing data.
+
+The core idea is straightforward: set a down-payment amount for a loan product, collect that amount when the loan is disbursed, and amortize the remaining financed amount through the loan’s instalment schedule. The down-payment portion is reflected in the repayment schedule as a component related to the initial disbursement, and the balance is amortized over the configured installments.
+
+### How the feature works (conceptual)
+- A loan product is configured with a down-payment value for disbursements. The down-payment amount is collected at the moment of disbursement and is tracked alongside the loan’s repayment plan.
+- The remaining funded amount (principal less the down-payment) is amortized according to the loan’s instalment configuration. In the simplest illustration, a loan with principal 1000 and a 25% down-payment results in a 250 down-payment and a 750 financed amount, which is paid back over the configured instalments.
+- The repayment schedule records the down-payment portion (DP Principal) and the regular principal repayments that follow. In example scenarios, instalments may be presented as fixed principal amounts, and the schedule shows how the outstanding balance evolves after each payment.
+- The feature supports various disbursement patterns, including multiple disbursements and backdated use cases, while keeping the down-payment tracking aligned with the disbursement flow.
+
+### User roles and who benefits
+- Operations staff: Configure down-payment rules at the loan product level and monitor the impact on disbursement and amortization.
+- Loan officers and credit agents: Verify down-payment collection during disbursement and review how the financed amount is scheduled for repayment.
+- Branch managers: Confirm that the product configuration supports same-day instalment and down-payment collection in branch disbursements.
+
+## UI navigation and operational steps
+To configure the down-payment option for disbursements at the loan product level, perform the following steps:
+1. Open the product configuration path: navigate to **Disbursement and Schedule > Down-payment > Same day Instalment & Disbursement (down-payment)**.
+2. allows the down-payment option for the loan product and set the down-payment value that will be collected at disbursement. The value should reflect the product policy (for example, 25% of the loan principal as shown in the representative scenarios).
+3. Save the changes to apply the policy to new and existing loans using this product configuration.
+4. When disbursing a loan under this product, the system will collect the configured down-payment amount at the time of disbursement and disburse the remaining funded amount according to the instalment configuration.
+5. In servicing, view the loan’s repayment schedule and confirm that the down-payment portion is represented separately (as the DP Principal) and that subsequent installments reflect the remaining financed amount.
+6. If a second disbursement occurs for a loan with an active down-payment, verify how the additional funds are allocated across the remaining installments. The system supports allocating second-disbursement amounts to remaining installments under certain conditions (see Disbursement amount distribution scenarios).
+
+Bold field/button names indicate visible UI controls in the workflow.
+
+- Path: Disbursement and Schedule > Down-payment > Same day Instalment & Disbursement (down-payment)
+- Field: Down-payment value (e.g., 25%)
+- Button: Save (to commit product configuration)
+- Outcome: The loan product is configured to collect the down-payment at disbursement and to amortize the remaining funded amount through the instalment plan.
+
+## Calculations and representative example
+The following representative calculation demonstrates how a down-payment interacts with a fixed principal instalment pattern in a 1000 principal loan with a 25% down-payment.
+
+<div class="param-grid">
+ <div class="param-card"><span class="param-label">Principal</span><span class="param-value">1000</span></div>
+ <div class="param-card"><span class="param-label">Down-payment</span><span class="param-value">250 (25%)</span></div>
+ <div class="param-card"><span class="param-label">Disbursed to borrower</span><span class="param-value">750</span></div>
+ <div class="param-card"><span class="param-label">Installments</span><span class="param-value">4</span></div>
+ <div class="param-card"><span class="param-label">Each installment</span><span class="param-value">250</span></div>
+</div>
+
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> <code>Down-payment = Principal × DP%</code></div>
+ <div class="calc-step"><strong>Substitution:</strong> <code>1000 × 0.25 = 250</code></div>
+ <div class="calc-step calc-result"><strong>Result:</strong> <code>Down-payment 250; Financed amount 750; Installments: 4 × 250</code></div></div>
+
+> Important: In the presented example, the down-payment is 25% of the loan principal (250 on a 1000 principal). Four equal instalments of 250 are shown in the representative schedule, illustrating how the financed portion is amortized over the configured instalments. The exact distribution and timing of instalments can vary by product configuration and disbursement pattern; the key principle is that the down-payment is collected at disbursement and the remaining funded amount is amortized through the instalment plan.
+
+### Disbursement amount distribution scenarios (highlights)
+The system supports flexible distribution of disbursement amounts across installments when multiple disbursements occur or when repayment timing changes. The reference scenarios illustrate how second disbursements can be allocated to remaining installments under certain conditions.
+- When a second repayment arrives before all installments are paid, the system evaluates how to allocate the additional disbursement amount across the remaining installments.
+- In observed patterns, if the first instalment has been fully paid, the second disbursement amount may be allocated to the last two or the last three remaining installments, depending on the scenario.
+- A representative use case demonstrates allocation of a second disbursement amount to the remaining installments when the first instalment has been fully paid, and it shows variations where the second disbursement is allocated to different counts of remaining installments.
+
+#### Practical notes on backdated disbursement use cases
+The feature supports backdated disbursement scenarios to follows business rules for repayment start dates. The main backdated use cases include:
+- When the repayment start date is set to the disbursement date, the repayment schedule begins in alignment with the disbursement, and the down-payment is recorded at disbursement.
+- When the repayment start date is set to the loan submitted state date, the repayment timeline is anchored to the loan submission state rather than the immediate disbursement date.
+- Other documented variations in the backdated use cases adjust the alignment of the repayment start with the loan lifecycle state while preserving the down-payment collection at the disbursement event.
+
+### Calculation references (for operations and servicing)
+- Calculation base: Down-payment amount = Principal × DP% (example: 1000 × 0.25 = 250).
+- Remaining financed amount: Principal − Down-payment. In the representative example, 1000 − 250 = 750. The instalment schedule is shown to illustrate how the financed portion amortizes over the configured installments.
+- Instalment pattern: In the single-disbursement representative scenario, the example shows four equal instalments; the exact timing and number of instalments can vary by product configuration.
+- Backdated and distribution behavior: When second disbursements occur, the allocation of the new funds to remaining installments is governed by observed patterns in the use-case materials. Key takeaways are that (a) second disbursements can be allocated to remaining installments and (b) if an instalment has already been fully paid, the second disbursement may be allocated to the trailing installments.
+
+## Worked examples and patterns (selected scenarios)
+The reference data contains multiple scenarios to illustrate how the down-payment interacts with one or more disbursements and with different repayment timelines. The most common patterns include:
+- Single D normal flow: A 1000 principal with a 25% down-payment (250); four equal instalments of 250; no interest or fees in the example; the down-payment is collected at disbursement.
+- Single D charge flow: Similar to the normal flow but with an upfront charge affecting the instalment calculation.
+- Double D normal: Two disbursements across two dates with the same 25% down-payment pattern, showing how instalments are structured across two disbursement events.
+- Double D same day / other double-disbursement variants: Two disbursements on the same day or on different dates, illustrating how the schedule adapts to multiple funding events.
+- Overpayment and partial/full scenarios: The reference set includes scenarios where the borrower overpays or where second disbursement amounts are applied to later installments as the first ones are paid.
+- Backdated use cases: Scenarios where repayment start dates are tied to disbursement dates or loan submission states, illustrating how the schedule is aligned when the lifecycle timing changes.
+
+> Note: The exact figures and dates vary by scenario. The representative pattern shown above demonstrates the fundamental interaction: a down-payment is collected at disbursement, the financed amount is amortized through the instalment plan, and subsequent disbursements are allocated to remaining installments under defined rules.
+
+### Summary of what to verify in operations
+- Confirm that the loan product is configured with a down-payment policy for disbursements and that the configured value is applied at the time of disbursement.
+- Verify that the repayment schedule reflects the down-payment as a DP component (DP Principal) and that the remaining financed amount is amortized across the configured instalments.
+- When multiple disbursements occur, check that any additional funded amounts are allocated according to the observed distribution rules in the system (e.g., allocation to remaining installments when applicable).
+- In backdated use cases, verify the repayment start date follows the intended lifecycle event (disbursement date or loan submission date) and that the down-payment collection remains on disbursement as specified by policy.
+
+This page presents the verified behavior of the Same day Instalment & Disbursement (down-payment) feature, including its purpose, user benefits, configuration steps, representative calculations, and the pattern of installment distributions across common scenarios. It is intended to guide operations staff, loan officers, branch managers, and credit agents through configuring and using the feature in day-to-day loan disbursement and servicing workflows.

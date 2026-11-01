@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Trial Balance report changes</h1>
+  This document describes the verified behavioral changes to the Trial Balance reporting surface in support of reflecting interest-related activity. The enhancement focuses on incorporating interest accruals, interest postings, waivers, and refunds into the daily trial balance and associated reports. It also addresses asset ownership visibility for interest activity and adds detail lines for interest installment products to reflect the correct asset owner details. The aim is to improve reconciliation and daily posting capabilities for Credit Accounting Managers and investors.
+
+<h3>Scope of change</h3>
+
+The reference material specifies high-level reporting outcomes without enumerating concrete code artifacts, API surfaces, database schemas, or service interfaces. , this document describes verified product behavior at a functional level, and notes where implementation details are not provided .
+<ul>
+<li>Primary focus: include interest activity in the Trial Balance and related daily accounting reports.</li>
+<li>Reports affected: daily Trial Balance and the Transaction Summary reports, with asset owner separation for interest activity and balances.</li>
+<li>Data detail: new detail lines for interest installment products carry the correct asset owner details.</li>
+<li>Investor-centric view: daily accounting reports reflect interest activity by investor to support reconciliation and posting workflows.</li>
+<li>API, schema, and internal component changes: not specified in the reference material. No concrete changes to API contracts, database schemas, or specific class names are described here.</li>
+
+</ul>
+<h3>Verified behavioral changes</h3>
+
+The reference describes the following behavioral changes as part of the enhancement:
+<ul>
+<li>Interest activity is included in the trial balance calculations. This encompasses interest accruals as they occur within the reporting horizon, and interest postings as entries are settled in the ledger.</li>
+<li>Interest waivers and interest refunds are reflected in the trial balance, so that the daily DR/CR activity accounts for reductions or restorations of previously recognized interest amounts.</li>
+<li>Daily reports contain all interest-related activity, enabling reconciliation and daily posting workflows. The reports aggregate both balances and daily DR/CR lines to include interest accruals, postings, waivers, and refunds.</li>
+<li>Asset ownership visibility is improved for interest-related activity. New detail lines are created for interest installment products to reflect the asset owner details accurately.</li>
+<li>Reporting surfaces (trial balance and transaction summaries) exhibit asset owner separation for interest-related activity and balances. This separation verifies that interest-related movements can be traced to the standard asset owner.</li>
+
+</ul>
+<h3>Conceptual data flow and processing</h3>
+
+The following flow describes how interest activity surfaces in the Trial Balance reporting, from capture to output, without asserting internal component names or implementation specifics:
+<ul>
+<li>Interest-related transactions are generated and recorded in the general ledger as accruals, postings, waivers, and refunds.</li>
+<li>The Trial Balance generation process ingests these interest-related entries alongside existing principal and other ledger activity for the period.</li>
+<li>Calculations aggregate daily DR/CR activity, incorporating interest accruals and postings, and adjust for waivers and refunds .</li>
+<li>Output reports (Trial Balance and Transaction Summary) present balances and activity, with explicit asset owner details where relevant, and with dedicated lines for interest installment products.</li>
+<li>Investor-focused views in the daily accounting reports aggregate interest activity by investor, enabling reconciliations and postings at the investor level.</li>
+
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Interest Transactions: accruals, postings, waivers, refunds] --> B[General Ledger / Interest-related entries]
+ B --> C[Trial Balance Generator]
+ C --> D[Trial Balance Output with asset owner details]
+ C --> E[Transaction Summary Output]
+ D --> F[Daily Investor-level Reports]
+ E --> F]]></ac:plain-text-body></ac:structured-macro> 
+
+<h3>Data integrity and calculations: expectations without concrete numerics</h3>
+
+There are no numeric examples in the reference material. However, the described behavior implies that:
+<ul>
+<li>Opening and closing balances in each period should reflect all interest-related activity processed during that period, including accruals and postings, with waivers and refunds adjusting the DR/CR totals .</li>
+<li>The daily DR/CR activity totals for interest must reconcile with posted interest amounts and any adjustments due to waivers or refunds.</li>
+<li>Asset owner details must be accurate for all interest-related entries, and the separation by asset owner must be preserved in both the Trial Balance and the Transaction Summary reports.</li>
+
+</ul>
+<h3>Implementation notes and constraints</h3>
+
+Because the reference does not specify concrete implementation artifacts, this document does not enumerate component names, service interfaces, or database schema changes. The following points reflect what is known and what remains unspecified:
+<ul>
+<li>No API surface changes are described in the reference. If APIs exist for retrieving Trial Balance data or related reports, their current use for interest-related transactions is described at a functional level, not via contract-level changes.</li>
+<li>No DDL or database migration details are provided. Therefore, no schema changes are documented here.</li>
+<li>No specific class, package, or module modifications are listed. supports a reporting-visible change, not a disclosed code-level refactor.</li>
+
+</ul>
+<h3>Acceptance criteria and next steps</h3>
+
+The reference notes that acceptance criteria require further discussion with product stakeholders to delineate use cases. Practically, validation should cover:
+<ul>
+<li>Correct inclusion of interest accruals, postings, waivers, and refunds in daily Trial Balance and Transaction Summary outputs.</li>
+<li>Asset owner separation on all interest-related activity in trial balance and transaction summaries.</li>
+<li>New detail lines for interest installment products reflect the correct asset owner details.</li>
+<li>Investor-level reporting of interest activity follows reconciliation and posting processes.</li>
+
+</ul>
+<p>Since the reference does not provide concrete acceptance tests, these items should be refined with stakeholders and translated into verifiable test cases in the project’s quality regime.</p>
+
+<h3>Summary of impact</h3>
+
+This enhancement broadens the Trial Balance reporting surface to incorporate complete interest-related activity, improves asset-owner traceability for interest movements, and supports investor-focused reconciliation workflows. The changes described here are anchored in the verified behavioral expectations from the reference material, with implementation specifics and data-model changes left to follow-up discussions and detailed design work with product and engineering.
+</ac:document>

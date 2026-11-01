@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Interest bearing Progressive Loan performance improvements</h1>
+  <h3>Precise technical summary</h3>
+The refactor targets the architectural erosion caused by a monolithic Loan entity that currently comprises 7200+ lines of logic. The primary objective is to extract business logic from the Loan entity into distinct, well-scoped components—namely services, assemblers, and mappers—so the entity retains only its fields, accessors, and lightweight state manipulation methods. This separation is intended to reduce deserialization overhead, lessen the number of cross-entity fetches, and demystify the processing pipeline by decoupling responsibilities. The work spans the broader platform boundaries of the progressive loan module and its interaction with the core loan subsystem, while preserving existing behavior and external contracts. No new behavior is introduced as part of this refactor; the intent is isolation and reuse rather than feature augmentation.
+
+Among the guiding module boundaries, the effort contemplates clearly delineating responsibilities across the following conceptual areas:
+<ul>
+<li>fineract-loan: the core loan domain kept lean at the entity level.</li>
+<li>fineract-progressive-loan: the progressive loan-specific logic and orchestrations that will be implemented through services, assemblers, and mappers rather than embedded in the Loan entity.</li>
+
+</ul>
+<p>The refactor follows an ongoing design principle: move business logic out of the persistence/rich-domain object into stateless services that encapsulate validation, state transitions, actions on loans, and financial calculations where standard, with mapping layers translating between domain and API data transfer objects.</p>
+
+<h3>Execution lifecycle and state machine</h3>
+ describes a dedicated component, the loan lifecycle state machine, responsible for governing transitions in the loan lifecycle. While the reference does not enumerate concrete states or triggers, the intended outcome of the refactor is to keep the Loan entity free of lifecycle logic and to centralize lifecycle transitions within the state machine and related services.
+
+<p>If and when state names and triggers are enumerated in the future, they will be documented separately with their exact transitions and preconditions. In the current reference, the stateful behavior remains centralized in the lifecycle state machine, with the Loan entity kept lightweight and focused on state storage.</p>
+
+<h3>Architecture and responsibilities after refactor</h3>
+The proposed target architecture splits concerns to improve readability, maintainability, and reuse. The Loan entity should contain only its fields, getters, setters, and lightweight state-manipulation methods. All substantive business logic moves to specialized components, including but not limited to:
+<ul>
+<li>Validators: enforce invariants and preconditions for loan creation, modification, and actions.</li>
+<li>Creation and modification: encapsulate the rules that govern loan instantiation and updates.</li>
+<li>State changes: manage transitions validated by the lifecycle/state machine layer.</li>
+<li>Actions on loan: encapsulate operations such as disbursement, repayment, recovery, waive actions, and related side effects.</li>
+<li>Disbursement related actions: sequence and validation specific to fund release.</li>
+<li>Utility actions: generic helpers used by multiple workflows.</li>
+<li>Loan Transaction related actions: handling of postings, reversals, and auditing hooks.</li>
+<li>Loan repayment schedule related actions: generation, adjustments, and recalculations of the repayment timetable.</li>
+<li>Loan balance related actions: balance maintenance and reconciliation hooks.</li>
+<li>Loan offices related actions: geographic or organizational associations that may impact processing rules.</li>
+<li>Loan accounting related actions: interfacing with accounting entries, postings, and GL integration when available.</li>
+<li>Loan charge related actions: management of interest, fees, and other charges.</li>
+<li>Interest recalculation related actions: recalculation logic isolated from the core entity.</li>
+<li>Loan mapping related actions: transformations between domain and API representations.</li>
+<li>Guarantor related actions: handling guarantor data and related validations.</li>
+<li>Loan reschedule related actions: actions and validations for rescheduling loans.</li>
+<li>Delinquency related actions: delinquency tracking and related triggers.</li>
+<li>Loan mapping actions: dedicated mapping logic for converting loan domain data to external representations.</li>
+
+</ul>
+<p>This decomposition is intended to produce small, reusable, well-defined components that can be exercised independently and tested in isolation, reducing the cognitive load of the Loan entity and enabling easier maintenance and testing.</p>
+
+<h3>Acceptance criteria (verification-oriented)</h3>
+The refactor is considered complete when the following conditions are met:
+<ul>
+<li>The Loan entity contains only its fields, getters, setters, and basic state-manipulation methods.</li>
+<li>No helper classes remain embedded within the Loan entity; helpers and complex logic are moved to dedicated services, assemblers, or mappers.</li>
+<li>The business logic formerly embedded in the Loan entity is extracted into services, assemblers, and mappers.</li>
+<li>Complex methods and business logic are split into smaller, well-defined pieces that can be reused across workflows.</li>
+<li>The resulting architecture provides clear separation of concerns, enabling easier testing, reuse, and future extensions without changing external behavior.</li>
+
+</ul>
+<h3>Traceable decomposition plan (high-level)</h3>
+The refactor contemplates a progressive decomposition into the following cross-cutting areas, each with its own focused responsibilities:
+<ul>
+<li>Validators</li>
+<li>Creation and modification</li>
+<li>State changes</li>
+<li>Actions on loan</li>
+<li>Disbursement related actions</li>
+<li>Utility actions</li>
+<li>Loan Transaction related actions</li>
+<li>Loan repayment schedule related actions</li>
+<li>Loan balance related actions</li>
+<li>Loan offices related actions</li>
+<li>Loan accounting related actions</li>
+<li>Loan charge related actions</li>
+<li>Interest recalculation related actions</li>
+<li>Loan mapping related actions</li>
+<li>Guarantor related actions</li>
+<li>Loan reschedule related actions</li>
+<li>Delinquency related actions</li>
+<li>Loan mapping actions</li>
+
+</ul>
+<p>This organization aims to establish a reusable set of building blocks that can be composed to implement loan workflows without entangling domain entity state with business logic.</p>
+
+<h3>Diagram: high-level architecture of the refactor</h3>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ LoanEntity["Loan Entity (lightweight)"] -->|data, basic state| LoanService
+ LoanService --> AssemblersMappers["Assemblers &amp; Mappers"]
+ LoanLifecycle["Loan Lifecycle State Machine"] --> LoanService
+ AssemblersMappers --> LoanEntity
+ style LoanEntity fill:#eef6ff,stroke:#0b4a8a]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Why this matters for performance and maintainability</h3>
+The current consolidation of extensive logic within the Loan entity increases deserialization cost and leads to repeated, intertwined evaluation paths that can trigger across many code paths. By isolating business logic into dedicated services and mapping layers, the platform reduces the amount of logic executed directly within the entity during serialization/deserialization and reduces the need to fetch and recombine data from the entity for every operation. The reorganization enhances readability and testability, enabling more focused unit and integration tests for each component and facilitating easier future optimizations.
+
+<h3>Notes on behavior, validation, and accounting</h3>
+<ul>
+<li>No new behavior is introduced by this refactor; the effort concentrates on structural changes that preserve existing externally observable behavior.</li>
+<li>The loan lifecycle continues to be governed by the dedicated state machine component, which orchestrates transitions based on explicit triggers and validations (states and triggers are not enumerated ).</li>
+<li>Validation guards, invariant checks, and error handling are expected to be centralized within Validator components and related services as part of the decomposition, rather than embedded in the Loan entity.</li>
+<li>Where accounting interactions exist, dedicated Loan accounting related actions are introduced to mediate journal postings and GL integration in a structured manner, separate from entity state management.</li>
+
+</ul>
+<h3>How to approach verification in a real implementation (alignment with )</h3>
+<ul>
+<li>Confirm that the Loan entity exposes only its data fields, getters, and setters after refactor.</li>
+<li>Validate that all previously observable behavior remains unchanged from the caller’s perspective by running existing integration and end-to-end tests.</li>
+<li>Verify that the new components (validators, actions, schedule logic, etc.) can be exercised independently and can be swapped or extended without touching the Loan entity.</li>
+<li>verify that the loan lifecycle transitions remain driven by the loan lifecycle state machine, with services consuming state changes via well-defined interfaces.</li>
+
+</ul>
+This page codifies the reference-material-driven plan for achieving performance and maintainability improvements through a disciplined, service- and mapper-first refactor of the Interest bearing Progressive Loan domain. It documents the intended architectural boundaries, the target decomposition, and the acceptance criteria that signal completion, while preserving established behavior and external contracts.
+</ac:document>

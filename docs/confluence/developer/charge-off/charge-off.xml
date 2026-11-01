@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Charge-off</h1>
+  Charge-off represents the formal accounting and operational state applied when a loan churns and the collection of the outstanding amount is considered not-likely. In Pepper-Soup, charge-off loans are treated as frozen, with no expectation of further transactions. This page documents the verified behavior, including the event definition, repayment strategies, scheduling implications, and the accounting mappings that support charge-off processing across the fineract loan module boundaries (notably fineract-loan and related components).
+
+<h3>Scope and component boundaries</h3>
+
+<p>Charge-off is implemented as a feature within the loan processing stack, interacting with the loan lifecycle, repayment scheduling, and accounting mappings. The behavior described here reflects the confirmed design: when a loan is charged off, it is effectively frozen and is not expected to accumulate further installment-level transactions unless recovery or post-charge-off adjustments occur. The primary execution context for charge-off depends on the loan transaction workflows and the repayment strategy governance that drives how payments and charges are allocated to the repayment schedule.</p>
+
+<h3>Charge-off event definition</h3>
+
+Charge-off is modeled as an event that originates from loan transactions. The verified event definition is as follows:
+<ul>
+<li>Event class: LoanTransactionBusinessEvent (a subclass/derivative used for loan-related business events)</li>
+<li>Trigger: Whenever a charge-off happens, the event shall be triggered.</li>
+<li>Payload extension (beyond the standard event data):</li>
+<li>unpaidCharges: a list of UnpaidCharge objects. The list contains unpaid charges grouped by charge name. If multiple charges are unpaid on the same loan, only a single UnpaidCharge object is present in the list for that charge group.</li>
+<li>unpaidCharges.chargeId: The identifier of the charge (long).</li>
+<li>unpaidCharges.chargeName: The name of the unpaid charge group (string).</li>
+<li>unpaidCharges.outstandingAmount: The summed amount outstanding for all unpaid charges in that group (BigDecimal).</li>
+
+</ul>
+<p>This payload augments the standard transaction data with the explicit view of what remains unpaid at the moment charge-off is triggered, enabling downstream accounting and reporting to reflect the outstanding charge groups.</p>
+
+<h4>Diagram: charge-off event flow</h4>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Charge-off occurs] --> B[Emit LoanTransactionBusinessEvent]
+ B --> C{Payload contains unpaidCharges}
+ C -->|Yes| D[Include unpaidCharges in event data]
+ C -->|No| E[Proceed with standard processing]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Time-respective repayment strategy (TRS)</h3>
+
+TRS governs how payments and charges are allocated to the repayment schedule, with explicit emphasis on the order of application and the handling of reverse-replay when charges or payments are added after the fact. The verified rules include:
+<ul>
+<li>Goal: Accurate accounting of income sources (fees and other charged amounts) is critical for financial reporting. Fees added to a loan are expected to be paid by payments created after the fee due date. This requirement applies to any other income that participates in the same repayment distribution mechanism.</li>
+<li>Current behavior (repayment schedule and distribution):</li>
+<li>For transactions, the system uses the transaction date as the anchor for allocation.</li>
+<li>For charges, the system uses the charge due date as the anchor (e.g., specific due date charges use the due date; disbursement fees use the disbursal date; installment fees use the installment due date; overdue penalties use the date from when added).</li>
+<li>Repayment strategy ordering: When a repayment transaction is executed, the distribution follows the target repayment installment according to the configured strategy. The example order given is </li>
+<li>Penalty, Fee, Interest, Principal, unless the active strategy specifies otherwise. The described propagation emphasizes that the allocation respects any unpaid balances in the installment before applying to principal or other components.</li>
+<li>Reverse-replay logic: When a repayment transaction is executed or a charge is added, the system may reverse and replay affected transactions to verify the repayment schedule reflects the latest state. The replay process reconstructs installment balances from the first Disbursement, rebuilding balances according to the repayment strategy, and re-distributes repayments. If this reconstruction leads to mismatches for a modified transaction, the original transaction is reversed and a new transaction with the same properties but updated balances replaces it.</li>
+<li>Assignment of charges before replay: Charges are assigned to repayment installments before the transactions are reprocessed. If a new charge is added to an installment, the repayment transaction will be reverse-replayed and portions of the repayment may be allocated to pay that charge (see the discussion in the high-level design for repayment strategy).</li>
+
+</ul>
+<h4>New repayment strategy order (as documented)</h4>
+<ul>
+<li>Due charges</li>
+<li>In-advance principal</li>
+<li>Penalty</li>
+<li>Fee</li>
+<li>Interest</li>
+<li>Principal</li>
+
+</ul>
+<p>This order supports scenarios where charges become due and must be addressed before applying to in-advance principal or other income components.</p>
+
+<h4>Diagram: repayment strategy and reverse-replay flow</h4>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[sequenceDiagram
+ participant T as Transaction
+ participant C as Charge
+ participant R as RepaymentStrategy
+ T->>R: Execute repayment transaction
+ alt If there are due charges
+ R->>T: Allocate to due charges first
+ end
+ alt If new charges are added
+ Note over R: reverse-replay triggered
+ R->>T: Recalculate installment balances
+ end
+ C->>R: New charge added
+ R->>R: Pre-allocate charge to installments]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Post-charge-off accounting flows (high-level)</h3>
+
+Charge-off triggers a cascade of accounting mappings that move balances and reflect impairment or loss recognition according to the defined GL structures. The reference mappings describe two general categories for charge-off entries: Charge-off Fraud and Charge-off Non-Fraud, each with principal, interest, and fees components that map to associated asset, revenue, and liability accounts. The mappings are defined in the charge-off accounting entries templates, including the New Mapping fields to be introduced in product accounting mapping and dedicated GLs related to charge-off (GL Type). The accounting entries cover scenarios such as charge-off, repayments, penalties, fees, and related adjustments, including recoveries and goodwill adjustments. The accounting templates also distinguish between fraud and non-fraud variants when applicable.
+<ul>
+<li>Core mappings (representative, non-exhaustive):</li>
+<li>Principal portion and related movements typically involve Loans Receivable (Asset) and Charge-off expense or Credit Loss/Bad Debt (Expense) with related adjustments to the Loan Portfolio. Amounts may be tracked against the charge-off expense as the system recognizes impairment.</li>
+<li>Interest portion and related movements map to Interest income charge off (Income) and related receivables or interest-related accounts .</li>
+<li>Fees portion and related movements map to Fee Charge off (Income) and Fee Receivable (Asset) or related revenue accounts.</li>
+<li>Other categories include penalties, refunds, recoveries, and goodwill-related adjustments, with associated GLs including Suspense/Clearing accounts and Other Credit liability, among others.</li>
+<li>Longitudinal mapping across templates: The reference data provides multiple templates (Charge-off entries v2, v3, and PP accounting variants) that define which debit and credit accounts participate in each transaction category during charge-off, repayment, and post-charge-off movements. The templates collectively describe how the system balances debits and credits and how journal entries balance when both sides are present.</li>
+
+</ul>
+<h4>Key table: high-level GL mapping (representative entries)</h4>
+
+<div class="param-grid"><div class="param-card"><span class="param-label">GL Account (examples)</span><span class="param-value">112601, 112603, 145023, 245000</span></div><div class="param-card"><span class="param-label">Description</span><span class="param-value">Loans Receivable, Fee Receivable, Suspense/Clearing account, Other Credit liability</span></div><div class="param-card"><span class="param-label">GL Type</span><span class="param-value">Asset, Asset, Suspense/clearing account, Liability</span></div></div>
+<ul>
+<li>Core accounts and types (from the COA reference):</li>
+<li>112601 | Loans Receivable | Asset</li>
+<li>112603 | Fee Receivable | Asset</li>
+<li>145023 | Suspense/Clearing account | Suspense/clearing account</li>
+<li>245000 | Other Credit liability | Liability</li>
+<li>744003 | Principal bal adjustment | Expense</li>
+<li>404001 | Interest income charge off | Income</li>
+<li>404007 | Fee Income | Income</li>
+<li>404011 | Fee Income | Income</li>
+<li>404000 | Interest income | Income</li>
+<li>145800 | Other receivables | Asset</li>
+<li>404008 | Fee Charge off | Income</li>
+<li>744008 | recoveries | Expense</li>
+<li>744007 | Credit Loss/Bad Debt | Expense</li>
+<li>744037 | Credit Loss/Bad Debt Fraud | Expense</li>
+
+</ul>
+<h4>PP accounting templates (overview)</h4>
+<ul>
+<li>PP full accounting and PP Standard accounting templates describe the matching of transaction types to allocation types and cash status, and define the debit/credit flows to GL accounts during charge-off, repayments, and related movements. The templates enumerate mappings for cases such as Disbursement (Principal), Transaction Refund/Provisioned Credit (Interest - Repayment, Principal Payment, Unallocated Credit), and charges against repayments, including cases where cash is No Cash (Good Will, Late Fee Waivers, and related scenarios) depending on the scenario.</li>
+
+</ul>
+<blockquote><p>Integrity note: When numerical is available, all periods’ opening balances must equal the previous period’s closing balances, and journal entries must balance (debits equal credits). Rounding must follow the documented conventions (e.g., HALF_UP or HALF_EVEN) as evidenced by the source material. Where values are not provided in a given narrative, the documented behavior is described at the level of the rule, not as a numerical example.</p></blockquote>
+
+<h3>Calculation references and example scenarios</h3>
+
+To illustrate the flow of post-charge-off processing and the interaction between repayments, charges, and postings, the reference data includes structured scenario sets labeled as S-1, S-2, S-3, and S-4, as well as a post-charge-off progression. These scenarios show how charges and repayments interact with the payoff schedule, how reverse-replay can be triggered, and how new repayment strategies affect the allocation of funds.
+<ul>
+<li>S-1 Scheduled Pmt Rev and S-2 Realtime Pmt Rev demonstrate how a loan with a 1000 disbursement evolves through charges, repayments, and a charge-off event, including the impact of repayments and reversals on the outstanding balance and the charge-off entry. The example emphasizes the interaction between repayment reversal, charge-off reversal, and replay when a fraud charge-off is introduced.</li>
+<li>S-3 Auto Pay Pmt Rev documents a similar sequence in an auto-pay context, illustrating how scheduled and auto-pay repayments integrate with charges and subsequent charge-off events.</li>
+<li>S-4 OCA Repayment Rev focuses on how an aligned set of repayments relates to OCA (Other Credit Amount) and charge-off-related movements, including reversals and charge-off replay implications.</li>
+<li>The “Post charge off scenarios” narrative demonstrates how different sequences in terms of the timing of repayments and charges (due vs in advance) affect the allocation and balance across the installment, including the possibility of new buckets like “Due charges” and “In advance principal.”</li>
+
+</ul>
+<blockquote><p>Note: The scenarios above are presented to illustrate verified behavior around the interaction of repayments, charges, and post-charge-off adjustments. They reflect the documented patterns in the reference data and are used to explain the operational implications of the Time respective repayment strategy.</p></blockquote>
+
+<h3>Edge cases and validation guards</h3>
+<ul>
+<li>Validation guards around charge-off typically involve so that the unpaidCharges payload reflects the actual outstanding amounts per charge group at the moment of trigger. The event payload is designed to convey this information for downstream accounting and reporting.</li>
+<li>Journal entries associated with charge-off should balance when debit and credit sides are present, and any adjustments (recoveries, goodwill adjustments, penalties) should be reflected in both the asset and revenue/expense sides according to the mapped GLs.</li>
+<li>Rounding and precision must follow the platform conventions, with careful handling of small residuals to preserve balance integrity across postings.</li>
+<li>When a new repayment or a new charge is added after a discharge, the reverse-replay process may recalculate the installment balances and re-distribute the repayment according to the active TRS. In some scenarios, a repayment may not trigger a reverse-replay if it does not affect the balance in the context of the current charge-off state.</li>
+
+</ul>
+<h3>Summary of operational impact</h3>
+<ul>
+<li>A charge-off marks the loan as frozen, halting expected transactional activity beyond recovery dynamics unless post-charge-off adjustments or recoveries occur.</li>
+<li>The event-driven approach surfaces unpaid charges to downstream processes, enabling accurate impairment accounting and revenue recognition.</li>
+<li>The Time respective repayment strategy enforces a disciplined allocation order, prioritizing due charges and in-advance principal before applying to penalties, fees, and interest, with reverse-replay verifying consistency as the schedule evolves.</li>
+<li>The accounting mappings define how each component of a charge-off (principal, interest, fees, penalties, recoveries) is posted to GL accounts, and the COA provides the reference accounts and their types for these postings.</li>
+
+</ul>
+If you need a compact summary of the core accounting postures for a specific charge-off scenario (e.g., “Fraud vs Non-Fraud” or a particular combination of principal and interest components), I can extract a focused, ready-to-publish excerpt based on the exact mapping set from the reference data.
+</ac:document>

@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Workshop between Mifos and PP team for long-term relationship-building and collaboration</h1>
+  The Pepper-Soup program emphasizes sustained collaboration with partner teams. This workshop between Mifos and the PP team is structured to establish a durable, trust-based relationship, align on shared objectives, and define a governance and collaboration model that can scale over time. The session does not enact production changes or platform deployments; rather, it creates the foundation for coordinated joint work and sets the stage for future initiatives. The output is a collaborative charter, a high-level roadmap, and agreed working practices that participants can adopt in subsequent engagements.
+
+<h3>Objectives</h3>
+<ul>
+<li>Build mutual understanding of strategic goals and capabilities across Mifos and PP teams. </li>
+<li>Establish a governance framework for decision rights, escalation paths, and information sharing. </li>
+<li>Map capabilities and identify joint initiatives with high impact and feasible scope. </li>
+<li>Define success criteria, metrics, and a cadence for reviews to verify continuous alignment. </li>
+<li>Address data handling, security, and confidentiality considerations relevant to future collaborations. </li>
+<li>Agree on the process for integrating future external-system work, including how interaction contracts would be defined and maintained.</li>
+
+</ul>
+<h3>Scope and boundaries</h3>
+<ul>
+<li>In-scope: planning and alignment activities that establish how the two teams will collaborate, including discovery of joint initiatives, capability mapping, risk assessment, and governance definitions. </li>
+<li>Out-of-scope: production deployments, detailed technical designs, or implementation workstreams. Detailed design and development will follow in separate engagements once collaboration is formally chartered.</li>
+
+</ul>
+<h3>Participants and roles</h3>
+<ul>
+<li>Mifos representatives: technical and product stakeholders responsible for articulating strategic objectives, capabilities, and risk considerations.</li>
+<li>PP team representatives: technical lead, product owner, and integration specialists responsible for partnering on feasibility, dependencies, and execution planning.</li>
+<li>Facilitator: neutral moderator responsible for guiding discussions, documenting decisions, and verifying productive collaboration.</li>
+<li>Observers: any additional stakeholders may participate in a limited capacity to provide context, as agreed in advance.</li>
+
+</ul>
+<h3>Interaction contracts and external-system considerations</h3>
+
+<p>If future work involves integration with external systems or ledger postings, the participants will define an interaction contract during subsequent engagements. The contract will address data payload semantics, sequencing, error handling, and reconciliation with the ledger . Any shared data handling will respect applicable privacy and security requirements, and access controls will be agreed as part of the collaboration charter.</p>
+
+<h3>Process and sequencing</h3>
+
+1) Preparation
+<ul>
+<li>Align on the workshop’s objectives, success criteria, and scope. </li>
+<li>Gather and circulate pre-reads, including high-level business goals, potential collaboration areas, and any constraints or compliance considerations. </li>
+<li>Establish a lightweight success framework and a draft agenda for the workshop.</li>
+
+</ul>
+2) Workshop execution
+<ul>
+<li>Conduct joint sessions to clarify strategic objectives, map capabilities, and explore candidate joint initiatives. </li>
+<li>Identify dependencies, risks, and cross-team responsibilities. </li>
+<li>Agree on governance structures, decision rights, escalation paths, and information-sharing principles. </li>
+<li>Produce a working draft of the collaboration charter and a high-level roadmap for follow-up activities.</li>
+
+</ul>
+3) Post-workshop artifacts
+<ul>
+<li>Formalize decisions in a collaboration charter and capture actions, owners, and due dates. </li>
+<li>Create a joint roadmap outlining prioritized initiatives, milestones, and review cadences. </li>
+<li>Establish a shared artifact repository or workspace for ongoing updates and decisions, with access controls defined.</li>
+
+</ul>
+4) Follow-up and cadence
+<ul>
+<li>Schedule regular collaboration reviews to assess progress against the roadmap and adapt as necessary. </li>
+<li>Maintain open channels for ad-hoc questions, issue escalation, and knowledge transfer between teams.</li>
+
+</ul>
+<h3>Artifacts and governance</h3>
+
+Deliverables from the workshop are intended to include:
+<ul>
+<li>A collaboration charter that codifies goals, governance, and working practices.</li>
+<li>A joint roadmap outlining prioritized initiatives, ownership, and timeframes.</li>
+<li>A risk register capturing key concerns and mitigation strategies.</li>
+<li>Data-sharing guidelines and security considerations relevant to future joint work.</li>
+<li>An agreed repository or workspace for ongoing artifact storage and versioning.</li>
+
+</ul>
+<p>Governance focuses on clear decision rights, escalation procedures, and a sustainable operating rhythm that avoids duplication of effort and minimizes friction in future engagements.</p>
+
+<h3>Data, security, and confidentiality</h3>
+
+<p>Participants will treat all workshop materials and any subsequently shared data as confidential. Any sharing of sensitive information will comply with applicable privacy and security requirements and be governed by the collaboration charter. Access to shared artifacts will be restricted to approved participants and maintained in a controlled workspace.</p>
+
+<h3>Risks and mitigations</h3>
+<ul>
+<li>Misalignment of strategic objectives: address via explicit objective articulation and a shared success framework during the workshop.</li>
+<li>Scope creep or drift in priorities: mitigate by locking a draft collaboration charter and a prioritized roadmap with owners and due dates.</li>
+<li>Insufficient stakeholder engagement: verify representation from both teams in key decision points and follow-up reviews.</li>
+<li>Information-security concerns: apply data-handling guidelines and access controls to any shared artifacts.</li>
+
+</ul>
+<h3>Success criteria and measurement</h3>
+<ul>
+<li>Clarity of joint objectives and alignment on collaboration model as evidenced by the collaboration charter. </li>
+<li>Agreement on a prioritized, actionable joint roadmap with owners and milestones. </li>
+<li>Defined governance, including decision rights and escalation paths, with documented processes. </li>
+<li>Establishment of a reusable collaboration workspace and agreed data-sharing guidelines. </li>
+<li>Positive feedback from participants on clarity of roles, expectations, and working relationships.</li>
+
+</ul>
+<h3>Visual overview (workflow)</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Preparation] --> B[Workshop Execution]
+ B --> C[Post-workshop Artifacts]
+ C --> D[Follow-up &amp; Cadence]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Glossary</h3>
+<ul>
+<li>Collaboration charter: A formal document that codifies the purpose, governance, principles, and working practices for a long-term partnership.</li>
+<li>Joint roadmap: A prioritized plan detailing shared initiatives, owners, milestones, and review points.</li>
+<li>Interaction contract: A future agreement describing data formats, sequencing, error handling, and reconciliation for any external-system integrations.</li>
+
+</ul>
+This publication presents the intended process for establishing a durable, cooperative relationship between Mifos and the PP team. It describes what the workshop aims to achieve, how the collaboration will be governed, and how artifacts and follow-ups will be managed to sustain productive, long-term engagement. It emphasizes clarity, disciplined governance, and secure, structured data handling as foundations for future joint work.
+</ac:document>

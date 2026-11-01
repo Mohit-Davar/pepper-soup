@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Scoping &amp; Planning for Pay in 3 and Pay in 4 rollout</h1>
+  This page documents the scoping and planning work item for the Pay in 3 and Pay in 4 rollout within the Pepper-Soup BNPL domain. It is targeted at backend Java engineers, integrators, and Fineract contributors who will contribute to subsequent design and implementation. Reflecting the reference specification, this artifact focuses on scoping activities and intentionally excludes implementation details. The deliverables produced by this work item serve as the boundary definition and planning basis for the rollout, guiding later design, development, and integration work.
+
+<h3>Objectives</h3>
+<ul>
+<li>Establish clear scope boundaries for the Pay in 3 and Pay in 4 rollout, including what is in scope and what lies outside the current planning window. </li>
+<li>Align the rollout with the existing BNPL architecture’s principles and governance, verifying consistency with current strategy and standards.</li>
+<li>Identify high-level interfaces, touchpoints, and data considerations with BNPL components that will be impacted by the rollout, without specifying implementation artifacts.</li>
+<li>Prepare a plan for subsequent design and implementation phases, including major milestones, risk assessment, and milestone criteria.</li>
+<li>Define acceptance criteria for the scoping phase to allows formal sign-off and a smooth transition to design activities.</li>
+
+</ul>
+<h3>Scope</h3>
+Inclusions
+<ul>
+<li>Definition of Pay in 3 and Pay in 4 rollout boundaries and boundaries between adjacent BNPL capabilities.</li>
+<li>High-level requirements and non-functional considerations that influence design decisions (e.g., performance, reliability, monitoring, and observability at a planning level).</li>
+<li>Identification of interfaces and integration touchpoints with existing BNPL components, described at a high level rather than in implementation detail.</li>
+<li>Data impact considerations, policy constraints, and governance implications relevant to scoping.</li>
+<li>Risk assessment, constraints, and dependency mapping related to the rollout.</li>
+<li>Preliminary timeline, milestones, and resourcing considerations for planning purposes.</li>
+
+</ul>
+Exclusions
+<ul>
+<li>No implementation details, code changes, configuration specifics, or API contracts are included in this scoping artifact.</li>
+<li>No data migration steps, schema changes, or deployment plans are defined within this scope.</li>
+<li>No concrete test plans, acceptance criteria for production features, or operational runbooks are described here.</li>
+
+</ul>
+<h3>Architectural considerations (high level)</h3>
+The scoping activity will identify, at a high level, how Pay in 3 and Pay in 4 will relate to existing BNPL components. This includes recognizing where payment scheduling, installment calculations, risk assessment inputs, and accounting interactions may intersect with the rollout. Detailed interface contracts, data models, and precise sequencing will be defined in subsequent design work, guided by the scope boundaries established during this planning phase.
+
+<h3>Deliverables</h3>
+<ul>
+<li>Scoping document that captures objectives, boundaries, constraints, and high-level requirements for Pay in 3 and Pay in 4 rollout.</li>
+<li>Boundary definitions outlining what is included in the rollout and what is excluded from this planning phase.</li>
+<li>High-level dependency and risk register identifying key risks, mitigations, and external dependencies.</li>
+<li>Preliminary timeline with major milestones to guide subsequent design and implementation activities.</li>
+<li>Summary of anticipated interfaces and data considerations to inform future design work.</li>
+<li>Acceptance criteria for scoping completion, enabling formal sign-off and transition to design.</li>
+
+</ul>
+<h3>Milestones and timeline (high level)</h3>
+<ul>
+<li>Initiation and stakeholder alignment</li>
+<li>Boundary and scope definition completion</li>
+<li>Risk and dependency assessment completion</li>
+<li>Review and sign-off of scoping artifact</li>
+<li>Transition to design phase with documented inputs</li>
+
+</ul>
+<h3>Risks, constraints, and assumptions</h3>
+<ul>
+<li>Scope creep risk exists if stakeholder requirements are unclear or if parallel BNPL initiatives introduce overlapping capabilities. Clear boundary definitions and sign-off criteria mitigate this risk.</li>
+<li>Dependencies on other planning work items or external governance processes may affect the schedule. Early identification and regular synchronization reduce impact.</li>
+<li>Changes in BNPL policy or regulatory expectations could necessitate scope refinements during downstream design.</li>
+
+</ul>
+<h3>Dependencies</h3>
+<ul>
+<li>Alignment with other Pay in 3/4 planning activities and BNPL governance for consistency across the platform.</li>
+<li>Availability of stakeholder representatives for scope validation and sign-off.</li>
+
+</ul>
+<h3>Acceptance criteria for scoping completion</h3>
+<ul>
+<li>A formally approved scoping document that clearly defines scope, boundaries, and high-level requirements for Pay in 3 and Pay in 4 rollout.</li>
+<li>Documented risk register, dependency map, and preliminary timeline available for design teams.</li>
+<li>Sign-off from designated stakeholders indicating readiness to proceed to design and implementation phases.</li>
+
+</ul>
+<h3>Next steps</h3>
+<ul>
+<li>Initiate design phase with the scoping artifact as input.</li>
+<li>Develop high-level architecture principles and interface considerations to guide detailed design.</li>
+<li>Gather further requirements and, , refine non-functional targets to inform implementation planning.</li>
+
+</ul>
+<h3>Glossary (key terms)</h3>
+<ul>
+<li>Pay in 3 / Pay in 4: BNPL rollout capabilities enabling customers to split payments into three or four installments, respectively, as part of the Pepper-Soup BNPL offering.</li>
+<li>BNPL: Buy Now, Pay Later, a model that defers payment for purchases under defined terms.</li>
+<li>Scoping: The activity of defining the boundaries, objectives, constraints, and deliverables for a project or feature rollout, prior to design and implementation.</li></ul>
+
+</ac:document>

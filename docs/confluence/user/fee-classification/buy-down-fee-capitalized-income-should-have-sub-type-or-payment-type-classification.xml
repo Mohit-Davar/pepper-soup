@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Buy-Down Fee &amp; Capitalized Income Subtypes</h1>
+  This page documents the enhanced Buy-Down Fee and Capitalized Income capabilities, including optional classifications (subtypes) and the interaction with origination fees as a new, mappable fee type. The change allows configuring and selecting classifications when creating transactions, so users can capture more granular reporting and accounting for these special transaction types. The enhancements apply to the fee classification area under Fees and to transaction creation workflows for Buy-Down Fees, Capitalized Income, and the newly introduced origination fees at the product level.
+
+<h3>What changed and why it matters</h3>
+<ul>
+<li>Buy-Down fees and Capitalized Income transactions can now be assigned a sub-type (classification) at creation time. This allows finer categorization for reporting, allocation, and accounting purposes.</li>
+<li>A new origination fee concept is introduced at the product level. Origination fees are configured per loan product, mapped to the loan product, and added to the loan at disbursement on the disbursement date only. The origination fee amount is flat (user-entered) and affects the principal and amortization schedule.</li>
+<li>When capitalized income is recorded, the system uses a deferred income (Defered Income) mapping as part of the accounting flow. Amortization of capitalized income moves amounts from Defered Income to Income from Amortization over time, with special handling in the event of a charge-off.</li>
+<li>A validation rule constrains disbursements with origination fees against the approved amount: disbursement amount plus origination fees must be less than or equal to the approved amount.</li>
+
+</ul>
+<p>These changes impact day-to-day operations by making classifications visible and selectable during transaction creation, improving visibility into fee components, and aligning accounting treatment with the new fee structure.</p>
+
+<h3>Key concepts and terminology</h3>
+<ul>
+<li>Buy-Down Fee Subtypes: Optional classifications that you configure to categorize buy-down fee transactions consistently. When you create a Buy-Down Fee or Capitalized Income transaction, you may select a subtype to classify the transaction.</li>
+<li>Capitalized Income: A transaction type used to capture income that is capitalized to the loan (for example, fees that are treated as part of the loan balance and amortized over the loan term).</li>
+<li>Origination Fees: A new fee type introduced at the product level. Origination fees are added to the loan at disbursement and treated as part of the principal for amortization purposes. The amount is flat (entered by the user) and mapped to the loan product.</li>
+<li>Defered Income: A liability (GL) account used to track the deferred income associated with capitalized income until amortization recognizes the income in the period.</li>
+<li>Income from Amortization: An accounting line used to recognize amortized income (revenue) over time from the capitalized income/deferred income stream.</li>
+
+</ul>
+<p>These terms describe implemented behavior and mappings that you will observe in the user interface and in the accounting entries when using the enhanced feature set.</p>
+
+<h3>Configuration and compatibility considerations</h3>
+<ul>
+<li>Subtypes (classifications) for Buy-Down Fee and Capitalized Income are configured under Fees > Fee classification > Buy-Down Fee &amp; Capitalized Income Subtypes. Each subtype provides an optional classification for transactions created under these areas.</li>
+<li>Origination Fees: The new fee type must be defined at the product level and mapped to the loan product. The user enters the origination fee amount (flat) at disbursement time; the system adds the origination fee to the disbursement amount to form the base for the principal and for amortization.</li>
+<li>Disbursement validation: The disbursement amount plus origination fees must not exceed the approved amount. This constraint verifies that the total disbursed funds, inclusive of origination fees, remain within the approved limit.</li>
+<li>Accounting implications: The introduction of origination fees and capitalized income changes the standard posting paths. The following are the implemented mappings and flows (summarized):</li>
+<li>Capitalized Income: Debit Loan Portfolio (Loan Receivable); Credit Defered Income (Defered Income mapping).</li>
+<li>Capitalized Income Amortization: Debit Defered Income; Credit Income from Amortization (Interest/Fees Income).</li>
+<li>Capitalized Income Amortization in Charge-Off: Debit Defered Income; Credit Charge-Off Expense and Credit Loss (Bad Debt) related entries.</li>
+<li>Operational readiness: To use these features, update loan products to include Origination Fees and configure the requested Buy-Down Fee &amp; Capitalized Income Subtypes. Users must select the standard subtype when creating relevant transactions; if no subtype is selected, the transaction proceeds with the classification logic configured at the product level.</li>
+
+</ul>
+<blockquote><p>Note: A potential governance gap item exists regarding an Origination Fees Adjustment transaction type. Current documentation confirms the standard origination-fee flow and its allocation, but a separate Origination Fees Adjustment transaction type is listed as a potential future addition. This item is not part of verified behavior and should be treated as a待 القرار/possible future enhancement.</p></blockquote>
+
+<h3>How to use the new classifications and origination fees (operational workflow)</h3>
+
+1) Configure subtypes for Buy-Down Fee and Capitalized Income
+<ul>
+<li>Navigate to Fees &amp; Fee classification > Buy-Down Fee &amp; Capitalized Income Subtypes.</li>
+<li>Create or edit subtypes to reflect the classifications you want to use for these transactions. Each subtype represents a distinct category used during transaction creation.</li>
+<li>Save the subtype definitions. These classifications will be available when creating Buy-Down Fee and Capitalized Income transactions.</li>
+
+</ul>
+2) allows and map origination fees at the loan product level
+<ul>
+<li>Open the loan product definition that will use origination fees.</li>
+<li>allows the new fee type Origination Fees and enter the flat amount (per disbursement) to be charged for this product.</li>
+<li>verify that the origination fee amount is mapped to the loan product so that it is included in the disbursement flow and in the amortization calculations.</li>
+
+</ul>
+3) Create a transaction with a classification (subtype)
+<ul>
+<li>When creating a Buy-Down Fee or Capitalized Income transaction, select the standard sub-type from the available classifications. This selection is optional; classifications improve reporting and accounting traceability.</li>
+<li>If you do not select a subtype, the system will continue with the default behavior configured for the product and the transaction type.</li>
+
+</ul>
+4) Validate disbursement against approved amount when origination fees apply
+<ul>
+<li>For disbursements with origination fees, confirm that (disbursement amount + origination fees) <= approved amount. This validation protects against over-disbursement when origination fees are added to the principal base.</li>
+
+</ul>
+5) Review accounting implications and reporting
+<ul>
+<li>Capitalized Income posting: On disbursement, capitalized income increases the Loan Receivable by the origination-fee amount and credits Defered Income.</li>
+<li>Amortization: On each amortization day (daily, COB), a portion of Defered Income is recognized as Income from Amortization.</li>
+<li>Charge-off handling: If a charge-off occurs, the system posts the standard Defered Income against charge-off expenses and cross-cuts to bad debt/credit loss categories as shown by the fixed mappings.</li>
+<li>Reporting: With subtypes in place, reporting can distinguish between different Buy-Down Fee and Capitalized Income classifications, improving insight into fee components and their amortization profiles.</li>
+
+</ul>
+<h3>Accounting mappings and illustrative flows</h3>
+The following mappings reflect implemented behavior for the capitalized income and related flows. These are the verified, implemented patterns you will observe in postings and reports.
+<ul>
+<li>Capitalized Income</li>
+<li>Debit: Loan Portfolio (Asset) – Loan Receivable</li>
+<li>Credit: Defered Income (Liability) – Defered Income mapping</li>
+<li>Capitalized Income Amortization</li>
+<li>Debit: Defered Income (Liability) – Defered Income mapping</li>
+<li>Credit: Income from Amortization (Income)</li>
+<li>Capitalized Income Amortization in Charge-Off</li>
+<li>Debit: Defered Income (Liability) – Defered Income mapping</li>
+<li>Credit: Charge-off expense / Bad debt related accounts (Expense) and Credit Loss accounts ()</li>
+<li>Capitalized Income Adjustment (future item noted as a potential enhancement in some sources)</li>
+<li>This item is not considered part of the verified implemented behavior at this time and is listed here for reference only.</li>
+
+</ul>
+<p>These mappings verify consistency between the underlying asset, the deferred liability, and the eventual income recognition as amortization proceeds.</p>
+
+<h3>Calculations and example patterns</h3>
+Financing changes in Buy-Down Fee and Capitalized Income revolve around two core quantities: the disbursement base (disbursement plus origination fees) and the amortization of the capitalized income over the loan life. The calculation approach follows these principles:
+<ul>
+<li>Calculation inputs:</li>
+<li>Disbursement amount (principal cash released to the borrower)</li>
+<li>Origination fees (flat amount added to the disbursement base)</li>
+<li>Total amount (Disbursement + Origination fees)</li>
+<li>Interest rate and day-count conventions for the amortization period (as configured in the loan’s terms)</li>
+<li>Amortization cadence (daily amortization at COB, with reporting on the period basis)</li>
+<li>Calculation method:</li>
+<li>The origination fee is added to the loan’s principal base, affecting both the schedule’s principal portion and the interest base for the period. Amortization of capitalized income reduces the Defered Income liability over time and recognizes associated income through Income from Amortization.</li>
+<li>When the loan reaches payoff or is charged-off, the system applies the stated accounting mappings to update the liability and expense accounts .</li>
+<li>Financial effect:</li>
+<li>The loan balance grows by the origination fee amount at disbursement due to capitalization.</li>
+<li>Amortization gradually converts the deferred income into recognized income over the life of the loan according to the period’s accruals and daily entries.</li>
+<li>In a charge-off scenario, the remaining Defered Income balance is treated in line with the charge-off accounting rules for capitalization, verifying the balance follows the loan’s status.</li>
+
+</ul>
+Example calculations (based on the reference content and the defined example patterns):
+<ul>
+<li>Example parameters (UC-1 Simple loan - capitalized income on same day as disbursement):</li>
+<li>Interest Rate: 7% annually, Day Count: 360, Days in Month: 30</li>
+<li>Disbursement: 100</li>
+<li>Capitalized Income: 50</li>
+<li>Origination Fees: notated in the example as part of the capitalized base for amortization</li>
+<li>Total Amount (base for amortization): 150</li>
+<li>Repayment cadence: 1 month</li>
+<li>Calculation pattern (illustrative, using the documented approach):</li>
+<li>Base principal for amortization = 150 (disbursement 100 + capitalized income 50)</li>
+<li>Amortization entries move amounts from Defered Income to Income from Amortization daily (COB basis) and reflect the related interest and principal recognition in the period.</li>
+<li>Observed interim results (from the documented UC sequences):</li>
+<li>The monthly installment (EMI) observed in the provided patterns is approximately 50.58 for the initial period, reflecting the combined base and the interest accrual over the period.</li>
+<li>The amortization process reduces the Defered Income balance over time, converting it into recognized income.</li>
+
+</ul>
+Notes on precision and verification:
+<ul>
+<li>All shown values illustrate the implemented behavior and are presented to reflect the verified patterns in the reference data. Intermediate numbers in the long schedules are retained from the source materials and should be interpreted in the context of the complete amortization and accounting sequences rather than as standalone benchmarks.</li>
+<li>Rounding: use the rounding conventions defined in the product rules for intermediate steps and final totals, such as HALF_UP or HALF_EVEN, to the financial calculations.</li>
+
+</ul>
+<h3>Diagram: lifecycle of a Buy-Down Fee / Capitalized Income transaction</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Disbursement with optional Buy-Down / Capitalized Income sub-type] --> B{Classification selected?}
+ B -- Yes --> C[Create transaction with selected sub-type]
+ B -- No --> D[Create transaction without subtype (default handling)]
+ C --> E[Capitalized Income posting: Debit Loan Portfolio (Loan Receivable); Credit Defered Income]
+ E --> F[Amortization: Daily COB transfer Defered Income to Income from Amortization]
+ F --> G{Loan payoff or charge-off?}
+ G -- Payoff --> H[Payoff posting: update balances and income]
+ G -- Charge-off --> I[Charge-off handling: Defered Income to Charge-off Expenses / Bad Debt]
+ H --> J[Reporting and reconciliation]
+ I --> J]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Validation, reporting, and governance notes</h3>
+<ul>
+<li>Validation: Disbursement amount plus origination fees must be less than or equal to the approved amount. This verifies that origination fees do not push the disbursed funds beyond the approved limits.</li>
+<li>Classification usage: Buy-Down Fee and Capitalized Income sub-types are optional and configurable. When creating a transaction, you may select a subtype to enhance reporting granularity.</li>
+<li>Origination fees: Introduced at the product level, mapped to the loan product, and applied to disbursement as part of the principal base for amortization. The origination fee amount is flat and entered by the user.</li>
+<li>Compatibility: If migrating to this enhanced behavior from a prior baseline, verify loan products are updated to include Origination Fees and the new sub-types so that transactions can be created with classifications and the disbursement flow includes origination fee amounts as part of the base.</li>
+<li>GAP item (Origination Fees Adjustment): A separate Origination Fees Adjustment transaction type is listed as a potential future enhancement in some reference materials. This is not verified as implemented behavior and should be treated as a potential future capability.</li>
+
+</ul>
+<h3>Summary for operations teams</h3>
+<ul>
+<li>You now have the option to classify Buy-Down Fee and Capitalized Income transactions using configurable sub-types. Use this to improve reporting fidelity and to support more precise accounting paths for these special transaction types.</li>
+<li>Origination Fees are defined at the loan product level, added to the disbursement base, and included in the amortization calculations. verify that product definitions are updated and that the sum of disbursement plus origination fees does not exceed the approved amount.</li>
+<li>The accounting flows follow the introduction of Defered Income as a liability and Income from Amortization as revenue, with dedicated posting paths for payoff and charge-off scenarios.</li>
+<li>Refer to the lifecycle diagram above to understand the sequence from disbursement through amortization and eventual payoff or charge-off.</li>
+
+</ul>
+If you need a tailored flowchart or a product-specific example using your loan terms, provide the loan term details (disbursement amount, origination fee amount, interest rate, and amortization cadence) and we will illustrate the end-to-end process for your configuration.
+</ac:document>

@@ -1,0 +1,152 @@
+# Re-amortization for Interest Bearing
+
+Re-amortization is available for loans using an Interest Bearing Progressive repayment strategy. This feature introduces controlled adjustments to the repayment schedule at a remortization event, with explicit options for how interest accrues or is allocated during and after re-amortization. The capability is designed to give loan servicing staff, credit agents, and branch teams a predictable, auditable way to handle re-amortization for affected loans, with clear visibility of balances, installments, and rate-based adjustments.
+
+The following sections describe what the feature does, the business purpose it serves, the user-visible behaviors you should observe, and the concrete calculation details used by the system to produce re-amortization schedules. The examples and figures herein are drawn from verified reference data for the Re-amortization for Interest Bearing scenarios.
+
+### What the feature does and who benefits
+
+- allows re-amortization during remortization events for loans under an Interest Bearing Progressive strategy.
+- Provides multiple options for handling accrued interest and existing unpaid amounts at the time of re-amortization, with outcomes that are visible in the recalculated schedule and the re-amortization totals.
+- Produces a re-amortized amount that is used to re-start the amortization sequence, and a final schedule that reconciles opening balances to closing balances across periods.
+- Documents the relationship between overdue components (principal and interest) and the re-amortized amount, verifying stakeholders can validate the allocation and balances after remortization.
+
+Roles that typically interact with this feature include Operations staff, Loan Officers, Branch Managers, and Credit Agents. They observe re-amortization outcomes directly on the loan servicing screens, validate the re-amortized amount, and review the resulting repayment schedule.
+
+### How re-amortization is represented in calculations
+
+The reference calculations assume an Interest Rate of 7% per year, with a 360-day year and 30-day months. The per-period interest rate is derived using the day-count convention: per-period rate i = annual rate × (days in month) / (days in year) = 0.07 × 30 / 360 = 0.005833333. The rate factor for a 30-day month is 1 + i = 1.005833333. For the baseline sample, Principal is 100, and the amortization spans 6 periods (2/1/24 through 7/1/24).
+
+The EMI (Equated Monthly Installment) for the standard 6-period schedule with these inputs is calculated as:
+
+- EMI = P × i × (1 + i)^n / ((1 + i)^n − 1)
+- Substituting P = 100, i = 0.005833333, n = 6, and (1 + i)^n = 1.035514404 yields EMI ≈ 17.01 (two-decimal precision)
+- The first payment on 2/1/24 reduces the balance from 100.00 to 83.57, with Principal ≈ 16.43 and Interest ≈ 0.58
+
+A key derived value is the RE-amortized amount, which represents the amount to be re-started in the remortized loan. In the example data, overdue principal and overdue interest sum to the re-amortized amount:
+- Overdue principal = 16.52
+- Overdue interest = 0.49
+- RE-amortized Amount = 16.52 + 0.49 = 17.01
+
+The reference representation shows the sequence of balances and allocations for the re-amortized loan, including the final balance reaching zero after six installments in the base scenario, and the accompanying EMI and component details for each period.
+
+<div class="param-grid">
+ <div class="param-card"><span class="param-label">Principal</span><span class="param-value">100</span></div>
+ <div class="param-card"><span class="param-label">Interest Rate</span><span class="param-value">7% annual</span></div>
+ <div class="param-card"><span class="param-label">Days In year</span><span class="param-value">360</span></div>
+ <div class="param-card"><span class="param-label">Days In month</span><span class="param-value">30</span></div>
+ <div class="param-card"><span class="param-label">Repaid every</span><span class="param-value">1 month</span></div>
+ <div class="param-card"><span class="param-label">Rate factor</span><span class="param-value">1.005833333</span></div>
+ <div class="param-card"><span class="param-label">EMI (example)</span><span class="param-value">17.01</span></div>
+</div>
+
+<div class="calc-box">
+ <div class="calc-title">Calculation</div>
+ <div class="calc-step"><strong>Formula:</strong> EMI = P × i × (1 + i)^n / ((1 + i)^n − 1)</div>
+ <div class="calc-step"><strong>Substitution:</strong> P = 100, i = 0.005833333, n = 6, (1 + i)^n = 1.035514404</div>
+ <div class="calc-step calc-result"><strong>Result:</strong> EMI ≈ 17.01 (rounded to two decimals)</div>
+</div>
+
+### Worked example: Schedule elements for a baseline re-amortization (S1)
+
+In the baseline scenario labeled RE-amortization S1, the disbursement after remortization shows:
+- Interest Rate: 7% (daily rate 0.000194444; Days In year: 360; Days In month: 30) 
+- Principal: 100
+- Repaid every: 1 month
+- EMI: 17.01
+- Overdue principal: 16.52; Overdue interest: 0.49; RE-amortized Amount: 17.01
+
+The schedule after disbursement demonstrates the stepwise balance reduction and the component splits for each payment period:
+
+| Date | Balance | EMI | Prin | Int | Balance after payment |
+| --- | ---:| ---:| ---:| ---:| ---:|
+| 2/1/24 | 83.57 | 17.01 | 16.43 | 0.58 | 83.57 after payment remains 83.57 (new balance after first installment) |
+| 3/1/24 | 67.05 | 17.01 | 16.52 | 0.49 | Balance reduces to 67.05 |
+| 4/1/24 | 50.43 | 17.01 | 16.62 | 0.39 | Balance reduces to 50.43 |
+| 5/1/24 | 33.72 | 17.01 | 16.72 | 0.29 | Balance reduces to 33.72 |
+| 6/1/24 | 16.90 | 17.01 | 16.81 | 0.20 | Balance reduces to 16.90 |
+| 7/1/24 | 0.00 | 17.00 | 16.90 | 0.10 | Loan fully repaid at the end of cycle |
+
+> Note: The final schedule indicates whether the installment is fully fulfilled in each period and balances reconcile across periods (opening balance of a period equals the previous period’s closing balance).
+
+### Additional re-amortization options demonstrated in the reference data
+
+The reference data includes several distinct approaches to handling a remortization for an interest-bearing loan:
+
+- Principal Only re-amortization: unpaid interest and fees are allocated equally to all future installments. The re-amortized amount equals overdue principal plus overdue interest (e.g., 16.52 + 0.49 = 17.01 in the baseline example).
+- Interest Pause after Remortization: interest accrual is paused for a defined window around the remortization date, after which regular amortization resumes. Example shows a pause window around 4/1/2024 to 4/15/2024.
+- N+1 Installment: the loan is re-amortized with a schedule that introduces an additional installment period (i.e., one more payment period beyond the original count) and an adjusted EMI.
+- ChargeBack Example: future interest and/or principal components may be charged back or allocated differently, with explicit lines showing “Chargeaback Prin” and “Chargeaback Int” as part of the re-amortization step.
+- Charge-off – accelerate maturity date: a scenario where the re-amortization is followed by an acceleration of the loan’s maturity, reducing the number of remaining installments and shortening the term.
+
+Each option is demonstrated with concrete values in the reference data, including EMI amounts, principal and interest allocations per payment, and resulting balances.
+
+> For reference, the calculations for the baseline case show EMI = 17.01 with i = 0.07 × 30 / 360 = 0.005833333 and (1 + i)^n = 1.035514404 for n = 6. The re-amortized amount is the sum of overdue principal and overdue interest (16.52 + 0.49 = 17.01), and the opening balance for the remortized period is 100.00 with a first payment reducing it to 83.57.
+
+### Operational steps: performing re-amortization (UI-facing guidance)
+
+1. Open the loan record for the customer whose loan is due for remortization. The loan must be configured for an Interest Bearing Progressive strategy to use this feature.
+ - User action: navigate to the loan and select the loan in Servicing.
+ - System outcome: loan servicing view loads with current balance, overdue items, and next-remortization fields.
+2. In the loan servicing actions, select the re-amortization operation.
+ - Bold field/button names (example):
+ - bold "Re-amortization" action in the Servicing menu
+ - bold "Re-amortization for Interest Bearing" panel opens
+ - System outcome: the re-amortization panel is shown with option choices and a field for remortization date.
+3. Choose the desired interest-handling option for this remortization.
+ - Options evidenced by reference data include:
+ - Principal Only (unpaid interest and fees allocated to future installments)
+ - Interest Pause after Remortization
+ - N+1 Installment
+ - ChargeBack Example
+ - Charge-off – accelerate maturity date
+ - System outcome: the selected option is highlighted and the associated recalculation parameters are prepared for preview.
+4. Enter or confirm the remortization date and any option-specific parameters (for example, pause window dates or the intended re-amortized amount).
+ - System outcome: the system computes the re-amortization schedule using the inputs and presents a preview of the new amortization path, including the RE-amortized Amount and the updated balance trajectory.
+5. Validate the preview against expected balances and allocations.
+ - Critical checks include:
+ - Opening balance for the remortized schedule equals the prior period’s closing balance.
+ - The RE-amortized Amount equals the sum of overdue principal and overdue interest ().
+ - The final Schedule after Re-amortization is not iterative (per reference: should iterate FALSE).
+ - System outcome: if validation passes, proceed to apply the re-amortization.
+6. Apply the re-amortization.
+ - Bold button: "Apply Re-amortization" (or equivalent confirmation control)
+ - System outcome: the loan record updates; a new final schedule is generated, including the Final Schedule after Re-amortization and the updated payment stream. You should see the updated balances, EMI, principal and interest breakdowns per period, and the RE-amortized Amount as the starting point for the remainder of the loan.
+7. Review the resulting schedules and reconciliations.
+ - The system presents:
+ - Final Schedule after Re-amortization (with per-period balances, principal, and interest components)
+ - RE-amortized Amount, and any other period-level reconciliation data (e.g., overdue items after remortization)
+ - verify that all period openings equal the previous period’s closing balances, and that the total allocations reconcile to the transaction amount. The example baseline shows a balance progression from 100.00 to 83.57 to 67.05 to 50.43 to 33.72 to 16.90 to 0.00 across six installments, with EMI of 17.01 each period.
+
+### Edge cases and notable behaviors evidenced in the reference data
+
+- When overdue principal and overdue interest exist at remortization, the RE-amortized Amount is the sum of those overdue components (e.g., 16.52 overdue principal and 0.49 overdue interest sum to 17.01).
+- Some re-amortization variants demonstrate interest pauses or alternate payment timing around remortization dates (e.g., a pause window around 4/1/2024 to 4/15/2024 in the reference data).
+- In scenarios labeled as N+1 Installment, the repayment schedule includes adjusted EMI values and altered payment dates, reflecting the addition of an extra installment in the remortized path.
+- ChargeBack and Charge-off variants illustrate how the system can allocate or reclassify future interest and principal, including cases where future payments include a charged amount or an accelerated maturity path.
+
+### Worked references and verification notes
+
+- Calculation references (RE and S1) show the baseline inputs and resulting EMI and balances, with EMI 17.01 for a 100 principal loan under a 7% annual rate, 360-day year, 30-day month, remortization after remortization date, and 6 monthly payments.
+- The baseline balance progression under the standard re-amortization path is shown as: 100.00 → 83.57 → 67.05 → 50.43 → 33.72 → 16.90 → 0.00 across six installments, with principal allocations per period totaling the EMI and with the re-amortized amount computed from overdue components.
+- The re-amortization amount: Overdue principal 16.52 + Overdue interest 0.49 = RE-amortized Amount 17.01 (consistent with the sum of overdue components).
+
+### Related calculation reference (S2 and S3 variants)
+
+- S2: Interest Pause after Remortization demonstrates continued EMI of 17.01 with the same rate parameters but a different balance trajectory reflecting the pause scenario.
+- S3: N+1 Installment shows a remortization path where an additional installment is introduced, resulting in modified balance progression and EMI values in the re-amortization pathway.
+- S4 and S5 demonstrate Charge-Back and Charge-off variants, illustrating how the re-amortization mechanism can be combined with charge events and maturity-date adjustments to reflect different recovery or payoff strategies.
+
+### Summary of observable outcomes
+
+- The system derives a RE-amortized Amount from overdue components when applicable and then recalculates the loan’s amortization path according to the selected option.
+- The resulting payment stream and balances are visible in the loan servicing view, with the final schedule showing a complete payoff path under the new terms.
+- The opening balance of the remortized schedule equals the previous closing balance, and each period’s opening balance equals the prior period’s closing balance, preserving financial integrity.
+
+If you need to reference populated example values during training or audits, use the following baseline numbers from the reference data, which follows the standard calculation path for a 100 principal loan at 7% annual rate with 360-day year and 30-day months:
+- Per-period rate i = 0.07 × 30 / 360 = 0.005833333
+- EMI ≈ 17.01
+- Balance progression (2/1/24 through 7/1/24): 100.00 → 83.57 → 67.05 → 50.43 → 33.72 → 16.90 → 0.00
+- RE-amortized Amount = Overdue principal (16.52) + Overdue interest (0.49) = 17.01
+
+This page captures verified behavior and published expectations for Re-amortization for Interest Bearing, including the options for interest handling during remortization and the resulting impact on balances and installment allocations. It is intended as a standalone reference for operations staff, loan officers, branch managers, and credit agents.

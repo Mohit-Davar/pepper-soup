@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Deprecate OkHttp and migrate to Apache HTTP client</h1>
+  This page documents the strategic deprecation of the OkHttp-based HTTP client used by the Fineract client generation flow and its migration to Apache HttpClient. The change is motivated by the need for reliable connection lifecycle management in long-running server applications, particularly the ability to configure and honor connection maxAge to avoid issues with stale or long-lived connections. Retrofit-based integration tests remain available, while exploration continues into whether FEIGN would offer a better integration approach.
+
+<h2>Overview and rationale</h2>
+
+<p>The current client generation pathway previously relies on OkHttp as the HTTP client for generated Fineract clients. While OkHttp satisfies functional needs, its lack of built-in, explicit connection lifecycle management in terms of connection maxAge can lead to long-lived connections that become stale. Apache HttpClient provides built-in connection lifecycle management, including support for connection maxAge, which helps verify connections are refreshed and kept within sensible lifespans. This property makes Apache HttpClient a more reliable choice for long-running server applications.</p>
+
+In addition to the core HTTP client replacement, there is consideration of alternative HTTP client strategies. The reference notes raise the question of whether FEIGN could be a better option in the future, though a definitive decision is not yet established. For backward compatibility in testing, Retrofit remains available for integration tests.
+
+<h2>Technical scope and affected areas</h2>
+<ul>
+<li>Affected components and services:</li>
+<li>Client generation workflow that currently emits clients built to use OkHttp.</li>
+<li>Runtime HTTP client configuration and the HTTP client factory used by generated clients.</li>
+<li>Supporting integration test setup that currently relies on Retrofit.</li>
+<li>Scope of change:</li>
+<li>Replace the OkHttp-based HTTP client usage with Apache HttpClient in the generated clients and related runtime wiring.</li>
+<li>Introduce or adjust configuration to uses Apache HttpClient’s connection lifecycle features, notably connection maxAge.</li>
+<li>Preserve Retrofit-based integration tests during migration, with ongoing evaluation of FEIGN as a potential alternative later.</li>
+
+</ul>
+<h2>What changes in behavior and structure to expect</h2>
+<ul>
+<li>HTTP client implementation:</li>
+<li>The underlying HTTP client used by generated Fineract clients will transition from OkHttp to Apache HttpClient.</li>
+<li>Apache HttpClient’s connection lifecycle management (including support for connection maxAge) will govern how long connections are kept alive and when they are refreshed, reducing the risk of stale connections in long-running processes.</li>
+<li>Backward compatibility considerations:</li>
+<li>Retrofit remains available for integration tests to verify compatibility with existing test scenarios during the migration window.</li>
+<li>The reference notes indicate that FEIGN is under investigation as a potential alternative; no decision has been recorded as of this description.</li>
+
+</ul>
+<h2>Migration considerations and guidance</h2>
+<ul>
+<li>Dependency and build changes: Replace OkHttp dependencies with Apache HttpClient in the client generation and runtime modules. verify the HTTP client factory and any related builders are updated to instantiate Apache HttpClient instances.</li>
+<li>Configuration exposure: Expose configuration knobs for connection maxAge and related lifecycle properties , so operators can tune behavior in production scenarios.</li>
+<li>Testing strategy: Maintain Retrofit-based integration tests to exercise the generated clients during the migration. Plan for eventual validation of any alternative integration approaches (e.g., FEIGN) if pursued.</li>
+<li>API surface: The documentation does not indicate changes to external REST endpoints or the public API surface of the generated clients beyond the internal HTTP client implementation. No endpoint changes are implied by the migration notes.</li>
+
+</ul>
+<h2>Architectural view</h2>
+
+<p>The following diagram illustrates the migration flow from the existing OkHttp-based path to the Apache HttpClient-based path, with Retrofit test usage remaining during the transition and FEIGN evaluation as a future consideration.</p>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Client generation] --> B[OkHttp (current, deprecated)]
+ B --> C[Apache HttpClient (target)]
+ D[Retrofit-based integration tests] --> E[Test stability during migration]
+ F[FEIGN investigation] --> G[Future evaluation path]]]></ac:plain-text-body></ac:structured-macro>
+
+<h2>Summary of verified points</h2>
+<ul>
+<li>OkHttp is deprecated as the HTTP client for generated Fineract clients in favor of Apache HttpClient.</li>
+<li>Apache HttpClient provides built-in connection lifecycle management, including support for connection maxAge, mitigating issues with stale or long-lived connections common in long-running services.</li>
+<li>OkHttp does not provide built-in connection maxAge capability and requires custom workarounds in scenarios involving long-lived connections.</li>
+<li>Retrofit remains available for integration tests to preserve backward compatibility during the migration window.</li>
+<li>FEIGN is identified as an area for investigation to determine whether it could offer a more suitable integration approach in the future.</li>
+
+</ul>
+This page captures the verified scope and rationale from the current reference direction and outlines the migration considerations and expectations for the transition from OkHttp to Apache HttpClient. Further concrete changes to code, APIs, tests, and configuration will be documented as they are implemented and validated.
+</ac:document>

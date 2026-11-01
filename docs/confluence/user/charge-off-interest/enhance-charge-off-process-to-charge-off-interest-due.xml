@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Charge off process to charge off interest due</h1>
+  This enhancement integrates the automatic charge-off of interest balances into the automated charge-off routine. The change verifies that interest portions that are deemed uncollectible are written off in concert with principal charge-offs, so accounting entries reflect the true state of the loan portfolio and follows the defined chart of accounts (COA) mappings. In practice, the system now processes interest balances during the same automated run that handles principal charge-offs, applying the same governance, validation, and posting discipline as principal write-offs. This matters for day-to-day operations because it preserves the integrity of the borrower’s ledger, verifies consistent financial reporting, and reduces the risk of misaligned revenue and expense recognition when interest is not collectible.
+
+<h3>What changed and why it matters</h3>
+<ul>
+<li>The enhancement brings interest balances into the automated charge-off workflow, so uncollectible interest is written off alongside the principal when a loan is charged off. This prevents residual interest from remaining on the books after the account is written off and preserves accurate income and expense recognition.</li>
+<li>The change relies on the defined charge-off mappings in the COA. Interest write-offs use the COA mappings for charge-off entries, including accounts such as Loans Receivable, Interest Receivable, Interest income charge off, and Credit Loss/Bad Debt, along with recoveries handling .</li>
+<li>The approach applies to both Fraud and Non-Fraud charge-off scenarios, with explicit mappings for each path to verify correct accounting treatment per category.</li>
+
+</ul>
+<h3>Scope and terminology</h3>
+<ul>
+<li>Charge-off: A formal write-off of an uncollectible loan balance, including principal and related interest components, as defined by policy.</li>
+<li>Interest due: The portion of interest that has accrued on a loan and remains unpaid at the time the charge-off is processed.</li>
+<li>Interest receivable: The recorded amount representing earned interest that remains unpaid and is subject to write-off.</li>
+<li>Recoveries: Any cash received after a charge-off that offsets the loss, recorded against a recoveries account.</li>
+<li>Fraud vs Non-Fraud: Distinct accounting paths with separate mappings in the charge-off framework.</li>
+
+</ul>
+<h3>How the system handles charge-off of interest due (workflow)</h3>
+
+1) The automated charge-off process identifies loans selected for write-off and detects outstanding interest balances that should be charged off as part of the same run.
+2) For each identified loan, the system applies the charge-off mappings to post journal entries that correspond to the principal and interest portions of the write-off.
+3) The principal portion affects Loans Receivable and related credit-loss or bad-debt accounting as defined in the COA, with standard offsetting entries to verify the loan portfolio balances reflect the write-off.
+4) The interest portion affects Interest Receivable and the designated interest-off entry (e.g., Interest income charge off) per the COA mappings, and it posts to the associated expense or income account according to the fraud/non-fraud path.
+5) If recoveries occur after a charge-off, they are posted to the recoveries accounts and reduce the net charge-off impact.
+6) The process produces a reconciled set of postings that balance within the period, with the opening balances of each period matching the previous period’s closing balances, per standard accounting rules.
+
+<blockquote><p>Note: Some mappings and fields in the reference data are marked as in development. Operations should verify the exact journal entries and GL selections in the live environment when those items are released.</p></blockquote>
+
+<h3>Key accounting implications (high level)</h3>
+<ul>
+<li>Principal portion: Decreases the Loans Receivable balance. The write-off is reflected as a charge-off or credit loss expense per the COA, and the offset may involve the main loan portfolio and related suspense accounts as defined by policy.</li>
+<li>Interest portion: Decreases the Interest Receivable balance and records the write-off against an income/expense designation in the charge-off category (for example, an interest income charge off), in accordance with the COA mapping. Fraud and Non-Fraud paths have separate mappings to verify correct classification.</li>
+<li>Fees and penalties: , related fees or penalties that were part of the loan’s charge-off process are posted to their associated receivables and revenue/expense accounts as defined by the mapping.</li>
+<li>Recoveries: Any subsequent recoveries post-charge-off are posted to recoveries accounts and offset the original charge-off impact.</li>
+<li>Suspense/clearing handling: The charge-off process employs suspense/clearing accounts as part of the lifecycle to verify traceability and clean balancing during posting.</li>
+
+</ul>
+<h3>Reference mapping essentials (conceptual)</h3>
+The authoritative mappings reference the following categories in the COA and charge-off workflow:
+<ul>
+<li>Asset accounts: Loans Receivable (principal balance) and Interest Receivable (accrued interest)</li>
+<li>Income accounts: Interest income charge off (used to reflect charged-off interest) and Fee Income / Fee Charge off </li>
+<li>Expense accounts: Credit Loss/Bad Debt and Credit Loss/Bad Debt Fraud (plus recovery-related expenses)</li>
+<li>Liability / clearing accounts: Other Credit liability and Suspense/Clearing account</li>
+<li>Recoveries: Recoveries (offsetting entries when cash is later recovered)</li>
+
+</ul>
+<h3>User workflow: UI navigation and actions (operational view)</h3>
+The enhanced process is accessible through the following navigation path: Charge-off, Write-off and Settlement > Charge-off interest > Charge off process to charge off interest due.
+
+Operational steps to perform the charge-off of interest due (when the enhancement is enabled):
+1) Open the Charge-off interest area and select the “Charge off process to charge off interest due.”
+2) Confirm the scope of the automated charge-off run, verifying the accounts selected include those with eligible interest balances.
+3) Review the generated postings for principal and interest portions against the COA mappings, confirming correct accounts are used for each component and that fraud vs non-fraud paths are applied as standard.
+4) Validate that opening balances for the period equal the prior period’s closing balances, and that the postings balance within the period.
+5) Post the journal entries to the ledger. Monitor for any exceptions or validation messages and address them per procedural guidance.
+6) If post-charge-off recoveries occur, process and apply them to the standard recoveries accounts and verify the net liability reflects the update.
+
+<h3>Data integrity and validation notes</h3>
+<ul>
+<li>The system must reconcile each period’s opening balance with the previous closing balance, per standard accounting practice.</li>
+<li>Payment allocation and journal entries must balance, with the sum of debits equal to the sum of credits across the charge-off postings.</li>
+<li>Remaining cash, unactioned dues, and the outstanding balance must reconcile after postings.</li>
+<li>If any GLs or mappings are not yet active in the live environment (for example, those marked as in development in the reference data), operations should treat those entries as pending and verify actual live mappings after deployment.</li>
+
+</ul>
+<h3>Migration and compatibility considerations for operations staff</h3>
+<ul>
+<li>Validation of COA mappings: Confirm which GL accounts are active for charge-off of interest due in the live environment and verify they follows the COA descriptions.</li>
+<li>New GLs: The reference data indicates that new GLs related to charge-off and new mapping fields are planned; verify the availability and applicability of these GLs in the production environment before processing live charge-offs.</li>
+<li>Reconciliation timing: Because interest write-offs are processed in the same run as principal write-offs, reconcile the period-wide totals after the run to confirm there are no residual mismatches in the interest and principal components.</li>
+<li>Reporting impact: Period-end reports may reflect changes in charge-off allocations between principal and interest components; verify reporting teams are aware of the enhanced treatment for interest write-offs.</li>
+
+</ul>
+<h3>GAPs and test items (present-tense)</h3>
+<ul>
+<li>Several mapping entries are labeled in development in the reference data and are not guaranteed to be live in all environments. These items constitute gaps to verify during UAT and production validation.</li>
+<li>The table-based “For Fineract charge-off mapping” includes mappings that indicate changes to mapping fields in the Lona product accounting mapping and new GLs. Confirm whether these GLs are implemented and available in the current release before relying on them in production postings.</li>
+
+</ul>
+<h3>Appendix: Key terms and mappings (reference concepts)</h3>
+<ul>
+<li>Loans Receivable (Asset): The principal balance of loans that may be charged off.</li>
+<li>Interest Receivable (Asset): Accrued interest that has not yet been received at the charge-off decision point.</li>
+<li>Interest income charge off (Income): An income-type account used in charge-off scenarios for interest balances.</li>
+<li>Credit Loss/Bad Debt (Expense): The expense category that captures losses on uncollectible loan balances.</li>
+<li>Credit Loss/Bad Debt Fraud (Expense): A separate expense category for fraud-related charge-offs.</li>
+<li>Recoveries (Expense/offset): Amounts recovered after a charge-off that offset the original loss.</li>
+<li>Suspense/Clearing account (Asset): A holding account used during posting to verify traceability and balancing.</li>
+<li>Fees Receivable (Asset) and Fee Income / Fee Charge off (Income): Accounts associated with fees that may be affected during charge-off procedures.</li>
+
+</ul>
+<h3>Diagram: high-level charge-off flow for interest due</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+ direction LR
+
+ [*] --> InterestBalanceIdentified
+ InterestBalanceIdentified --> ChargeOffProcessing : begin
+ ChargeOffProcessing --> PrincipalOffLoaded : principal
+ ChargeOffProcessing --> InterestOffLoaded : interest
+ PrincipalOffLoaded --> PostJournalEntries : postings generated
+ InterestOffLoaded --> PostJournalEntries : postings generated
+ PostJournalEntries --> ReconcilePeriod : period reconciled
+ ReconcilePeriod --> [*]]]></ac:plain-text-body></ac:structured-macro>
+
+This page provides an operationally focused description of the enhanced charge-off process for interest due, its alignment with COA mappings, and the practical steps for the day-to-day use by operations staff, loan officers, branch managers, and credit agents. It preserves the critical conditions and relationships that govern the posting behavior and the financial effects of charging off interest alongside principal within the automated workflow.
+</ac:document>

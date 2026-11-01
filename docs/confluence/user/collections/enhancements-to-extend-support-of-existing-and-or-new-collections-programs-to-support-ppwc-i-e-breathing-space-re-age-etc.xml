@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>Enhancements to extend support of existing and/or new collections programs to support PPWC i.e. Breathing Space, Re-Age, etc</h1>
+  This enhancement expands the collections capability for PPWC (PayPal Working Capital) to accommodate programs such as Breathing Space and Re-Age. It introduces a WC-focused data model, events, and operational workflows that follows PPWC collection programs while preserving the established delinquency and breach management patterns. The changes affect how accounts are represented, how payments are allocated, and how collection events are produced and consumed by downstream processes. The goal is to give operations staff clear, auditable controls for pausing, resuming, and managing delinquency and breach states under PPWC programs, with consistent financial results and traceable event history.
+
+<h3>Why this matters for day-to-day operations</h3>
+<ul>
+<li>PPWC programs require explicit handling of delinquency and breach states at the Working Capital level, with per-period and per-event granularity that differs from term loans. Staff gain the ability to enroll accounts into Breathing Space or Re-Age, pause certain collection activities, and manage related schedule changes without compromising data integrity.</li>
+<li>The new data model and events verify that portfolio-level reporting, payment allocations, and accounting entries reflect the PPWC programs, while preserving the relationships between an account’s principal, charges, and delinquent amounts.</li>
+<li>Delinquency processing behavior changes in this enhancement are precise: changes to the delinquency schedule that affect the amount or days in a delinquency bucket do not themselves trigger events; only changes to the delinquency range or to breach state generate events. This clarifies when operational notifications occur and reduces event noise.</li>
+
+</ul>
+<h3>What changed (high level)</h3>
+<ul>
+<li>Data model extensions to support PPWC programs, including dedicated WC data structures and records.</li>
+<li>New and renamed data elements to model PPWC concepts within the existing delinquency and collection framework.</li>
+<li>A new per-transaction payment allocation mechanism tailored for PPWC, enabling accurate application of payments to principal, fees, and other components.</li>
+<li>Expanded event coverage for Working Capital activities, including explicit handling for delinquency range changes, breaches, and related pauses/resumes.</li>
+<li>Updated workflow guidance for operations staff to enroll accounts in Breathing Space or Re-Age and manage their delinquency/breach states.</li>
+
+</ul>
+<h3>Updated data model highlights (key additions and mappings)</h3>
+<ul>
+<li>New records and data shapes</li>
+<li>WorkingCapitalLoanChargeDataV1: a subset of LoanChargeDataV1 fields, exposed within the WC data model as charges associated with Working Capital loans.</li>
+<li>WorkingCapitalLoanDisbursementDetailDataV1: detailed disbursement information specific to WC loans.</li>
+<li>WorkingCapitalLoanSummaryDataV1: a WC-specific summary object that aggregates principal, charges, and balances for WC loans.</li>
+<li>Product data: a WC-configured product data structure (WorkingCapitalProductDataV1) that carries core product attributes and funding context, populated by the serializer; legacy product remains null when not applicable.</li>
+<li>Delinquent data: WorkingCapitalLoanCollectionDataV1 (delinquent) with fields aligned to WC’s collection semantics, including the delinquentAmount and related timestamps.</li>
+<li>Delinquency schedule: a WC-specific representation for delinquency timing and amounts, including per-period delinquency buckets and ranges.</li>
+<li>Breach and near-breach: new WC-specific fields and records to model breach events and their related configurations.</li>
+<li>Field mappings and translations (illustrative, not exhaustive)</li>
+<li>delinquent.delinquentPrincipal maps to totalDelinquentAmount in WC contexts; delinquent.delinquentAmount maps to the aggregated outstanding from delinquency periods.</li>
+<li>product.delinquencyBucket carries legacy bucket information; WC carries associated bucket data and lifts it to the top level for convenience.</li>
+<li>summary.totalPrincipal maps to the disbursed principal with adjustments ; summary.totalRepayment reflects WC-priority repayment accounting, consistent with WC scheduling rules.</li>
+<li>delinquencyschedule fields (periods, amounts, and tags) are introduced as part of a dedicated avro schema for the WC delinquency schedule.</li>
+<li>Payment allocation</li>
+<li>A new WorkingCapitalPaymentAllocationDataV1 structure establishes per-transaction allocation rules and an ordered allocation plan (paymentAllocationOrder) to drive how a payment is applied across principal, charges, and other components.</li>
+<li>Timeline and events</li>
+<li>The WC timeline remains the source of disbursement and maturity information, but with WC-specific field usage and renamings (for example, some legacy REST names are reflected in WC field labels).</li>
+<li>New events related to Working Capital lifecycle and PPWC programs (e.g., delinquency range changes, breach changes, pause/resume actions) are defined to drive downstream processing and reporting.</li>
+
+</ul>
+<blockquote><p>Note: The WC data model uses WC-specific avro records and field names. Where legacy fields exist, mappings preserve intent while adopting WC-standard data structures and nomenclature.</p></blockquote>
+
+<h3>Updated events and operational semantics (selected items)</h3>
+<ul>
+<li>Events for Working Capital activities</li>
+<li>Account Changed (Working Capital loan details): Created for lifecycle changes such as creation, approval, disbursement, tagging, and breaches related to PPWC.</li>
+<li>Transaction events: Cover disbursements, payouts, fees, repayments, write-offs, charge-offs, discounts, and related adjustments specific to WC transactions.</li>
+<li>Journal Entries: Triggered using the same legacy event types as the associated WC activities, verifying accounting traceability.</li>
+<li>Delinquency and breach events: Delinquency range changes, breach changes, near-breach changes, and related pause/resume/reset/allows/disable actions generate dedicated WC events.</li>
+<li>Special notes about event triggering</li>
+<li>Delinquent amount and delinquent days amount changes do not trigger events by themselves. Event generation focuses on changes to the delinquency range and on breach/near-breach state transitions.</li>
+<li>Breach schedule changes produce breach-related events and may drive associated adjustments in delinquency state.</li>
+
+</ul>
+<h3>Updated operational workflows (how interactions change)</h3>
+
+1) Identify PPWC-eligible accounts for Breathing Space or Re-Age programs. Staff assess eligibility and prepare to enroll the account into the chosen PPWC program.
+2) Enroll the account into Breathing Space or Re-Age. The system records program enrollment by updating delinquency and breach state data, including any active delinquency pause periods.
+3) Manage delinquency and breach state changes. If the account experiences a breach or enters a new breach range, the system generates the standard breach-related events and updates the delinquency schedule .
+4) Apply payment allocations per transaction. Each payment is allocated according to the new paymentAllocation structure and order, with allocations reflected in the WC summary and disbursement data .
+5) Review and reconcile results. Staff verify that opening balances, running totals, and allocations reconcile with the transaction amount and the WC schedule, including any pauses or reductions in collection actions under the PPWC program.
+6) Monitor downstream effects. Generated events feed downstream systems and reporting, so that PPWC programs are auditable and traceable through the loan lifecycle.
+
+<h3>Migration considerations for operations staff</h3>
+<ul>
+<li>Data migration and read-path exposure</li>
+<li>Existing loans move to the WC data model on read paths, with the WC read service populating new WC-specific fields . The new avro records are used by WC endpoints for those loans.</li>
+<li>Some legacy fields are preserved for compatibility and are renamed or repurposed to reflect WC semantics (for example, certain interest-related fields are excluded in WC because PPWC uses discount-fee pricing in a way that does not reflect term-loan interest).</li>
+<li>Timeline and maturity handling</li>
+<li>The WC timeline reuses the loan application timeline semantics, but the actual maturity-related fields may map differently in WC context. The avro field for actualMaturityDate may be unmapped in some WC representations where the WC model uses its own maturity logic.</li>
+<li>Delinquency and breach handling</li>
+<li>Delinquency pause periods are represented as a list with active, start, and end dates. Pause/resume lifecycle is captured by dedicated events and associated data updates, so operators can pause collections without losing historical delinquency context.</li>
+<li>Compatibility of reporting and accounting</li>
+<li>Journal entries are produced using the same legacy event semantics for WC activities, preserving accounting traceability while adopting WC-specific data shapes for reporting and analytics.</li>
+
+</ul>
+<h3>Practical considerations for staff training and operations</h3>
+<ul>
+<li>Staff training should emphasize the new PPWC program concepts: Breathing Space and Re-Age, how to enroll accounts, how delinquency pause periods affect collection actions, and how breach states drive workflow changes.</li>
+<li>Review and reconcile processes now include WC-specific structures for charges, disbursements, and summaries, verifying the total outstanding and principal disbursed reflect the WC model consistently.</li>
+<li>Pay attention to the new payment allocation semantics. Per-transaction allocations now rely on a defined order of components, which affects how receipts and reversals appear in the WC summary and reports.</li>
+
+</ul>
+<h3>Diagram: Working Capital PPWC lifecycle (high level)</h3>
+
+flowchart TD
+ A[PPWC account identified for program] --> B{Choose PPWC program}
+ B --> C[Breathing Space enrollment]
+ B --> D[Re-Age enrollment]
+ C --> E[Apply delinquency pause and breach configuration]
+ D --> E
+ E --> F[Update delinquency range and breach state]
+ F --> G[Process payment allocations per transaction]
+ G --> H[Generate WC events and update summaries]
+ H --> I[Operational review and reporting]
+
+<p>Note: This diagram illustrates the high-level lifecycle for PPWC programs within the Working Capital collections framework. The exact steps and event names map to WC-specific data structures and events described in this page.</p>
+
+<h3>Glossary of terms (selected)</h3>
+<ul>
+<li>Breathing Space: PPWC program to pause certain collection actions for a defined period while maintaining account integrity.</li>
+<li>Re-Age: PPWC program variant that adjusts aging and delinquency evaluation under the WC model.</li>
+<li>Delinquency range: A categorized state within the WC delinquency model that depends on the age and amount of the oldest unmet payment period.</li>
+<li>Delinquency pause periods: Time windows during which collection actions under the WC program may be paused, with active status tracked per account.</li>
+<li>Working Capital (WC) data model: A set of WC-specific data records (including WorkingCapitalLoanAccountDataV1, WorkingCapitalLoanChargeDataV1, WorkingCapitalLoanDisbursementDetailDataV1, WorkingCapitalLoanSummaryDataV1, etc.) designed to support PPWC programs.</li>
+<li>Payment allocation: The per-transaction mapping of incoming payments to principal, charges, and other components according to an explicit order.</li>
+
+</ul>
+<h3>Quick reference: verified behaviors and constraints</h3>
+<ul>
+<li>The WC data model introduces new records for charges, disbursements, and summaries, plus a WC product data record, to support PPWC program data.</li>
+<li>Delinquent amount and delinquent days amount changes do not trigger events by themselves; only changes to the delinquency range or to breach-related state transitions generate events.</li>
+<li>Breach schedule changes generate breach-related events; near-breach changes also produce associated events.</li>
+<li>Journal entries for WC activities reuse the same legacy event triggers for consistency with existing accounting processes.</li>
+<li>The new paymentAllocation structure governs how per-transaction payments are allocated within the WC data model, including the order of allocation.</li>
+<li>Delinquency pause periods are represented with active, start, and end fields, enabling controlled pausing of certain collection actions under PPWC.</li>
+
+</ul>
+This publication captures the implemented behavior and operational guidance for enhancements to extend support of PPWC programs (Breathing Space, Re-Age, etc.). It focuses on verified data structures, event semantics, and workflow implications that operations staff will encounter when working with PPWC-enabled collections.
+</ac:document>

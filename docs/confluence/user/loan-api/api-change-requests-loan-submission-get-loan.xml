@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ac:document xmlns:ac="http://www.atlassian.com/schema/confluence/4/ac/" xmlns:ri="http://www.atlassian.com/schema/confluence/4/ri/">
+  <h1>API Change requests - Loan submission / get loan</h1>
+  This page documents an enhancement to the loan retrieval workflow focused on GET Loan by ID. Specifically, when a loan is retrieved, the response now includes additional accrual-related fields that support visibility into accrued interest and payable amounts. The reference materials also indicate a related change to the POST - create loan API to support related functionality; however, this page documents the GET loan field changes and notes that the exact POST changes are not described in the provided materials.
+
+<h3>What changed and why it matters</h3>
+
+The GET Loan by ID (and by external-id, ) response now includes three accrual-focused fields that were not part of the baseline response previously:
+<ul>
+<li>totalUnpaidAccruedDueInterest: The aggregate accrued interest that remains unpaid as of the current close of business (COB). This field provides a snapshot of the total accrual outstanding for the loan at retrieval time.</li>
+<li>PayPal Derived Field (accrued interest amount): The accrued interest amount derived by the accrual model for the current or recent accrual period. This field supports reconciliation and external integrations that require an explicit accrued-interest figure.</li>
+<li>currentInstallmentPayableInterest (After COB): The portion of the current installment's interest that is payable after COB, reflecting the status of accruals and any outstanding interest that will be due with the next payment event.</li>
+
+</ul>
+<p>These fields appear in the loan retrieval output alongside existing loan data. The enhancement is described in the reference material as part of the GET API Field changes Examples for progressive loan scenarios, including cases with and without post-disbursement repayments.</p>
+
+<h3>How the change affects day-to-day operations</h3>
+<ul>
+<li>Operations and finance staff gain immediate visibility into accrued interest and payable amounts when reviewing a loan’s status. This supports more accurate cashflow planning, daily reconciliations, and dispute resolutions related to interest accruals.</li>
+<li>For reconciliations and accounting processes, the totalUnpaidAccruedDueInterest provides a single figure to compare against internal schedules and GL postings related to accrued interest.</li>
+<li>External integrations that consume loan retrieval data can read the new fields to surface accrual information without requiring separate API calls or calculations.</li>
+
+</ul>
+<h3>Scope and limitations</h3>
+<ul>
+<li>The documented changes focus on the GET loan by ID/external-id response. The reference also mentions a modification to the POST - create loan API to support related features, but the exact details are not provided in the current materials. This page describes only the GET loan field changes.</li>
+
+</ul>
+<h3>Field definitions and behavior</h3>
+<ul>
+<li>totalUnpaidAccruedDueInterest</li>
+<li>Description: The sum of accrued interest that has not yet been paid as of COB for the loan.</li>
+<li>When populated: On loan retrieval, the field reflects the current accrued interest balance that remains unpaid.</li>
+<li>Operational note: This value aids reconciliations and operational decision-making when assessing short-term liquidity needs.</li>
+<li>PayPal Derived Field (accrued interest amount)</li>
+<li>Description: The accrued interest amount computed by the accrual model for the relevant accrual window. This field is intended to expose the accrued amount in a readily consumable form for integrations that reference PayPal-era terminology or similar accounting flows.</li>
+<li>When populated: Present in the GET loan response when accruals are active.</li>
+<li>currentInstallmentPayableInterest (After COB)</li>
+<li>Description: The portion of the current installment’s interest that becomes payable after COB, considering accrued interest and any interim repayments.</li>
+<li>When populated: Available in the GET loan response in the context of the current installment and accrual cycle.</li>
+
+</ul>
+<h3>How accrual is modeled (context from reference calculations)</h3>
+
+<p>The reference material provides calculation references for Accrual and Accrual Activity across progressive loan variants. The accrual model progresses daily, aggregating daily accruals into a running balance of unpaid accrued interest. The payable interest surfaces through the PayPal-derived field and the current installment payable amount, enabling visibility into both accumulated and upcoming interest obligations. The two example sheets show scenarios with and without repayments and illustrate how accruals and payables evolve over time. In practice, the values depend on loan terms, the daily accrual logic, and the COB processing schedule.</p>
+
+For transparency, the reference includes a dedicated calculation sheet that demonstrates how payable interest is derived from daily accruals, including the use of daily rates, rounding of intermediate values, and the aggregation of daily accruals into period totals. Two progressive-loan variants (v2 and v3) illustrate the same concepts across different term structures and repayment patterns.
+
+<h3>Visual overview (high level)</h3>
+
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+ A[Disbursement] --> B[Accrual Periods]
+ B --> C[totalUnpaidAccruedDueInterest]
+ B --> D[PayPal Derived Field (accrued interest amount)]
+ B --> E[currentInstallmentPayableInterest (After COB)]]]></ac:plain-text-body></ac:structured-macro>
+
+<h3>Example scenarios (conceptual, non-exhaustive)</h3>
+<ul>
+<li>Without repayment during the accrual window: GET loan by ID returns the accrual fields showing the accumulation of interest that remains unpaid as of COB. The numbers reflect the accrual logic over the observed days and the status of the current installment’s payable interest.</li>
+<li>With repayment during the accrual window: GET loan by ID still returns the accrual fields, but the values adjust to reflect the repayment reducing the outstanding accrued interest and affecting current installment payable interest as of COB. The exact figures depend on the repayment date, the amount paid, and the schedule of accruals.</li>
+
+</ul>
+<h3>Operations guidance and validation tips</h3>
+<ul>
+<li>When reviewing a retrieved loan, validate that the new fields are present and populated as described. If any of the accrual fields are missing or appear as null, investigate whether accruals are active for the loan and whether COB processing has occurred.</li>
+<li>Use totalUnpaidAccruedDueInterest in reconciliation with suspense or accrued-interest GL postings, and use currentInstallmentPayableInterest to anticipate upcoming payments.</li>
+<li>If downstream systems rely on a fixed schema, implement tolerant parsing to ignore unknown fields while still validating the presence and reasonableness of the new fields.</li>
+
+</ul>
+<h3>Implementation notes (non-functional considerations)</h3>
+<ul>
+<li>The changes are additive to the GET loan response. No existing navigation or workflow changes are required to access the new fields; they appear in the loan retrieval payload alongside existing loan details.</li>
+<li>The enhancement does not mandate changes to the loan submission workflow as described in the referenced materials. Any interaction with the POST create loan API to support related features is not detailed in this page.</li>
+
+</ul>
+If you need deeper walkthroughs of accrual calculations and the available sample data, refer to the referenced calculation materials in the provided sheets which illustrate progressive loan accruals under varying repayment patterns and COB processing assumptions.
+</ac:document>
