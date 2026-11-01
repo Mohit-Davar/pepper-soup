@@ -6,6 +6,7 @@ site:
       key: user-guide
       title: User Guide
       path: user
+      default: true
       content:
         directory: ./docs/gitbook/user
 
