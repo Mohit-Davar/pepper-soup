@@ -1,4 +1,4 @@
-# Accounting and Asset related changes
+﻿# Accounting and Asset related changes
 
 This release introduces enhanced capabilities to move funds from T24 books to Fineract and to externalize assets for real-time transfer to external investors. It documents two migration approaches, their respective accounting treatments, and the operational considerations required to perform and validate migrations. The changes affect how asset ownership is reflected, how opening balances are established at migration end, and how subsequent reporting reconciles opening balances with period balances.
 
@@ -78,12 +78,12 @@ These questions describe gaps in the current specification and indicate areas wh
 
 ```mermaid
 flowchart TD
- A[Migration Start] --> B1[Option 1: Set T24 asset owner (balance 0)]
+ A[Migration Start] --> B1["Option 1: Set T24 asset owner (balance 0)"]
  B1 --> C1[Migration: Update Sale/Buyback flow]
  C1 --> D1[End of migration: Create GL entry for opening balance]
  D1 --> E1[Post-migration: Fineract ownership aligned, GL balanced]
  A --> B2[Option 2: Do not create GL entries during migration]
- B2 --> C2[End of migration: Create trial balance entry for opening balance (P/I/F/Penalties)]
+ B2 --> C2["End of migration: Create trial balance entry for opening balance (P/I/F/Penalties)"]
  C2 --> D2[Post-migration: Trial balance reflects opening balance]
  D1 --> F[Common: Real-time asset transfers to external investors]
  D2 --> F

@@ -1,4 +1,4 @@
-# Accrual Activity Posting on Installment date
+﻿# Accrual Activity Posting on Installment date
 
 This page documents the behavior and calculations associated with the introduction of a new non-monetary transaction type named accrual activity transaction. The accrual activity transaction is posted on the Installment due_date and applies to the Installment’s INCOME portion. It records accrual-related income without moving cash, and it interacts with the existing daily accrual and repayment processing to shape the repayment schedule and income recognition.
 
@@ -93,8 +93,8 @@ Below is a compact visualization of the end-to-end flow from prior daily accrual
 ```mermaid
 flowchart TD
  A[Daily accruals] --> B[Installment due date]
- B --> C[Post accrual activity (non-monetary)]
- C --> D[Repayment entry (cash)]
+ B --> C["Post accrual activity (non-monetary)"]
+ C --> D["Repayment entry (cash)"]
  D --> E[Loan schedule update]
  E --> F[Income recognition updated via accrual activity]
 ```

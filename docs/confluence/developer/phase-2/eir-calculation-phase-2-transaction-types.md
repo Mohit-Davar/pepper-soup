@@ -1,4 +1,4 @@
-<!-- Labels: developer, phase-2 -->
+﻿<!-- Labels: developer, phase-2 -->
 # EIR Calculation Phase 2 - Transaction Types
 
 This page documents the transaction type landscape for of the EIR (Effective Interest Rate) calculation in Pepper-Soup’s Working Capital loan product. The Working Capital product is designed as a separate module that introduces EIR-based income recognition, accounting mappings, and a flexible transaction model aligned with PayPal’s Working Capital financing concepts. The implementation guarantees referenced here reflect verified behavior: the product operates as a zero-interest facility with a single disbursement, no accrual-type transactions, and a lifecycle that supports repayments, reversals, and a range of charge-related activities while verifying accurate amortization and reporting through the EIR methodology.
@@ -126,9 +126,9 @@ flowchart TD
  B --> C[Amortization Schedule Generated/Updated]
  C --> D{Repayment Received?}
  D -->|Yes| E[Allocate Payment by Priority]
- D -->|No| F[Accrue Deferred Income (EIR-based with Repayments)]
+ D -->|No| F["Accrue Deferred Income (EIR-based with Repayments)"]
  E --> G[Amortization Update & Schedule Recalculation]
- G --> H[Discount Fees Amortization (Non-Monetary)]
+ G --> H["Discount Fees Amortization (Non-Monetary)"]
  H --> I[Report/GL Update]
  G --> J{Backdated?}
  J -->|Yes| K[Backdate Processing: Recalculate, Replay Transactions]

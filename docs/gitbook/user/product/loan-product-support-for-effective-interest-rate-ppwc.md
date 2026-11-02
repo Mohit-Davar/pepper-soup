@@ -1,4 +1,4 @@
-# Loan product support for Effective interest rate (PPWC)
+﻿# Loan product support for Effective interest rate (PPWC)
 
 The Pepper-Soup Working Capital (PPWC) product introduces an Effective Interest Rate (EIR)–based calculation framework designed to follows PayPal’s Working Capital financing offerings. This feature describes a zero-interest, single-disbursement loan product that uses an EIR methodology to recognize income over the life of the loan, supports flexible repayment patterns, and provides reliable configuration and accounting capabilities. The target audience includes operations staff, loan officers, branch managers, and credit agents who require precise, verified behavior for product setup, servicing, and reporting.
 
@@ -158,7 +158,7 @@ flowchart TD
  B --> C[Amortization Schedule Generated] 
  C --> D[Repayment] 
  D --> E[Actual Amortization Updated] 
- E --> F[Discount Fees Amortization (non-monetary)] 
+ E --> F["Discount Fees Amortization (non-monetary)"] 
  F --> G[Amortization Schedule Update] 
  D --> H[Discount Fee Adjustment] 
  H --> I[Future Amortization Recalculation] 

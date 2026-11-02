@@ -1,4 +1,4 @@
-# Charge off process to charge off interest due
+﻿# Charge off process to charge off interest due
 
 ### Overview
 The enhancement described as “Charge off process to charge off interest due” adds automated handling for writing off interest balances as part of the overall charge-off workflow. The objective is to verify accounting entries reflect charged-off interest alongside principal and other charge-off components so that the ledger remains consistent with the defined accounting mappings. The reference data identifies the specific GL accounts and mapping rules that govern how different portions of a charge-off are posted, including distinctions between fraud and non-fraud scenarios and between principal, interest, fees, and penalties.
@@ -89,15 +89,15 @@ The following simplified overview captures the principal associations described 
 flowchart TD
  A[Loan with outstanding interest balance] --> B{Charge-off eligibility?}
  B -->|Yes| C[Determine portions: Principal, Interest, Fees, Penalties, UNC]
- C --> D1[Principal portion -> Loans Receivable / Credit Loss (744007 or 744037)]
- C --> D2[Interest portion -> Interest income charge off (404001)]
- C --> D3[Fees portion -> Fee Charge off (404008)]
+ C --> D1["Principal portion -> Loans Receivable / Credit Loss (744007 or 744037)"]
+ C --> D2["Interest portion -> Interest income charge off (404001)"]
+ C --> D3["Fees portion -> Fee Charge off (404008)"]
  C --> D4[Penalties portion -> Penalty-related lines]
  D1 --> E[Update Loan balance and loss provisioning]
  D2 --> E
  D3 --> E
  D4 --> E
- E --> F[Reconcile with Suspense (145023) and Overpayment Liability (245000) as needed]
+ E --> F["Reconcile with Suspense (145023) and Overpayment Liability (245000) as needed"]
  F --> G[Finalize GL entries]
  B -->|No| H[No charge-off action]
  G --> I[Audit trail]

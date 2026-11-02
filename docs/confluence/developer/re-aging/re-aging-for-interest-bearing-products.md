@@ -1,4 +1,4 @@
-<!-- Labels: developer, re-aging -->
+﻿<!-- Labels: developer, re-aging -->
 # Re-aging for Interest bearing products
 
 Re-aging is a controlled reallocation of a loan’s repayment schedule that allows adjusting the timing and composition of future installments after an original disbursement. For Pepper-Soup, Re-aging for interest-bearing products allows updating the remaining principal schedule while accounting for interest, fees, and any chargebacks in a forward- or backward-looking manner, subject to the verified rules described below. The feature is characterized by its allowance to re-age from any date in the loan cycle, with the re-age date allowed to be before the last repayment date under certain scenarios, and by a set of deterministic rules that govern how interest, principal, fees, and chargebacks are reallocated, reversed, or replayed. The rules are captured across several scenario categories (S1–S6) and their variants, each illustrating a distinct treatment when re-aging is performed.
@@ -78,7 +78,7 @@ A compact view of the execution flow is shown in the diagram below. It captures 
 ```mermaid
 flowchart TD
  A[Re-aging Trigger] --> B[Validate re-age date against last repayment date]
- B --> C[Identify re-aging scenario (S1-S6 and variants)]
+ B --> C["Identify re-aging scenario (S1-S6 and variants)"]
  C --> D[Recompute amortization schedule for principal]
  D --> E[Allocate interest, fees, and charge-backs per scenario rules]
  E --> F[Replay and adjust future installments as needed]

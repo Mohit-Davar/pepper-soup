@@ -1,4 +1,4 @@
-<!-- Labels: user, loan-api -->
+﻿<!-- Labels: user, loan-api -->
 # API Change requests - Loan submission / get loan
 
 This page documents an enhancement to the loan retrieval workflow focused on GET Loan by ID. Specifically, when a loan is retrieved, the response now includes additional accrual-related fields that support visibility into accrued interest and payable amounts. The reference materials also indicate a related change to the POST - create loan API to support related functionality; however, this page documents the GET loan field changes and notes that the exact POST changes are not described in the provided materials.
@@ -50,8 +50,8 @@ For transparency, the reference includes a dedicated calculation sheet that demo
 flowchart TD
  A[Disbursement] --> B[Accrual Periods]
  B --> C[totalUnpaidAccruedDueInterest]
- B --> D[PayPal Derived Field (accrued interest amount)]
- B --> E[currentInstallmentPayableInterest (After COB)]
+ B --> D["PayPal Derived Field (accrued interest amount)"]
+ B --> E["currentInstallmentPayableInterest (After COB)"]
 ```
 
 ### Example scenarios (conceptual, non-exhaustive)

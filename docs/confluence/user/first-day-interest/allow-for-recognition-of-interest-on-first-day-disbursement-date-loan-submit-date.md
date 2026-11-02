@@ -1,4 +1,4 @@
-<!-- Labels: user, first-day-interest -->
+﻿<!-- Labels: user, first-day-interest -->
 # First-Day Interest Recognition on Disbursement
 
 This page describes the enhancement that allows configurable recognition of interest on the first day of loan disbursement. Historically, the system accrued interest according to the chosen accrual rules, but this enhancement makes it possible to recognize and record interest on the disbursement date itself (the first day of the period), rather than starting accrual on a subsequent day. The change matters in day-to-day operations because it affects when interest begins to accrue, how daily accruals are posted, and how repayments are allocated between principal and interest from the very first day of a loan. The reference material demonstrates the treatment using a 7% annual rate with a 360-day year and illustrates the Day 0 (first day) accrual pattern and its continuation through the repayment cycle.
@@ -57,7 +57,7 @@ The reference data includes explicit example values that illustrate Day 0 accrua
 
 ```mermaid
 flowchart TD
- A[Loan disbursement (Day 0)] --> B[First-day accrual entry posted]
+ A["Loan disbursement (Day 0)"] --> B[First-day accrual entry posted]
  B --> C[Daily accrual entries continue across the first period]
  C --> D[First repayment date arrives]
  D --> E[Repayment allocated to principal and interest]

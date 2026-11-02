@@ -1,4 +1,4 @@
-# Calculating interest on 366 days in a year
+﻿# Calculating interest on 366 days in a year
 
 The Pepper-Soup financial module supports region-aware day-count conventions for interest accrual, including explicit handling of leap years. This enhancement allows per-region calculation rules that follows regulatory expectations in US and German loan terms, and provides configurable leap-year strategies for how the denominator in the interest fraction is determined. The core idea is that the interest earned over a period is proportional to the actual number of days in that period (the numerator) divided by a denominator that reflects whether that period falls in a leap-year context. The resulting ratio is multiplied by the nominal annual rate and the principal to yield the accrued interest for the period.
 
@@ -97,7 +97,7 @@ flowchart TD
  E -->|Option B| G[Determine Den: 366 if period includes Feb 29, else 365]
  F --> H[Compute D: actual days in period]
  G --> H
- H --> I[Compute I = P * r * (D / Den)]
+ H --> I["Compute I = P * r * (D / Den)"]
  I --> J[Update accrual schedule and GL postings]
  J --> K[End]
 ````

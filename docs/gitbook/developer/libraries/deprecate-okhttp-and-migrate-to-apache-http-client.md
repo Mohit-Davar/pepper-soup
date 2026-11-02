@@ -1,4 +1,4 @@
-# Deprecate OkHttp and migrate to Apache HTTP client
+﻿# Deprecate OkHttp and migrate to Apache HTTP client
 
 This page documents the strategic deprecation of the OkHttp-based HTTP client used by the Fineract client generation flow and its migration to Apache HttpClient. The change is motivated by the need for reliable connection lifecycle management in long-running server applications, particularly the ability to configure and honor connection maxAge to avoid issues with stale or long-lived connections. Retrofit-based integration tests remain available, while exploration continues into whether FEIGN would offer a better integration approach.
 
@@ -41,8 +41,8 @@ The following diagram illustrates the migration flow from the existing OkHttp-ba
 
 ```mermaid
 flowchart TD
- A[Client generation] --> B[OkHttp (current, deprecated)]
- B --> C[Apache HttpClient (target)]
+ A[Client generation] --> B["OkHttp (current, deprecated)"]
+ B --> C["Apache HttpClient (target)"]
  D[Retrofit-based integration tests] --> E[Test stability during migration]
  F[FEIGN investigation] --> G[Future evaluation path]
 ```

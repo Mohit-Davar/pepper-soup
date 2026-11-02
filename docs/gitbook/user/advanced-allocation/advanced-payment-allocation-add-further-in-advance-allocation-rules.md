@@ -1,4 +1,4 @@
-# Advanced payment allocation - Add further in advance allocation rules
+﻿# Advanced payment allocation - Add further in advance allocation rules
 
 This enhancement defines the behavior for allocating funds when a payment is made in advance against a loan where multiple installments are outstanding. The new strategy specifies the allocation order for unprocessed funds: first to the upcoming installment, and then to the last installment if any funds remain unallocated. It also covers an explicit exceptional path for cases where the early repayment amount exceeds both the first upcoming installment and the last installment outstanding. This change affects daily operations by clarifying the sequence of allocations that credit agents must apply and by making the resulting installment balances more predictable from the customer’s perspective.
 
@@ -56,15 +56,15 @@ In all scenarios, the allocations are recorded as distinct line items against th
 
 ```mermaid
 flowchart TD
- A[In-Advance Payment Allocation] --> B[Identify first upcoming installment (U1)]
+ A[In-Advance Payment Allocation] --> B["Identify first upcoming installment (U1)"]
  B --> C{P <= U1?}
  C -->|Yes| D[Allocate P to upcoming; end]
  C -->|No| E[Allocate U1 to upcoming; P1 = P - U1]
  E --> F{Last installment exists with UL > 0?}
- F -->|Yes| G[Allocate min(P1, UL) to last installment; P2 = P1 - UL]
+ F -->|Yes| G["Allocate min(P1, UL) to last installment; P2 = P1 - UL"]
  F -->|No| H[No last installment; stop allocations]
  G --> I{P2 > 0?}
- I -->|Yes| J[Allocate min(P2, UL2) to last-but-one; P3 = P2 - UL2]
+ I -->|Yes| J["Allocate min(P2, UL2) to last-but-one; P3 = P2 - UL2"]
  I -->|No| K[End]
  J --> L[End]
 ```

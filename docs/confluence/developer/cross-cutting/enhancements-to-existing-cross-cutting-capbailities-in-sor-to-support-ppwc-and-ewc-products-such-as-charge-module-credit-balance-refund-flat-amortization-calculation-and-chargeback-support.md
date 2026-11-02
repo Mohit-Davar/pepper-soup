@@ -1,4 +1,4 @@
-<!-- Labels: developer, cross-cutting -->
+﻿<!-- Labels: developer, cross-cutting -->
 # Enhancements to existing cross-cutting capbailities in SOR to support PPWC and EWC products such as charge module, credit balance refund, flat amortization calculation, and chargeback support
 
 The enhancements described here pertain to the upstream SOR (Statement of Resources) cross-cutting capabilities, with a focus on extending support for Working Capital products (PPWC and EWC). The design introduces a dedicated Working Capital product module and aligns cross-cutting workflows—such as amortization, charges, refunds, and chargebacks—with the requirements of non-traditional working capital financing while preserving the integrity of existing term-loan semantics. The goal is to allows accurate income recognition, flexible repayment constructs, and reliable accounting reconciliation in a domain where cash flows and deferred income are governed by an Effective Interest Rate (EIR) view. The following document documents verified scope, architecture, and behavior, and highlights areas where interpretation or future work remains under review.
@@ -129,9 +129,9 @@ flowchart TD
  E --> F{Backdated or Regular}
  F -->|Regular| G[Update Balance & Amortization]
  F -->|Backdated| H[Recalculate Schedule & Replay Transactions]
- G --> I[Discount Fees Amortization (tracking)]
+ G --> I["Discount Fees Amortization (tracking)"]
  I --> J[Possible DFA Adjustments]
- J --> K[Accounting Entries (JE) ]
+ J --> K["Accounting Entries (JE) "]
  H --> K
  E --> L[CBR or Overpayment Handling]
  L --> M[Adjust Credit Balance or Refund]

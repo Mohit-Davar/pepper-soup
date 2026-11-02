@@ -1,4 +1,4 @@
-<!-- Labels: user, interest-transactions -->
+﻿<!-- Labels: user, interest-transactions -->
 # Transaction type - Interest refund
 
 This feature handles the calculation and posting of interest refunds whenever a merchant refund posts against a loan. When a merchant refund is posted, the system computes the associated interest refund, allocates it to the interest accrual first, and, if any refund remains after reducing interest, applies the remainder to principal. The behavior is defined to maintain a consistent and auditable progression of a loan’s balance and accrued interest. The feature supports a variety of real-world refund patterns, including refunds on single disbursements, multiple disbursements on the same or different days, and partial refunds across different points in the repayment schedule. It is visible to operations staff, loan officers, branch managers, and credit agents through the loan servicing workflow and the interest transaction results on the loan’s ledger.
@@ -98,7 +98,7 @@ flowchart TD
  C --> D{Is there remaining refund after interest accruals?}
  D -- Yes --> E[Apply remainder to Principal]
  D -- No --> F[Post Interest Refund only]
- E --> G[Update Loan Balances (Principal, Interest)]
+ E --> G["Update Loan Balances (Principal, Interest)"]
  F --> G
  G --> H[Ledger Reflects New State]
 ```

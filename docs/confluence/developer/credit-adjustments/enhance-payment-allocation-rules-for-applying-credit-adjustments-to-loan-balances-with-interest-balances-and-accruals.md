@@ -1,4 +1,4 @@
-<!-- Labels: developer, credit-adjustments -->
+﻿<!-- Labels: developer, credit-adjustments -->
 # Payment allocation rules for applying credit adjustments to loan balances with interest balances and accruals
 
 This page documents the conceptual and reference behavior for applying credit adjustments to loan balances that carry both interest components and accruals. It describes the financial operation at a high level, the reference calculations used to illustrate the underlying mechanics, and how credit adjustments interact with an amortizing loan schedule. The content focuses on verified material from the reference data and does not introduce undocumented behaviors. Where the reference provides concrete numbers and formulas, those are reproduced exactly and interpreted only within the scope of the documented material.
@@ -85,7 +85,7 @@ From a backend perspective, supporting credit adjustments with variable allocati
 ```mermaid
 flowchart TD
  A[Credit Adjustment Input] --> B[Resolve Allocation Rule]
- B --> C[Apply to Loan Balances (principal, interest, accruals)]
+ B --> C["Apply to Loan Balances (principal, interest, accruals)"]
  C --> D[Recalculate Interest & Accruals for future periods]
  D --> E[Update Amortization Schedule and Balances]
  E --> F[Persist Balances and Schedule/Outputs]

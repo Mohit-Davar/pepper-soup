@@ -1,4 +1,4 @@
-# Accounting and Asset related changes
+﻿# Accounting and Asset related changes
 
 This page documents the verified, publication‑ready understanding of the accounting and asset handling changes associated with externalizing assets and moving funds from T24 books to Fineract. The guidance reflects a two‑option approach for migration end behavior, focusing on how opening balances are established in Fineract’s ledgers and reporting.
 
@@ -78,8 +78,8 @@ flowchart TD
  D --> E{Migration end handling}
  E -->|Option 1| F[Create GL opening balance entry for loan]
  E -->|Option 2| H[Create Trail Balance opening balance entry]
- F --> G[Migration complete (Option 1)]
- H --> I[Migration complete (Option 2)]
+ F --> G["Migration complete (Option 1)"]
+ H --> I["Migration complete (Option 2)"]
 ```
 
 Explanation: The diagram reflects the two end‑of‑migration paths that determine how the opening balance of migrated loans is represented in the accounting records. Option 1 results in a GL entry, while Option 2 results in a trail balance entry that includes principal and component balances.

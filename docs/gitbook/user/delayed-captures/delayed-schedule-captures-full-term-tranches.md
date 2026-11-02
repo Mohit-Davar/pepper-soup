@@ -1,4 +1,4 @@
-# Delayed Schedule Captures/Full Term tranches
+﻿# Delayed Schedule Captures/Full Term tranches
 
 The Delayed Schedule Captures/Full Term tranches feature allows Disbursement Processing and Planning (Disbursement PP) to support delayed captures for long-term installment loans. It covers scenarios where funds are disbursed in installments after a customer completes an order (for example, an order at a partner platform) and receives approval for a long-term term. The core idea is to generate a complete repayment schedule, allocate disbursed amounts across tranches, and produce an accurate amortization view that reflects the actual timing of disbursements and the terms of the loan. The window for delayed captures is up to 56 days from the customer’s order completion in eligible cases, and the system can produce full-term tranche schedules consistent with the stated term length and rate.
 
@@ -23,10 +23,10 @@ An illustrative diagram of the lifecycle illustrates the high-level flow from or
 
 ```mermaid
 flowchart TD
- A[Order Completed] --> B[Loan Approved (Long-Term Installment)]
+ A[Order Completed] --> B["Loan Approved (Long-Term Installment)"]
  B --> C{Delayed Capture Window (>0 and <=56 days)}
- C -->|Within window| D[Record Delayed Disbursement(s)]
- D --> E[Generate Repayment Schedule (Full Term Tranche)]
+ C -->|Within window| D["Record Delayed Disbursement(s)"]
+ D --> E["Generate Repayment Schedule (Full Term Tranche)"]
  E --> F{Post-Capture Events}
  F --> G[Refunds]
  F --> H[Reversals]

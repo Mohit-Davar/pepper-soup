@@ -1,4 +1,4 @@
-# Buy-Down Fee & Capitalized Income Subtypes
+﻿# Buy-Down Fee & Capitalized Income Subtypes
 
 This page documents the enhanced Buy-Down Fee and Capitalized Income capabilities, including optional classifications (subtypes) and the interaction with origination fees as a new, mappable fee type. The change allows configuring and selecting classifications when creating transactions, so users can capture more granular reporting and accounting for these special transaction types. The enhancements apply to the fee classification area under Fees and to transaction creation workflows for Buy-Down Fees, Capitalized Income, and the newly introduced origination fees at the product level.
 
@@ -121,8 +121,8 @@ Notes on precision and verification:
 flowchart TD
  A[Disbursement with optional Buy-Down / Capitalized Income sub-type] --> B{Classification selected?}
  B -- Yes --> C[Create transaction with selected sub-type]
- B -- No --> D[Create transaction without subtype (default handling)]
- C --> E[Capitalized Income posting: Debit Loan Portfolio (Loan Receivable); Credit Defered Income]
+ B -- No --> D["Create transaction without subtype (default handling)"]
+ C --> E["Capitalized Income posting: Debit Loan Portfolio (Loan Receivable); Credit Defered Income"]
  E --> F[Amortization: Daily COB transfer Defered Income to Income from Amortization]
  F --> G{Loan payoff or charge-off?}
  G -- Payoff --> H[Payoff posting: update balances and income]

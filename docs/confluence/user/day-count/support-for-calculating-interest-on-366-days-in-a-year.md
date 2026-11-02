@@ -1,4 +1,4 @@
-<!-- Labels: user, day-count -->
+﻿<!-- Labels: user, day-count -->
 # Calculating interest on 366 days in a year
 
 This enhancement adds region- and term-based day-count conventions to interest accrual, enabling accurate calculation of interest when a year contains 366 days. The system supports two regional rules (United States and Germany–Luxembourg timeframes are represented here as US LT and DE LT in the product) and provides configurable options to determine when a 366-day denominator should apply. This alignment verifies regulatory compliance and consistent accrual across product offerings that span leap years or February 29. 
@@ -79,7 +79,7 @@ flowchart TD
  DE --> DEFeb{Period includes Feb 29?}
  DEFeb -->|Yes| D366[Denominator = 366]
  DEFeb -->|No| D365[Denominator = 365]
- USD366 & USD365 & D366 & D365 --> Calc[Calculation: Interest = Principal × Rate × (DaysInPeriod ÷ Denominator)]
+ USD366 & USD365 & D366 & D365 --> Calc["Calculation: Interest = Principal × Rate × (DaysInPeriod ÷ Denominator)"]
  Calc --> End([End: Post accrual])
  Start --> region
  End --> |Output| End

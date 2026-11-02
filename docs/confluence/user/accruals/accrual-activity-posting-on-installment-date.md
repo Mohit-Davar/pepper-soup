@@ -1,4 +1,4 @@
-<!-- Labels: user, accruals -->
+﻿<!-- Labels: user, accruals -->
 # Accrual Activity Posting on Installment date
 
 This page documents the enhancement that introduces a new non-monetary transaction type called accrual activity. The accrual activity is posted on the Installment due_date for the installment’s income portion. The feature provides visibility into accrued income associated with each installment, independent of cash movements, and integrates with subsequent repayment processing to reflect the income recognition on the installment date.
@@ -70,8 +70,8 @@ Mermaid diagram: accrual activity posting workflow
 ```mermaid
 flowchart TD
  A[Installment due date occurs] --> B{Accrual activity posting enabled}
- B -- Yes --> C[Post accrual activity (non-monetary) for income portion]
- C --> D[Repayment occurs (if any) for the installment]
+ B -- Yes --> C["Post accrual activity (non-monetary) for income portion"]
+ C --> D["Repayment occurs (if any) for the installment"]
  D --> E[Allocate cash to Principal and Interest based on repayment rules]
  E --> F[Interest portion reflects accrual activity amount]
  B -- No --> G[No accrual activity posted]

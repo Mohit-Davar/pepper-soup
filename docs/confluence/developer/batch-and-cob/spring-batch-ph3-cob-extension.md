@@ -1,4 +1,4 @@
-<!-- Labels: developer, batch-and-cob -->
+﻿<!-- Labels: developer, batch-and-cob -->
 # Spring Batch - Ph3 [CoB extension]
 
 The Spring Batch - Ph3 [CoB extension] page describes the third phase of the Spring Batch rework within the CoB extension, focusing on collecting and tracking the execution of Spring Batch changes to extend CoB functionality. This page documents verified architectural intent and observed processing behavior as part of the platform’s Batch and CoB program.
@@ -31,7 +31,7 @@ This description represents the observable processing pattern without asserting 
 ```mermaid
 flowchart LR
  SB[Spring Batch Execution] --> TE[CoB Telemetry Collector]
- TE --> TD[Telemetry/Data Store (CoB)]
+ TE --> TD["Telemetry/Data Store (CoB)"]
  TE --> RA[CoB Extension Analytics / Dashboards]
 ```
 

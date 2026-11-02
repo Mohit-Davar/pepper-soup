@@ -1,4 +1,4 @@
-# Pay in 30 days - Phase 2 [Nice to have]
+﻿# Pay in 30 days - Phase 2 [Nice to have]
 
 completes the implementation required to support the Pay in 30 days feature. This work builds on the BNPL Pay in 3/4 and Pay in 30 flows, integrating Pay in 30 days actions with the existing loan transaction and loan charge processing pathways. The outcome is a consistent, auditable trail of Pay in 30 days activity visible to operations staff, loan officers, branch managers, and credit agents, with clear linkage between initiated actions, resulting transaction identifiers, and any associated charges.
 
@@ -44,9 +44,9 @@ The outcome of Pay in 30 days actions is therefore not only the immediate transa
 
 ```mermaid
 flowchart TD
- A[Initiate Pay in 30 days transaction] --> B[System creates loan transaction (type: repayment, goodwillcredit, waiveinterest, etc.)]
+ A[Initiate Pay in 30 days transaction] --> B["System creates loan transaction (type: repayment, goodwillcredit, waiveinterest, etc.)"]
  B --> C[System returns resourceId = transactionId]
- C --> D[Option: Adjust (revert) transaction]
+ C --> D["Option: Adjust (revert) transaction"]
  C --> E[Option: Create / pay / waive loan charges for this action]
  E --> F[System returns resourceId = chargeId]
  D --> G[Transaction state updated; balances and dates may be recalculated]

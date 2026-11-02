@@ -1,4 +1,4 @@
-<!-- Labels: developer, first-day-interest -->
+﻿<!-- Labels: developer, first-day-interest -->
 # First-Day Interest Recognition on Disbursement
 
 This topic documents the implementation and behavior of first-day interest recognition on loan disbursement within Pepper-Soup. The feature allows customization of how interest accrues on the actual disbursement date (the first day) versus subsequent days, using the standard Fineract accrual model as the baseline. The reference material anchors the behavior to a rate of 7% annualized with a 360-day year and the associated day-count conventions, and presents working schedules and ledger entries that illustrate how first-day accrual interacts with subsequent accruals and repayments.
@@ -79,7 +79,7 @@ flowchart TD
  C --> E[For each subsequent business day: Post Accrual entry using dailyRate × outstandingPrincipal]
  E --> F[On repayments: allocate payment across accrued interest and principal]
  F --> G[Update loan balance and continue accrual cycle]
- G --> H[GL postings and journals ()]
+ G --> H["GL postings and journals ()"]
 ```
 
 ### Financial integrity and verification notes

@@ -1,4 +1,4 @@
-# Chargeback amount distribution
+﻿# Chargeback amount distribution
 
 The Chargeback amount distribution feature enhances the existing chargeback capability to allocate chargeback amounts across all components of a repayment allocation (principal, interest, penalties, and fees). The distribution is driven by the repayment that is being chargebacked and is governed by product-level configuration that determines the exact order and rules of allocation. A critical design constraint is that interest on chargeback remains out of scope given the current advance allocation strategy. The practical effect is that a chargeback creates a new charge that becomes due at the chargeback initiation date, and the delinquency evaluation period starts from that same date. These behaviors are evidenced by the design guidance and calculations documented in the reference material for chargebacks.
 
@@ -56,7 +56,7 @@ flowchart TD
  A[Chargeback Initiated against a Repayment] --> B[Compute Distribution Across Repayment Components]
  B --> C{Product Allocation Rules}
  C --> D[Create New Charge due on Chargeback Date]
- D --> E[Update Installment Schedule for Next Due Date(s)]
+ D --> E["Update Installment Schedule for Next Due Date(s)"]
  E --> F[Post Accounting Entries for Each Affected Component]
  F --> G[Persist State and Schedules]
 ```

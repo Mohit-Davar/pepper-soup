@@ -1,4 +1,4 @@
-<!-- Labels: developer, charge-off-balances -->
+﻿<!-- Labels: developer, charge-off-balances -->
 # Charge-Off: Immediate Due of Future Balances
 
 This page documents the technical scope, behavior, and accounting implications of the enhancement that makes all future balances on a loan due immediately on charge-off. The design intent is that once a loan is charged off, the full balance of the loan—including future principal and any accrued interest up to the charge-off date—becomes collectible, and ongoing accrual ceases after that date. The material below summarizes the verified processing rules, the involved accounting, and the protections and edge cases observed in the reference calculations the enhancement is based on.
@@ -78,11 +78,11 @@ The accounting entries must balance, with debits equal to credits when data for 
 ```mermaid
 flowchart TD
  A[Loan Active / Amortizing] --> B{Charge-off requested}
- B --> C[Validate charge-off date (not in future, latest transaction)]
+ B --> C["Validate charge-off date (not in future, latest transaction)"]
  C --> D[Compute accrued interest up to charge-off date]
  D --> E[Mark future balances as due immediately]
  E --> F[Cease interest accrual from day after charge-off]
- F --> G[Record charge-off accounting entries (principal, interest, fees, penalties)]
+ F --> G["Record charge-off accounting entries (principal, interest, fees, penalties)"]
  G --> H[Update loan schedule to reflect immediate due balances]
  H --> I[Payments post-charge-off are allocated to settled exposure]
  I --> J{Backdated payment or reversal occurs?}
