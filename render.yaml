@@ -3,7 +3,7 @@ services:
     name: doc-site
     runtime: static
     buildCommand: python build_manifest.py
-    staticPublishPath: ./
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*

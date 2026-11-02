@@ -151,8 +151,40 @@ def build_manifest():
     with open('data/data.js', 'w', encoding='utf-8') as f:
         f.write('window.__DOCS_MANIFEST__ = ' + json.dumps(manifest) + ';\n')
         f.write('window.__DOCS_SEARCH_INDEX__ = ' + json.dumps(search_index) + ';\n')
+
+    # Build standalone dist directory for Render staticPublishPath: dist
+    build_dist()
+
+def build_dist():
+    import shutil
+    dist_dir = 'dist'
+    os.makedirs(dist_dir, exist_ok=True)
     
-    print(f"Generated manifest.json and search-index.json ({len(search_index)} indexed pages).")
+    # Copy root index.html
+    shutil.copy('index.html', os.path.join(dist_dir, 'index.html'))
+    
+    # Copy assets
+    if os.path.exists('assets'):
+        dest_assets = os.path.join(dist_dir, 'assets')
+        if os.path.exists(dest_assets):
+            shutil.rmtree(dest_assets)
+        shutil.copytree('assets', dest_assets)
+        
+    # Copy data
+    if os.path.exists('data'):
+        dest_data = os.path.join(dist_dir, 'data')
+        if os.path.exists(dest_data):
+            shutil.rmtree(dest_data)
+        shutil.copytree('data', dest_data)
+        
+    # Copy docs
+    if os.path.exists('docs'):
+        dest_docs = os.path.join(dist_dir, 'docs')
+        if os.path.exists(dest_docs):
+            shutil.rmtree(dest_docs)
+        shutil.copytree('docs', dest_docs)
+
+    print("Dist directory prepared for production deployment.")
 
 if __name__ == '__main__':
     build_manifest()
