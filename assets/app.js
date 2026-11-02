@@ -110,10 +110,82 @@ function setupMarked() {
 function setupMermaid() {
   mermaid.initialize({
     startOnLoad: false,
-    theme: state.theme === 'dark' ? 'dark' : 'default',
     securityLevel: 'loose',
-    fontFamily: 'Inter, sans-serif'
+    fontFamily: 'Inter, sans-serif',
+    ...(state.theme === 'dark' ? getDarkMermaidConfig() : getLightMermaidConfig())
   });
+}
+
+function getLightMermaidConfig() {
+  return {
+    theme: 'base',
+    themeVariables: {
+      // Pastel palette — soft blue/purple/green
+      primaryColor: '#ede9fe',          // lavender fill
+      primaryTextColor: '#3b0764',      // deep purple text
+      primaryBorderColor: '#c084fc',    // purple border
+      secondaryColor: '#e0f2fe',        // sky blue
+      tertiaryColor: '#dcfce7',         // mint green
+      lineColor: '#a78bfa',             // soft violet arrows
+      edgeLabelBackground: '#faf5ff',   // near-white purple tint
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '14px',
+      // cluster / subgraph
+      clusterBkg: '#faf5ff',
+      clusterBorder: '#d8b4fe',
+      // note / special
+      noteBkgColor: '#fef9c3',
+      noteTextColor: '#713f12',
+      noteBorderColor: '#fde047',
+      // sequence diagram
+      actorBkg: '#ede9fe',
+      actorBorder: '#c084fc',
+      actorTextColor: '#3b0764',
+      actorLineColor: '#a78bfa',
+      signalColor: '#7c3aed',
+      signalTextColor: '#7c3aed',
+      labelBoxBkgColor: '#f3e8ff',
+      labelBoxBorderColor: '#c084fc',
+      labelTextColor: '#4c1d95',
+      loopTextColor: '#4c1d95',
+      activationBorderColor: '#c084fc',
+      activationBkgColor: '#f3e8ff',
+    }
+  };
+}
+
+function getDarkMermaidConfig() {
+  return {
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#2d1b69',
+      primaryTextColor: '#e9d5ff',
+      primaryBorderColor: '#7c3aed',
+      secondaryColor: '#0c2340',
+      tertiaryColor: '#052e16',
+      lineColor: '#a78bfa',
+      edgeLabelBackground: '#1e1040',
+      fontFamily: 'Inter, sans-serif',
+      fontSize: '14px',
+      clusterBkg: '#1e1040',
+      clusterBorder: '#6d28d9',
+      noteBkgColor: '#422006',
+      noteTextColor: '#fef9c3',
+      noteBorderColor: '#ca8a04',
+      actorBkg: '#2d1b69',
+      actorBorder: '#7c3aed',
+      actorTextColor: '#e9d5ff',
+      actorLineColor: '#7c3aed',
+      signalColor: '#c084fc',
+      signalTextColor: '#c084fc',
+      labelBoxBkgColor: '#1e1040',
+      labelBoxBorderColor: '#7c3aed',
+      labelTextColor: '#e9d5ff',
+      loopTextColor: '#e9d5ff',
+      activationBorderColor: '#7c3aed',
+      activationBkgColor: '#2d1b69',
+    }
+  };
 }
 
 function setupEvents() {
@@ -215,8 +287,8 @@ function applyTheme(theme) {
 
   mermaid.initialize({
     startOnLoad: false,
-    theme: theme === 'dark' ? 'dark' : 'default',
-    securityLevel: 'loose'
+    securityLevel: 'loose',
+    ...(theme === 'dark' ? getDarkMermaidConfig() : getLightMermaidConfig())
   });
 }
 
