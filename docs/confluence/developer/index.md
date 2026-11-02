@@ -1,6 +1,4 @@
 <!-- Labels: developer, index -->
-# Pepper-Soup: Developer Reference
-
 # Pepper-Soup Developer Reference
 
 Architecture, technical specifications, and extension guides for Pepper-Soup.

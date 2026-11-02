@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: doc-site
+    runtime: static
+    buildCommand: python build_manifest.py
+    publishPath: .
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+

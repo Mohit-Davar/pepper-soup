@@ -1,6 +1,4 @@
 <!-- Labels: user, index -->
-# Pepper-Soup: User Guide
-
 # Pepper-Soup User Guide
 
 Authoritative user and operations manual for Pepper-Soup.
