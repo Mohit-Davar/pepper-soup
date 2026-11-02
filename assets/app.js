@@ -2,40 +2,25 @@
 const state = {
   manifest: null,
   searchIndex: [],
-  currentSource: 'gitbook',       // 'gitbook' or 'confluence'
-  currentSubspace: 'user',         // 'user' or 'developer'
+  currentPlatform: 'gitbook',    // 'gitbook' or 'confluence' (controls BOTH content & theme)
+  currentSubspace: 'user',       // 'user' or 'developer'
   currentPath: '',
   currentDocTitle: '',
   allPagesInCurrentView: [],
-  theme: localStorage.getItem('doc_theme') || 'light',
-  skin: localStorage.getItem('doc_skin') || 'gitbook' // 'gitbook' or 'confluence'
+  theme: localStorage.getItem('doc_theme') || 'light'
 };
 
-// Metadata for the 4 spaces
-const spaceMeta = {
-  'gitbook/user': {
-    name: 'User Guide',
-    sub: 'GitBook Space',
-    icon: '📘',
-    crumb: 'User Guide'
+// Metadata for the platforms
+const platformMeta = {
+  'gitbook': {
+    name: 'GitBook',
+    sub: 'GitBook Docs & Styling',
+    icon: '📘'
   },
-  'gitbook/developer': {
-    name: 'Developer Reference',
-    sub: 'GitBook Space',
-    icon: '⚙️',
-    crumb: 'Developer Reference'
-  },
-  'confluence/user': {
-    name: 'User Knowledge Base',
-    sub: 'Confluence Space',
-    icon: '📑',
-    crumb: 'User Wiki'
-  },
-  'confluence/developer': {
-    name: 'Engineering Wiki',
-    sub: 'Confluence Space',
-    icon: '🛠️',
-    crumb: 'Engineering Specs'
+  'confluence': {
+    name: 'Confluence Wiki',
+    sub: 'Atlassian Pages & Styling',
+    icon: '📑'
   }
 };
 
@@ -46,6 +31,7 @@ const el = {
   currentSpaceName: document.getElementById('current-space-name'),
   currentSpaceFormat: document.getElementById('current-space-format'),
   currentSpaceIcon: document.getElementById('current-space-icon'),
+  subspaceToggleBar: document.getElementById('subspace-toggle-bar'),
   navTree: document.getElementById('nav-tree'),
   sidebarFilter: document.getElementById('sidebar-filter'),
   docContent: document.getElementById('doc-content'),
@@ -61,7 +47,6 @@ const el = {
   closeSearchBtn: document.getElementById('close-search-btn'),
   themeToggle: document.getElementById('theme-toggle'),
   themeIcon: document.getElementById('theme-icon'),
-  skinSwitch: document.getElementById('skin-switch'),
   readingPane: document.getElementById('reading-pane'),
   mobileToggleBtn: document.getElementById('mobile-toggle-btn'),
   sidebar: document.getElementById('sidebar')
@@ -70,12 +55,12 @@ const el = {
 // Boot
 async function init() {
   applyTheme(state.theme);
-  applySkin(state.skin);
+  applyPlatform(state.currentPlatform);
   setupMarked();
   setupMermaid();
   setupEvents();
 
-  // 1. First check if data is already loaded via <script src="data/data.js">
+  // 1. Check pre-bundled data from <script src="data/data.js">
   if (window.__DOCS_MANIFEST__ && window.__DOCS_SEARCH_INDEX__) {
     state.manifest = window.__DOCS_MANIFEST__;
     state.searchIndex = window.__DOCS_SEARCH_INDEX__;
@@ -83,7 +68,7 @@ async function init() {
     return;
   }
 
-  // 2. Fallback to fetch for web servers / APIs
+  // 2. Fallback to fetch for web servers
   try {
     const [manifestRes, indexRes] = await Promise.all([
       fetch('data/manifest.json'),
@@ -132,7 +117,7 @@ function setupMermaid() {
 }
 
 function setupEvents() {
-  // Space Switcher Dropdown (ERPNext workspace style)
+  // Platform Switcher Dropdown (Switches BOTH folder content AND theme style together)
   el.spaceBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     el.spaceDropdown.classList.toggle('show');
@@ -144,17 +129,17 @@ function setupEvents() {
 
   el.spaceDropdown.querySelectorAll('.dropdown-item').forEach(item => {
     item.addEventListener('click', () => {
-      const src = item.dataset.src;
-      const sub = item.dataset.sub;
-      switchSpace(src, sub);
+      const platform = item.dataset.platform;
+      switchPlatform(platform);
       el.spaceDropdown.classList.remove('show');
     });
   });
 
-  // Skin Switcher (GitBook vs Confluence)
-  el.skinSwitch.querySelectorAll('.skin-btn').forEach(btn => {
+  // Subspace Tabs (User Guide vs Developer Reference)
+  el.subspaceToggleBar.querySelectorAll('.subspace-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      applySkin(btn.dataset.skin);
+      const sub = btn.dataset.sub;
+      switchSubspace(sub);
     });
   });
 
@@ -235,17 +220,12 @@ function applyTheme(theme) {
   });
 }
 
-function applySkin(skin) {
-  state.skin = skin;
-  localStorage.setItem('doc_skin', skin);
-  document.body.setAttribute('data-mode', skin);
-
-  el.skinSwitch.querySelectorAll('.skin-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.skin === skin);
-  });
+function applyPlatform(platform) {
+  state.currentPlatform = platform;
+  document.body.setAttribute('data-mode', platform);
 
   // Toggle Confluence vs GitBook layout headers
-  if (skin === 'confluence') {
+  if (platform === 'confluence') {
     el.confluenceHeader.style.display = 'block';
     el.gitbookBreadcrumbs.style.display = 'none';
   } else {
@@ -254,79 +234,87 @@ function applySkin(skin) {
   }
 }
 
-function switchSpace(source, subspace) {
-  state.currentSource = source;
-  state.currentSubspace = subspace;
-  
-  // If user picks confluence space, automatically switch to confluence skin for authenticity
-  if (source === 'confluence' && state.skin !== 'confluence') {
-    applySkin('confluence');
-  } else if (source === 'gitbook' && state.skin !== 'gitbook') {
-    applySkin('gitbook');
-  }
-
-  updateSpaceSelectorUI();
+function switchPlatform(platform) {
+  state.currentPlatform = platform;
+  applyPlatform(platform);
+  updatePlatformSelectorUI();
   renderSidebar();
 
-  const defaultDoc = source === 'gitbook' ? 'README.md' : 'index.md';
-  setRoute(source, subspace, defaultDoc);
+  const defaultDoc = platform === 'gitbook' ? 'README.md' : 'index.md';
+  setRoute(platform, state.currentSubspace, defaultDoc);
 }
 
-function updateSpaceSelectorUI() {
-  const key = `${state.currentSource}/${state.currentSubspace}`;
-  const info = spaceMeta[key] || { name: 'Docs', sub: 'Space', icon: '📖' };
+function switchSubspace(subspace) {
+  state.currentSubspace = subspace;
+  updateSubspaceUI();
+  renderSidebar();
 
+  const defaultDoc = state.currentPlatform === 'gitbook' ? 'README.md' : 'index.md';
+  setRoute(state.currentPlatform, subspace, defaultDoc);
+}
+
+function updatePlatformSelectorUI() {
+  const info = platformMeta[state.currentPlatform] || platformMeta['gitbook'];
   el.currentSpaceName.textContent = info.name;
   el.currentSpaceFormat.textContent = info.sub;
   el.currentSpaceIcon.textContent = info.icon;
 
   el.spaceDropdown.querySelectorAll('.dropdown-item').forEach(item => {
-    const isAct = item.dataset.src === state.currentSource && item.dataset.sub === state.currentSubspace;
-    item.classList.toggle('active', isAct);
+    item.classList.toggle('active', item.dataset.platform === state.currentPlatform);
+  });
+}
+
+function updateSubspaceUI() {
+  el.subspaceToggleBar.querySelectorAll('.subspace-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.sub === state.currentSubspace);
   });
 }
 
 function handleRoute() {
   const hash = window.location.hash.slice(1);
   if (!hash) {
-    updateSpaceSelectorUI();
+    updatePlatformSelectorUI();
+    updateSubspaceUI();
     renderSidebar();
-    const defaultDoc = state.currentSource === 'gitbook' ? 'README.md' : 'index.md';
-    setRoute(state.currentSource, state.currentSubspace, defaultDoc);
+    const defaultDoc = state.currentPlatform === 'gitbook' ? 'README.md' : 'index.md';
+    setRoute(state.currentPlatform, state.currentSubspace, defaultDoc);
     return;
   }
 
   const parts = hash.split('/');
   if (parts.length >= 2) {
-    const src = parts[0];
+    const platform = parts[0];
     const sub = parts[1];
     const path = parts.slice(2).join('/');
 
-    if (state.manifest && state.manifest.sources[src]) {
-      state.currentSource = src;
+    if (state.manifest && state.manifest.sources[platform]) {
+      state.currentPlatform = platform;
       state.currentSubspace = sub;
-      updateSpaceSelectorUI();
+      applyPlatform(platform);
+      updatePlatformSelectorUI();
+      updateSubspaceUI();
       renderSidebar();
-      loadDoc(path || (src === 'gitbook' ? 'README.md' : 'index.md'));
+      loadDoc(path || (platform === 'gitbook' ? 'README.md' : 'index.md'));
       return;
     }
   }
 
-  updateSpaceSelectorUI();
+  updatePlatformSelectorUI();
+  updateSubspaceUI();
   renderSidebar();
-  loadDoc(state.currentSource === 'gitbook' ? 'README.md' : 'index.md');
+  loadDoc(state.currentPlatform === 'gitbook' ? 'README.md' : 'index.md');
 }
 
-function setRoute(src, sub, path) {
-  window.location.hash = `#${src}/${sub}/${path}`;
+function setRoute(platform, sub, path) {
+  window.location.hash = `#${platform}/${sub}/${path}`;
 }
 
 function renderSidebar() {
-  const subData = state.manifest.sources[state.currentSource]?.subspaces[state.currentSubspace];
+  const subData = state.manifest.sources[state.currentPlatform]?.subspaces[state.currentSubspace];
   if (!subData) return;
 
   state.allPagesInCurrentView = [];
-  const defaultDoc = state.currentSource === 'gitbook' ? 'README.md' : 'index.md';
+  const defaultDoc = state.currentPlatform === 'gitbook' ? 'README.md' : 'index.md';
   state.allPagesInCurrentView.push({
     title: 'Overview',
     path: defaultDoc,
@@ -390,7 +378,7 @@ function renderSidebar() {
   el.navTree.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      setRoute(state.currentSource, state.currentSubspace, link.dataset.path);
+      setRoute(state.currentPlatform, state.currentSubspace, link.dataset.path);
       if (window.innerWidth <= 768) el.sidebar.classList.remove('show');
     });
   });
@@ -422,7 +410,7 @@ async function loadDoc(relPath) {
     }
   });
 
-  const subData = state.manifest.sources[state.currentSource].subspaces[state.currentSubspace];
+  const subData = state.manifest.sources[state.currentPlatform].subspaces[state.currentSubspace];
   const fullPath = `${subData.base}/${relPath}`;
 
   el.docContent.innerHTML = `<div style="padding: 2rem 0; color: var(--text-tertiary);">Loading...</div>`;
@@ -474,19 +462,21 @@ function renderDoc(rawMarkdown, relPath) {
 }
 
 function updateBreadcrumbs() {
-  const key = `${state.currentSource}/${state.currentSubspace}`;
-  const info = spaceMeta[key];
+  const pName = state.currentPlatform === 'gitbook' ? 'GitBook' : 'Confluence';
+  const subName = state.currentSubspace === 'user' ? 'User Guide' : 'Developer Reference';
 
   el.gitbookBreadcrumbs.innerHTML = `
-    <span>${info.name}</span>
+    <span>${pName}</span>
+    <span>/</span>
+    <span>${subName}</span>
     <span>/</span>
     <span class="active">${state.currentDocTitle}</span>
   `;
 
   if (el.confluenceSpaceCrumb) {
     el.confluenceSpaceCrumb.innerHTML = `
-      <span class="crumb-icon">${info.icon}</span>
-      <span class="crumb-space-name">${info.name}</span> / <span>${state.currentDocTitle}</span>
+      <span class="crumb-icon">${state.currentPlatform === 'gitbook' ? '📘' : '📑'}</span>
+      <span class="crumb-space-name">${pName} / ${subName}</span> / <span>${state.currentDocTitle}</span>
     `;
   }
 }
@@ -611,7 +601,7 @@ function buildPagination() {
   el.paginationFooter.querySelectorAll('.page-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
-      setRoute(state.currentSource, state.currentSubspace, btn.dataset.path);
+      setRoute(state.currentPlatform, state.currentSubspace, btn.dataset.path);
     });
   });
 }
@@ -622,9 +612,9 @@ function resolveDocLink(href) {
 
   const found = state.allPagesInCurrentView.find(p => p.path.endsWith(clean) || clean.endsWith(p.path));
   if (found) {
-    setRoute(state.currentSource, state.currentSubspace, found.path);
+    setRoute(state.currentPlatform, state.currentSubspace, found.path);
   } else {
-    setRoute(state.currentSource, state.currentSubspace, clean);
+    setRoute(state.currentPlatform, state.currentSubspace, clean);
   }
 }
 
@@ -632,7 +622,7 @@ function resolveDocLink(href) {
 function openSearch() {
   el.searchModal.classList.add('show');
   el.modalSearchInput.value = '';
-  el.searchResultsBox.innerHTML = `<div class="search-empty-prompt">Type to search all topics across spaces...</div>`;
+  el.searchResultsBox.innerHTML = `<div class="search-empty-prompt">Type to search all topics...</div>`;
   setTimeout(() => el.modalSearchInput.focus(), 50);
 }
 
@@ -672,7 +662,12 @@ function doSearch(query) {
     row.addEventListener('click', () => {
       const { src, sub, path } = row.dataset;
       closeSearch();
-      switchSpace(src, sub);
+      state.currentPlatform = src;
+      state.currentSubspace = sub;
+      applyPlatform(src);
+      updatePlatformSelectorUI();
+      updateSubspaceUI();
+      renderSidebar();
       setRoute(src, sub, path);
     });
   });

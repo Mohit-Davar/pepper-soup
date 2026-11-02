@@ -352,8 +352,8 @@ html, body {
   gap: 0.6rem;
 }
 
-/* Skin/Layout Switcher (GitBook vs Confluence) */
-.skin-switch {
+/* Subspace Tab Switcher (User Guide vs Developer Reference) */
+.subspace-toggle-bar {
   display: flex;
   background: var(--bg-hover);
   border: 1px solid var(--border-color);
@@ -361,34 +361,35 @@ html, body {
   padding: 2px;
 }
 
-[data-mode="confluence"] .skin-switch {
+[data-mode="confluence"] .subspace-toggle-bar {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.skin-btn {
+.subspace-tab-btn {
   border: none;
   background: transparent;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: var(--radius-sm);
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.1s;
+  transition: all 0.12s;
+  white-space: nowrap;
 }
 
-[data-mode="confluence"] .skin-btn {
-  color: rgba(255, 255, 255, 0.7);
+[data-mode="confluence"] .subspace-tab-btn {
+  color: rgba(255, 255, 255, 0.75);
 }
 
-.skin-btn.active {
+.subspace-tab-btn.active {
   background: var(--bg-surface);
   color: var(--text-main);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
-[data-mode="confluence"] .skin-btn.active {
+[data-mode="confluence"] .subspace-tab-btn.active {
   background: #ffffff;
   color: #0052cc;
 }

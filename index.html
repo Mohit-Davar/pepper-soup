@@ -29,49 +29,32 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </button>
 
-        <!-- Workspace / Space Dropdown (ERPNext workspace switcher pattern) -->
+        <!-- Platform / Format Switcher (GitBook Experience vs Confluence Experience) -->
         <div class="space-selector-wrap" id="space-selector-wrap">
           <button class="space-selector-btn" id="space-selector-btn">
             <span class="space-icon" id="current-space-icon">📖</span>
             <div class="space-text-wrap">
-              <span class="space-name" id="current-space-name">User Guide</span>
-              <span class="space-sub" id="current-space-format">GitBook Space</span>
+              <span class="space-name" id="current-space-name">GitBook Docs</span>
+              <span class="space-sub" id="current-space-format">GitBook Format & Style</span>
             </div>
             <svg class="chevron-down" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
 
-          <!-- Dropdown Menu for all 4 spaces -->
+          <!-- Dropdown Menu -->
           <div class="space-dropdown-menu" id="space-dropdown-menu">
-            <div class="dropdown-group-header">GitBook Spaces</div>
-            <button class="dropdown-item active" data-src="gitbook" data-sub="user">
+            <div class="dropdown-group-header">Documentation Engine</div>
+            <button class="dropdown-item active" data-platform="gitbook">
               <span class="item-icon">📘</span>
               <div class="item-info">
-                <span class="item-title">User Guide</span>
-                <span class="item-desc">Functional operations & business workflows</span>
+                <span class="item-title">GitBook</span>
+                <span class="item-desc">GitBook markdown files with native GitBook styling</span>
               </div>
             </button>
-            <button class="dropdown-item" data-src="gitbook" data-sub="developer">
-              <span class="item-icon">⚙️</span>
-              <div class="item-info">
-                <span class="item-title">Developer Reference</span>
-                <span class="item-desc">Architecture, APIs, batches & internal logic</span>
-              </div>
-            </button>
-
-            <div class="dropdown-divider"></div>
-            <div class="dropdown-group-header">Confluence Spaces</div>
-            <button class="dropdown-item" data-src="confluence" data-sub="user">
+            <button class="dropdown-item" data-platform="confluence">
               <span class="item-icon">📑</span>
               <div class="item-info">
-                <span class="item-title">User Knowledge Base</span>
-                <span class="item-desc">Confluence pages, labels & page tree</span>
-              </div>
-            </button>
-            <button class="dropdown-item" data-src="confluence" data-sub="developer">
-              <span class="item-icon">🛠️</span>
-              <div class="item-info">
-                <span class="item-title">Engineering Wiki</span>
-                <span class="item-desc">Confluence tech specs, runbooks & data flows</span>
+                <span class="item-title">Confluence Wiki</span>
+                <span class="item-desc">Confluence markdown files with native Atlassian styling</span>
               </div>
             </button>
           </div>
@@ -87,16 +70,12 @@
         </div>
       </div>
 
-      <!-- Right: UI Mode (GitBook vs Confluence Theme) + Dark Mode -->
+      <!-- Right: Subspace switcher (User Guide vs Developer Reference) + Theme Toggle -->
       <div class="header-right">
-        <!-- Layout / Skin Toggle (True GitBook vs Confluence Emulation) -->
-        <div class="skin-switch" id="skin-switch">
-          <button class="skin-btn active" data-skin="gitbook" title="GitBook Documentation Theme">
-            GitBook
-          </button>
-          <button class="skin-btn" data-skin="confluence" title="Atlassian Confluence Wiki Theme">
-            Confluence
-          </button>
+        <!-- Subspace Tab Switcher -->
+        <div class="subspace-toggle-bar" id="subspace-toggle-bar">
+          <button class="subspace-tab-btn active" data-sub="user">User Guide</button>
+          <button class="subspace-tab-btn" data-sub="developer">Developer Reference</button>
         </div>
 
         <button id="theme-toggle" class="btn-icon" title="Toggle color scheme">
