@@ -1,10 +1,17 @@
 services:
   - type: web
     name: doc-site
-    runtime: static
-    buildCommand: python build_manifest.py
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/manifest
+    envVars:
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: EDIT_PASSWORD
+        sync: false
+      - key: GITHUB_REPO
+        sync: false
+      - key: GITHUB_BRANCH
+        sync: false
