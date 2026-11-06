@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: doc-site
+    name: Pepper-Soup
     runtime: node
     plan: free
     buildCommand: npm ci
