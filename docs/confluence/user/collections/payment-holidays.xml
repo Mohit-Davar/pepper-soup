@@ -1,0 +1,163 @@
+<h2>Payment Holidays</h2>
+<p>A payment holiday moves future installments on a loan account according to the holiday period and reschedules the maturity date accordingly. It applies on an installment due date and cannot be set on a backdated date or after the maturity date.</p>
+<p>The following rules apply when a payment holiday is applied:</p>
+<ul>
+<li>Future installments are moved according to the holiday period; installments already due are not extended.</li>
+<li>The down-payment installment is not affected.</li>
+<li>The N+1 installment is treated as a regular installment and is rescheduled according to the holiday set.</li>
+<li>Fee and penalty due dates in the future move forward to the next payment due date.</li>
+<li>Delinquency and pause calculations are independent and handled automatically.</li>
+<li>Account changed events are triggered when payment holidays are applied.</li>
+</ul>
+<p>For multi-disbursement loans, the payment holiday date depends on the status of the down payments:</p>
+<ul>
+<li>If the first down payment is past due and the second down payment is received, apply the payment holiday on the date of the second down payment.</li>
+</ul>
+<p>After a payment holiday is approved, an API call can update the following dates:</p>
+<ul>
+<li>Repayment next due date.</li>
+<li>Remaining schedule payment due dates.</li>
+<li>Maturity date.</li>
+</ul>
+<p>A customer borrows 1,200 and repays it in four equal monthly installments of 300. The installments fall due on 1 April, 1 May, 1 June, and 1 July, and the loan matures on 1 July. Before any installment is due, the officer approves a one-month payment holiday on 15 March. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Original due date</th>
+<th>New due date</th>
+<th>Amount</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 April</td>
+<td>1 May</td>
+<td>300.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 May</td>
+<td>1 June</td>
+<td>300.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 June</td>
+<td>1 July</td>
+<td>300.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 July</td>
+<td>1 August</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Maturity</td>
+<td>1 July</td>
+<td>1 August</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>If the approved holiday is two months instead of one, every future due date and the maturity date shift by two months rather than one.</p>
+<p>A customer borrows 1,200 and repays it in four equal monthly installments of 300 due on 1 April, 1 May, 1 June, and 1 July, maturing on 1 July. The first installment remains unpaid when it becomes due on 1 April. On 15 April, with that installment already overdue, the officer approves a two-month payment holiday. The overdue installment keeps its original date, while later installments move forward by two months.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Original due date</th>
+<th>New due date</th>
+<th>Amount</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 April</td>
+<td>1 April</td>
+<td>300.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 May</td>
+<td>1 July</td>
+<td>300.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 June</td>
+<td>1 August</td>
+<td>300.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 July</td>
+<td>1 September</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Maturity</td>
+<td>1 July</td>
+<td>1 September</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>A customer borrows 1,200 and repays it in four monthly installments of 300 due on 1 April, 1 May, 1 June, and 1 July, maturing on 1 July. A 15 fee is added to the second installment, so its amount becomes 315. After the first installment is paid on 1 April, the officer approves a one-month payment holiday on 15 April. The second installment moves to 1 June and keeps the 315 amount, while the remaining installments move forward by one month and the fee is settled with that installment.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Original due date</th>
+<th>New due date</th>
+<th>Amount</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 April</td>
+<td>1 April</td>
+<td>300.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 May</td>
+<td>1 June</td>
+<td>315.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 June</td>
+<td>1 July</td>
+<td>300.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 July</td>
+<td>1 August</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Maturity</td>
+<td>1 July</td>
+<td>1 August</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody></table>

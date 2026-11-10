@@ -14,21 +14,28 @@ const FRONTEND = path.join(ROOT, "frontend");
 const MAX_REQUEST_SIZE = "5mb";
 const logger = console;
 
+/** Published documentation: only these folders are ever served to readers. */
+const PUBLISHED = ["gitbook", "confluence"];
+
+/** Review material: served only to signed-in reviewers. */
+const NEEDS_REVIEW = path.join(DOCS, "needs-review.md");
+const EVIDENCE = path.join(DOCS, "evidence-map.json");
+const REVIEW_STATE = path.join(DOCS, "review.json");
+const REVIEW_STATE_REPO_PATH = "docs/review.json";
+
 const SPACES = {
-  gitbook: {
-    user: ["gitbook/user", "README.md", "SUMMARY.md", "## "],
-    developer: ["gitbook/developer", "README.md", "SUMMARY.md", "## "],
-  },
-  confluence: {
-    user: ["confluence/user", "index.md", "index.md", "### "],
-    developer: ["confluence/developer", "index.md", "index.md", "### "],
-  },
+  "gitbook/user": { folder: "gitbook/user", overview: "README.md", nav: "SUMMARY.md" },
+  "gitbook/developer": { folder: "gitbook/developer", overview: "README.md", nav: "SUMMARY.md" },
+  "confluence/user": { folder: "confluence/user", overview: "index.md", nav: "index.md" },
+  "confluence/developer": { folder: "confluence/developer", overview: "index.md", nav: "index.md" },
 };
 
 const SPACE_TITLES = {
   user: "User Guide",
   developer: "Developer Reference",
 };
+
+const AUDIENCE_SPACE = { end_user: "user", contributor: "developer" };
 
 export function loadConfig(env = process.env) {
   function required(name) {
@@ -58,7 +65,16 @@ export function loadConfig(env = process.env) {
 }
 
 async function readText(filePath) {
-  return (await fs.readFile(filePath, "utf8")).replace(/^\uFEFF/, "");
+  return (await fs.readFile(filePath, "utf8")).replace(/^﻿/, "");
+}
+
+async function readOptional(filePath) {
+  try {
+    return await readText(filePath);
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
 }
 
 async function listFiles(directory) {
@@ -84,86 +100,194 @@ function toPlainText(markdown) {
     .trim();
 }
 
-async function parseNavigation(filePath, marker) {
-  const sections = [];
+// ---------------------------------------------------------------- navigation
 
-  for (const line of (await readText(filePath)).split(/\r?\n/)) {
-    const stripped = line.trim();
-    if (stripped.startsWith(marker)) {
-      sections.push({
-        title: stripped.slice(marker.length).replace(/[*_`]/g, "").trim(),
-        pages: [],
-      });
-    }
-
-    const match = stripped.match(/^[-*]\s+\[(.+?)\]\((.+?)\)/);
-    if (match && !["README.md", "index.md"].includes(match[2])) {
-      if (sections.length === 0) {
-        sections.push({ title: "General", pages: [] });
-      }
-      sections.at(-1).pages.push({ title: match[1], path: match[2] });
-    }
+/**
+ * Reads a nested bullet list of links (SUMMARY.md or a Confluence index.md)
+ * into a tree. Two spaces of indentation make one level. The root overview link
+ * is left out: the site has its own overview page.
+ */
+export function parseTree(markdown) {
+  const root = [];
+  const stack = [{ depth: -1, children: root }];
+  for (const line of markdown.split(/\r?\n/)) {
+    const match = line.match(/^(\s*)[*-]\s+\[(.+?)\]\((.+?)\)\s*$/);
+    if (!match) continue;
+    const depth = Math.floor(match[1].replace(/\t/g, "  ").length / 2);
+    const target = match[3];
+    if (depth === 0 && /^(README|index)\.md$/.test(target)) continue;
+    const node = { title: match[2].replace(/\\([[\]\\])/g, "$1"), path: target, children: [] };
+    while (stack.at(-1).depth >= depth) stack.pop();
+    stack.at(-1).children.push(node);
+    stack.push({ depth, children: node.children });
   }
-
-  return sections.filter((section) => section.pages.length > 0);
+  return root;
 }
 
+let manifestCache = null;
+
 export async function buildManifest() {
+  if (manifestCache) return manifestCache;
   const spaces = {};
   const index = [];
 
-  for (const [source, sourceSpaces] of Object.entries(SPACES)) {
-    for (const [space, [folder, overview, navigation, marker]] of Object.entries(
-      sourceSpaces,
-    )) {
-      const base = path.join(DOCS, folder);
-      const sections = await parseNavigation(path.join(base, navigation), marker);
-      spaces[`${source}/${space}`] = {
-        title: SPACE_TITLES[space],
-        base: `docs/${folder}`,
-        overview,
-        sections,
-      };
+  for (const [key, { folder, overview, nav }] of Object.entries(SPACES)) {
+    const base = path.join(DOCS, folder);
+    const navText = await readOptional(path.join(base, nav));
+    const tree = navText ? parseTree(navText) : [];
+    const space = key.split("/")[1];
+    spaces[key] = { title: SPACE_TITLES[space], base: `docs/${folder}`, overview, tree };
 
-      const pages = [
-        ["", "Overview", overview],
-        ...sections.flatMap((section) =>
-          section.pages.map((page) => [section.title, page.title, page.path]),
-        ),
-      ];
-
-      for (const [section, title, relativePath] of pages) {
-        const filePath = path.join(base, relativePath);
-        const content = await fs
-          .readFile(filePath, "utf8")
-          .then((text) => text.replace(/^\uFEFF/, ""))
-          .catch((error) => {
-            if (error.code === "ENOENT") return "";
-            throw error;
+    const visit = async (nodes, section) => {
+      for (const node of nodes) {
+        if (!node.children.length) {
+          const content = (await readOptional(path.join(base, node.path))) ?? "";
+          const withoutCode = content.replace(/```[\s\S]*?```/g, "");
+          index.push({
+            space: key,
+            section,
+            title: node.title,
+            path: node.path,
+            headings: [...withoutCode.matchAll(/^#{2,3}\s+(.+)$/gm)]
+              .slice(0, 40)
+              .map((match) => match[1]),
+            text: toPlainText(content).slice(0, 2000),
           });
-        const withoutCode = content.replace(/```[\s\S]*?```/g, "");
-
-        index.push({
-          space: `${source}/${space}`,
-          section,
-          title,
-          path: relativePath,
-          headings: [...withoutCode.matchAll(/^#{2,3}\s+(.+)$/gm)]
-            .slice(0, 30)
-            .map((match) => match[1]),
-          text: toPlainText(content).slice(0, 1500),
-        });
+        }
+        await visit(node.children, node.children.length ? node.title : section);
       }
-    }
+    };
+    await visit(tree, "");
   }
 
-  return { spaces, index };
+  manifestCache = { spaces, index };
+  return manifestCache;
 }
+
+// ---------------------------------------------------------------- review data
+
+/**
+ * Parses needs-review.md. Each entry is a "### NR-<id> · <Kind>" heading followed
+ * by "- key: value" lines and an optional "- sources:" list.
+ */
+export function parseNeedsReview(markdown) {
+  const entries = [];
+  const blocks = markdown.split(/^### /m).slice(1);
+  for (const block of blocks) {
+    const [heading, ...lines] = block.split(/\r?\n/);
+    const head = heading.match(/^(NR-[0-9a-f]+)\s+·\s+(.+)$/);
+    if (!head) continue;
+    const entry = { id: head[1], kind: head[2].trim(), sources: [] };
+    let inSources = false;
+    for (const line of lines) {
+      if (/^- sources:\s*$/.test(line)) {
+        inSources = true;
+        continue;
+      }
+      const field = line.match(/^- (\w+):\s*(.*)$/);
+      if (field) {
+        inSources = false;
+        entry[field[1]] = field[2].trim();
+        continue;
+      }
+      if (inSources) {
+        const source = line.match(/^\s+-\s+`([^`]*)`\s*(?:"([\s\S]*)")?\s*$/);
+        if (source) entry.sources.push({ where: source[1], quote: source[2] ?? "" });
+        else if (line.trim().startsWith("- ")) {
+          entry.sources.push({ where: line.trim().slice(2), quote: "" });
+        }
+      }
+    }
+    if (entry.published) entry.published = entry.published.replace(/^"([\s\S]*)"$/, "$1");
+    if (entry.page) {
+      entry.notPublished = /\(not published\)\s*$/.test(entry.page);
+      // "gitbook/user/x.md" → "user/x.md": the same page exists in both outputs
+      entry.page = entry.page
+        .replace(/\s*\(not published\)\s*$/, "")
+        .replace(/^(?:gitbook|confluence)\//, "");
+    }
+    entries.push(entry);
+  }
+  return entries;
+}
+
+let evidenceCache = null;
+
+/**
+ * Loads evidence-map.json once (and again when the file changes) and indexes it
+ * by page: "user/loan-products/fees.md" → its sections and their blocks' facts.
+ */
+async function evidenceIndex() {
+  let stat;
+  try {
+    stat = await fs.stat(EVIDENCE);
+  } catch (error) {
+    if (error.code === "ENOENT") return new Map();
+    throw error;
+  }
+  if (evidenceCache?.mtime === stat.mtimeMs) return evidenceCache.byPage;
+
+  const raw = JSON.parse(await readText(EVIDENCE));
+  const byPage = new Map();
+  for (const [key, section] of Object.entries(raw)) {
+    const match = key.match(/^(\w+):([^#]+)#(.+)$/);
+    if (!match) continue;
+    const space = AUDIENCE_SPACE[match[1]];
+    if (!space) continue;
+    const page = `${space}/${match[2]}.md`;
+    const blocks = (section.blocks ?? []).map((block) => ({
+      index: block.index,
+      type: block.type,
+      facts: (block.facts ?? []).map((fact) => ({
+        id: fact.id,
+        statement: fact.statement ?? "",
+        status: fact.status ?? "",
+        quote: String(fact.quote ?? "").slice(0, 900),
+        source: {
+          title: fact.unitTitle ?? "",
+          file: fact.origin?.file ?? "",
+          sheet: fact.origin?.sheet ?? "",
+          headings: fact.origin?.headings ?? [],
+          ticket: fact.origin?.nodeId ?? "",
+          rows: fact.rowRefs ?? [],
+        },
+      })),
+    }));
+    if (!byPage.has(page)) byPage.set(page, []);
+    byPage.get(page).push({ key, title: section.section ?? "", blocks });
+  }
+  evidenceCache = { mtime: stat.mtimeMs, byPage };
+  return byPage;
+}
+
+async function readReviewState() {
+  const text = await readOptional(REVIEW_STATE);
+  if (!text) return { issues: {} };
+  return { issues: JSON.parse(text).issues ?? {} };
+}
+
+const STATUSES = new Set(["open", "resolved", "ignored"]);
+const clean = (value, max) =>
+  String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .trim()
+    .slice(0, max);
+
+/** Sets the status of one needs-review item; returns a commit summary or an error. */
+function applyStatus(state, body, author) {
+  const id = String(body?.id ?? "");
+  if (!/^NR-[0-9a-f]{4,}$/.test(id)) return { error: "Unknown review item." };
+  if (!STATUSES.has(body.status)) return { error: "Unknown status." };
+  state.issues[id] = { status: body.status, by: author, at: new Date().toISOString() };
+  return { summary: `${body.status} ${id}` };
+}
+
+// ---------------------------------------------------------------- files
 
 function resolveDocPath(relativePath) {
   if (
     typeof relativePath !== "string" ||
-    !/^docs\/[\w./-]+\.(?:md|xml)$/u.test(relativePath) ||
+    !/^docs\/(?:gitbook|confluence)\/[\w./-]+\.(?:md|xml)$/u.test(relativePath) ||
     relativePath.split(/[\\/]/).includes("..")
   ) {
     return null;
@@ -238,6 +362,18 @@ async function githubCommit(config, files, message) {
   return commit.sha;
 }
 
+async function commitOrWarn(config, files, message) {
+  try {
+    return { commit: await githubCommit(config, files, message), warning: null };
+  } catch (error) {
+    logger.error("Could not sync to GitHub:", error);
+    return {
+      commit: null,
+      warning: `Saved on the server, but the GitHub commit failed: ${error.message}`,
+    };
+  }
+}
+
 function createSaveQueue() {
   let queue = Promise.resolve();
   return (operation) => {
@@ -247,6 +383,14 @@ function createSaveQueue() {
   };
 }
 
+function authorOf(request) {
+  let name = request.get("X-Author") || "";
+  try {
+    name = decodeURIComponent(name);
+  } catch {}
+  return clean(name, 60).replace(/[^\p{L}\p{N} .'_-]/gu, "") || "Reviewer";
+}
+
 export function createApp(config) {
   const app = express();
   const save = createSaveQueue();
@@ -254,11 +398,18 @@ export function createApp(config) {
   app.disable("x-powered-by");
   app.use(compression());
 
+  /** Reviewer-only routes: the edit password is sent in X-Password. */
+  const requireReviewer = (request, response, next) => {
+    if (!passwordsMatch(request.get("X-Password") || "", config.editPassword)) {
+      setTimeout(() => response.status(401).json({ error: "Wrong password" }), 500);
+      return;
+    }
+    next();
+  };
+
   app.get("/api/manifest", async (request, response, next) => {
     try {
-      const manifest = await buildManifest();
-      manifest.editing = { passwordRequired: true, github: true };
-      response.json(manifest);
+      response.json(await buildManifest());
     } catch (error) {
       next(error);
     }
@@ -274,7 +425,7 @@ export function createApp(config) {
     try {
       const content = await fs.readFile(filePath);
       response.json({
-        content: content.toString("utf8").replace(/^\uFEFF/, ""),
+        content: content.toString("utf8").replace(/^﻿/, ""),
         hash: hash(content),
       });
     } catch (error) {
@@ -297,14 +448,17 @@ export function createApp(config) {
       return;
     }
 
-    const target = scope === "all" ? DOCS : path.join(DOCS, scope);
+    // review material never leaves the server in a download
+    const targets = scope === "all" ? PUBLISHED.map((name) => path.join(DOCS, name)) : [path.join(DOCS, scope)];
     const name =
       scope === "all" ? "docs.zip" : `docs-${scope.replaceAll("/", "-")}.zip`;
     response.attachment(name);
     try {
       const archive = new yazl.ZipFile();
-      for (const filePath of await listFiles(target)) {
-        archive.addFile(filePath, path.relative(ROOT, filePath));
+      for (const target of targets) {
+        for (const filePath of await listFiles(target)) {
+          archive.addFile(filePath, path.relative(ROOT, filePath));
+        }
       }
       archive.outputStream.on("error", next);
       archive.outputStream.pipe(response);
@@ -314,18 +468,69 @@ export function createApp(config) {
     }
   });
 
+  app.post("/api/login", requireReviewer, (request, response) => {
+    response.json({ ok: true });
+  });
+
+  app.get("/api/review", requireReviewer, async (request, response, next) => {
+    try {
+      const markdown = (await readOptional(NEEDS_REVIEW)) ?? "";
+      response.json({
+        entries: parseNeedsReview(markdown),
+        state: await readReviewState(),
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/evidence", requireReviewer, async (request, response, next) => {
+    const page = String(request.query.page ?? "");
+    if (!/^(user|developer)\/[\w./-]+\.md$/.test(page) || page.includes("..")) {
+      response.status(400).json({ error: "Bad page" });
+      return;
+    }
+    try {
+      response.json({ sections: (await evidenceIndex()).get(page) ?? [] });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post(
+    "/api/review/status",
+    requireReviewer,
+    express.json({ limit: "200kb" }),
+    async (request, response, next) => {
+      try {
+        const author = authorOf(request);
+        const result = await save(async () => {
+          const state = await readReviewState();
+          const outcome = applyStatus(state, request.body ?? {}, author);
+          if (outcome.error) return { status: 400, body: { error: outcome.error } };
+
+          const text = `${JSON.stringify(state, null, 2)}\n`;
+          await fs.writeFile(REVIEW_STATE, text);
+          const { commit, warning } = await commitOrWarn(
+            config,
+            { [REVIEW_STATE_REPO_PATH]: text },
+            `Review: ${outcome.summary}\n\nBy ${author}`,
+          );
+          return { status: 200, body: { state, commit, warning } };
+        });
+        response.status(result.status).json(result.body);
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
+
   app.post(
     "/api/save",
-    (request, response, next) => {
-      if (!passwordsMatch(request.get("X-Password") || "", config.editPassword)) {
-        setTimeout(() => response.status(401).json({ error: "Wrong password" }), 500);
-        return;
-      }
-      next();
-    },
+    requireReviewer,
     express.json({ limit: MAX_REQUEST_SIZE }),
     async (request, response, next) => {
-      const { files, author } = request.body ?? {};
+      const { files } = request.body ?? {};
       if (
         !Array.isArray(files) ||
         files.length === 0 ||
@@ -390,19 +595,14 @@ export function createApp(config) {
             saved[file.path] = data.toString("utf8");
             hashes[file.path] = hash(data);
           }
+          manifestCache = null;
 
-          let commit = null;
-          let warning = null;
-          try {
-            const cleanAuthor = String(author || "").trim().slice(0, 60);
-            const message = `Edit ${Object.keys(saved).join(", ")}` +
-              (cleanAuthor ? `\n\nEdited by ${cleanAuthor}` : "");
-            commit = await githubCommit(config, saved, message);
-          } catch (error) {
-            logger.error("Could not sync saved edits to GitHub:", error);
-            warning = `Saved on the server, but the GitHub commit failed: ${error.message}`;
-          }
-
+          const author = authorOf(request);
+          const { commit, warning } = await commitOrWarn(
+            config,
+            saved,
+            `Edit ${Object.keys(saved).join(", ")}\n\nEdited by ${author}`,
+          );
           return { status: 200, body: { hashes, commit, warning } };
         });
         response.status(result.status).json(result.body);
@@ -412,10 +612,13 @@ export function createApp(config) {
     },
   );
 
-  app.use("/docs", express.static(DOCS, { fallthrough: true, index: false }));
+  // Only the published folders are reachable as static files.
+  for (const name of PUBLISHED) {
+    app.use(`/docs/${name}`, express.static(path.join(DOCS, name), { fallthrough: true, index: false }));
+  }
   app.use(express.static(FRONTEND, { fallthrough: true }));
   app.use((request, response, next) => {
-    if (request.path.startsWith("/docs/")) {
+    if (request.path.startsWith("/docs/") || request.path.startsWith("/api/")) {
       response.status(404).json({ error: "Not found" });
       return;
     }

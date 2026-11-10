@@ -1,0 +1,118 @@
+<h2>Investor Module</h2>
+<p>The investor module shows loan accounts associated with investors and handles the sale and buyback of interest-bearing loans to external investors. Sale and buyback amounts include all balances on the loan, including any interest due, and interest balances are accounted for using the interest receivables GL mapping.</p>
+<p>The investor screen provides the following views and actions:</p>
+<ul>
+<li>A global filter view shows loan account details associated with investors.</li>
+<li>The top of the screen summarises the total loan amount associated at each investor level.</li>
+<li>Investors and the total balance appear as a pie chart.</li>
+<li>You can drill down to each loan account by clicking on any loan from the view screen.</li>
+</ul>
+<p>A loan officer sells an interest-bearing loan to an external investor. The loan has a principal of 1,000.00 and 10.00 in accrued interest and fees, so the total balance to sell is 1,010.00. The figures in this example are illustrative. This example shows that the total balance to sell includes both principal and accrued interest and fees.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Counterparty</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Record sale</td>
+<td>Receivable/clearing account</td>
+<td>1,010.00</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Loan Receivables</td>
+<td></td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Interest and fees receivables</td>
+<td></td>
+<td>10.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Transfer to investor</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,010.00</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Loan Receivables</td>
+<td>1,000.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td></td>
+<td>Interest and fees receivables</td>
+<td>10.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+</tbody></table>
+<p>The same loan is bought back from the external investor. The buyback amount is the full balance of 1,010.00, consisting of 1,000.00 principal and 10.00 interest and fees. Compared with the sale, the debit and credit sides reverse because the loan returns to the asset owner.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Counterparty</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Record buyback</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,010.00</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Loan Receivables</td>
+<td>1,000.00</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Interest and fees receivables</td>
+<td>10.00</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Transfer from investor</td>
+<td>Receivable/clearing account</td>
+<td>1,010.00</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>Loan Receivables</td>
+<td></td>
+<td>1,000.00</td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td></td>
+<td>Interest and fees receivables</td>
+<td></td>
+<td>10.00</td>
+<td>Investor A</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="asset-externalization"><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization: Asset Externalization]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="pay-in-3-and-pay-in-4"><ri:page ri:content-title="BNPL Products"/><ac:plain-text-link-body><![CDATA[BNPL Products: Pay in 3 and Pay in 4]]></ac:plain-text-link-body></ac:link>.</p>

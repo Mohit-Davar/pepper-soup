@@ -1,0 +1,213 @@
+<h2>Loan API</h2>
+<h3>Loan API response fields</h3>
+<p>Field names in the GET Loan API response are camelCase. The GET Loan by ID/external-id API returns additional interest-related fields, including norminal_interest_rate, total_unpaid_posted_interest, total_unpaid_accrued_interest, total_interest, delinquent_interest, total_interest_refunds, total_interest_payment_waiver, totalUnpaidAccruedDueInterest, totalUnpaidAccruedNotDueInterest, delinquentInterest, delinquentFee, totalInterestRefund, totalInterestPaymentWaiver, totalUnpaidPayableDueInterest, and totalUnpaidPayableNotDueInterest. Delinquency includes interest, fee, penalty, and principal portions.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Example value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>proposedPrincipal</td>
+<td>500.000000</td>
+</tr>
+<tr>
+<td>approvedPrincipal</td>
+<td>450.000000</td>
+</tr>
+<tr>
+<td>principal</td>
+<td>500.000000</td>
+</tr>
+<tr>
+<td>netDisbursalAmount</td>
+<td>250.00</td>
+</tr>
+</tbody></table>
+<h3>Down payment configuration</h3>
+<p>You can enable or disable down payment at the loan account level through the loan account create and modify APIs. Down payment can only be set and configured on the loan level when it is set and enabled on the loan product.</p>
+<p>The following rules apply to down payment overrides:</p>
+<ul>
+<li>The enableDownPayment override is allowed only when down payment is configured on the loan product but disabled during loan submission.</li>
+<li>If enableAutoRepaymentForDownPayment or disbursedAmountPercentageForDownPayment is provided, those values override the loan product values.</li>
+<li>If either field is not provided, the values set on the loan product are used.</li>
+</ul>
+<h3>Down payment fields in create loan API</h3>
+<p>The POST create loan API accepts down payment fields that control whether a loan is treated as a down payment loan and how its principal is set.</p>
+<p>The API supports the following down payment fields:</p>
+<ul>
+<li>enableDownPayment (also written as enableDownpayment) decides dynamically whether the loan is a down payment loan.</li>
+<li>enableAutoRepaymentForDownPayment controls automatic repayment for down payment loans.</li>
+<li>disbursedAmountPercentageForDownPayment sets the disbursed amount as a percentage for down payment loans.</li>
+<li>interestRatePerPeriod sets the nominal interest rate per period.</li>
+</ul>
+<p>For WC loans, database fields m_wc_loan.principal_amount_proposed, m_wc_loan.approved_principal and m_wc_loan.principal_amount hold proposed, approved and principal amounts respectively.</p>
+<p>For WC loans, lastPaymentDate and lastPaymentAmount are not exposed via GetLoan API or via GET delinquency-range-schedule, GET delinquencyrangetags, GET breach-schedule, unlike non-WC loans where they are returned via ?associations=collection.</p>
+<p>For WC loans, the overpaid date is not exposed; there is no field that tells on what date the loan became overpaid.</p>
+<p>The GET Loan by ID/external-id API returns field totalInterestRefund of type BigDecimal representing the total refund amount of interest refund transactions which are not reversed.</p>
+<p>A new field flags is added to LoanTransactionDataV1 and the serializer is enhanced for the flags field.</p>
+<p>Loan details API / collection details should be extended with two new fields: Delinquency start date (if applicable) and Breach start date (if applicable).</p>
+<p>The Template API is extended for this operation.</p>
+<h3>Payable interest calculation</h3>
+<p>Payable interest calculation splits unpaid interest into due and not-due amounts. The calculation uses the EMICalculator so daily interest matches the legacy accrual calculation and the EMICalculator, and it is performed on the fly up to yesterday&#39;s transaction using an interest model. WCP loan details GET API JSON parameters should contain similar JSON parameters as of Term loans along with other parameters specific to WCP.</p>
+<p>The two payable interest amounts are calculated as follows:</p>
+<ul>
+<li>totalUnpaidPayableDueInterest is the total interest due as of the installment date plus past due interest as of the installment date, based on actual balances of repayment schedules.</li>
+<li>totalUnpaidPayableNotDueInterest is the accumulated daily interest of the current installment period based on actual balances of repayment schedules, and the accumulation restarts for every installment period.</li>
+</ul>
+<p>Calculation of totalUnpaidPayableDueInterest and totalUnpaidPayableNotDueInterest is moved out of LoanSummaryData into a service that builds the loan interest model.</p>
+<h3>Worked examples</h3>
+<p>A loan of 1,000.00 is disbursed at an annual interest rate of 12% with three monthly installments and 30-day months. The figures are illustrative. The borrower pays each installment on time, so the opening balance falls by the principal portion of each payment and the final outstanding balance is zero. The schedule shows how each installment splits into interest and principal and how the balance declines to zero.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Interest due</th>
+<th>Principal due</th>
+<th>Total due</th>
+<th>Paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>340.02</td>
+<td>340.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>669.98</td>
+<td>6.70</td>
+<td>333.32</td>
+<td>340.02</td>
+<td>340.02</td>
+<td>336.66</td>
+</tr>
+<tr>
+<td>3</td>
+<td>336.66</td>
+<td>3.37</td>
+<td>336.66</td>
+<td>340.03</td>
+<td>340.03</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>20.07</td>
+<td>1,000.00</td>
+<td>1,020.07</td>
+<td>1,020.07</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The same loan is observed on day 40 after installment 1 of 340.02 falls due on day 30 and remains unpaid. Because the installment is past due, its interest portion is recorded as due interest without further daily accumulation, while interest on the outstanding balance continues to accrue daily for the current period. The table separates interest that is already due from interest that is still accumulating.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Balance</th>
+<th>Interest due and unpaid</th>
+<th>Daily accrual current period</th>
+<th>totalUnpaidPayableDueInterest</th>
+<th>totalUnpaidPayableNotDueInterest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>30</td>
+<td>Installment 1 due, unpaid</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>31</td>
+<td>One day of daily interest accrues</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.33</td>
+<td>10.00</td>
+<td>0.33</td>
+</tr>
+<tr>
+<td>40</td>
+<td>Ten days of daily interest accrued</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>3.33</td>
+<td>10.00</td>
+<td>3.33</td>
+</tr>
+</tbody></table>
+<p>The borrower prepays the full loan on day 30 instead of waiting for the installment schedule. Interest accrues for the 30 days before the prepayment, and the repayment covers the full principal plus that interest, leaving a zero balance. The table shows that a prepayment settles remaining principal plus accrued interest up to the prepayment date.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Total paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Accrual to day 30</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Full prepayment on day 30</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>1,010.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>After installment 1 is paid on day 30, the daily payable interest for the new installment period starts at zero and accumulates each day on the reduced balance. If a partial payment is made, it reduces the payable interest before further accrual continues. The table shows the daily restart and growth of current-installment payable interest.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Balance</th>
+<th>currentInstallmentPayableInterest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>30</td>
+<td>Installment 1 paid</td>
+<td>669.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>31</td>
+<td>One day accrues</td>
+<td>669.98</td>
+<td>0.22</td>
+</tr>
+<tr>
+<td>40</td>
+<td>Ten days accrued</td>
+<td>669.98</td>
+<td>2.23</td>
+</tr>
+</tbody></table>

@@ -1,0 +1,197 @@
+<h2>Interest-Bearing Loan Products</h2>
+<p>Interest-bearing loan products support progressive configurations with validations that apply only to that setup. You can set or update allocation rules for these products.</p>
+<p>Multidisbursal progressive loans follow these rules:</p>
+<ul>
+<li>A loan configured with one tranche allows creating two or more disbursements, such as 70$ and 30$, when &#39;Disallow Expected Disbursements&#39; is disabled at loan level.</li>
+<li>Undoing the last disbursement returns a 403 error when the number of disbursements exceeds the number of tranches configured with disbursement details.</li>
+</ul>
+<p>Charge-off behaves as follows:</p>
+<ul>
+<li>Charge-off is prevented if there is any transaction after the charge-off date, but reversed transactions are excluded from this check.</li>
+<li>After a charge is waived and the waive loan charges transaction is undone, charge-off with an earlier date is allowed even though the charge still exists.</li>
+<li>The charge-off transaction is reversed if the amount balance becomes zero after reprocessing.</li>
+</ul>
+<p>Interest and chargeback rules include:</p>
+<ul>
+<li>Interest pause is forbidden for a progressive loan with interest recalculation enabled and interest rate zero.</li>
+<li>When a CBR is replayed and the overpayment amount is not lower than the CBR amount, the system reflects it as credit on the EmiModel and calculates interest based on the outstanding amount.</li>
+<li>CBR behaves like Chargeback, so the actual current installment EMI gets increased.</li>
+<li>Each day the 1st installment interest gets recalculated until the maturity date is reached.</li>
+<li>When CBR is more than the overpayment amount, the loan schedule is credited with the difference between CBR amount and overpayment amount, which in this situation is 100.</li>
+</ul>
+<p>Penalty accrual follows this schedule:</p>
+<ul>
+<li>The Accrual for penalty is created during COB along with Accrual activity.</li>
+<li>Five or any random number of days later, when a repayment is made to pay off the penalty, the backdated accrual is created along with this repayment.</li>
+</ul>
+<p>Static limits and dates apply to interest-bearing loan products.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Effective Rate Limit</td>
+<td>0.09995</td>
+</tr>
+<tr>
+<td>Loan Start Date</td>
+<td>1/1/23</td>
+</tr>
+<tr>
+<td>Transaction Range</td>
+<td>0.01 - 98.99</td>
+</tr>
+</tbody></table>
+<p>PayPal currently has two consumer-facing interest-bearing longer term installment lending products that are live in US and German markets.</p>
+<p>A product administrator creates an interest-bearing loan product with a principal of 1,000 and a term of three months. The system compares the effective rate against the effective rate limit of 0.09995. The figures are illustrative. This example shows that rates at or below the limit are accepted, while rates above it are rejected, and that tightening the limit rejects more rates.</p>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>Nominal rate</th>
+<th>Effective rate</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0.09995</td>
+<td>0.0900</td>
+<td>0.0900</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td>0.09995</td>
+<td>0.1050</td>
+<td>0.1050</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>0.09990</td>
+<td>0.09985</td>
+<td>0.09985</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td>0.09990</td>
+<td>0.1050</td>
+<td>0.1050</td>
+<td>Rejected</td>
+</tr>
+</tbody></table>
+<p>A loan officer disburses an interest-bearing loan of 300 with three monthly installments. The borrower repays 100 and then reverses that repayment. Interest accruals do not restart on the reversal date; they resume from the next scheduled repayment date and continue daily until maturity. This example shows that reversing a repayment does not move accruals back to the reversal date.</p>
+<table>
+<thead>
+<tr>
+<th>Business date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Accrual status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 1</td>
+<td>Loan disbursed</td>
+<td>300.00</td>
+<td>Accruals start</td>
+</tr>
+<tr>
+<td>Day 5</td>
+<td>Repayment of 100.00</td>
+<td>200.00</td>
+<td>Accruals continue</td>
+</tr>
+<tr>
+<td>Day 15</td>
+<td>Repayment reversed</td>
+<td>300.00</td>
+<td>Reversal date recorded</td>
+</tr>
+<tr>
+<td>Day 22</td>
+<td>COB run</td>
+<td>300.00</td>
+<td>Accruals resume from next schedule date</td>
+</tr>
+<tr>
+<td>Day 23</td>
+<td>Daily COB</td>
+<td>300.00</td>
+<td>Accrual posted each day</td>
+</tr>
+</tbody></table>
+<p>An interest-bearing loan of 1,000 with three monthly installments reaches maturity. The borrower pays off the principal with a 1,000 repayment on the maturity date, and a penalty charge of 20 is added the same day. At end-of-day processing, the system creates a penalty accrual even though the principal balance is zero. Five days later the borrower repays the penalty, and a backdated accrual is created with that repayment. This example shows that penalty accrual is generated during COB on the maturity date and that a later penalty repayment creates a backdated accrual.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Penalty balance</th>
+<th>Accrual created</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Maturity date</td>
+<td>Repayment of 1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Maturity date</td>
+<td>Penalty charge of 20.00</td>
+<td>0.00</td>
+<td>20.00</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Maturity date</td>
+<td>End-of-day COB</td>
+<td>0.00</td>
+<td>20.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Five days later</td>
+<td>Repayment of 20.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>Yes (backdated)</td>
+</tr>
+</tbody></table>
+<p>A loan officer enters a transaction for a three-month loan of 100 at a nominal rate that produces an effective rate above the 0.09995 limit. The system rejects the total amount of 105. When the rate is lowered so the effective rate falls below the limit, the new total amount is 104, a difference of 1 cent. This example shows that exceeding the effective rate limit forces a rate adjustment that changes the collected total by one cent.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Nominal rate</th>
+<th>Effective rate</th>
+<th>Total amount</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Rejected transaction</td>
+<td>0.1200</td>
+<td>0.1050</td>
+<td>105.00</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Accepted transaction</td>
+<td>0.0945</td>
+<td>0.0609</td>
+<td>104.00</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td>Difference</td>
+<td>-</td>
+<td>-</td>
+<td>1.00</td>
+<td>1 cent</td>
+</tr>
+</tbody></table>

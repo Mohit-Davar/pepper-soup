@@ -1,0 +1,71 @@
+<h2>Events and Notifications</h2>
+<p>Loan changed events use camelCase field names, and every field added to them is optional. Loan details based business events contain loan details, including the annual effective interest rate only. Working capital loans trigger business events similarly as legacy and progressive loans.</p>
+<p>Working capital loan business events include:</p>
+<ul>
+<li>WorkingCapitalLoanApplicationModifiedBusinessEvent</li>
+<li>WorkingCapitalLoanUndoDisbursalBusinessEvent</li>
+<li>WorkingCapitalLoanDelinquencyRangeChangeBusinessEvent</li>
+<li>WorkingCapitalLoanBalanceChangedBusinessEvent</li>
+<li>WorkingCapitalLoanUndoApprovalBusinessEvent</li>
+<li>WorkingCapitalLoanRejectedBusinessEvent</li>
+<li>WorkingCapitalLoanStatusChangedBusinessEvent</li>
+<li>WorkingCapitalLoanApprovedBusinessEvent</li>
+<li>WorkingCapitalLoanDisbursalBusinessEvent</li>
+<li>WorkingCapitalLoanCreatedBusinessEvent</li>
+</ul>
+<p>The WorkingCapitalLoanAccountDataV1.avsc schema follows these rules:</p>
+<ul>
+<li>Common fields match LoanAccountDataV1.avsc in name, datatype, and flat versus inclined object structure.</li>
+<li>Fields not relevant to working capital loans, such as interest and repayment schedule, are excluded.</li>
+<li>Fields new and only relevant to working capital loans are included.</li>
+</ul>
+<p>Loan details API fields map to business event fields as follows:</p>
+<table>
+<thead>
+<tr>
+<th>API field</th>
+<th>Mapped field</th>
+<th>Type</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>total_unpaid_posted_interest</td>
+<td>totalUnpaidAccruedDueInterest</td>
+<td>BigDecimal</td>
+<td>The total unpaid posted interest amount on the loan</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>total_unpaid_accrued_interest</td>
+<td>totalUnpaidAccruedNotDueInterest</td>
+<td>BigDecimal</td>
+<td>The total unpaid accrued interest amount (calculated from last non-monetary interest activity posting date) and not yet posted on the billing period</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>delinquent_interest</td>
+<td>delinquentInterest, delinquentFee</td>
+<td>BigDecimal</td>
+<td>The delinquent amount with interest portion</td>
+<td>0.10</td>
+</tr>
+<tr>
+<td>total_interest_refund</td>
+<td>totalInterestRefund</td>
+<td>BigDecimal</td>
+<td>The total refund amount when a merchant or agent initiates the disbursement refund (not reversed)</td>
+<td>0.10</td>
+</tr>
+<tr>
+<td>total_interest_waiver</td>
+<td>totalInterestPaymentWaiver</td>
+<td>BigDecimal</td>
+<td>The total interest waiver amount when PayPal initiates the interest waiver transaction (not reversed)</td>
+<td>0.10</td>
+</tr>
+</tbody></table>
+<p>LoanTransactionBusinessEvent accepts an optional flags argument. The changedTerms flag is optional in LoanTransaction business events and applies to DisbursementTransactionBusinessEvent and ReageTransactionBusinessEvent.</p>
+<p>Some loan events keep the loan status at 300 (active) even when the loan is fully paid, instead of changing it to 600 (closed). After a second disbursement followed by a repayment, the LoanBalanceChangedBusinessEvent is not refreshed at the principalDisbursed field.</p>
+<p>Inline COB for working capital loans is not triggered as part of monetary activity even when the loan is eligible for inline COB. Register and wire WorkingCapitalLoanCOBApiFilter so it can ensure up to date COB state before monetary transaction.</p>

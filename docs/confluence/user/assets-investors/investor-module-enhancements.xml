@@ -1,0 +1,302 @@
+<h2>Investor Module Enhancements</h2>
+<h3>Module overview and goals</h3>
+<p>The Investor Module Enhancement is also known as Danube 2.0. Its goal is to allow intermediate sale of a loan account before the sale is complete. Features discussed as out of scope might be revisited in a later release.</p>
+<h3>Owner ID and accounting rules</h3>
+<p>The Owner ID for an intermediary transfer is passed by the user. Status changes invoked through API create no accounting entries, and no accounting entries are created for zero amounts.</p>
+<p>The following rules apply to status changes and accounting:</p>
+<ul>
+<li>Pending-Intermediary status is invoked through API and creates no accounting entries.</li>
+<li>Pending status is invoked through API and creates no accounting entries.</li>
+<li>Decline status occurs when Active-Intermediary status is canceled by the user through API and creates no accounting entries.</li>
+<li>Buyback status is invoked through API once the status is in Active state.</li>
+<li>Buyback-Intermediary status is invoked through API once the status is in Active-Intermediary state.</li>
+</ul>
+<p>When the status changes from Pending to Active and the loan has zero balance:</p>
+<ul>
+<li>No accounting entries are passed for zero amount.</li>
+<li>The status is transferred to the new asset owner.</li>
+<li>Any new monetary transaction after that is tagged to the new asset owner.</li>
+</ul>
+<h3>Status transitions and lifecycle</h3>
+<p>An intermediary sale adds an intermediate step before the actual sale, moving a loan from Pending-Intermediary to Active-Intermediary to Pending to Active.</p>
+<p>The following status transitions apply:</p>
+<ul>
+<li>A user initiates an intermediary sale on an active loan account, resulting in Pending-Intermediary status.</li>
+<li>The COB job picks up the Pending-Intermediary sale to make it Active-Intermediary.</li>
+<li>A user initiates the sale on an Active-Intermediary loan account, resulting in Pending status.</li>
+<li>The COB job picks up the Pending sale to make it Active.</li>
+<li>A user can buy back an Active-Intermediary loan account, resulting in BuyBack-Intermediary status.</li>
+<li>Only loans with status Active can be moved to Buyback state, and loans with status Active-Intermediary can be moved to Buyback-Intermediary status.</li>
+<li>A user can buy back an Active-Intermediary loan account or move it to the next status.</li>
+</ul>
+<p>The following status change orders are not allowed:</p>
+<ul>
+<li>Pending-Intermediary to Pending.</li>
+<li>Pending-Intermediary to Active.</li>
+<li>Pending-Intermediary to Active-Intermediary to Decline.</li>
+<li>Pending-Intermediary to Active-Intermediary to Pending to Active to Decline.</li>
+</ul>
+<p>COB processing rules for loan statuses are:</p>
+<ul>
+<li>COB does not decline a Pending loan even if the loan account is closed or overpaid.</li>
+<li>COB processes Active-Intermediary status.</li>
+<li>COB processes Active status.</li>
+<li>When a loan account is in a Pending state, it moves to Active even if the loan balance is zero or overpaid.</li>
+<li>When a loan account is in a Pending-Intermediary state and the loan is closed or overpaid, COB moves the status to Declined.</li>
+<li>When a loan account is in an Active-Intermediary state, it stays in the same state even if the loan is closed or overpaid.</li>
+<li>The COB job declines the Pending-Intermediary sale when the loan account status is closed or overpaid.</li>
+</ul>
+<p>A sale can be on status right after initiation, transitioning from PENDING to ACTIVE.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Pending-Intermediary" as n1
+  state "Active-Intermediary" as n2
+  state "Pending" as n3
+  state "Active" as n4
+  state "Buyback-Intermediary" as n5
+  state "Declined" as n6
+  n1 --> n2 : COB job
+  n2 --> n3 : initiate sale
+  n3 --> n4 : COB job
+  n2 --> n5 : buy back
+  n1 --> n6 : closed or overpaid]]></ac:plain-text-body></ac:structured-macro>
+<h3>Asset transfer lifecycles</h3>
+<p>An asset transfer moves through a lifecycle that starts at Pending-Intermediary and continues to Active-Intermediary, then follows one of several paths depending on the transfer outcome.</p>
+<p>Possible lifecycles are:</p>
+<ul>
+<li>Pending-Intermediary → Active-Intermediary → Active → Buyback.</li>
+<li>Pending-Intermediary → Active-Intermediary → Repayment → Active → Buyback.</li>
+<li>Pending-Intermediary → Active-Intermediary → Repayment → Active → Reverse.</li>
+<li>Pending-Intermediary → Active-Intermediary → Repayment → Buyback.</li>
+<li>Pending-Intermediary → Active-Intermediary → Paid-off → Active → Reverse.</li>
+</ul>
+<p>Each transfer record tracks status, owner, effective from date, and effective to date.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Pending-Intermediary" as n1
+  state "Active-Intermediary" as n2
+  state "Active" as n3
+  state "Buyback" as n4
+  state "Repayment" as n5
+  state "Paid-off" as n6
+  state "Reverse" as n7
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n2 --> n5
+  n5 --> n3
+  n3 --> n7
+  n5 --> n4
+  n2 --> n6
+  n6 --> n3]]></ac:plain-text-body></ac:structured-macro>
+<h3>Worked examples</h3>
+<p>A loan officer starts an intermediary sale for a loan with a balance of 1,000, made up of 800 principal, 100 fees and 100 interest. The figures are illustrative. On day 1 the sale is requested and the account enters Pending-Intermediary under owner 999 with no accounting entries. At close of business the same day it becomes Active-Intermediary under owner 999, and the ledger moves the principal, fees and interest to that owner. On day 5 a second user initiates a purchase, moving the account to Pending under owner 10001; at close of business it becomes Active under owner 10001 and the ledger transfers the balances from owner 999 to owner 10001. On day 10 the current owner buys the loan back, moving it to Buyback under owner 10001 with no accounting entries. This example shows the full intermediary sale lifecycle from first offer to buyback.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Action</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Balance after</th>
+<th>Ledger entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Start sale</td>
+<td>Pending-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>1 (close)</td>
+<td>Close of business</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>Principal 800.00, Fees 100.00, Interest 100.00 to owner 999</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Start purchase</td>
+<td>Pending</td>
+<td>10001</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>5 (close)</td>
+<td>Close of business</td>
+<td>Active</td>
+<td>10001</td>
+<td>1,000.00</td>
+<td>Principal 800.00, Fees 100.00, Interest 100.00 to owner 10001</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Buyback</td>
+<td>Buyback</td>
+<td>10001</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+</tbody></table>
+<p>A loan with a zero balance is sold intermediarily. On day 1 the sale is requested and the account enters Pending-Intermediary under owner 999 with no accounting entries. At close of business it becomes Active-Intermediary under owner 999 even though the balance is zero, and no ledger entries are posted because the amount is zero. On day 5 a second user initiates a purchase; the account moves to Pending under owner 10001 and at close of business to Active under owner 10001, again with no zero-amount entries. Any later transaction is tagged to the new owner. If the loan were overpaid instead of exactly zero, the status would still move to Active at close of business, but no accounting entries would be passed for the zero amount.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Action</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Balance after</th>
+<th>Ledger entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Start sale, zero balance</td>
+<td>Pending-Intermediary</td>
+<td>999</td>
+<td>0.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>1 (close)</td>
+<td>Close of business</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>0.00</td>
+<td>Zero-amount entry skipped</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Start purchase</td>
+<td>Pending</td>
+<td>10001</td>
+<td>0.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>5 (close)</td>
+<td>Close of business</td>
+<td>Active</td>
+<td>10001</td>
+<td>0.00</td>
+<td>Zero-amount entry skipped</td>
+</tr>
+<tr>
+<td>10</td>
+<td>New payment</td>
+<td>Active</td>
+<td>10001</td>
+<td>0.00</td>
+<td>Payment tagged to owner 10001</td>
+</tr>
+</tbody></table>
+<p>A repayment of 50, made up of 10 fees and 40 principal, is posted while the loan is Active-Intermediary under owner 999; the ledger credits fees and principal to owner 999 and debits cash to owner 999. Before the repayment is reversed, the sale completes and the loan becomes Active under owner 10001. When the reversal is processed, the ledger debits fees and principal to owner 10001 and credits cash to owner 10001, so the reversal follows the current owner rather than the original one. This example shows that repayments and reversals are tagged to the owner recorded at the time of processing.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Action</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Balance after</th>
+<th>Ledger entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Start sale</td>
+<td>Pending-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>1 (close)</td>
+<td>Close of business</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment of 50.00</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>960.00</td>
+<td>Fees 10.00 credit, Principal 40.00 credit, Cash 50.00 debit to owner 999</td>
+</tr>
+<tr>
+<td>5 (close)</td>
+<td>Sale completes</td>
+<td>Active</td>
+<td>10001</td>
+<td>960.00</td>
+<td>Principal 800.00, Fees 100.00, Interest 100.00 to owner 10001</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Repayment reversal</td>
+<td>Active</td>
+<td>10001</td>
+<td>1,000.00</td>
+<td>Fees 10.00 debit, Principal 40.00 debit, Cash 50.00 credit to owner 10001</td>
+</tr>
+</tbody></table>
+<p>A repayment of 1,200 is made on a loan with a balance of 1,000, made up of 800 principal, 100 fees and 100 interest, creating an overpaid amount of 200 credited to owner 999. At close of business the sale completes and the loan becomes Active under owner 10001; the ledger transfers the overpaid amount of 200 from owner 999 to owner 10001. A later buyback of 200 clears the overpaid amount under owner 10001. This example shows how overpaid amounts move with the account to the new owner.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Action</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Balance after</th>
+<th>Ledger entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Start sale</td>
+<td>Pending-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>1 (close)</td>
+<td>Close of business</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>1,000.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment of 1,200.00</td>
+<td>Active-Intermediary</td>
+<td>999</td>
+<td>-200.00</td>
+<td>Fees 100.00 credit, Principal 800.00 credit, Overpaid 200.00 credit, Cash 1,200.00 debit to owner 999</td>
+</tr>
+<tr>
+<td>5 (close)</td>
+<td>Sale completes</td>
+<td>Active</td>
+<td>10001</td>
+<td>-200.00</td>
+<td>Overpaid 200.00 transferred to owner 10001</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Buyback of 200.00</td>
+<td>Buyback</td>
+<td>10001</td>
+<td>0.00</td>
+<td>Overpaid 200.00 cleared, Cash 200.00 credit to owner 10001</td>
+</tr>
+</tbody></table>

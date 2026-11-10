@@ -1,0 +1,341 @@
+<h2>Backdated Loans</h2>
+<h3>Backdated loan creation</h3>
+<p>You can create a backdated loan with a business date of 01-11-2024 and a loan creation date of 01-01-2022.</p>
+<h3>Allowed backdated transaction types</h3>
+<p>You can backdate monetary activities on a loan account, including disbursements, refunds, repayments, fee and charge adjustments, goodwill credits, charge-offs, interest waivers, interest accrual activity, interest refunds and reversals, and interest rate changes.</p>
+<h3>Backdated schedule adjustments</h3>
+<p>You can backdate a loan schedule adjustment through the API. Charge-off backdating is also supported through the API. Backdating a reduced interest rate and backdating a pause or resume of interest are not supported through the API.</p>
+<h3>Backdating rules and effects</h3>
+<p>Backdated transactions apply only when they are the latest transaction in the loan life cycle, and no transaction can be executed on a future date. A backdated transaction or reversal triggers reverse replay of the loan account, and the system updates the loan status accordingly.</p>
+<p>The following backdated transactions are supported:</p>
+<ul>
+<li>A merchant-issued refund is created.</li>
+<li>A goodwill credit is reversed and replayed with the same external id.</li>
+</ul>
+<h3>Accrual activity processing</h3>
+<p>Accrual activity processing reverses and replays accrual activity consistently, and it reverses and replays just once for each transaction. You enable accrual activity on a loan product using the Accounting tab checkbox. When a transaction is reverse-replayed, the system copies the reverted transaction external id to the replayed new transaction and clears the external id on the reverted transaction. Updating the transaction date to the date when the period got early repaid prevents the accrual from reversing again and creating a new Accrual Activity.</p>
+<blockquote>
+<p><strong>Note:</strong> The system does not create both a LoanAdjustTransactionBusinessEvent that reverts a transaction and a LoanAdjustTransactionBusinessEvent that reverse-replays the same transaction.</p>
+</blockquote>
+<h3>Loan product configuration</h3>
+<p>A loan product can be configured as progressive and interest bearing with interest recalculation enabled. The affected loan product configuration is progressive, interest bearing, has interest recalculation set to true, default payment allocation is LAST_INSTALLMENT, and Accrual Activity is enabled on the loan product via the Accounting tab checkbox. The flag is set when disbursement or reage changes the number of terms. Calculate the number of terms before the action is executed and after the action is executed; if they differ, add the flag.</p>
+<p>The following loan product configurations apply:</p>
+<ul>
+<li>Loan product configuration DELT uses interest rate 9.99%, days in month ACTUAL, days in year ACTUAL, and number of repayments 6.</li>
+<li>The issue does not affect loan product configuration with days in year 360 and days in month 30.</li>
+<li>For ACTUAL / ACTUAL, the number of days in the period should be taken directly instead of calculating days in the month and multiplying with the repay every month multiplier.</li>
+</ul>
+<p>The following automatic interest refund behaviour applies:</p>
+<ul>
+<li>The affected loan product configuration makes an automatic interest refund transaction when a merchant issued refund is created.</li>
+</ul>
+<p>The following repayment schedule behaviour applies:</p>
+<ul>
+<li>The 2nd disbursement should show the same outstanding amount on each installment except the last installment, which will have an adjusted amount.</li>
+</ul>
+<h3>Rate factor formulas</h3>
+<p>The rate factor formula depends on how often repayments fall due. Monthly, weekly and daily periods each use a different formula, while yearly and whole-period options follow the default period behaviour. The formula also adjusts for the actual number of days in the period compared with the calculated number of days in the period.</p>
+<table>
+<thead>
+<tr>
+<th>Repayment period</th>
+<th>Rate factor formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly</td>
+<td>1+(rate of interest*(repaid every *days in month /days in year)*actual days in period/calculated days in period)</td>
+</tr>
+<tr>
+<td>Weekly</td>
+<td>1+(rate of interest*(7*repaid every /days in year)*actual days in period/calculated days in period)</td>
+</tr>
+<tr>
+<td>Daily</td>
+<td>1+(rate of interest*(repaid every /days in year)*actual days in period/calculated days in period)</td>
+</tr>
+</tbody></table>
+<p>EMI is calculated by deducting the downpayment principal from the principal balance even when the downpayment transaction is not paid. When the loan falls in the same year, EMIs match, period interests match, early and late payments match, and preclosure calculation matches.</p>
+<p>During backbook migration there is no down-payment, no chargeback, there are N+1 situations, and fees are mostly added after the maturity date.</p>
+<p>In Fineract the from date is excluded and the end date is included, so a period&#39;s first day is excluded, causing the number of days in a particular month and year to differ from Temenos. For example, for the period from 13 December 2023 to 13 January 2024, Fineract recognizes 18 days in 2023 and 13 days in 2024, while Temenos recognizes 19 days in 2023 and 12 days in 2024.</p>
+<h3>Interest calculation start date</h3>
+<p>The interest calculation start date differs between Temenos and Fineract.</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>First day of interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Temenos</td>
+<td>Disbursement date</td>
+</tr>
+<tr>
+<td>Fineract</td>
+<td>Disbursement date + 1</td>
+</tr>
+</tbody></table>
+<h3>Projected interest and repayment schedule approaches</h3>
+<p>Fineract and Temenos use different projected interest calculation and repayment schedule approaches. Temenos calculates and reflects the repayment schedule as if the current period due got paid. Fineract calculates and reflects the repayment schedule as if all past due periods got paid.</p>
+<p>Interest for a period uses this formula:</p>
+<ul>
+<li>outstanding total principal * nominal interest rate / number of days in year * number of days in period</li>
+</ul>
+<h3>Fineract vs Temenos interest mismatches</h3>
+<p>Interest and EMI amounts do not always match between Fineract and Temenos for backdated loans. Mismatches occur for specific repayment periods, disbursements, installments, and adjustments, and can be as small as one cent.</p>
+<p>The following mismatches occur between Fineract and Temenos:</p>
+<ul>
+<li>EMI matches between Fineract and Temenos.</li>
+<li>Interest amounts for the first and second repayment periods match when the first period is past due and the second period is due.</li>
+<li>Future installment interest amounts do not match.</li>
+<li>Interest for the third repayment period does not match.</li>
+<li>Interest from second periods does not match.</li>
+<li>Interest from third periods does not match.</li>
+<li>The last but one installment period interest does not match by 1 cent.</li>
+<li>The last installment EMI differs by 1 cent.</li>
+<li>The EMI of the last installment does not match.</li>
+<li>Adjust to last has differences.</li>
+<li>EMI after the second disbursement does not match.</li>
+<li>Period interest does not match.</li>
+</ul>
+<p>Additional observed differences include:</p>
+<ul>
+<li>Temenos does not recalculate interest for the current period after early repayment, so the second payment interest does not match.</li>
+<li>Early payment interests do not match, probably because Temenos does not recalculate them, so the second payment interest also does not match.</li>
+<li>Temenos calculates interest differently when the whole loan is backdated and the current date is after the maturity date.</li>
+<li>In a multi-disbursement scenario, the total billed amount in Temenos is less than the disbursed amount with 3 cents missing (7.82 + 7.97 + 8.09 + 8.22 + 8.39 + 8.51 = 49).</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> One scenario could not be reviewed because the exact use case could not be replicated in Temenos.</p>
+</blockquote>
+<h3>One year cycle matching</h3>
+<p>When a loan cycle falls within one year, EMI and period interest match for S5 schedules at disbursement and after all four repayments, and EMI and period interest match generally for one-year cycles. For S6 schedules, last installment interest and EMI do not match after disbursement, while payment interest and preclosure calculation match after repayments.</p>
+<h3>S7 schedule scenarios</h3>
+<p>S7 schedule scenarios cover interest differences after disbursement and preclosure, EMI mismatches, and the conditions under which Fineract matches Temenos.</p>
+<p>S7 scenarios show the following differences:</p>
+<ul>
+<li>After the first disbursement, interest differs after 10-11-2024 regarding how Temenos calculates interest for a future date.</li>
+<li>After the second disbursement, interest differs by 1 cent, the last EMI differs, and interest differs after the current date.</li>
+<li>After preclosure, interest differs by 1 cent, the last EMI differs, and the preclosure calculation differs possibly because of calculation after the current date.</li>
+</ul>
+<p>Schedule and payment behaviour follows these rules:</p>
+<ul>
+<li>Schedule and payment calculation match only till the current date.</li>
+<li>The last installment EMI does not match between Fineract and Temenos.</li>
+<li>If days in year is 365, Fineract matches; otherwise it does not match.</li>
+</ul>
+<p>Rescheduling behaviour follows these rules:</p>
+<ul>
+<li>One due date reschedule moves the due date from 2/1/24 to 3/1/24.</li>
+<li>Off due date reschedule moves the due date from 3/1/24 to 4/15/24.</li>
+<li>During reschedule of a period due date, the EMI must not change; only the due date moves and interest is recalculated.</li>
+</ul>
+<p>Outstanding amount is projected as follows:</p>
+<ul>
+<li>The projected total outstanding amount is calculated on the fly based on total disbursed amount plus total fee plus total penalty plus total interest.</li>
+<li>Each period deducts the amount due from total outstanding amount to get the projected total outstanding after each period.</li>
+</ul>
+<p>Rate factor approaches for rescheduled periods:</p>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Rescheduled period rate factor</td>
+<td>interest rate / days in year * days in month * actual days in period / calculated days in period</td>
+</tr>
+<tr>
+<td>Correct rate factor approach</td>
+<td>calculate full months between from date and due date, then add ratio of partial period as number of days / actual days in the month of the partial period from date</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> A Temenos sample is not yet available to compare against the S7 screenshot of values after the second disbursement.</p>
+</blockquote>
+<p>For S9 after disbursement, the calculated accrual amount in Temenos till Nov 19 is 4.98.</p>
+<p>When m_loan_charge_paid_by is not present after reversal for some credit transactions, the transaction summary report does not include the fees portion for those credit transactions.</p>
+<h3>Worked examples</h3>
+<p>A loan officer creates a loan with a backdated creation date. The business date is later than the creation date, but because no disbursement or repayment has been posted yet, the backdate is allowed and the schedule starts from the creation date. The figures in this example are illustrative. The setup is a principal of 1,000, an annual interest rate of 12%, three monthly installments, and 30-day months. If the product uses ACTUAL/ACTUAL day count instead of 30/360, interest for each period uses the actual number of days in that period rather than 30.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Payment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 month</td>
+<td>1,000.00</td>
+<td>340.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2 months</td>
+<td>670.00</td>
+<td>340.00</td>
+<td>6.70</td>
+<td>333.30</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3 months</td>
+<td>336.70</td>
+<td>340.07</td>
+<td>3.37</td>
+<td>336.70</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>1,020.07</td>
+<td>20.07</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A repayment is posted with a date earlier than the current business date. Because it is the latest transaction in the loan life cycle, the backdate is allowed and the system reverse-replays the account, recalculating interest for the affected period as if the payment had arrived on time. The setup is a principal of 1,000, an annual interest rate of 12%, three monthly installments, and 30-day months. The second installment is backdated to its due date. If the payment date were not backdated, ten extra days of interest on the 670.00 balance would add about 2.23 to the interest charge.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>Payment date</th>
+<th>Opening balance</th>
+<th>Payment</th>
+<th>Interest</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 month</td>
+<td>1 month</td>
+<td>1,000.00</td>
+<td>340.00</td>
+<td>10.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2 months</td>
+<td>2 months (backdated)</td>
+<td>670.00</td>
+<td>340.00</td>
+<td>6.70</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3 months</td>
+<td>3 months (backdated)</td>
+<td>336.70</td>
+<td>340.07</td>
+<td>3.37</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td>1,020.07</td>
+<td>20.07</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The interest rate on an active loan is changed with a backdated effective date. The system recalculates interest from that date while keeping earlier periods at the old rate. The setup is a principal of 1,000, an original annual interest rate of 12% for the first month, then 9% from the second month, three monthly installments, and 30-day months. This shows that a backdated rate change reprices only the periods from the effective date onward.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Rate</th>
+<th>Opening balance</th>
+<th>Payment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>12%</td>
+<td>1,000.00</td>
+<td>340.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>9%</td>
+<td>670.00</td>
+<td>340.00</td>
+<td>5.03</td>
+<td>334.97</td>
+<td>335.03</td>
+</tr>
+<tr>
+<td>3</td>
+<td>9%</td>
+<td>335.03</td>
+<td>337.54</td>
+<td>2.51</td>
+<td>335.03</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>1,017.54</td>
+<td>17.54</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A fee is added to a loan and then reversed with a backdated date. Because the reversal is the latest transaction, it is allowed and the balance returns to the amount before the fee. The setup is a loan balance of 1,000, a fee of 20.00, and the reversal posted backdated to the fee date. If the field showing who paid the charge is missing after the reversal, the transaction summary report excludes the fees portion for that credit transaction.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Date</th>
+<th>Amount</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fee added</td>
+<td>1 month</td>
+<td>20.00</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>Fee reversed (backdated)</td>
+<td>1 month</td>
+<td>-20.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Repayment</td>
+<td>2 months</td>
+<td>-340.00</td>
+<td>660.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="emi-calculation"><ri:page ri:content-title="Interest Calculation"/><ac:plain-text-link-body><![CDATA[Interest Calculation: EMI Calculation]]></ac:plain-text-link-body></ac:link>.</p>

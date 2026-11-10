@@ -1,0 +1,62 @@
+<h2>In-Advance Allocation Rules</h2>
+<p>The in advance allocation rule allocates an unprocessed amount to the upcoming installment first, then to the last installment if any amount remains. The Future installment rule allocates to the upcoming installment first, then to the last installment, and then backward in order.</p>
+<p>If an early repayment amount exceeds both the first upcoming installment outstanding and the last installment outstanding:</p>
+<ul>
+<li>The remaining unprocessed amount is allocated to the last but one installment.</li>
+</ul>
+<p>A new future allocation rule named &quot;Next installment - Last installment&quot; is added.</p>
+<p>An operations officer applies an early repayment of 300.00 on 10 January to a loan with four monthly installments of 120.00 each, due on the first of February, March, April and May. The figures are illustrative. The product uses the in-advance allocation rule, so the unprocessed amount goes to the first upcoming installment, then to the last installment, and any remainder goes to the last-but-one installment. This determines which installments the system treats as paid and which remain overdue.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Installment due</th>
+<th>Outstanding before</th>
+<th>Allocated</th>
+<th>Outstanding after</th>
+<th>Unprocessed remaining</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment received</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>First upcoming</td>
+<td>1 February</td>
+<td>120.00</td>
+<td>120.00</td>
+<td>0.00</td>
+<td>180.00</td>
+</tr>
+<tr>
+<td>Last installment</td>
+<td>1 May</td>
+<td>120.00</td>
+<td>120.00</td>
+<td>0.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>Last but one</td>
+<td>1 April</td>
+<td>120.00</td>
+<td>60.00</td>
+<td>60.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Not reached</td>
+<td>1 March</td>
+<td>120.00</td>
+<td>0.00</td>
+<td>120.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that the March installment is left unpaid even though it falls before April, because the rule moves from the first upcoming installment to the last and then to the last-but-one installment before stopping.</p>
+<p>See also: <ac:link ac:anchor="payment-allocation-strategies"><ri:page ri:content-title="Payment Allocation Strategies"/><ac:plain-text-link-body><![CDATA[Payment Allocation Strategies: Payment Allocation Strategies]]></ac:plain-text-link-body></ac:link>.</p>

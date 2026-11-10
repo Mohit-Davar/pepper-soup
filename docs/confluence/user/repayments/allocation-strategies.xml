@@ -1,0 +1,509 @@
+<h2>Payment Allocation Strategies</h2>
+<h3>Payment allocation strategy overview</h3>
+<p>A repayment strategy decides how a repayment transaction is distributed across an instalment&#39;s unpaid balances. The strategy applies to credit adjustments, repayments, refunds, goodwill credits and waivers.</p>
+<p>The strategy orders transactions within an instalment and pays them off within that instalment&#39;s timeframe.</p>
+<ul>
+<li>The current repayment strategy order is Penalty, Fee, Interest, Principal.</li>
+<li>If an instalment has unpaid balances, the strategy distributes the transaction amount in that order.</li>
+</ul>
+<h3>New repayment strategy order</h3>
+<p>The new repayment strategy allocates payments in this order: due charges, due penalty, due fee, due interest, due principal, in advanced principal, in advanced penalty, in advanced fee, in advanced interest.</p>
+<h3>Reverse-replay logic</h3>
+<p>Reverse-replay logic recalculates installment balances when you execute a payment transaction or add a charge, starting from the first Disbursement and resetting installment balances. It applies to region DE (Germany) and product PayIn30.</p>
+<p>Reverse-replay follows these rules:</p>
+<ul>
+<li>Transactions and charges are ordered, and repayment distribution respects that order.</li>
+<li>If you add a repayment and a charge occurs on the same day, no reverse-replay occurs.</li>
+<li>If you add another repayment on the same day, that repayment pays the charge.</li>
+<li>Charges are assigned to repayment installments before transactions are reprocessed; when a new charge is added to an installment, even if its submitted or due date is later than the repayment transaction, the repayment transaction is reverse-replayed and distributes part of its amount to pay that charge.</li>
+<li>If the before and after balances do not match, the system reverses the original transaction and creates a new transaction with the same properties but different balances.</li>
+</ul>
+<p>The payment allocation order for Pin30 in DE (Germany) applies to all transaction types.</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Allocation target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>DuePenalties</td>
+</tr>
+<tr>
+<td>2</td>
+<td>DueInterest</td>
+</tr>
+<tr>
+<td>3</td>
+<td>DuePrincipal</td>
+</tr>
+<tr>
+<td>4</td>
+<td>DueFees</td>
+</tr>
+<tr>
+<td>5</td>
+<td>InAdvancePenalties</td>
+</tr>
+<tr>
+<td>6</td>
+<td>InAdvanceInterest</td>
+</tr>
+<tr>
+<td>7</td>
+<td>InAdvancePrincipal</td>
+</tr>
+<tr>
+<td>8</td>
+<td>InAdvanceFees</td>
+</tr>
+</tbody></table>
+<h3>Fine-grained allocation rules</h3>
+<p>Fine-grained transaction allocation rules decide how payments are applied to Fee, Penalty and Principal, and create allocation mapping entries for each monetary transaction.</p>
+<p>The predefined allocation rules cover six categories:</p>
+<ul>
+<li>DUE PRINCIPAL</li>
+<li>DUE FEE</li>
+<li>DUE PENALTY</li>
+<li>IN ADVANCE PRINCIPAL</li>
+<li>IN ADVANCE FEE</li>
+<li>IN ADVANCE PENALTY</li>
+</ul>
+<h3>Allocation outcomes and handling</h3>
+<p>A payment can result in two outcomes: to be paid and to be debt. The outcome decides where each part of the payment goes.</p>
+<p>The system allocates each part of a payment based on its outcome:</p>
+<ul>
+<li>Principal goes to the amortization schedule.</li>
+<li>Fee and penalty go to charge payment handling.</li>
+<li>Overpayment goes to overpayment handling.</li>
+</ul>
+<h3>Overpayment and credit balance refund</h3>
+<p>Repayment transactions aim to pay down outstanding balances. Every transaction or charge is assigned to an installment to monitor the debt and repayments and decide on the distribution. For transactions the transaction date is used for assignment; for charges the due date is used, with specific due date charge using due date, disbursement fee using disbursal date, installment fee using installment due date, and overdue penalty due from the moment it was added.</p>
+<p>A new repayment strategy introduces two buckets: Due charges and In advance principal, allowing payment of a charge on or after the charge due date, with the strategy aware of any unpaid but due charge or penalty.</p>
+<p>Overpayment occurs when a repayment exceeds the total outstanding balance. The system refunds the overpaid amount back to the customer through a credit balance refund. If the overpayment amount is lower than the credit balance refund amount, principal outstanding is increased and the amortization schedule is updated with only the principal portion.</p>
+<h3>Strategy issues and expected behavior</h3>
+<p>The new payment strategy due-penalty-fee-interest-principal-in-advance-principal-penalty-fee-interest-strategy and the New DueInAdvance payment strategy show known issues when a payment includes an in advance portion.</p>
+<p>Known issues with in advance payments:</p>
+<ul>
+<li>Paying only principal leaves the extra in advance part off the repayment schedule and transactions tab and puts the loan into OVERPAID status.</li>
+<li>With the New DueInAdvance payment strategy, the In Advance column on the Repayment schedule tab shows an incorrect amount when in advance portions exist.</li>
+<li>The expected In Advance column value is either 1000 EUR for principal only or 1100 EUR for principal plus penalty plus fee, and the correct expected result is under investigation.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Paying more than the actual due payment should leave the loan status ACTIVE.</p>
+</blockquote>
+<h3>Accrual configuration and consistency</h3>
+<p>Accrual posting for charges can be configured to use either the charge created date or the due date, and the system posts accrual journal entries according to that setting. Accrual jobs, end-of-day jobs, and accrual made through the API behave consistently. When accrual is reverse-replayed, the recreated accrual uses the same value date as the original accrual transaction to avoid accounting issues.</p>
+<p>The following rules apply to accrual and fee behaviour:</p>
+<ul>
+<li>With immediate accrual, multiple accruals can occur on the same day.</li>
+<li>If waiving a loan charge completes an N+1 installment as a side effect, the paid-by date is the transaction date of the waive-charge transaction.</li>
+<li>Fees added to loans are a source of income, and backdated transactions or reverse-replay can change how money is distributed and pay off fees retrospectively, changing the amount of income.</li>
+<li>Fees added to an instalment must be paid by a payment created after the fee is due; this applies to any other income source too.</li>
+</ul>
+<h3>UI screen fields and navigation</h3>
+<p>The advance payment allocation tab screen shows the fields Credit Allocation Strategy and Future Installment Allocation Rule, along with the text You can drag and drop the rows to set a Payment Allocations order; Order; Payment Allocation Rule; Credit Allocation Rule.</p>
+<ol>
+<li>Open the loan product wizard.</li>
+<li>Open the PAYMENT ALLOCATION step.</li>
+<li>Choose the tab labeled with the transaction value to open the advance payment allocation tab screen.</li>
+</ol>
+<p>Two global settings control accrual behaviour:</p>
+<ul>
+<li>charge_accrual_date accepts submitted on or due date and defaults to due date.</li>
+<li>Accrual_timing accepts immediate or job and defaults to job.</li>
+</ul>
+<h3>Example allocation orders</h3>
+<p>The payment allocation order lists the charge types and due dates the system applies to a repayment, in the order they are paid off.</p>
+<table>
+<thead>
+<tr>
+<th>Repayment</th>
+<th>Allocation order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>31-Jan Autopayment</td>
+<td>DuePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Rt Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>10-Feb Rt Repayment</td>
+<td>InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>Due Penalties due 28-Jan then DuePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>Due Penalties due 15-Feb then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Rt Repayment</td>
+<td>Due Penalties due 15-Feb (Oldest First) then Due Penalties due 7-Mar (Oldest First) then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>16-Jan RT Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>1-Feb Real Time Repayment</td>
+<td>InAdavncePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Real Time Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>30-Jan Real Time Repayment</td>
+<td>InAdvance Penalties due 28-Jan then InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>10-Feb Real Time Repayment</td>
+<td>InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>24-Feb Real Time Repayment</td>
+<td>Due Penalties due 15-Feb then InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>Due Penalties due 15-Feb (Oldest First) then Due Penalties due 26-Feb (Oldest First) then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>Due Penalties due 15-Feb then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Real Time Repayment</td>
+<td>Due Penalties due 15-Feb (Oldest First) then DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>15-Mar Real Time Repayment</td>
+<td>DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>22-Mar Real Time Repayment</td>
+<td>DuePrincipal due 1-Mar then DueFees due 1-Mar then Due Penalties due 7-Mar (Oldest First)</td>
+</tr>
+<tr>
+<td>10-Feb Real Time Repayment</td>
+<td>InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>21-Feb Real Time Repayment</td>
+<td>Due Penalties due 15-Feb then InAdvancePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>28-Feb Real Time Repayment</td>
+<td>InAdvancePrincipal due 15-Feb then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>21-Feb Real Time Repayment</td>
+<td>Due Penalties due 15-Feb then InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>28-Feb Real Time Repayment</td>
+<td>InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>Due Penalties due 15-Feb then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Real Time Repayment</td>
+<td>Due Penalties due 15-Feb (Oldest First) then Due Penalties due 7-Mar (Oldest First) then DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>15-Mar Real Time Repayment</td>
+<td>DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>22-Mar Real Time Repayment</td>
+<td>DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>31-Jan Autopayment</td>
+<td>DuePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Rt Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>31-Jan Autopayment</td>
+<td>Due Penalties due 28-Jan then DuePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>10-Feb Rt Repayment</td>
+<td>InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Rt Repayment</td>
+<td>Due Penalties due 15-Feb (Oldest First) then DuePrincipal due 1-Mar then DueFees due 1-Mar then Due Penalties due 7-Mar (Oldest First)</td>
+</tr>
+<tr>
+<td>16-Jan RT Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>1-Feb Real Time Repayment</td>
+<td>InAdavncePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Real Time Repayment</td>
+<td>InAdvancePrincipal due 31-Jan</td>
+</tr>
+<tr>
+<td>30-Jan Real Time Repayment</td>
+<td>InAdvance Penalties due 28-Jan then InAdvancePrincipal due 31-Jan</td>
+</tr>
+</tbody></table>
+<p>Use case: Disburse loan on 14th of May, add Snooze fee (amount based on disbursement amount) due 31st of May, do an extra disbursement on 16th of May; the accrual needs to be reverse-replayed since the amount should be higher.</p>
+<h3>Worked examples</h3>
+<p>A loan of 1,000 is disbursed on Day 1 with principal due on Day 30. With no other charges, a repayment of 1,000 on Day 30 clears the loan. If a 20 fee is also due on Day 30, a repayment of 1,020 on Day 30 clears both principal and fee. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Transaction</th>
+<th>Principal</th>
+<th>Fee</th>
+<th>Principal due</th>
+<th>Total due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disburse</td>
+<td>Day 1</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Repay no fee</td>
+<td>Day 30</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Add fee</td>
+<td>Day 25</td>
+<td>-</td>
+<td>20.00</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>Repay with fee</td>
+<td>Day 30</td>
+<td>1,020.00</td>
+<td>1,000.00</td>
+<td>20.00</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>Adding a due fee increases the repayment needed to clear the loan by the fee amount.</p>
+<p>A loan of 1,000 is disbursed on Day 1. The customer repays 600 on Day 10, leaving 400 of principal. On Day 15, a 40 charge is added with a due date of Day 20. On Day 18, before the charge is due, the customer repays 350; because the charge is not yet due, the amount pays principal only and the charge stays unpaid. On Day 21, after the charge is due, the customer repays 40; this amount pays the charge, leaving 50 outstanding.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Transaction</th>
+<th>Principal</th>
+<th>Charge</th>
+<th>Principal due</th>
+<th>Total due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disburse</td>
+<td>Day 1</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 10</td>
+<td>600.00</td>
+<td>-</td>
+<td>-</td>
+<td>400.00</td>
+<td>400.00</td>
+</tr>
+<tr>
+<td>Add charge</td>
+<td>Day 15</td>
+<td>-</td>
+<td>40.00</td>
+<td>-</td>
+<td>400.00</td>
+<td>440.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 18</td>
+<td>350.00</td>
+<td>-</td>
+<td>-</td>
+<td>50.00</td>
+<td>90.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 21</td>
+<td>-</td>
+<td>40.00</td>
+<td>-</td>
+<td>50.00</td>
+<td>50.00</td>
+</tr>
+</tbody></table>
+<p>A repayment made before a charge due date does not pay the charge; a repayment made after the due date pays it.</p>
+<p>A loan of 1,000 is disbursed on Day 1. On Day 25, a 20 fee is added with due date Day 60. On Day 40, the customer repays 1,020, clearing principal and fee. The repayment is then reversed, restoring principal of 1,000 and fee of 20. On Day 45, a 15 penalty is added with due date Day 45. On Day 60, the customer repays 1,035. The payment covers the due principal of 1,000, the due penalty of 15, and the due fee of 20, clearing all balances.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Transaction</th>
+<th>Principal</th>
+<th>Penalty</th>
+<th>Fee</th>
+<th>Principal due</th>
+<th>Total due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disburse</td>
+<td>Day 1</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Add fee</td>
+<td>Day 25</td>
+<td>-</td>
+<td>-</td>
+<td>20.00</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 40</td>
+<td>1,020.00</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Reverse</td>
+<td>Day 40</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>Add penalty</td>
+<td>Day 45</td>
+<td>-</td>
+<td>15.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,035.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 60</td>
+<td>1,035.00</td>
+<td>15.00</td>
+<td>20.00</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>A repayment large enough to cover all due amounts pays principal, penalty, and fee together.</p>
+<p>A loan of 1,000 is disbursed on Day 1. On Day 25, a 15 penalty is added with due date Day 28. On Day 30, the customer repays 500. The payment first covers the due penalty of 15 and then applies 485 to principal, leaving 515 of principal outstanding.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Transaction</th>
+<th>Principal</th>
+<th>Penalty</th>
+<th>Principal due</th>
+<th>Total due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disburse</td>
+<td>Day 1</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Add penalty</td>
+<td>Day 25</td>
+<td>-</td>
+<td>15.00</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>1,015.00</td>
+</tr>
+<tr>
+<td>Repay</td>
+<td>Day 30</td>
+<td>500.00</td>
+<td>15.00</td>
+<td>-</td>
+<td>515.00</td>
+<td>515.00</td>
+</tr>
+</tbody></table>
+<p>When a penalty is due, a partial repayment pays the penalty before it reduces principal.</p>

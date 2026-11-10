@@ -1,0 +1,162 @@
+<h2>Environment Provisioning</h2>
+<h3>One-click environment provisioning</h3>
+<p>One-click environment provisioning sets up an environment with a single button push. Account creation follows compliant practices such as audit logging, and the Mifos environment builds up as it did before.</p>
+<h3>AWS account creation and security setup</h3>
+<p>Terraform creates new AWS accounts. CloudTrail and encryption setup are required, and you must log everything.</p>
+<blockquote>
+<p><strong>Note:</strong> Do not perform destructive actions such as account removal from AWS IAM until you are confident with automation behavior.</p>
+</blockquote>
+<h3>EKS module customization and sharing</h3>
+<p>The EKS module terraform code includes Helm bridging, Kubernetes addons, and EKS addons. It is cleaned up from secrets, customized for specific partners, and shared with the partner.</p>
+<h3>Resource naming and tagging standards</h3>
+<p>Resource names use the &lt;partner&gt;-&lt;business_name&gt;-&lt;environment&gt; structure, and every resource carries a fixed set of tags. These requirements apply to all Terraform code. All resources carry the owner, manager, clients, cost_allocation_method, project, environment_type, and data_type tags. The owner, manager, project, environment_type, and data_type tags use the value &quot;alluvial&quot; or &quot;alluvial-managed-platform&quot; or &quot;prod&quot; as shown below; the clients tag uses the list [ &quot;alluvial&quot; ].</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>owner</td>
+<td>&quot;alluvial&quot;</td>
+</tr>
+<tr>
+<td>manager</td>
+<td>&quot;alluvial&quot;</td>
+</tr>
+<tr>
+<td>clients</td>
+<td>[ &quot;alluvial&quot; ]</td>
+</tr>
+<tr>
+<td>cost_allocation_method</td>
+<td>&quot;owner&quot;</td>
+</tr>
+<tr>
+<td>project</td>
+<td>&quot;alluvial-managed-platform&quot;</td>
+</tr>
+<tr>
+<td>environment_type</td>
+<td>&quot;prod&quot;</td>
+</tr>
+<tr>
+<td>data_type</td>
+<td>&quot;prod&quot;</td>
+</tr>
+</tbody></table>
+<h3>Jump box SSH key management</h3>
+<p>Manual setup of jump boxes is enough for SSH key management. Jenkins jobs distribute and remove keys on the jumpboxes, with access limited to specific users. Each job serves a different role.</p>
+<p>The following rules govern jump box SSH key management:</p>
+<ul>
+<li>Manual setup of jump boxes is enough for SSH key management.</li>
+<li>A Jenkins job removes all SSL keys from the jumpboxes.</li>
+<li>A Jenkins job distributes an accessing user&#39;s key to all the jumpboxes.</li>
+<li>Jenkins job access is limited.</li>
+<li>The distributer job is for developers.</li>
+<li>The deletion job is for a dedicated user.</li>
+</ul>
+<h3>Amazon MQ deployment and usage</h3>
+<p>Amazon MQ runs on a managed platform and is created and configured by a Terraform module. The system uses it for event transmission and for Spring Batch partitioning, including the CoB job. Events can be read through a message consumer, and CoB runs successfully using MQ.</p>
+<h3>AMQ user accounts and access</h3>
+<p>AMQ user accounts include an admin user and a read-only user, both created as headless users and assigned groups. The admin port must be opened for access.</p>
+<h3>Terraform configuration in shared repo</h3>
+<p>Terraform configuration lives in the shared repo and contains no hard-coded reference to the ECR repo; the ECR URL is configurable. Changes are added to Terraform in the shared repo, and the Terraform module itself is available there. Configuration must be available in the shared repo, and cross-region availability is required for the component.</p>
+<p>The Helm chart supports the following configuration:</p>
+<ul>
+<li>Placement of the load balancer (internal or internet-facing) is configurable.</li>
+<li>A solution synchronizes secrets from AWS Secrets Manager to EKS Kubernetes secrets for sensitive configuration variables.</li>
+</ul>
+<h3>Fineract schema migration deployment</h3>
+<p>A Fineract administrator can deploy new database schema versions independently from running the Fineract service. The deployment runs an independent Fineract instance that performs Liquibase migrations and then exits without starting Fineract itself.</p>
+<p>The same approach can start new Fineract instances with new software versions while Liquibase remains disabled.</p>
+<p>Set the configuration parameter using an environment variable to control startup behaviour after migration:</p>
+<ul>
+<li>spring.liquibase.exit-after-migration stops the Fineract startup process after Liquibase migration completes.</li>
+<li>The process exit code reflects the success state of the Liquibase migration when this parameter is set.</li>
+</ul>
+<h3>Aurora PostgreSQL IAM read-only user setup</h3>
+<p>Aurora PostgreSQL supports read-only users with IAM authentication and authorisation. You can connect with an IAM user whose access is limited to a given database and who can execute only SELECT statements. A small test database is available for this setup.</p>
+<p>The setup also covers connection pooling and environment management.</p>
+<ul>
+<li>Data source initial_pool_size and max pool size can be overridden depending on the type of instance being run.</li>
+<li>Pool size can be set via environment variable.</li>
+<li>You can shut down a POC environment.</li>
+<li>The EKS cluster can be upgraded to a version supported beyond 2023-10-30, and upgrade instructions can be shared with the client.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> A Confluence page summarises the setup so anyone can recreate the database and user and test it.</p>
+</blockquote>
+<h3>Development and performance environment pipelines</h3>
+<p>Development environments deploy from OpenMF, while performance environments deploy and scale through BaasFlow Jenkins. Cucumber tests run on the baasflow platform and BaasFlow Jenkins starts them.</p>
+<p>The following rules apply to development and performance environment pipelines:</p>
+<ul>
+<li>Every Jenkins job used for development has been migrated.</li>
+<li>BaasFlow Jenkins starts performance tests.</li>
+<li>A Lambda subscribed to IAM group membership changes sounds feasible.</li>
+<li>Guardrails modules are implemented in layer 1 Terraform as described in <a href="https://mifosforge.jira.com/browse/">https://mifosforge.jira.com/browse/</a>.</li>
+<li>ECR is a parameter in Terraform so it can be used in any environment.</li>
+<li>The current Helm chart uses the same ECR URL for all Docker images, independent from the environment.</li>
+<li>The current Helm chart supports only internet-facing load-balancers.</li>
+<li>Identity and access management is automated based on a Google Sheet first, providing an audit trail and amendable via AWS Lambdas.</li>
+<li>Current initial data is loaded to the sheet with data of existing users.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A batch environment runs 150 worker pods against an Aurora PostgreSQL instance that allows 5,000 connections. Each pod uses a data source with a configurable minimum pool size and a maximum pool size of 100. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Min pool size per pod</th>
+<th>Worker pods</th>
+<th>Worker connections</th>
+<th>Headroom</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Default</td>
+<td>20</td>
+<td>150</td>
+<td>3000.00</td>
+<td>2000.00</td>
+</tr>
+<tr>
+<td>Override</td>
+<td>5</td>
+<td>150</td>
+<td>750.00</td>
+<td>4250.00</td>
+</tr>
+</tbody></table>
+<p>Changing the minimum pool size from 20 to 5 reduces worker connections from 3,000.00 to 750.00 and raises headroom from 2,000.00 to 4,250.00.</p>
+<p>In addition to batch workers, the environment runs read/write pods that open 500 connections. The instance limit remains 5,000 connections.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Connections</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Batch workers (min pool 20)</td>
+<td>3000.00</td>
+</tr>
+<tr>
+<td>Read/write pods</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Total demand</td>
+<td>3500.00</td>
+</tr>
+<tr>
+<td>Instance limit</td>
+<td>5000.00</td>
+</tr>
+<tr>
+<td>Headroom</td>
+<td>1500.00</td>
+</tr>
+</tbody></table>
+<p>Total demand of 3,500.00 stays below the 5,000-connection limit, leaving 1,500.00 connections of headroom.</p>

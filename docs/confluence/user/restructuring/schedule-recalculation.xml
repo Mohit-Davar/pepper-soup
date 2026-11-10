@@ -1,0 +1,174 @@
+<h2>Schedule Recalculation for Overdue Loans</h2>
+<h3>Interest recalculation scope and behavior</h3>
+<p>Interest recalculation applies to loan accounts with Interest Recalculation enabled when an instalment is not paid on its instalment date. The system recalculates interest for all instalments according to the overdue days and regenerates the repayment schedule. If the loan is not interest-bearing, there is nothing to recalculate.</p>
+<p>The recalculation follows these rules:</p>
+<ul>
+<li>Progressive interest-bearing loans handle overdue instalments similarly to cumulative loans when interest recalculation is enabled.</li>
+<li>The recalculation adjusts both the interest and principal portions of instalments according to the daily or same-as-repayment-period strategy.</li>
+<li>Weekly, monthly and mixed strategies are not covered.</li>
+<li>Overdue last instalments are not covered.</li>
+</ul>
+<h3>Configuration and COB job setup</h3>
+<p>Schedule recalculation for overdue loans runs as a configured business step in the Loan COB job. You set interest recalculation as the last step, enable interest recalculation on loans, and set the interest calculation type to DAILY. The step runs at start of business day using the actual business date, after all end of business day business steps.</p>
+<h3>Repayment schedule updates and scenarios</h3>
+<p>The repayment schedule updates after close of business when an installment is overdue, so that repayment amounts stay correct for late repayments and the schedule remains valid for business days.</p>
+<p>The schedule updates correctly after COB for the following overdue scenarios:</p>
+<ul>
+<li>One overdue installment.</li>
+<li>Two or more installments overdue in a row.</li>
+<li>Late repayment on the next installment due date.</li>
+<li>Late repayment on a day between the start and due dates.</li>
+<li>Partial late repayment on the same day where the sum of partial repayments fully repays the overdue installment.</li>
+<li>Partial late repayment on different business days during the same installment period.</li>
+</ul>
+<p>For the MIXED strategy, the schedule updates correctly after COB for the same overdue scenarios:</p>
+<ul>
+<li>One overdue installment.</li>
+<li>Two or more installments overdue in a row.</li>
+<li>Late repayment on the next installment due date.</li>
+<li>Late repayment on a day between the start and due dates.</li>
+<li>Partial late repayment on the same day where the sum of partial repayments fully repays the overdue installment.</li>
+<li>Partial late repayment on different business days during the same installment period.</li>
+</ul>
+<p>For an interest bearing progressive loan with interest recalculation enabled, additional interest on overdue principal is handled and shown on the repayment schedule when the installment becomes overdue.</p>
+<h3>Post-maturity late repayment handling</h3>
+<p>When a borrower makes a late repayment after the maturity date, the system creates a new installment as of the repayment date and calculates interest for the extra days from the last maturity date on the current reducing principal balance. No new installment is created during the end-of-day job, and that job does not add, calculate, or collect interest after maturity. Repayment after maturity collects only the interest in the repayment schedule for the installment being fulfilled. The model holds and calculates overdue interest so payoff calculations are not broken, and creates a new installment only when repayment happens.</p>
+<p>The advanced payment processor handles post-maturity repayments as follows:</p>
+<ul>
+<li>Get payable details using the payable details calculator.</li>
+<li>Update the repayment schedule period due principal and due interest.</li>
+<li>Allocate the repayment transaction to that period.</li>
+<li>Call the payable details calculator with paid principal times -1 as a balance correction.</li>
+<li>Update the repayment schedule period again from the model.</li>
+<li>Proceed to the next installment if any unprocessed amount remains.</li>
+</ul>
+<h3>Rate factor formulas</h3>
+<p>The rate factor depends on how often repayments occur: monthly, weekly or daily. Each formula adds one to the product of the interest rate, the repayment frequency, and the ratio of actual days in the period to calculated days in the period.</p>
+<table>
+<thead>
+<tr>
+<th>Frequency</th>
+<th>Rate factor formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly</td>
+<td>1 + rate of interest × repaid every × days in month ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+<tr>
+<td>Weekly</td>
+<td>1 + rate of interest × 7 × repaid every ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+<tr>
+<td>Daily</td>
+<td>1 + rate of interest × repaid every ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+</tbody></table>
+<h3>Worked examples</h3>
+<p>A customer takes a 900 loan with 12% annual interest, repaid in three equal monthly installments over 30-day months. Interest recalculation is enabled, but every installment is paid on time, so the schedule remains as originally generated. The figures are illustrative. On-time payments keep the original schedule unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Feb 1</td>
+<td>900.00</td>
+<td>9.00</td>
+<td>297.02</td>
+<td>602.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Mar 1</td>
+<td>602.98</td>
+<td>6.03</td>
+<td>299.99</td>
+<td>302.99</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Apr 1</td>
+<td>302.99</td>
+<td>3.03</td>
+<td>302.99</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>18.06</td>
+<td>900.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The second installment of 306.02, due on Mar 1, is not paid. Interest recalculation is enabled. On Mar 11, ten days after the due date, the system recalculates interest on the overdue principal of 299.99. Under the daily strategy, interest is charged for the ten actual overdue days. Under the same-as-repayment-period strategy, interest is charged for the full 30-day period. With the same-as-repayment-period setting, the borrower pays 2.00 more in overdue interest because the full month is charged instead of the actual ten days.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Description</th>
+<th>Daily strategy</th>
+<th>Same-as-repayment-period</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Overdue principal on Mar 1</td>
+<td>299.99</td>
+<td>299.99</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Overdue days</td>
+<td>10</td>
+<td>30</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest on overdue principal</td>
+<td>1.00</td>
+<td>3.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Added to amount due</td>
+<td>1.00</td>
+<td>3.00</td>
+</tr>
+</tbody></table>
+<p>The second installment of 306.02, due Mar 1, remains unpaid. On Mar 11 the customer pays 150.00. The system calculates interest on the overdue principal for the days it was outstanding, applies the payment to interest first and then to principal, and reduces the balance. On Mar 20 the customer pays the remaining amount, and the schedule is closed. Each partial payment reduces the overdue principal, so interest for the remaining days is calculated on a smaller balance.</p>
+<table>
+<thead>
+<tr>
+<th>Payment date</th>
+<th>Amount paid</th>
+<th>Interest cleared</th>
+<th>Principal cleared</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Mar 11</td>
+<td>150.00</td>
+<td>1.00</td>
+<td>149.00</td>
+<td>150.99</td>
+</tr>
+<tr>
+<td>Mar 20</td>
+<td>151.44</td>
+<td>0.45</td>
+<td>150.99</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="backdated-loans"><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans: Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="emi-calculation"><ri:page ri:content-title="Interest Calculation"/><ac:plain-text-link-body><![CDATA[Interest Calculation: EMI Calculation]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="early-and-late-repayment-interest"><ri:page ri:content-title="Interest Timing"/><ac:plain-text-link-body><![CDATA[Interest Timing: Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="loan-payoff"><ri:page ri:content-title="Loan Payoff"/><ac:plain-text-link-body><![CDATA[Loan Payoff: Loan Payoff]]></ac:plain-text-link-body></ac:link>.</p>

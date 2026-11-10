@@ -1,0 +1,17 @@
+<h2>Journal Entry Aggregation</h2>
+<p>Journal Entry Aggregation pre-bakes journal entry data so reports can use aggregated tables instead of aggregating journal entries every day. When a job has not yet been executed, reports must perform a null check on aggregated tables. The Trial Balance Report uses the pre-baked Journal Entry Aggregation Summary table.</p>
+<p>The post_snapshot_delta_data query applies the following filters:</p>
+<ul>
+<li>It includes only journal entries where entity_type_enum equals 1 and manual_entry is false.</li>
+<li>It includes entries where the latest aggregated_date is null or submitted_on_date is later than the latest aggregated_date.</li>
+<li>It includes entries where submitted_on_date is earlier than endDate.</li>
+<li>It includes entries where office_id equals officeId.</li>
+</ul>
+<p>The summary_snapshot_baseline_data query applies the following filters and grouping:</p>
+<ul>
+<li>It uses ags.aggregated_on_date instead of ags.submitted_on_date.</li>
+<li>It includes only entries where ags.entity_type_enum equals 1 and ags.manual_entry is false.</li>
+<li>It includes entries where ags.aggregated_on_date is less than or equal to the latest aggregated_date.</li>
+<li>It includes entries where ags.office_id equals officeId.</li>
+<li>It groups results by productname, glcode, glname, and assetowner.</li>
+</ul>

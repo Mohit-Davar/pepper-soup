@@ -1,0 +1,236 @@
+<h2>Loan Submission API</h2>
+<h3>Global configuration flag behavior</h3>
+<p>A loan product has a flag called &quot;to apply values from global config or not&quot; in its event settings section. When this flag is true, the loan product reads event values from the global configuration and the user cannot manually enter them at the loan product level because those fields are grayed out. Changes to event values at the global configuration apply to every loan product where the flag is true. The user can manually enter event values only when the flag is false.</p>
+<h3>Down payment override rules</h3>
+<p>The down payment override applies only when down payment is configured on the loan product but the loan submission disables it. You can enable and disable down payment from the loan account create or modify API level.</p>
+<p>The system applies down payment repayment settings as follows:</p>
+<ul>
+<li>If automatic repayment for down payment or disbursed amount percentage for down payment is provided, those values override the values fetched from the loan product.</li>
+<li>If neither field is provided, the values set on the loan product are used.</li>
+<li>If down payment was not set and enabled on the loan product, it cannot be set and configured at the loan level.</li>
+</ul>
+<h3>Approved amount update</h3>
+<p>You can update an approved loan amount using the Loan Submission API. The new amount must not be lower than the total already disbursed amounts plus total expected disbursement amounts plus total capitalized income, and it cannot exceed the applied loan amount and allowed over applied max. The new available amount fails validation if the approved amount cannot be lower than the total amount of already disbursed or expected disbursement amounts plus capitalized income.</p>
+<p>The API supports two endpoints for updating the approved loan amount:</p>
+<ul>
+<li>PUT /loans/&lt;loan_id&gt;/approved-amount updates the approved loan amount.</li>
+<li>PUT /loans/external-id/&lt;loan_external_id&gt;/approved-amount updates the approved loan amount.</li>
+</ul>
+<p>A successful update returns HTTP 200 with a CommandProcessingResult that includes the old approved amount and the new approved amount.</p>
+<ul>
+<li>The new approved loan amount equals total disbursed amount plus total capitalized income plus the new available disbursement amount.</li>
+<li>An indirect loan approved amount change creates an approved amount history entry.</li>
+</ul>
+<h3>Available disbursement amount update</h3>
+<p>You can update the available disbursement amount for a loan using either its loan ID or its external ID. The new amount cannot be negative. A successful response returns HTTP 200 with a CommandProcessingResult that includes the old and new available disbursement amounts and the old and new approved amounts.</p>
+<h3>Repayment schedule date update</h3>
+<p>You can use the API to update the repayment next due date, remaining schedule payment due dates, and maturity date. Installments already due are not extended; only future installments move forward. Future fee and penalty due dates also move forward to the next payment due date.</p>
+<h3>Payable interest details</h3>
+<p>Fetching loan details returns payable interest details, including interest, fee, penalty, and principal portions of delinquency.</p>
+<p>Payable interest details include two interest amounts:</p>
+<ul>
+<li>The total interest due as of the installment date plus past due interest as of the installment date is based on actual balances of repayment schedules.</li>
+<li>The accumulated daily interest of the current installment period is based on actual balances of repayment schedules, and the accumulation restarts for every installment period.</li>
+</ul>
+<p>The system calculates payable interest as follows:</p>
+<ul>
+<li>The system performs an on-the-fly recalculation of the loan up to yesterday&#39;s transaction to fetch payable details using an interest model.</li>
+<li>Payable interest calculation uses the EMICalculator so daily interest matches the legacy accrual calculation and the EMICalculator.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Field names in the GET Loan API response use lowercase letters with no spaces.</p>
+</blockquote>
+<h3>Worked examples</h3>
+<p>A borrower takes a loan of 1,000 on 1-Jan. The product charges 1.00 interest per day on a 30-day month, and three monthly installments fall due on 1-Feb, 1-Mar and 1-Apr. No payment is made before 1-Feb. The figures are illustrative. The example shows that daily interest accumulates in the not-yet-due field until the installment date, when it moves to the due field.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Daily interest added</th>
+<th>Payable interest not yet due</th>
+<th>Total unpaid due interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2-Jan</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>5-Jan</td>
+<td>1.00</td>
+<td>4.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>10-Jan</td>
+<td>1.00</td>
+<td>9.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1-Feb</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>2-Feb</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>30.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 with 1.00 daily interest and installments on 1-Feb, 1-Mar and 1-Apr is now paid on time. The borrower pays 330.00 on 1-Feb, covering 300.00 principal and 30.00 interest. Paying on time clears the due interest and restarts the daily accumulation for the next period.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Payment received</th>
+<th>Interest due for period</th>
+<th>Payable interest not yet due</th>
+<th>Outstanding balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>-</td>
+<td>-</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1-Feb</td>
+<td>330.00</td>
+<td>30.00</td>
+<td>0.00</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>10-Feb</td>
+<td>-</td>
+<td>-</td>
+<td>9.00</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>1-Mar</td>
+<td>330.00</td>
+<td>30.00</td>
+<td>0.00</td>
+<td>400.00</td>
+</tr>
+<tr>
+<td>10-Mar</td>
+<td>-</td>
+<td>-</td>
+<td>9.00</td>
+<td>400.00</td>
+</tr>
+<tr>
+<td>1-Apr</td>
+<td>430.00</td>
+<td>30.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>No payment is made on the 1-Feb installment. When the end-of-day job runs on 2-Feb, the 30.00 January interest remains in the due field while February interest begins to accumulate daily in the not-yet-due field. The due field grows only when an installment date passes unpaid, while the not-yet-due field resets each period and builds day by day.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Total unpaid due interest</th>
+<th>Payable interest not yet due</th>
+<th>Outstanding balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Feb</td>
+<td>Installment 1 due and unpaid</td>
+<td>30.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2-Feb</td>
+<td>End-of-day job runs</td>
+<td>30.00</td>
+<td>1.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>5-Feb</td>
+<td>End-of-day job runs</td>
+<td>30.00</td>
+<td>4.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>10-Feb</td>
+<td>End-of-day job runs</td>
+<td>30.00</td>
+<td>9.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1-Mar</td>
+<td>Installment 2 due and unpaid</td>
+<td>60.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>
+<p>The loan of 1,000 is disbursed on 1-Jan with 1.00 daily interest. The borrower repays the full amount on 3-Jan, two days after disbursement, so only two days of interest are charged. Prepayment shortly after disbursement limits interest to the days the money was actually outstanding.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Date</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Total paid</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>1-Jan</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Daily accrual</td>
+<td>2-Jan</td>
+<td>-</td>
+<td>1.00</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Daily accrual</td>
+<td>3-Jan</td>
+<td>-</td>
+<td>1.00</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Full prepayment</td>
+<td>3-Jan</td>
+<td>1,000.00</td>
+<td>2.00</td>
+<td>1,002.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

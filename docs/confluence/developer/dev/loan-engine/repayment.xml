@@ -1,0 +1,1637 @@
+<h2>Payment Allocation Strategies</h2>
+<h3>Repayment strategy order</h3>
+<p>The repayment strategy order determines how payments are applied to amounts due on a loan. The order is: Due charges, In advanced principal, Penalty, Fee, Interest, Principal.</p>
+<h3>New repayment strategy behavior</h3>
+<p>The new repayment strategy tracks unpaid but due charges and penalties and applies reverse-replay logic that respects transaction order. Reverse-replay recalculates installments of the repayment schedule when a payment transaction is executed or a charge is added, starting from the first Disbursement and resetting installment balances. It rebuilds installment balances based on the transaction and redistributes repayments according to the repayment strategy; if before and after balances do not match, the transaction is reverse-replayed by reversing the original transaction and creating a new transaction with the same properties but different balances.</p>
+<p>The following rules govern reverse-replay and transaction assignment:</p>
+<ul>
+<li>If a repayment is added and later a charge occurs on the very same day, no reverse-replay occurs.</li>
+<li>If another repayment is added on the very same day, the charge is paid by this repayment.</li>
+<li>Transactions and charges can be ordered, and reverse-replay logic respects that order.</li>
+<li>Every executed transaction or added charge is always assigned to an installment to monitor debt and repayments and decide on distribution.</li>
+<li>For transactions, the transaction date is used for assignment; for charges, the due date is used.</li>
+</ul>
+<p>Specific charge types use these dates for assignment:</p>
+<ul>
+<li>specific due date charge uses due date</li>
+<li>disbursement fee uses disbursal date</li>
+<li>installment fee uses installment due date</li>
+<li>overdue penalty is due from the moment it was added</li>
+</ul>
+<p>With the New DueInAdvance payment strategy, when there are in advance portions:</p>
+<ul>
+<li>the In Advance column on the Repayment schedule tab shows an incorrect amount</li>
+</ul>
+<p>Paying more than the actual due payment keeps the loan status ACTIVE.</p>
+<h3>Repayment distribution mechanics</h3>
+<p>A repayment strategy controls how a repayment transaction amount is distributed based on the target repayment installment. The strategy orders transactions of the instalment and pays those off within the instalment&#39;s timeframe. Payment Allocation Strategy applies to region DE (Germany) and product PayIn30.</p>
+<p>The distribution follows these rules:</p>
+<ul>
+<li>If the installment has unpaid balances, the strategy distributes the transaction amount according to its order, such as Penalty, Fee, Interest, Principal.</li>
+<li>Charges are assigned to repayment installments before transactions are reprocessed.</li>
+<li>When a new charge is added to an installment, even if its submitted or due date is later than the repayment transaction, the repayment transaction is reverse-replayed and distributes a portion of the transaction amount to pay that charge.</li>
+<li>Fees added to the instalment have to be paid by a payment created after the fee is due; this applies to any other income source too.</li>
+<li>A new repayment strategy introduces two buckets: Due charges and In advance principal, allowing payment of a charge on or after the charge due date, with the strategy aware of any unpaid but due charge.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The strategy pays the charge on or after the charge due date and needs to be aware if there is any unpaid but due charge or penalty.</p>
+</blockquote>
+<h3>Payment allocation examples</h3>
+<p>The payment allocation order decides which charge types and due dates a payment settles first. The order depends on the transaction type, repayment date, and loan product strategy.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Date</th>
+<th>Payment allocation order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>31-Jan Autopayment</td>
+<td>31-Jan</td>
+<td>DuePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>31-Jan Autopayment</td>
+<td>31-Jan</td>
+<td>Due Penalties on 28-Jan then DuePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>DuePrincipal on 1-Mar then DueFees on 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>Due Penalties on 15-Feb then DuePrincipal on 1-Mar then DueFees on 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>Due Penalties due 15-Feb (Oldest First), then Due Penalties due 26-Feb (Oldest First), then DuePrincipal due 1-Mar, then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>Due Penalties due 15-Feb, then DuePrincipal due 1-Mar, then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>Due Penalties due 15-Feb then DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>1-Mar Autopayment</td>
+<td>1-Mar</td>
+<td>DuePrincipal due 1-Mar then DueFees due 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Rt Repayment</td>
+<td>25-Jan</td>
+<td>InAdvancePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>10-Feb Rt Repayment</td>
+<td>10-Feb</td>
+<td>InAdvancePrincipal on 1-Mar then InAdvanceFees on 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Rt Repayment</td>
+<td>8-Mar</td>
+<td>Due Penalties on 15-Feb (Oldest First) then DuePrincipal due 1-Mar then DueFees due 1-Mar then Due Penalties due 7-Mar (Oldest First)</td>
+</tr>
+<tr>
+<td>16-Jan RT Repayment</td>
+<td>16-Jan</td>
+<td>InAdvancePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>1-Feb Real Time Repayment</td>
+<td>1-Feb</td>
+<td>InAdavncePrincipal on 1-Mar</td>
+</tr>
+<tr>
+<td>25-Jan Real Time Repayment</td>
+<td>25-Jan</td>
+<td>InAdvancePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>30-Jan Real Time Repayment</td>
+<td>30-Jan</td>
+<td>InAdvance Penalties on 28-Jan then InAdvancePrincipal on 31-Jan</td>
+</tr>
+<tr>
+<td>10-Feb Real Time Repayment</td>
+<td>10-Feb</td>
+<td>InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>24-Feb Real Time Repayment</td>
+<td>24-Feb</td>
+<td>Due Penalties due 15-Feb, then InAdvancePrincipal due 1-Mar, then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Real Time Repayment</td>
+<td>8-Mar</td>
+<td>Due Penalties on 15-Feb (Oldest First) then Due Penalties on 7-Mar (Oldest First) then DuePrincipal on 1-Mar then DueFees on 1-Mar</td>
+</tr>
+<tr>
+<td>8-Mar Real Time Repayment</td>
+<td>8-Mar</td>
+<td>Due Penalties due 15-Feb (Oldest First), then DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>15-Mar Real Time Repayment</td>
+<td>15-Mar</td>
+<td>DuePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>22-Mar Real Time Repayment</td>
+<td>22-Mar</td>
+<td>DuePrincipal due 1-Mar, then DueFees due 1-Mar, then Due Penalties due 7-Mar (Oldest First)</td>
+</tr>
+<tr>
+<td>21-Feb Real Time Repayment</td>
+<td>21-Feb</td>
+<td>Due Penalties due 15-Feb then InAdvancePrincipal due 1-Mar</td>
+</tr>
+<tr>
+<td>21-Feb Real Time Repayment</td>
+<td>21-Feb</td>
+<td>Due Penalties due 15-Feb then InAdvancePrincipal due 1-Mar then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>28-Feb Real Time Repayment</td>
+<td>28-Feb</td>
+<td>InAdvancePrincipal due 15-Feb then InAdvanceFees due 1-Mar</td>
+</tr>
+<tr>
+<td>28-Feb Real Time Repayment</td>
+<td>28-Feb</td>
+<td>InAdvanceFees due 1-Mar</td>
+</tr>
+</tbody></table>
+<p>For Pin30 in DE (Germany), the payment allocation order is DuePenalties, DueInterest, DuePrincipal, DueFees, InAdvancePenalties, InAdvanceInterest, InAdvancePrincipal, InAdvanceFees, and this order remains the same for all transaction types.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Start allocation"]
+  n2["Due Penalties"]
+  n3["Due Interest"]
+  n4["Due Principal"]
+  n5["Due Fees"]
+  n6["In Advance Penalties"]
+  n7["In Advance Interest"]
+  n8["In Advance Principal"]
+  n9["In Advance Fees"]
+  n10["Allocation complete"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n7 --> n8
+  n8 --> n9
+  n9 --> n10]]></ac:plain-text-body></ac:structured-macro>
+<h3>Accrual configuration</h3>
+<p>Accrual configuration controls when charge accruals post and how they behave across jobs, COB jobs and API calls. You set two global settings: charge_accrual_date and Accrual_timing. Transaction allocation must be set properly. The transaction processor should be implemented.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>charge_accrual_date</td>
+<td>submitted on, due date</td>
+<td>due date</td>
+</tr>
+<tr>
+<td>Accrual_timing</td>
+<td>immediate, job</td>
+<td>job</td>
+</tr>
+</tbody></table>
+<p>Accrual behaviour follows these rules:</p>
+<ul>
+<li>With immediate accrual, multiple accruals can happen on the same day.</li>
+<li>Accrual posting for charges is based on either the charge created date or the due date, and the system posts accrual journal entries accordingly.</li>
+<li>Job, COB job and accrual via API behave consistently.</li>
+<li>When an accrual transaction is reverse-replayed and was created on the submitted-on date instead of the due date, the recreated accrual uses the same value date.</li>
+<li>Fees added to loans are a source of income, and backdated transactions or reverse-replay can change money distribution and pay off fees retrospectively, changing the amount of income.</li>
+</ul>
+<p>A disbursement on 14 May, a Snooze fee based on the disbursement amount due 31 May, and an extra disbursement on 16 May require reverse-replay of the accrual so the fee amount reflects the higher disbursement.</p>
+<h3>Worked examples</h3>
+<p>A loan with no penalties or fees is disbursed for a principal of 1,000.00 and a single installment due on 31 January. On 31 January an autopayment of 1,000.00 is received and allocated entirely to principal. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>To principal</th>
+<th>Principal balance</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>31-Jan</td>
+<td>Autopayment</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan is disbursed for 1,000.00 on 1 January with an installment due on 31 January. A fee of 20.00 is added on 25 January and due on 1 March. A repayment of 1,020.00 on 10 February pays principal and the fee, clearing the balance. That repayment is reversed on 15 February, restoring principal and fee. An NSF penalty of 15.00 is added on 15 February and due on 15 February, bringing the total to 1,035.00. On 1 March an autopayment of 1,035.00 pays principal, the due penalty, and the due fee, clearing all balances.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>To principal</th>
+<th>To penalty</th>
+<th>To fee</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>25-Jan</td>
+<td>Snooze fee</td>
+<td>20.00</td>
+<td>–</td>
+<td>–</td>
+<td>20.00</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>10-Feb</td>
+<td>Repayment</td>
+<td>1,020.00</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>20.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Reversal</td>
+<td>1,020.00</td>
+<td>(1,000.00)</td>
+<td>–</td>
+<td>(20.00)</td>
+<td>1,020.00</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>NSF penalty</td>
+<td>15.00</td>
+<td>–</td>
+<td>15.00</td>
+<td>–</td>
+<td>1,035.00</td>
+</tr>
+<tr>
+<td>1-Mar</td>
+<td>Autopayment</td>
+<td>1,035.00</td>
+<td>1,000.00</td>
+<td>15.00</td>
+<td>20.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan is disbursed for 1,000.00 on 1 January. A repayment of 500.00 on 10 January pays principal only. A charge of 50.00 is added on 15 January and due on 20 January. A repayment of 100.00 on 17 January, before the charge due date, pays principal only and leaves the charge unpaid. A second charge of 10.00 is added on 19 January and due on 23 January. A repayment of 100.00 on 20 January pays the now-due first charge of 50.00 and 50.00 of in-advance principal, but not the second charge because it is not yet due. Merging the single-charge and two-charge cases: the only difference is the extra later-due charge, which remains unpaid until its own due date.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>To principal</th>
+<th>To charge</th>
+<th>Outstanding</th>
+<th>Charge due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>–</td>
+</tr>
+<tr>
+<td>10-Jan</td>
+<td>Repayment</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>–</td>
+<td>500.00</td>
+<td>–</td>
+</tr>
+<tr>
+<td>15-Jan</td>
+<td>Charge added</td>
+<td>50.00</td>
+<td>–</td>
+<td>–</td>
+<td>550.00</td>
+<td>20-Jan</td>
+</tr>
+<tr>
+<td>17-Jan</td>
+<td>Repayment before due</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>–</td>
+<td>450.00</td>
+<td>20-Jan</td>
+</tr>
+<tr>
+<td>19-Jan</td>
+<td>Second charge added</td>
+<td>10.00</td>
+<td>–</td>
+<td>–</td>
+<td>460.00</td>
+<td>23-Jan</td>
+</tr>
+<tr>
+<td>20-Jan</td>
+<td>Repayment on due date</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>360.00</td>
+<td>20-Jan</td>
+</tr>
+</tbody></table>
+<p>A loan is disbursed for 1,000.00 on 1 January with an installment due on 31 January. A repayment of 500.00 on 10 January pays principal only. On 15 January a charge of 50.00 is added with a due date of 20 January. Because the charge is assigned to the same installment and its due date is later than the repayment, the repayment is reverse-replayed: 50.00 moves from principal to the charge, leaving principal at 450.00 and the charge paid. On 20 January the charge is due and already settled. If the charge were added on the same day as the repayment, no reverse-replay would occur and the repayment would remain allocated to principal only.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>To principal</th>
+<th>To charge</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>10-Jan</td>
+<td>Repayment</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>–</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>15-Jan</td>
+<td>Charge added (due 20-Jan)</td>
+<td>50.00</td>
+<td>–</td>
+<td>–</td>
+<td>550.00</td>
+</tr>
+<tr>
+<td>15-Jan</td>
+<td>Reverse-replay repayment</td>
+<td>–</td>
+<td>(50.00)</td>
+<td>50.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>20-Jan</td>
+<td>Charge due (already paid)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>500.00</td>
+</tr>
+</tbody></table>
+<h2>Configurable Payment Allocations</h2>
+<h3>Advanced payment allocation strategy</h3>
+<p>The advanced payment allocation strategy supports configurable repayment allocation for a loan product. Selecting it displays the Payment allocation tab and requires default payment allocation rules. The strategy is named Advanced payment allocation, uses code advanced-payment-allocation-strategy, and has order 8.</p>
+<blockquote>
+<p><strong>Note:</strong> The implementation is NOOP yet.</p>
+</blockquote>
+<h3>Configuration scope and inheritance</h3>
+<p>Advanced payment allocation is configured at the transaction type level and applies to Repayment, Goodwill credit, payout refund, Merchant refund, Charge Adjustments, and Downpayment. The same allocation applies to all sub-payment types of each transaction type. Each loan product can define its own advanced payment allocation configuration, and customizable allocations by payment type can be set across specific BNPL products and markets. When a loan is created, it inherits the loan product&#39;s payment allocation rules, and later changes to the loan product do not affect loans that already exist.</p>
+<blockquote>
+<p><strong>Note:</strong> Future allocations already applied to an installment have no impact during reverse replay or future repayments.</p>
+</blockquote>
+<h3>Payment allocation rules management</h3>
+<p>Payment allocation rules define how a repayment is distributed across installments for each transaction type. You can store these rules on a loan product, update them, and fetch them from the database.</p>
+<p>The following rules govern how payment allocation rules are configured and applied:</p>
+<ul>
+<li>A DEFAULT transaction type configuration is always required and acts as fallback rules when no configured rules exist for a specific transaction type.</li>
+<li>The default allocation order cannot be deleted.</li>
+<li>Configured order for a transaction type can be removed except for DEFAULT.</li>
+<li>When no payment allocation rules are set for a payment transaction type, the system falls back to the DEFAULT rules.</li>
+<li>A default allocation can be overruled by configuring a payment allocation order for a specific transaction type.</li>
+<li>When a repayment allocation rule is set, a repayment is allocated accordingly across the installments.</li>
+<li>When no repayment allocation rule is set for a given transaction, the default allocation rule is used.</li>
+<li>If an element is not sent, it is considered deleted; if a transaction type is missing, it needs to be deleted.</li>
+<li>Always send all of the elements for all of the configured transaction types even if there was no change in the order.</li>
+<li>The UI always sends all of the allocation rules for all of the transaction types.</li>
+<li>For future installments, the system follows the default behaviour at first: the next installment to be processed first for in advance rules.</li>
+</ul>
+<h3>Default allocation order</h3>
+<p>Default transaction payment allocation needs to be implemented. Default allocation order decides how the system processes a transaction amount and distributes it across repayment schedules and outstanding balances. It applies when Advanced payment allocation is selected as the repayment strategy and a default payment allocation order is set.</p>
+<p>The following settings govern default payment allocation:</p>
+<ul>
+<li>paymentAllocation must be set for the default transaction type when Advanced repayment allocation is the repayment strategy.</li>
+<li>paymentAllocation contains valid values and includes all 12 values.</li>
+<li>futureInstallmentAllocationRule must be set and must have a valid value.</li>
+<li>When a default allocation rule is set, payment transactions are allocated in that order across the installments.</li>
+</ul>
+<h3>Transaction processing order</h3>
+<p>Advanced payment allocation processes transactions, charges, and disbursements in chronological order to minimize reverse replaying. Loan transactions are ordered by transaction date, then submitted on date, then created date time. Loan charges are ordered by due date, then submitted on date, then creation date time.</p>
+<h3>Reverse replay and reprocessing</h3>
+<p>Reverse replay and reprocessing recalculate how repayments apply to charges when a transaction is added or changed. Reprocessing happens only when a backdated transaction or backdated charge alters something that must change as a side effect.</p>
+<p>The following conditions govern reverse replay and reprocessing:</p>
+<ul>
+<li>Only newly added payment transactions consider repaying newly added charges based on repayment strategy.</li>
+<li>Prior payment transactions are not affected by later added charges.</li>
+<li>Only transactions with dates later than a newly added transaction can be reallocated; transactions paid in advance do not change anymore.</li>
+<li>After disbursement, an installment paid in advance should not be reverse-replayed.</li>
+<li>Adding a charge later than a repayment does not require reprocessing the repayment because it has no effect on the earlier repayment.</li>
+<li>When a repayment is on or after the prior last processed transaction, reprocessing is unnecessary under the new strategy.</li>
+<li>When a charge is added with a due date after the last processed transaction, reprocessing is unnecessary.</li>
+<li>When a charge is added, prior repayments shall not be reverse-replayed.</li>
+<li>Adding a charge with a due date after a backdated repayment does not lead to reverse replay for the advanced payment strategy.</li>
+<li>If a loan charge due date is earlier than the last transaction date, then reprocess.</li>
+</ul>
+<p>Loan charges participate in reverse replay under these conditions:</p>
+<ul>
+<li>Loan charges can be configured whether they participate in reverse replaying or not.</li>
+<li>By default, loan charges were not reverse-replayed.</li>
+<li>A loan charge can be reverse-replayed when advanced repayment allocation strategy is set.</li>
+</ul>
+<p>Disbursement transactions are reprocessed and the repayment schedule is rebuilt from ground up to avoid reverse-replaying already allocated amounts.</p>
+<p>Transactions might need to be reprocessed only because interest handling could produce different interest amounts.</p>
+<h3>Disbursement handling</h3>
+<p>Advanced payment allocation supports Progressive loan disbursement handling only; CUMULATIVE (legacy) disbursement handling does not fit the chronological ordering idea. Selecting Advanced payment allocation for a CUMULATIVE loan throws a validation exception. When another payment allocation is chosen, cumulative disbursement remains the only option. Validation for Advanced payment allocation and disbursement handling happens at loan product creation/edit and loan account creation.</p>
+<h3>Installment processing types</h3>
+<p>Installment processing uses either HORIZONTAL or VERTICAL strategy, controlled by the loanScheduleProcessingType field. HORIZONTAL is the default and unchanged. The field is visible only when the Advanced payment allocation repayment strategy is selected, and its options come from the backend. Horizontal processing applies allocation rules in installment scope, processing installments from oldest to latest one by one. Vertical processing applies allocation rules in repayment schedule scope, processing balances one by one based on whether they are past due, due or in advance.</p>
+<p>Horizontal processing pays each installment in this order:</p>
+<ul>
+<li>unpaid penalty of the installment first</li>
+<li>then any unpaid fee</li>
+<li>then any unpaid interest</li>
+<li>then any unpaid principal of that installment</li>
+</ul>
+<p>Vertical processing pays balances in this order:</p>
+<ul>
+<li>oldest unpaid penalty first</li>
+<li>then remaining unpaid past due penalties</li>
+<li>then oldest unpaid past due fee</li>
+<li>then remaining unpaid past due fees</li>
+<li>then past due interest</li>
+</ul>
+<p>Future installment allocation affects in-advance payments as follows:</p>
+<ul>
+<li>When an N+1 installment is present and future installment allocation is LAST_INSTALLMENT, an in-advanced payment does not take the N+1 installment into account.</li>
+<li>The same error occurs with an in-advanced Merchant issued refund transaction when future installment allocation is REAMORTIZATION.</li>
+</ul>
+<h3>Future installment allocation rules</h3>
+<p>The future installment allocation rule code is futureInstallmentAllocationRule. Its options are Next installment (NEXT_INSTALLMENT), Last installment (LAST_INSTALLMENT), and Reamortization (REAMORTIZATION), with Next installment as the default. Secondary allocation follows the IN_ADVANCE_XXX rules order.</p>
+<p>Each option allocates an in-advance amount to future installments as follows:</p>
+<ul>
+<li>If NEXT_INSTALLMENT is selected, IN_ADVANCE_XXXX allocation rules are applied to the next due installment first, then to subsequent due installments if the remaining transaction amount is not fully processed.</li>
+<li>If LAST_INSTALLMENT is selected, IN_ADVANCE_XXXX allocation rules are applied to the last installment based on due date first, then to the last but one installment based on due date if the remaining transaction amount is not fully processed.</li>
+<li>If REAMORTIZATION is selected, the transaction amount is divided into equal amounts between the future installments.</li>
+</ul>
+<p>Allocation rules are followed when an in-advance amount is allocated for future installments.</p>
+<h3>Main allocation rules</h3>
+<p>Main allocation rules apply to past due, due, and in advance installments.</p>
+<p>The main allocation rules are:</p>
+<ul>
+<li>Past due installments are always allocated from the oldest installment.</li>
+<li>Due installments are allocated only to the current due installment when the transaction date matches the due date.</li>
+<li>Future installments can be allocated from the next installment, from the last installment, or re-amortized to future installments, and re-amortization applies only to the principal portion of installments.</li>
+</ul>
+<h3>Secondary allocation rules</h3>
+<p>Secondary allocation rules apply to Penalty, Fee, Principal, and Interest.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Allocation target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>T3.R1</td>
+<td>Penalties</td>
+</tr>
+<tr>
+<td>T3.R2</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>T3.R3</td>
+<td>Principal</td>
+</tr>
+<tr>
+<td>T3.R4</td>
+<td>Interest</td>
+</tr>
+</tbody></table>
+<p>For future installments, you can define one of three rules: Next installment, Last installment, or Reamortization.</p>
+<p>In advance allocation under each rule:</p>
+<ul>
+<li>Under Next installment, allocation goes to the next installment first based on due date.</li>
+<li>Under Last installment, allocation goes to the last installment first based on due date.</li>
+<li>Under Reamortization, allocation is divided evenly across all future installments.</li>
+</ul>
+<h3>Re-amortization</h3>
+<p>Re-amortization applies only to the principal balance and does not consider charges or penalties in its calculation.</p>
+<p>Re-amortization follows these rules:</p>
+<ul>
+<li>If an N+1 installment exists, the system considers it as well for re-amortization.</li>
+<li>When the re-amortization amount overpays the principal portion of all installments, the system allocates the excess to other portions according to the secondary allocation set, such as unpaid penalty or fees amounts.</li>
+</ul>
+<p>Backdated transactions added before the second disbursement are handled by reverse and replay logic with chronological order processing, which manages second disbursement and downpayment behaviour without affecting existing allocations.</p>
+<h3>Transaction type support</h3>
+<p>Advanced payment allocation supports specific transaction types for payment allocation: Repayment, Down payment, Merchant issued refund, Payout refund, Goodwill credit, Charge refund, Charge adjustment, Interest waiver, Refund for active loan, Chargeback, Charge-off, Charge payment, and Write-off. The list of supported transaction types is fixed.</p>
+<p>The following transaction types have specific allocation behaviour:</p>
+<ul>
+<li>Refund for active loan can have its own allocation order and acts as the opposite of repayment.</li>
+<li>Credit Balance Refund calculates the balance it may cover.</li>
+<li>Chargeback increases the due amount, is due immediately, triggers immediate delinquency calculation, creates an N+1 instalment when added after maturity, and allocates proportionally according to what the original payment paid off.</li>
+<li>Charge-off matches all outstanding balances and reverse replay runs only when a change modifies the outstanding balance.</li>
+<li>Charge payment can use a configured payment allocation order to override its default allocation, and when set, allocates across the installments accordingly.</li>
+<li>Pre-write-off payment reversal is not allowed.</li>
+</ul>
+<p>The following transaction types are handled the same way as before under Advanced payment allocation:</p>
+<ul>
+<li>Credit Balance Refund</li>
+<li>Chargeback</li>
+<li>Charge-off</li>
+</ul>
+<h3>Credit balance refund</h3>
+<p>A loan with Advanced payment allocation strategy supports Credit Balance Refund transactions, and loan transaction reprocessing can reverse-replay a Credit Balance Refund transaction. Reverse replay requires correct balances on the Credit Balance Refund transactions and correct balances on the loan schedule.</p>
+<h3>Waive loan charges</h3>
+<p>The Waive loan charges transaction is supported with Advanced payment allocation repayment strategy, and correct balances are calculated for it. Reprocessing of waive charge transaction is supported.</p>
+<blockquote>
+<p><strong>Note:</strong> Creating a new loan with PIN4 product where ADVANCED_PAYMENT_ALLOCATION is the repayment strategy and adding a Charge Installment Percentage Fee results in an internal server error.</p>
+</blockquote>
+<p>If Installment Percentage Fee is not supported for Advanced payment allocation repayment strategy, it should be handled correctly instead of an internal server error.</p>
+<h3>Charge management restrictions</h3>
+<p>You cannot remove or update a charge after the loan is approved. The system does not process any affected transactions for either operation, and no change occurs.</p>
+<h3>Other operations with no reverse replay</h3>
+<p>Certain loan operations do not trigger reverse replay or reprocessing. Loan reschedule, adding or deleting loan disbursal details, undoing a write-off, closing a loan, and updating the future schedule leave transaction processing unchanged. For an active loan, making a refund updates transaction amounts without reverse replay, and if the refund is the last transaction, no reprocessing occurs.</p>
+<h3>Use case examples</h3>
+<p>Use cases show how refunds and goodwill credits are allocated across installments depending on whether amounts are past due, due, or future.</p>
+<p>Refunds apply as follows across the documented use cases:</p>
+<ul>
+<li>In UC05, UC07, UC08, UC10, UC11, UC12, UC13, UC14, and UC15, the refund applies to past due amounts first.</li>
+<li>In UC08, UC13, and UC14, the refund then applies to due amounts.</li>
+<li>In UC13, UC15, and UC16, any remaining credit applies to the last or next installment.</li>
+<li>In UC09, the refund applies to the next installment (installments 2 and 3).</li>
+<li>In UC10, the refund applies to the past due amount for installment 2 and next installment 3.</li>
+<li>In UC11, the refund applies to past due installment 1 and next installments 2, 3, then 4.</li>
+<li>In UC12, nothing is past due or due, and the refund applies to the final installments.</li>
+<li>In UC13, the remainder of any refund applies to the final installment.</li>
+<li>In UC15, the goodwill credit is allocated to past due principle and then last installment.</li>
+<li>In UC16, the goodwill credit is allocated to the next installment.</li>
+<li>In UC20, partial merchant refunds are first allocated to the next due installment.</li>
+</ul>
+<p>Remaining credit balances are reamortized as follows:</p>
+<ul>
+<li>In UC05, UC07, and UC08, the remaining credit balance is reamortized across future due installments.</li>
+<li>In UC08, reamortization covers installments 3 and 4.</li>
+</ul>
+<h3>Allocation order examples</h3>
+<p>Refunds and goodwill credits follow configurable allocation orders that determine which loan amounts receive the payment first.</p>
+<p>Refund allocation orders apply as follows:</p>
+<ul>
+<li>A refund is applied to due, past due, and delinquent amounts oldest first, and any remainder applies to the final installment.</li>
+<li>A refund is applied to any past due amount and then the due amount.</li>
+<li>Partial merchant refunds are first allocated to the next due installment.</li>
+</ul>
+<p>Goodwill credit allocation orders apply as follows:</p>
+<ul>
+<li>Goodwill credit is allocated to past due principal and then the last installment.</li>
+<li>Goodwill credit is allocated to the next installment.</li>
+</ul>
+<h3>Provisional credit examples</h3>
+<p>Provisional credit applies to the oldest due installments first and triggers a re-amortization across all remaining installments.</p>
+<p>Reversing a $400.00 provisional credit restores the installment schedule to four equal amounts of $125.00 each.</p>
+<ul>
+<li>Reversal of $400.00 returns the schedule to $125.00, $125.00, $125.00, $125.00.</li>
+</ul>
+<p>When re-amortization leaves a remainder after fully paying an installment, that remainder goes to the last installment.</p>
+<ul>
+<li>If the outstanding balance of an installment is lower than the evenly divided credit, that installment is paid in full and the remainder goes to the very last installment.</li>
+</ul>
+<h3>Payment replay examples</h3>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Installment 1</th>
+<th>Installment 2</th>
+<th>Installment 3</th>
+<th>Installment 4</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>4 Jan payment replayed after reversal</td>
+<td>$75.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+</tr>
+<tr>
+<td>16 Jan payment replayed after reversal</td>
+<td>$0.00</td>
+<td>$75.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+</tr>
+<tr>
+<td>4 Jan payment replayed</td>
+<td>$75.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+</tr>
+<tr>
+<td>16 Jan payment replayed</td>
+<td>$0.00</td>
+<td>$75.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+</tr>
+<tr>
+<td>Credit balance refund reversed</td>
+<td>$25.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+<td>$125.00</td>
+</tr>
+</tbody></table>
+<h3>Overpayment examples</h3>
+<p>Overpayment is allocated to the next installment due.</p>
+<p>Partial merchant refunds follow the allocation rules for this use case.</p>
+<ul>
+<li>Partial merchant refunds are first allocated to the next due installment.</li>
+</ul>
+<h3>Database tables</h3>
+<p>The system stores configurable payment allocation rules in the database table m_loan_payment_allocation_rule. Product-level rules are stored in m_loan_product_payment_allocation_rule.</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>m_loan_payment_allocation_rule</td>
+<td>loan_id, transaction_type_code (DEFAULT), allocation_order, future_installment_allocation_rule</td>
+</tr>
+<tr>
+<td>m_loan_product_payment_allocation_rule</td>
+<td>loan_product_id, transaction_type_code (DEFAULT), allocation_order, future_installment_allocation_rule</td>
+</tr>
+</tbody></table>
+<h3>Allocation rule codes</h3>
+<p>Allocation rule codes identify how a payment is distributed across past due, due, and future or in advance amounts, and across penalty, fee, principal, and interest categories. The default payment allocation code is DEFAULT, and the default transaction type code is DEFAULT.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Past due penalty</td>
+<td>PAST_DUE_PENALTY</td>
+</tr>
+<tr>
+<td>Past due fee</td>
+<td>PAST_DUE_FEE</td>
+</tr>
+<tr>
+<td>Past due principal</td>
+<td>PAST_DUE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>Past due interest</td>
+<td>PAST_DUE_INTEREST</td>
+</tr>
+<tr>
+<td>Due penalty</td>
+<td>DUE_PENALTY</td>
+</tr>
+<tr>
+<td>Due fee</td>
+<td>DUE_FEE</td>
+</tr>
+<tr>
+<td>Due principal</td>
+<td>DUE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>Due interest</td>
+<td>DUE_INTEREST</td>
+</tr>
+<tr>
+<td>In advance penalty</td>
+<td>IN_ADVANCE_PENALTY</td>
+</tr>
+<tr>
+<td>In advance fee</td>
+<td>IN_ADVANCE_FEE</td>
+</tr>
+<tr>
+<td>In advance principal</td>
+<td>IN_ADVANCE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>In advance interest</td>
+<td>IN_ADVANCE_INTEREST</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Main allocation category</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Past due</td>
+<td>PAST_DUE</td>
+</tr>
+<tr>
+<td>Due</td>
+<td>DUE</td>
+</tr>
+<tr>
+<td>Future / in advance</td>
+<td>IN_ADVANCE</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Secondary allocation category</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Penalty</td>
+<td>PENALTY</td>
+</tr>
+<tr>
+<td>Fee</td>
+<td>FEE</td>
+</tr>
+<tr>
+<td>Principal</td>
+<td>PRINCIPAL</td>
+</tr>
+<tr>
+<td>Interest</td>
+<td>INTEREST</td>
+</tr>
+</tbody></table>
+<p>Future installment allocation rule codes are NEXT_INSTALLMENT, LAST_INSTALLMENT, and REAMORTIZATION. The future installment allocation rule code is futureInstallmentAlocationRule.</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>m_loan_product_payment_allocation_rule</td>
+<td>loan_product_id, transaction_type_code, allocation_order, future_installment_allocation_rule</td>
+</tr>
+<tr>
+<td>m_loan_payment_allocation_rule</td>
+<td>loan_id, transaction_type_code, allocation_order, future_installment_allocation_rule</td>
+</tr>
+</tbody></table>
+<h3>UI configuration</h3>
+<p>Configurable payment allocations let you customize how payments are allocated by payment type across specific BNPL products and markets. You configure advanced repayment allocation rules on the loan product screen by transaction type. The UI request includes a paymentAllocation array with transactionType, paymentAllocationOrder (paymentAllocationRule and order), and futureInstallmentAllocationRule fields.</p>
+<p>On the Payment allocation tab you can set up allocation behaviour as follows:</p>
+<ul>
+<li>Select a transaction type from the dropdown: Repayment, Down payment, Merchant issues refund, Payout refund, Goodwill credit, Charge refund, Charge adjustment, Refund for active loans, or Interest waiver.</li>
+<li>Set payment allocation rules in order for the selected transaction type, similarly to the business steps of a COB job.</li>
+<li>Select a future installment allocation rule from the dropdown.</li>
+<li>The Default transaction type (code: DEFAULT) is selected by default.</li>
+</ul>
+<p>The UI also provides these configuration entry points:</p>
+<ul>
+<li>You can define the default payment allocation order similarly to the business steps of a COB job.</li>
+<li>You can define the payment allocation order for a specific transaction type similarly to the business steps of a COB job.</li>
+<li>A new advanced repayment allocation strategy configuration page is available on the loan product page.</li>
+</ul>
+<p>A writeoff transaction payment allocation sets the loan balance to 0, closes the loan, and writes off all outstanding amounts.</p>
+<h3>Reprocessing mechanics</h3>
+<p>When transactions are reprocessed, the new repayment strategy processes and reprocesses transactions, disbursements and charges in chronological order and rebuilds the repayment schedule from the ground up. Disbursement transactions are reprocessed and added again to the installment. The loan inherits the configured payment allocation rules of the loan product by copying them into the m_loan_payment_allocation_rule table.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Process transactions chronologically"]
+  n2["Process disbursements"]
+  n3["Process charges"]
+  n4["Rebuild repayment schedule"]
+  n5["Reprocess disbursement transactions"]
+  n6["Add disbursements to installment"]
+  n1 --> n2
+  n1 --> n3
+  n2 --> n4
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6]]></ac:plain-text-body></ac:structured-macro>
+<h3>Worked examples</h3>
+<p>A loan product uses the Advanced payment allocation repayment strategy. The product defines a DEFAULT payment allocation with four rules: past-due penalty first, then past-due fee, then past-due interest, then in-advance interest, and sets the future installment rule to next installment. The figures are illustrative. This example shows how default allocation rules are configured for a transaction type.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Allocation rule</th>
+<th>Order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DEFAULT</td>
+<td>DUE_PAST_PENALTY</td>
+<td>1</td>
+</tr>
+<tr>
+<td>DEFAULT</td>
+<td>DUE_PAST_FEE</td>
+<td>2</td>
+</tr>
+<tr>
+<td>DEFAULT</td>
+<td>DUE_PAST_INTEREST</td>
+<td>3</td>
+</tr>
+<tr>
+<td>DEFAULT</td>
+<td>IN_ADVANCE_INTEREST</td>
+<td>14</td>
+</tr>
+<tr>
+<td>DEFAULT</td>
+<td>Future installment rule</td>
+<td>NEXT_INSTALLMENT</td>
+</tr>
+</tbody></table>
+<p>A loan has three installments of 100.00 each due. A repayment of 150.00 arrives. With NEXT_INSTALLMENT, the first installment is fully paid and the remainder goes to the second. With LAST_INSTALLMENT, the last installment is fully paid and the remainder goes to the second. With REAMORTIZATION, the repayment is divided equally across all three installments. This example shows how the future installment rule decides which installment receives an in-advance repayment first.</p>
+<table>
+<thead>
+<tr>
+<th>Repayment</th>
+<th>Future rule</th>
+<th>Installment 1</th>
+<th>Installment 2</th>
+<th>Installment 3</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>150.00</td>
+<td>NEXT_INSTALLMENT</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>150.00</td>
+<td>LAST_INSTALLMENT</td>
+<td>0.00</td>
+<td>50.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>150.00</td>
+<td>REAMORTIZATION</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>50.00</td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000.00 has four installments of 250.00 each. A fee of 20.00 and a penalty of 10.00 are added to the first installment, and a penalty of 10.00 is added to each of the second and third installments. A repayment of 275.00 arrives. Under horizontal processing, the installment&#39;s own balances are cleared in rule order before moving on. Under vertical processing, the same balance type is cleared across installments before moving to the next type. This example shows that horizontal processing exhausts one installment before moving to the next, while vertical processing exhausts one balance type across installments before moving to the next type.</p>
+<table>
+<thead>
+<tr>
+<th>Processing type</th>
+<th>Allocation order</th>
+<th>Installment 1 applied</th>
+<th>Installment 2 applied</th>
+<th>Installment 3 applied</th>
+<th>Remaining on installment 1</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Horizontal</td>
+<td>Penalty → Fee → Principal</td>
+<td>275.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>5.00</td>
+</tr>
+<tr>
+<td>Vertical</td>
+<td>Penalty → Fee → Principal</td>
+<td>255.00</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>25.00</td>
+</tr>
+</tbody></table>
+<p>A loan of 500.00 has four installments of 125.00 each due on 1-Jan, 16-Jan, 31-Jan, and 15-Feb. No down payment is posted, so all installments remain due. A partial merchant refund of 300.00 on 8-Jan reduces the principal balance to 200.00. The refund clears the past-due first installment and reamortizes the remaining credit across the future installments, leaving installments 2, 3, and 4 at 66.67, 66.67, and 66.66 respectively. This example shows that a refund first clears past-due installments and then reamortizes the remaining credit across future installments.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Principal balance</th>
+<th>Installment 1</th>
+<th>Installment 2</th>
+<th>Installment 3</th>
+<th>Installment 4</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Disbursement</td>
+<td>500.00</td>
+<td>125.00</td>
+<td>125.00</td>
+<td>125.00</td>
+<td>125.00</td>
+</tr>
+<tr>
+<td>8-Jan</td>
+<td>Merchant refund 300.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>66.67</td>
+<td>66.67</td>
+<td>66.66</td>
+</tr>
+<tr>
+<td>16-Jan</td>
+<td>Payment 66.67</td>
+<td>133.33</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>66.67</td>
+<td>66.66</td>
+</tr>
+<tr>
+<td>31-Jan</td>
+<td>Payment 66.67</td>
+<td>66.66</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>66.66</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Payment 66.66</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<h2>In-Advance Allocation Rules</h2>
+<p>The in advance allocation rule allocates an unprocessed amount to the upcoming installment first, then to the last installment if any amount remains unallocated. The Future installment rule allocates to the upcoming installment first, then to the last installment, and then allocates backward through earlier installments.</p>
+<p>If an early repayment amount exceeds both the first upcoming installment outstanding and the last installment outstanding, the remaining unprocessed amount is allocated as follows:</p>
+<ul>
+<li>The remaining amount is allocated to the last but one installment.</li>
+</ul>
+<p>A future allocation rule named &quot;Next installment - Last installment&quot; is added.</p>
+<p>Figures are illustrative. A loan with a principal of 1,000 and an annual interest rate of 12% has three monthly installments due on 1 March, 1 April and 1 May, each carrying an outstanding amount of 100. A repayment of 180 arrives on 10 January. Under the in-advance allocation rule, the unprocessed amount is posted to the upcoming installment first, and any remainder is posted to the last installment.</p>
+<table>
+<thead>
+<tr>
+<th>Installment due</th>
+<th>Outstanding before</th>
+<th>Allocation</th>
+<th>Paid order</th>
+<th>Outstanding after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 March</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>1</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>—</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>1 May</td>
+<td>100.00</td>
+<td>80.00</td>
+<td>2</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>300.00</td>
+<td>180.00</td>
+<td>—</td>
+<td>120.00</td>
+</tr>
+</tbody></table>
+<p>The April installment remains unpaid because the repayment is exhausted after the last installment receives its share.</p>
+<p>A loan with a principal of 1,000 and an annual interest rate of 12% has four monthly installments due on 1 March, 1 April, 1 May and 1 June, each carrying an outstanding amount of 100. A repayment of 320 arrives on 10 January. Under the future installment rule, the unprocessed amount is posted to the upcoming installment first, then to the last installment, and then backward through the remaining installments.</p>
+<table>
+<thead>
+<tr>
+<th>Installment due</th>
+<th>Outstanding before</th>
+<th>Allocation</th>
+<th>Paid order</th>
+<th>Outstanding after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 March</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>1</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>100.00</td>
+<td>20.00</td>
+<td>4</td>
+<td>80.00</td>
+</tr>
+<tr>
+<td>1 May</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>3</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 June</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>2</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>400.00</td>
+<td>320.00</td>
+<td>—</td>
+<td>80.00</td>
+</tr>
+</tbody></table>
+<p>Because the repayment exceeds both the first upcoming and the last installment, the remainder flows to the last-but-one installment and then backward to April.</p>
+<h2>Next and Last Instalment Allocation</h2>
+<p>The Next/Last installment option lets you allocate an advance amount first to the next installment and then to the last installment. Configuration is available to select this option as part of the Advanced payment allocation strategy. The FutureInstallmentAllocationRule enum contains the supported future installment allocation rules, and AdvancedPaymentScheduleTransactionProcessor supports the new allocation rule.</p>
+<p>The Next-Last allocation rule always defines a next installment, and the last installment behaviour is unchanged.</p>
+<ul>
+<li>If the repayment date is before the current installment due date, the current period is the next installment and any advance payment allocates to it first as the Next installment strategy.</li>
+<li>If the repayment date is on the current installment due date, the upcoming next installment is the next installment and any advance amount allocates to that current installment first, then to the last installment.</li>
+<li>If the current installment is fully paid, any in-advance portions allocate to the last installment as the Last installment strategy.</li>
+<li>Once allocation reaches the next installment, it jumps to the last installment and allocates from behind: last, then last but one, then last but two, and so on.</li>
+</ul>
+<p>Payment allocation follows this fixed order:</p>
+<ul>
+<li>overdue interest</li>
+<li>overdue principal</li>
+<li>overdue fees</li>
+<li>due interest</li>
+<li>due principal</li>
+<li>due fees</li>
+<li>advance principal</li>
+<li>advance interest</li>
+<li>advance fees</li>
+</ul>
+<p>A borrower takes a 1,000.00 loan at 12% per year with three monthly installments and 30-day months. Installment 1 is due on day 30 for 410.00 (interest 10.00, principal 300.00), installment 2 on day 60 for 307.00 (interest 7.00, principal 300.00), and installment 3 on day 90 for 404.00 (interest 4.00, principal 400.00). A payment of 500.00 arrives on day 15, before the first due date. Because the payment is before the due date, the current installment is treated as the next installment under the Next rule. The figures are illustrative. The example shows that an early payment clears the next installment first and sends the excess to the last installment, reducing its principal while the middle installment stays unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total</th>
+<th>Balance after principal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Next installment (No. 1)</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>410.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Payment received</td>
+<td>-</td>
+<td>-</td>
+<td>500.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Allocated to next installment</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>410.00</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Remainder to last installment (No. 3)</td>
+<td>-</td>
+<td>90.00</td>
+<td>90.00</td>
+<td>610.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Last installment (No. 3) remaining</td>
+<td>4.00</td>
+<td>310.00</td>
+<td>314.00</td>
+<td>610.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Installment No. 2 unchanged</td>
+<td>7.00</td>
+<td>300.00</td>
+<td>307.00</td>
+<td>610.00</td>
+</tr>
+</tbody></table>
+<p>The same 1,000.00 loan at 12% per year has three monthly installments due on days 30, 60, and 90. A payment of 500.00 arrives on day 30, the due date of installment 1. Because the payment is on the due date, the Next rule is skipped and the Last rule applies: the amount allocates to the last installment first and then backward to earlier installments. Had the payment arrived one day earlier, the Next rule would apply and installment 1 would receive the payment first. The example shows that a payment on the due date does not prepay the current installment; it is applied from the last installment backward.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total</th>
+<th>Balance after principal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Installment No. 1 (due)</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>410.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Payment received on due date</td>
+<td>-</td>
+<td>-</td>
+<td>500.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Last installment (No. 3)</td>
+<td>4.00</td>
+<td>400.00</td>
+<td>404.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Remainder to last but one (No. 2)</td>
+<td>-</td>
+<td>96.00</td>
+<td>96.00</td>
+<td>504.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Installment No. 2 remaining</td>
+<td>7.00</td>
+<td>204.00</td>
+<td>211.00</td>
+<td>504.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Installment No. 1 unchanged</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>410.00</td>
+<td>504.00</td>
+</tr>
+</tbody></table>
+<p>The same 1,000.00 loan at 12% per year has three monthly installments. A payment of 200.00 arrives on day 15, before installment 1 is due. The current installment is the next installment, but the payment is smaller than the installment amount, so it is fully consumed by the next installment and nothing flows to the last installment. If the payment were larger than the next installment, the excess would move to the last installment. The example shows that when the advance payment does not exceed the next installment, the last installment receives nothing.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total</th>
+<th>Balance after principal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Next installment (No. 1)</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>410.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Payment received before due date</td>
+<td>-</td>
+<td>-</td>
+<td>200.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Allocated to next installment</td>
+<td>10.00</td>
+<td>190.00</td>
+<td>200.00</td>
+<td>810.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Remainder to last installment</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>810.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Installment No. 1 remaining</td>
+<td>-</td>
+<td>110.00</td>
+<td>110.00</td>
+<td>810.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Installments No. 2 and No. 3 unchanged</td>
+<td>11.00</td>
+<td>700.00</td>
+<td>711.00</td>
+<td>810.00</td>
+</tr>
+</tbody></table>
+<h2>Credit Adjustments</h2>
+<p>Credit adjustments govern how payments are allocated across loan balances and how interest is calculated during repayment and pre-closure. Allocation rules determine whether monies apply to interest or principal, how many future payments are satisfied before re-amortization, and whether they target the next or last installment due.</p>
+<p>Payment allocation rules define the following behaviour:</p>
+<ul>
+<li>Monies apply to the interest balance of a single amount due first, ordered from the oldest due amount to the most current due amount.</li>
+<li>For future balances, payment allocation applies monies to principal balances only.</li>
+<li>Where applicable, future interest accrued but not yet due can be satisfied, such as in early payoff.</li>
+<li>Rules define how many future payments are satisfied prior to triggering a re-amortization of the repayment schedule.</li>
+<li>Rules define if monies apply to the next installment due or the last installment due.</li>
+</ul>
+<p>Interest calculation rules apply to decreasing balance loans with equal installments and daily interest calculation. For each normal repayment installment, interest is calculated based on the outstanding balance. Advance payment allocation disbursement supports decreasing balance interest calculation.</p>
+<p>Interest allocation and pre-closure rules include:</p>
+<ul>
+<li>Interest is not allocated for the down-payment installment when down-payment installment is enabled.</li>
+<li>The pre-closure interest calculation rule defines till when interest should calculate on the event of pre-closure.</li>
+</ul>
+<p>Pre-closure interest calculation supports two methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Calculate till pre closure date</td>
+<td>Calculates interest till as on the closing date; for example, if the loan closing date is 20th February, interest is calculated till 20th February.</td>
+</tr>
+<tr>
+<td>Calculate till rest frequency date</td>
+<td>Calculates interest till the rest period; for example, if the loan closing date is 20th February, interest is calculated till the repayment period due date.</td>
+</tr>
+</tbody></table>
+<p>A declining-balance loan with equal monthly installments calculates interest each period on the outstanding principal. The figures are illustrative: a principal of 1,500, an annual interest rate of 12%, three monthly installments, and 30-day months, with disbursement on 1 January and the first installment due on 1 February. If an additional disbursement is posted after the first installment, the outstanding principal rises and the interest on the remaining installments is recalculated upward. This example shows how interest declines as the principal is repaid.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 February</td>
+<td>1,500.00</td>
+<td>15.00</td>
+<td>510.03</td>
+<td>495.03</td>
+<td>1,004.97</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>1,004.97</td>
+<td>10.05</td>
+<td>510.03</td>
+<td>499.98</td>
+<td>504.99</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>504.99</td>
+<td>5.05</td>
+<td>510.04</td>
+<td>504.99</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>30.10</td>
+<td>1,530.10</td>
+<td>1,500.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan with a monthly interest rate and equal installments recalculates the schedule when a partial repayment is posted between installments. The figures are illustrative: a principal of 1,200, a monthly interest rate of 1%, three installments due on 1 March, 1 April, and 1 May. If a partial repayment of 250 is posted after the first installment, the outstanding principal drops and the interest on the remaining installments is recalculated downward. This example shows how a mid-term repayment reduces the balance and the interest charged on later installments.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 March</td>
+<td>1,200.00</td>
+<td>12.00</td>
+<td>408.03</td>
+<td>396.03</td>
+<td>803.97</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>803.97</td>
+<td>8.04</td>
+<td>408.03</td>
+<td>399.99</td>
+<td>403.98</td>
+</tr>
+<tr>
+<td>1 May</td>
+<td>403.98</td>
+<td>4.04</td>
+<td>408.02</td>
+<td>403.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>24.08</td>
+<td>1,224.08</td>
+<td>1,200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>Loan Payoff</h2>
+<p>A pay-off is a repayment done as of the transaction date with interest calculated as of that date. You can perform a pay-off transaction at API level for an active loan account, and once the loan is paid off its status is marked as closed. The pay-off amount required to close the loan on that day includes all principal, interest, fee, and penalty balances along with any accrued interest not yet billed. Accounting entries for a pay-off transaction are the same as for a repayment transaction.</p>
+<p>The following rules govern when a pay-off can occur and how interest is treated:</p>
+<ul>
+<li>Pay-off can be done as of any date from the last repayment date till the current date.</li>
+<li>Pay-off can be done as of any date from the last repayment date till the current date when interest recalculation is enabled.</li>
+<li>The system calculates and collects interest as of the pay-off date entered.</li>
+<li>When interest recalculation is disabled, payable interest is the same whether the loan is paid off in the middle of the loan lifecycle or on the maturity date.</li>
+<li>When interest recalculation is enabled, payable interest is only the recognized interest till the pay-off date and it matters whether the loan is paid off in the middle of the lifecycle or on the maturity date.</li>
+<li>When interest recalculation is disabled, the full principal, calculated interest, fee, and other amounts must be paid to fully pay off the loan.</li>
+<li>When interest recalculation is enabled, the full principal and the calculated interest till the pay-off date must be paid to fully pay off the loan.</li>
+</ul>
+<p>The pay-off calculation covers outstanding balances as follows:</p>
+<ul>
+<li>Pay-off calculation should contain all outstanding balances calculated till the pay-off date or the end of the pay-off period due date based on configuration.</li>
+<li>Pay-off calculation logic must add all past due installments outstanding balances, not only the payable details of the current period.</li>
+<li>If the transaction date is before or equal to the first disbursement date, all principal must be paid but no interest for an interest bearing loan product.</li>
+<li>If the transaction date is on or after the maturity date, all outstanding balances must be paid.</li>
+</ul>
+<p>Additional pay-off behaviour includes:</p>
+<ul>
+<li>For progressive loans in case of pay-off, the pay-off amount is allocated across each installment rather than modifying the current period to reflect the full amount paid.</li>
+<li>In case of interest recalculation for progressive loans, payable interest is calculated till the pay-off date, the current installment is modified, and any interest from upcoming installments is lifted if the transaction amount is enough to fully pay the outstanding principal on that installment.</li>
+<li>Disbursement chargeback is not allowed yet on the pay-off loan account.</li>
+<li>Backdated transactions or reversal of older transactions will trigger reverse replay of the loan account and the loan status will be updated accordingly.</li>
+<li>When backdated pay-off happens, the accrual transactions that happened after that date shall be reverted.</li>
+</ul>
+<p>The advanced payment allocation processor decides whether repayment starts from the next installment or the last installment.</p>
+<p>A customer takes a 900.00 loan at 12 percent annual interest with a 360-day year and 30-day months, repayable in three monthly installments of 300.00 principal each. The first installment falls on day 30. On day 45, fifteen days after the first installment, the customer requests a pay-off while interest recalculation is enabled. The system accrues interest on the outstanding principal from the last repayment date to the pay-off date, adds it to the principal balance, and closes the loan once the pay-off is collected. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>900.00</td>
+<td>—</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Installment 1 paid</td>
+<td>300.00</td>
+<td>9.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Day 45</td>
+<td>Pay-off</td>
+<td>600.00</td>
+<td>3.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The pay-off total of 603.00 equals outstanding principal plus accrued interest, and the loan status moves to closed.</p>
+<p>The same 900.00 loan at 12 percent annual interest with three monthly installments of 300.00 principal each is paid off on day 45 while interest recalculation is disabled. The system does not remeasure interest for the shortened period; instead it collects the interest that remained on the original schedule for the unpaid installments. The loan is closed once the pay-off is collected.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>900.00</td>
+<td>—</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Installment 1 paid</td>
+<td>300.00</td>
+<td>9.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Day 45</td>
+<td>Pay-off, recalculation disabled</td>
+<td>600.00</td>
+<td>9.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>If interest recalculation were enabled, the payable interest would be only 3.00 accrued till day 45, making the pay-off total 603.00 instead of 609.00.</p>
+<p>A 900.00 loan at 12 percent annual interest with three monthly installments of 300.00 principal each falls into arrears when the second installment due on day 60 is not paid. On day 75, fifteen days after the missed installment, the customer requests a pay-off. The pay-off calculation adds all past due installment balances, including the unpaid principal and interest of installment 2, together with interest accrued on the outstanding balance from day 60 to day 75.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>900.00</td>
+<td>—</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Installment 1 paid</td>
+<td>300.00</td>
+<td>9.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Day 60</td>
+<td>Installment 2 due, unpaid</td>
+<td>300.00</td>
+<td>6.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Day 75</td>
+<td>Pay-off</td>
+<td>600.00</td>
+<td>9.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The pay-off total of 609.00 covers the overdue installment 2 principal and interest plus accrued interest, rather than only the current period&#39;s payable amount.</p>
+<p>A progressive 1,000.00 loan at 12 percent annual interest with monthly installments of 200.00, 300.00, and 400.00 principal is paid off on day 45, after the first installment of 200.00 has been collected on day 30. The outstanding principal of 800.00 is allocated across the remaining installments instead of being applied only to the current period.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Installment 1 paid</td>
+<td>200.00</td>
+<td>10.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Day 45</td>
+<td>Pay-off</td>
+<td>800.00</td>
+<td>4.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The 800.00 pay-off principal is distributed across the remaining installments, and the loan is closed once the full amount is collected.</p>

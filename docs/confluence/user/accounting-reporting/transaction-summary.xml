@@ -1,0 +1,30 @@
+<h2>Transaction Summary Report</h2>
+<p>The transaction summary report reflects interest transactions, including interest accrual, interest posted, interest waiver, and interest refund.</p>
+<table>
+<thead>
+<tr>
+<th>Charge-off portion</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Income account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fraud Interest</td>
+<td>Interest income charge off</td>
+<td>Interest Receivable</td>
+<td></td>
+</tr>
+<tr>
+<td>Fraud Fees</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+<td>Fee Charge off</td>
+</tr>
+<tr>
+<td>Fraud Penalty</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+<td>Penalty Income</td>
+</tr>
+</tbody></table>

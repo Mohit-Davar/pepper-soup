@@ -1,0 +1,90 @@
+<h2>Charge-Off Interest Due</h2>
+<p>Charge-off interest due handles interest balances during automated charge-off so accounting entries match the defined accounting policy. Accounting entries must be handled for interest charge-off. It applies to interest-bearing loans that use the progressive allocation strategy.</p>
+<p>The system posts charge-off accounting entries as follows:</p>
+<ul>
+<li>Interest due at charge-off charges off to interest income charge-off.</li>
+<li>Interest recoveries post to the recoveries GL.</li>
+<li>Collections on charged-off interest balances post as charge-off recoveries to the GL.</li>
+</ul>
+<p>Charge-off mappings depend on the charge-off type:</p>
+<ul>
+<li>Charge off Fraud maps the interest portion to interest income charge-off, the fees portion to fee charge-off with fee receivable and charge-off fees income, and the penalty portion to fee charge-off with penalty receivable and charge-off penalty income.</li>
+<li>Charge off Non Fraud maps the interest portion to interest income charge-off, the fees portion to fee charge-off with fee receivable and charge-off fees income, and the penalty portion to fee charge-off with penalty receivable.</li>
+</ul>
+<p>Other charge-off mappings are:</p>
+<ul>
+<li>Charge adjustment maps the fees portion to fee income with other credit liability and income from fees, and the penalty portion to fee income with fee charge-off and income from penalties.</li>
+<li>OCA repayment maps the interest portion, fees portion, unallocated credit, and penalty portion to other receivables with recoveries and fund source or advance accounting, except unallocated credit, which maps to other credit liability with fund source or advance accounting.</li>
+</ul>
+<p>Repayment transactions on a charge-off loan account post these accounting entries:</p>
+<ul>
+<li>A debit to GLCode 145023 Suspense/clearing account (Fund source, Liability, Allocation Type Prin, Fees, and Penalty and excess).</li>
+<li>A credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type Prin).</li>
+<li>A credit to GLCode 245000 Other Credit liability (Overpayment Liability, Liability, Allocation Type excess).</li>
+<li>A credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type Penalty).</li>
+</ul>
+<p>Validation and restrictions include:</p>
+<ul>
+<li>Validation of the charge-off transaction includes confirming it appears in the list of transactions.</li>
+<li>From the time of charge-off, no more disbursement is allowed.</li>
+</ul>
+<p>A loan officer reviews an interest-bearing loan that uses the progressive allocation strategy. The principal is 1,000.00 and the annual interest rate is 12%. With 30-day months, three months of interest accrue to 30.00, which is the interest due when the officer initiates a non-fraud charge-off. From that moment the system blocks any further disbursement. The figures in this example are illustrative. If the charge-off reason were fraud instead, the interest portion would still post to Interest income charge off; only the fee and penalty portions would use additional charge-off income accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest due charged off</td>
+<td>Interest income charge off (744003)</td>
+<td>30.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Loan asset reduced</td>
+<td>Loans Receivable (112601)</td>
+<td></td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td>30.00</td>
+<td>30.00</td>
+</tr>
+</tbody></table>
+<p>This shows that interest due at charge-off moves to the interest income charge-off income account and the loan asset is reduced by the same amount, keeping debits and credits equal.</p>
+<p>After the charge-off, the borrower pays 15.00 toward the previously charged-off interest of 30.00. The loan officer records the collection on the charged-off account. Because no further disbursement is allowed after charge-off, the payment is treated as a recovery and posted using the Other receivables and recoveries accounting treatment.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Payment applied to charged-off interest</td>
+<td>Other receivables (145800)</td>
+<td>15.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Recovery recognized</td>
+<td>Recoveries GL</td>
+<td></td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td>15.00</td>
+<td>15.00</td>
+</tr>
+</tbody></table>
+<p>This shows that collections on charged-off interest post to Other receivables and the recoveries GL, reducing the charged-off interest balance and supporting correct charge-off recovery accounting.</p>

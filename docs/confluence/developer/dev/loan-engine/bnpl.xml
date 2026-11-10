@@ -1,0 +1,542 @@
+<h2>Pay in 30 Days</h2>
+<h3>Delinquency history and overdue calculation</h3>
+<p>The delinquency history feature records changes made by the LDC job and tracks movement into and out of overdue buckets at DB or reporting level. Real-time repayment changes are added to the history only when that functionality is implemented. A feature toggle enables or disables the feature, and the grace period for delinquency classification is configurable for each product.</p>
+<p>The default overdue calculation determines what appears on the loan account screens:</p>
+<ul>
+<li>The overdue summary amounts on the general tab summary screen are displayed based on the selected calculation.</li>
+<li>The loan status color (overdue or not) is displayed based on the selected calculation.</li>
+<li>The loan account overview screen displays &#39;Arrears By:&#39; or &#39;Delinquent By:&#39; based on the selected calculation.</li>
+<li>Users can configure whether the delinquency calculation or arrears calculation is displayed as the default overdue calculation.</li>
+</ul>
+<p>The arrears and delinquency display configuration does not cover:</p>
+<ul>
+<li>Penalty calculation.</li>
+<li>Interest recalculation and compounding.</li>
+</ul>
+<h3>Late fee slabs and fixed fees</h3>
+<p>Late fees use fixed fees for overdue amount ranges on loan charges with charge time type Overdue Fees and charge calculation Fixed fees for various slabs or ranges of overdue amount plus interest plus any fees. Administrators can add, edit, or remove rows defining overdue amount from, to, and fixed fee fields.</p>
+<p>Slab ranges determine the late fee charge:</p>
+<ul>
+<li>Between 1 and X1 charges Z1.</li>
+<li>Between X1 and X2 charges Z2.</li>
+<li>Between X3 and X4 charges Z3.</li>
+<li>Greater than X3 charges Z4.</li>
+</ul>
+<p>The system permits exceeding the approved or disbursed amount only by the configured percentage:</p>
+<ul>
+<li>The approved amount can go over by the configured percentage, not by 100% plus the additional configured percentage.</li>
+<li>If the approved amount is 1000 and it is allowed to go over by 10%, the maximum allowed total approved amount is 1100.</li>
+</ul>
+<h3>Goodwill credit, payout refund, and merchant issued refund transactions</h3>
+<p>Goodwill Credit, Payout Refund, and Merchant Issued Refund transactions cannot be edited at API level, and transactions that have already been undone cannot be edited or undone again. Undoing these transactions remains possible at API level.</p>
+<p>Chargeback behaviour for these transaction types follows these rules:</p>
+<ul>
+<li>Users can perform a chargeback for Goodwill Credit, Payout Refund, and Merchant Issued Refund transaction types.</li>
+<li>Chargeback is not allowed for reversed transactions.</li>
+<li>Error messages must be present for a chargeback amount of 0 and for amounts more than the allowed amount.</li>
+</ul>
+<p>LoanTransactionData includes these duplicate field pairs and resource type fields:</p>
+<ul>
+<li>date vs transactionDate, transactionType vs type, and amount vs transactionAmount.</li>
+<li>resourceType and subResourceType are added in every place where applicable.</li>
+</ul>
+<h3>Accrual transaction replay and events</h3>
+<p>Replaying an accrual transaction keeps the link between the original and replayed transactions, and when an accrual transaction is reverted and immediately replayed, the transactions are linked through LoanTransactionRelation. A transaction replayed event is triggered when an accrual transaction is replayed, while a LoanAccrualTransactionBusinessEvent is triggered when an accrual transaction is created or generated.</p>
+<p>When client A and client B use the same idempotent key for the same action and entity name, client B receives client A&#39;s cached response. After undoing a waive transaction, the balance is recalculated to reflect the waived charge being reinstated.</p>
+<h3>Credit and debit adjustments</h3>
+<p>Credit and debit adjustments appear on the repayment schedule and in the Retrieve loan API as summed amounts, and they are included in the Accounts changed event.</p>
+<p>The outstanding amount and credit adjustment are calculated as follows:</p>
+<ul>
+<li>The outstanding amount equals original plus credit adjustments minus paid minus waived minus written-off.</li>
+<li>The credit adjustment column is the sum of all chargeback credits that happened on that loan account.</li>
+</ul>
+<p>The submitted on date for a loan charge is the actual business date when the charge was added to the loan.</p>
+<p>Swagger representation rules for backend types are:</p>
+<ul>
+<li>Backend IDs that are Long are represented as long in Swagger classes.</li>
+<li>Backend Lists are represented as List in Swagger classes, not Set.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> JournalEntriesApiResource.retrieveAll fails via fineract-client because the Swagger response class is JournalEntryData.class while the response is wrapped in org.apache.fineract.infrastructure.core.service.Page.</p>
+</blockquote>
+<h3>Loan ID and transaction ID validation</h3>
+<p>The API validates that a transaction ID belongs to the loan ID before processing the request. This applies to undoing transactions and to fetching, updating, paying, waiving, adjusting, and deleting loan charges, as well as transaction reversal, chargeback, undo loan charge transaction, and fetching loan details.</p>
+<p>API write responses include the following fields:</p>
+<ul>
+<li>resourceId</li>
+<li>subResourceId</li>
+<li>resourceType</li>
+<li>subResourceType</li>
+</ul>
+<p>BulkMessage behaviour:</p>
+<ul>
+<li>When a BulkMessage exceeds the ActiveMQ 100KB message size limit, it is split into multiple messages.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A loan becomes overdue and the overdue amount is the sum of overdue principal, overdue interest and any overdue fees. The figures below are illustrative. A flat late fee is then selected by slab: 0 for an overdue amount from 1 to 10, 5 from 10 to 50, 12 from 50 to 100, and 20 above 100. The example shows that a larger overdue amount moves into a higher slab and incurs a larger flat charge.</p>
+<table>
+<thead>
+<tr>
+<th>Overdue amount</th>
+<th>Slab applied</th>
+<th>Flat charge</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5.00</td>
+<td>1 to 10</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>25.00</td>
+<td>10 to 50</td>
+<td>5.00</td>
+</tr>
+<tr>
+<td>75.00</td>
+<td>50 to 100</td>
+<td>12.00</td>
+</tr>
+<tr>
+<td>150.00</td>
+<td>greater than 100</td>
+<td>20.00</td>
+</tr>
+</tbody></table>
+<p>A product is configured to allow approval above the applied amount by 50 percent. A loan of 1,000 is approved and disbursed at 1,000. The system permits an additional 50 percent of 1,000, so the largest second disbursement is 500 and the largest total approved amount is 1,500. The example shows that the allowed increase is a percentage of the base amount, not 100 percent plus that percentage.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Amount</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Approved and disbursed</td>
+<td>1000.00</td>
+<td>Base amount</td>
+</tr>
+<tr>
+<td>Allowed increase (50%)</td>
+<td>500.00</td>
+<td>0.50 × 1000</td>
+</tr>
+<tr>
+<td>Maximum total approved</td>
+<td>1500.00</td>
+<td>1000 + 500</td>
+</tr>
+<tr>
+<td>Requested second disbursement</td>
+<td>1500.00</td>
+<td>Exceeds the 500 limit</td>
+</tr>
+<tr>
+<td>Result</td>
+<td>Rejected</td>
+<td>Above the allowed additional amount</td>
+</tr>
+</tbody></table>
+<p>The outstanding amount is the original amount plus credit adjustments minus payments minus waived and written-off amounts. Credit adjustments include refunds and goodwill credits; payments include repayments. The figures below are illustrative. The example shows that refunds and goodwill credits raise the outstanding amount while repayments lower it.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Column affected</th>
+<th>Amount</th>
+<th>Running outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original disbursement</td>
+<td>Original</td>
+<td>1000.00</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>Repayment of 200</td>
+<td>total_payments</td>
+<td>200.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Goodwill credit of 100</td>
+<td>credit_adjustments</td>
+<td>100.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Refund of 50</td>
+<td>credit_adjustments</td>
+<td>50.00</td>
+<td>950.00</td>
+</tr>
+</tbody></table>
+<h2>Pay in 3 and 4</h2>
+<h3>Asset externalization overview</h3>
+<p>Asset externalization supports loan sales to investors for the GPL portfolio of products and provides securitization concepts within Fineract core functionality. It supports Danube requirements for DE PayIn30 on the Fineract System and meets all data reporting obligations related to externalization enhancements.</p>
+<p>Ownership and transactional changes happen as follows:</p>
+<ul>
+<li>Once a loan is sold to an investor, PayPal retains no ownership of the loan.</li>
+<li>Fineract supports ownership assignment throughout the life cycle of the loan.</li>
+<li>Ownership is submitted in real time to Fineract, with the actual update occurring as part of close of business (COB).</li>
+<li>Fineract publishes events for all ownership-related activities.</li>
+<li>Fineract provides POST and GET APIs to support ownership-related activities.</li>
+</ul>
+<p>Asset externalization also covers accounting and reporting:</p>
+<ul>
+<li>It supports all accounting requirements for reporting and tracking GL activity for PayPal and non-PayPal-owned loans within Fineract.</li>
+<li>Fineract captures all monetary transaction GL entries according to PayPal&#39;s defined ownership.</li>
+<li>It supports real-time ownership and transactional changes related to asset sales via API and event publishing.</li>
+</ul>
+<h3>Roles and permissions</h3>
+<p>The external owner is a legal entity that holds the investor persona. A Business Manager is an employee of the organisation who offers the loan to its customer, decides on asset sale, or works with data related to it. An auditor can see the history of a loan&#39;s ownership changes. Only users with the external investor module permission and super users can perform those actions. Only transfer initiation is captured by API.</p>
+<h3>Transfer request fields and validation</h3>
+<p>Investor loan ownership transfer applies to loans with status ACTIVE only; any other status is rejected. The request requires Asset Owner ID, Purchase Price Ratio, and Settlement Date, and accepts an optional Sales Transaction ID. Settlement Date cannot be in the past.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Requirement</th>
+<th>Constraint</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Asset Owner ID</td>
+<td>Required</td>
+<td>Any string, max 100 chars</td>
+</tr>
+<tr>
+<td>Sales Transaction ID</td>
+<td>Optional</td>
+<td>Any string, max 100 chars; generated if not provided</td>
+</tr>
+<tr>
+<td>Purchase Price Ratio</td>
+<td>Required</td>
+<td>Percentage between 0% and 100%</td>
+</tr>
+<tr>
+<td>Settlement Date</td>
+<td>Required</td>
+<td>DATE; cannot be in the past</td>
+</tr>
+</tbody></table>
+<p>Buyback Transfer ID identifies the buyback transfer and is different from the sale transfer ID. No transfer between owners occurs; transfer is only possible after buyback.</p>
+<h3>Transfer lifecycle and statuses</h3>
+<p>An asset ownership transfer moves an asset portfolio from one owner to another. The effective date range is the period in which the ownership entry is valid, inclusively between its dates.</p>
+<p>A transfer carries technical information and moves through the following statuses:</p>
+<ul>
+<li>Technical information includes the transfer timestamp, the effective date range from the submitted on date to 9999-12-31, and the transfer status.</li>
+<li>PENDING means the request has been made but not yet made active by the COB end of day.</li>
+<li>ACTIVE means the transfer is active and all journal entries are made against the investor.</li>
+<li>BUYBACK means the loan&#39;s ownership was bought back.</li>
+<li>DECLINED means the request was made but end of day has not passed and the loan was paid back or overpaid, so there is nothing for the investor to buy.</li>
+<li>CANCELLED means the request was made but cancelled before execution.</li>
+</ul>
+<p>A successful transfer response includes the resource id, owner id, status PENDING, and sales transaction id, which is generated if not provided. A rejected transfer returns HTTP 403 with a reason.</p>
+<h3>Buyback process</h3>
+<p>A business manager can buy back loans with pending ownership transfer from investors when the loan account becomes fraud or for any other reason. The buyback is another activity with an external Buyback Transfer ID.</p>
+<p>The buyback API request requires these fields:</p>
+<ul>
+<li>Settlement date is mandatory.</li>
+<li>Transfer ID must be present.</li>
+<li>Owner ID can be null.</li>
+<li>Cancel does not require a settlement date; it always refers to the current PENDING transfer.</li>
+</ul>
+<p>Buyback and sale settlement date equals the same day.</p>
+<blockquote>
+<p><strong>Note:</strong> Cancelling buyback is not supported.</p>
+</blockquote>
+<h3>Same-day sale and buyback rules</h3>
+<p>When a sale and a buyback happen on the same day, the sale occurs first and the buyback after. Both transfers are cancelled and two CANCELLED events are triggered, one for the SALE transfer and one for the BUYBACK transfer. No GL entries are created. A pending transfer blocks new transfer requests, and a second pending request fails on the API. Initiation followed by buyback followed by initiation followed by buyback in the same day prior to COB is not allowed.</p>
+<h3>COB processing</h3>
+<p>Close of business processing completes asset ownership transfers when the settlement date arrives. The system evaluates the loan balance at close of business day to decide whether a transfer becomes active or declined.</p>
+<p>COB processing applies the following rules to asset ownership transfers:</p>
+<ul>
+<li>Asset ownership transfer entries are created during COB using the balance at close of business day.</li>
+<li>No ownership change or journal entries occur when the loan balance is 0.00 or less than 0.00.</li>
+<li>The system makes a transfer active during COB when the settlement date arrives and the loan balance is greater than 0.</li>
+<li>The system makes a transfer declined during COB when the settlement date arrives and the loan balance is less than or equal to 0.</li>
+<li>The system makes journal entries when asset ownership status changes from PENDING to ACTIVE.</li>
+<li>The system makes journal entries when asset ownership status changes from ACTIVE to BUYBACK.</li>
+<li>For a PENDING to BUYBACK status change, both PENDING and BUYBACK transfers are cancelled, no journal entries are made, and no status change occurs as if nothing happened.</li>
+</ul>
+<p>Restriction on transfer API calls when COB has not run until the settlement date must be the same as those of monetary activities.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "PENDING" as n1
+  state "ACTIVE" as n2
+  state "BUYBACK" as n3
+  state "CANCELLED" as n4
+  n1 --> n2 : settlement date arrives and balance > 0
+  n1 --> n3 : settlement date arrives and balance <= 0
+  n2 --> n3 : settlement date arrives
+  n1 --> n4 : PENDING to BUYBACK
+  n3 --> n4 : PENDING to BUYBACK]]></ac:plain-text-body></ac:structured-macro>
+<h3>Sale scenarios</h3>
+<p>An asset sale on an active loan records ownership when no active ownership record exists and the loan account is ACTIVE. The system persists the Asset Owner ID, sale transaction ID, purchase price ratio, and date/time of ownership change, marks ownership as active, and publishes an ownership-change event. At COB, accounting posts using the closing balance with two journal entries: DR 145600 CR 112601 /112603 and DR 112601 /112603 CR 145600, and publishes events for the journal entries.</p>
+<p>The same outcome applies to an active loan with inactive ownership records: validations require no active ownership record, previous inactive ownership records to exist, and the loan account to be ACTIVE. Ownership is marked active and the same fields are persisted, with an ownership-change event published. Accounting posts at COB using the closing balance and creates the same two journal entries, publishing events for them.</p>
+<p>The system declines an asset sale in the following cases:</p>
+<ul>
+<li>The loan account is CLOSED and no active ownership record exists; no ownership changes are recorded.</li>
+<li>The loan balance at COB is 0.00 or the loan account state is CLOSED; no ownership changes are recorded and an event is published for the declined ownership change.</li>
+<li>The loan balance at COB is less than 0.00; no ownership changes are recorded and an event is published for the declined ownership change.</li>
+<li>An active ownership record already exists on the loan account; no ownership changes are recorded.</li>
+<li>The RT API call to Fineract SOR finds that the loan account is not found.</li>
+</ul>
+<h3>Buyback scenarios</h3>
+<p>An asset buyback applies to an active loan with an active ownership record, a closed loan with an active ownership record, a FRAUD loan with an active FRAUD tag, or a loan account that cannot be found by the RT API call to Fineract SOR.</p>
+<p>The following buyback scenarios are supported:</p>
+<ul>
+<li>For an active loan, validation requires an active ownership record and an ACTIVE loan account, and the outcome changes the active Asset Owner ID to inactive, persists it on the loan account, persists the Buyback transaction ID and Buyback amount memo, records the date/time of ownership change, marks ownership as inactive, and publishes an ownership-change event.</li>
+<li>For a closed loan, validation requires an active ownership record and a CLOSED loan account, but no ownership changes are recorded and the response is decline.</li>
+<li>For a FRAUD loan, validation requires no active ownership record and an active FRAUD tag, and the outcome changes the active Asset Owner ID to inactive, persists it on the loan account, persists the Buyback transaction ID and Buyback amount memo, records the date/time of ownership change, marks ownership as inactive, and publishes an ownership-change event.</li>
+<li>When no active ownership exists on the loan account, validation requires no active ownership record, no ownership changes are recorded, and the response is decline.</li>
+<li>When the RT API call to Fineract SOR finds that the loan account is not found, the response is decline.</li>
+</ul>
+<p>Accounting impact applies to buybacks on active loans and FRAUD loans:</p>
+<ul>
+<li>Accounting posts at COB using the closing balance of the loan account.</li>
+<li>Two journal entries are created: DR 145600 CR 112601 /112603 and DR 112601 /112603 CR 145600.</li>
+<li>Events are published for the journal entries.</li>
+</ul>
+<h3>GL entries and accounting</h3>
+<p>Fineract stores journal entry relationships to external owners so auditors can fetch owner journal entries and reporting queries stay simple without different posting dates during portfolio transfer. Storing these relationships requires creating a relationship entry when an external owner owns the entry and coupling the Accounting and Investor modules through internal business events. Investor ownership does not change GL entries; the investor appears only as a comment or tag on the same entries.</p>
+<p>Account and Transaction changed events include the asset owner once the loan is actively owned by an external asset owner, although the API does not have to reflect this. PayPal provides daily investor accounting reports through the SOR.</p>
+<p>Ownership rules for post-sale activity are as follows:</p>
+<ul>
+<li>Fees applied to a loan after sale are owned by the investor, not PayPal.</li>
+<li>All payment allocation rules remain the same before and after sale.</li>
+<li>Past due and delinquency tracking remain the same before and after sale.</li>
+<li>Charge-off rules remain the same as PayPal-owned loan accounts for investor-owned loan accounts.</li>
+</ul>
+<p>Determination of loan statuses, assignment of loans to an investor, and buyback or reassignment of a loan are completed externally, not on the Fineract system.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>GL entries at close of business</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sale</td>
+<td>DR Loan/Fee Rec-Investor CR Loan/Fee Rec-PayPal, followed by CR 112601 /112603 - DR 146000 - PayPal CR 146000 - DR 112601 /112603 - Investor</td>
+</tr>
+<tr>
+<td>Buyback</td>
+<td>DR Loan/Fee Rec-PayPal CR Loan/Fee Rec-Investor, followed by DR 112601 /112603 - CR 146000 - PayPal DR 146000 - CR 112601 /112603 - Investor</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Ownership change</th>
+<th>Data stored in Fineract</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sale transaction</td>
+<td>Asset Owner ID, Sales Transaction ID, Purchase price ratio, created timestamp, updated timestamp</td>
+</tr>
+<tr>
+<td>Buyback transaction</td>
+<td>Buyback Transfer ID, created timestamp, updated timestamp</td>
+</tr>
+<tr>
+<td>Pending ownership change</td>
+<td>Asset Owner ID, Sales Transaction ID, Purchase price ratio, Settlement date, created timestamp, updated timestamp</td>
+</tr>
+</tbody></table>
+<p>A pending sales transaction remains pending until the settlement date arrives. On the settlement date, a batch process runs at close of business to create the sale transaction and move the loan balance from pending settlement to investor.</p>
+<table>
+<thead>
+<tr>
+<th>Activity</th>
+<th>GL entries</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Activity posted in pending state for settlement</td>
+<td>DR Cash Clearing-Investor CR Cash Clearing-PayPal DR Loan Rec-Pending Settlement CR Loan Rec-Investor</td>
+</tr>
+<tr>
+<td>Original quoted price</td>
+<td>DR Loan Rec-Investor CR Loan Rec-Pending Settlement</td>
+</tr>
+<tr>
+<td>Pending ownership change</td>
+<td>DR Loan Rec-Pending Settlement CR Loan Rec-PayPal</td>
+</tr>
+</tbody></table>
+<h3>Post-sale loan behavior</h3>
+<p>The credit platform partner router identifies which system of record (SOR) holds the loan and routes traffic accordingly. Domains above the router do not need to know which SOR the loan is recorded on. The credit ETL domain manages any changes required for storing ownership details in Credit databases.</p>
+<h3>Data persistence and events</h3>
+<p>The system persists externalisation status, externalisation requests and their outcomes, and the mapping between journal entries and external investors. It also extends existing events with owner information and emits a new event when ownership changes.</p>
+<p>Persistence covers the following:</p>
+<ul>
+<li>Externalisation status persistence stores the loan ID, status, and effective date range with from and to dates.</li>
+<li>Externalisation request and history persistence stores incoming externalisation requests and executed externalisation request outcomes.</li>
+<li>A mapping table stores the relationship between journal entries and external investors; no direct relationship exists between a loan transaction and an external investor.</li>
+<li>The external investor for a transaction can be fetched based on the posting date or reverted-on date of the transaction and the external owner effective date range.</li>
+<li>Existing events are extended with owner information.</li>
+<li>A new event is emitted for an ownership change.</li>
+</ul>
+<h3>API endpoints</h3>
+<p>The root endpoint /external-asset-owners supports asset transfer requests and ownership retrieval for loans identified by loan ID or loan external ID.</p>
+<p>You can initiate and retrieve transfer requests using the following endpoints:</p>
+<ul>
+<li>POST /external-asset-owners/transfers/loans/&lt;loan_id&gt;?command=&lt;action&gt; initiates an asset transfer request for a target loan identified by loan id.</li>
+<li>POST /external-asset-owners/transfers/loans/external-id/&lt;loan_external_id&gt;?command=&lt;action&gt; initiates an asset transfer request for a target loan identified by loan external id.</li>
+<li>GET /external-asset-owners/transfers?transferExternalId=&lt;transfer_external_id&gt; fetches transfer requests by transfer external id.</li>
+<li>GET /external-asset-owners/transfers?loanId=&lt;loan_id&gt; fetches transfer requests by loan id.</li>
+<li>GET /external-asset-owners/transfers?loanExternalId=&lt;loan_external_id&gt; fetches transfer requests by loan external id.</li>
+</ul>
+<p>You can retrieve asset ownership information and journal entries using the following endpoints:</p>
+<ul>
+<li>An API user can retrieve asset ownership information based on Loan ID (external id).</li>
+<li>An API user can retrieve asset ownership information based on the transfer ID.</li>
+<li>GET /external-asset-owners/transfers/external-id/{ownerExternalId}/journal-entries fetches transfer journal entries for an owner external id.</li>
+<li>GET /external-asset-owners/owners/external-id/{ownerExternalId}/journal-entries fetches owner journal entries for an owner external id.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A business manager requests a sale of an active loan to an external investor. The figures are illustrative. The loan has a principal of 1,000.00 and a closing balance of 1,000.00 on the business date. The request carries Asset Owner ID INV-001, Purchase Price Ratio 100%, and a Settlement Date two days ahead. The API accepts the request, stores the transfer as PENDING, and generates a Sales Transaction ID. At close of business on the settlement date, the batch process flips the ownership to ACTIVE using the closing balance and posts the sale journal entries. This example shows the pending-to-active transition and the two COB journal entries for a full sale.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Transfer status</th>
+<th>Loan balance</th>
+<th>Asset owner</th>
+<th>Journal entries</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>March 10</td>
+<td>Sale requested</td>
+<td>PENDING</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>None</td>
+</tr>
+<tr>
+<td>March 11</td>
+<td>End of day before settlement</td>
+<td>PENDING</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>None</td>
+</tr>
+<tr>
+<td>March 12</td>
+<td>Close of business on settlement date</td>
+<td>ACTIVE</td>
+<td>1,000.00</td>
+<td>INV-001</td>
+<td>DR 145600 CR 112601 /112603; DR 112601 /112603 CR 145600</td>
+</tr>
+</tbody></table>
+<p>A sale is requested on an active loan whose balance has already reached 0.00 before close of business. The API returns OK because the request itself is valid, but the COB batch finds a zero balance and declines the ownership change. No Asset Owner ID is persisted and no journal entries are posted; an event is published for the declined ownership change. If the balance were less than 0.00 instead of exactly 0.00, the outcome is identical: the transfer is declined and no ownership change is recorded. This example shows that a valid sale request still fails at COB when the closing balance is 0.00 or less.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Transfer status</th>
+<th>Loan balance</th>
+<th>Asset owner</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>March 10</td>
+<td>Sale requested</td>
+<td>PENDING</td>
+<td>0.00</td>
+<td>PayPal</td>
+<td>Accepted by API</td>
+</tr>
+<tr>
+<td>March 10</td>
+<td>Close of business runs</td>
+<td>DECLINED</td>
+<td>0.00</td>
+<td>PayPal</td>
+<td>No ownership change; declined event published</td>
+</tr>
+</tbody></table>
+<p>A loan is already owned by investor INV-001 with an ACTIVE transfer. A business manager initiates a buyback because the account is flagged as fraud. The request carries Buyback Transfer ID BB-001 and a Settlement Date equal to the current business date. At close of business, the ownership record is marked inactive, the Buyback Transaction ID is persisted, and the sale journal entries are reversed. This example shows that a buyback deactivates investor ownership and reverses the COB accounting entries.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Ownership status</th>
+<th>Loan balance</th>
+<th>Asset owner</th>
+<th>Journal entries</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>March 10</td>
+<td>Sale completed at close of business</td>
+<td>ACTIVE</td>
+<td>1,000.00</td>
+<td>INV-001</td>
+<td>DR 145600 CR 112601 /112603; DR 112601 /112603 CR 145600</td>
+</tr>
+<tr>
+<td>March 11</td>
+<td>Buyback requested</td>
+<td>PENDING</td>
+<td>1,000.00</td>
+<td>INV-001</td>
+<td>None until close of business</td>
+</tr>
+<tr>
+<td>March 11</td>
+<td>Close of business runs</td>
+<td>INACTIVE</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>DR 112601 /112603 CR 145600; DR 145600 CR 112601 /112603</td>
+</tr>
+</tbody></table>
+<p>A sale transfer is left PENDING during the day. Before close of business, a buyback is requested for the same loan and the same settlement date. Because sale and buyback happen the same day, no GL entries are created; instead both transfers are cancelled and two CANCELLED events are published, one for the sale and one for the buyback. This example shows that same-day sale and buyback cancel each other without touching the ledger.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Transfer status</th>
+<th>Loan balance</th>
+<th>Asset owner</th>
+<th>Events published</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>March 10</td>
+<td>Sale requested</td>
+<td>PENDING</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>None</td>
+</tr>
+<tr>
+<td>March 10</td>
+<td>Buyback requested same day</td>
+<td>CANCELLED</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>CANCELLED for sale; CANCELLED for buyback</td>
+</tr>
+<tr>
+<td>March 10</td>
+<td>Close of business runs</td>
+<td>CANCELLED</td>
+<td>1,000.00</td>
+<td>PayPal</td>
+<td>No journal entries</td>
+</tr>
+</tbody></table>

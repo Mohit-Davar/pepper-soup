@@ -1,0 +1,249 @@
+<h2>Charge-Off Interest Accruals</h2>
+<h3>Charge-off behaviour overview</h3>
+<p>Charge-off behaviour controls how interest accrues once a loan charges off and applies only to Progressive loan products where interest is not zero. Interest is calculated until the charge-off date, and repayment interest is irrelevant. The behaviour is stored with the product definition as a field on the loan product.</p>
+<p>The available charge-off behaviour options are:</p>
+<ul>
+<li>Regular (default)</li>
+<li>Zero interest after charge-off</li>
+<li>Accelerate maturity to charge-off date</li>
+</ul>
+<p>Configuration rules:</p>
+<ul>
+<li>If the charge-off behaviour variable is not set, the default is Regular.</li>
+<li>If the variable is set, it is validated as a valid value using ENUM validation with the string name.</li>
+<li>Whether charge-off behaviour is supported for the loan product is validated.</li>
+<li>If a loan product is not progressive or does not have interest or interest recalculation is not enabled, only Regular charge-off behaviour is supported.</li>
+<li>Charge-off behaviour cannot be updated on loan level.</li>
+<li>If charge-off behaviour changes on the product, existing loan accounts remain unaffected.</li>
+</ul>
+<p>User interface:</p>
+<ul>
+<li>The loan product Settings page includes a Charge-off behaviour selector located after the down payment section.</li>
+<li>The charge-off behaviour selector is available on the UI for loan products.</li>
+<li>When a loan is opened, the Account details section may show the charge-off behaviour value.</li>
+</ul>
+<p>Charge-off processing:</p>
+<ul>
+<li>Once a loan charges off, interest accruals stop; the schedule is adjusted to remove interest projections on future periods after charge off and to proportionally decrease interest on the current period where charge off occurred.</li>
+<li>Once accounting entries have posted for charge off, no further interest accruals can occur on the loan; any further debit or credit adjustments post charge off go through the charged off accounting treatment.</li>
+<li>Any repayment reversal before charge off reverses or replays the charge off and increases the charged off principal and interest amounts.</li>
+<li>Accounting treatments are differentiated between FRAUD and non FRAUD after charge off.</li>
+<li>Interest accrual stops when the loan moves to charge-off state; in case of reversal of charge off, accruals resume and are re-added for past items.</li>
+<li>Main elements are changing schedule future interest to $0, no accrual job, and transaction and validation of journal entries.</li>
+</ul>
+<p>Loan product related configuration is stored on loan level.</p>
+<h3>Zero interest after charge-off</h3>
+<p>Zero interest after charge-off applies when the loan product is progressive and interest recalculation is disabled. For interest recalculation = true loans, only the way of calculating interest till the charge-off date changes; the rest is the same. When charge-off is applied, interest becomes zero after the charge-off date and all future interest is set to zero. No interest is added for charged-off loans with this setting.</p>
+<p>The system recalculates interest for the partial period on the current instalment up to the charge-off date:</p>
+<ul>
+<li>The period from date is exclusive and the charge-off date is inclusive.</li>
+<li>A new schedule is created with zero interest for future instalments and fractional interest for the current instalment up to the charge-off date.</li>
+<li>Principal due on the period increases with the difference between the original interest of the period and the new interest of the period after charge-off.</li>
+<li>Principal due amount increases with the amount of interest that got removed.</li>
+<li>On the last unpaid installment, principal due is set to the remaining loan balance.</li>
+</ul>
+<p>Interest is added when a loan has a reverted charged-off transaction, and reversal of charge-off restores the original schedule and interest.</p>
+<blockquote>
+<p><strong>Note:</strong> Accelerate maturity to charge-off date comes later.</p>
+</blockquote>
+<h3>Post-charge-off transactions and reprocessing</h3>
+<p>When a repayment or other monetary activity occurs after charge-off, the system processes it using existing repayment periods and does not recalculate interest as if the loan were still active. Transactions before the charge-off transaction can recalculate interest, while transactions after it cannot.</p>
+<p>The system applies different processing depending on when the activity occurs relative to the charge-off transaction:</p>
+<ul>
+<li>Before charge-off, interest is recalculated for early or late repayment.</li>
+<li>After charge-off, payment allocation is handled instead of interest recalculation.</li>
+<li>If a backdated repayment or other monetary activity occurs, reprocess the transactions.</li>
+</ul>
+<p>Charge-off calculations reflect interest up to the charge-off date:</p>
+<ul>
+<li>The charge-off transaction includes the proper interest portion when an early repayment fully pays an installment on a progressive interest-bearing loan product with interest recalculation enabled and the Zero interest after Charge-off strategy.</li>
+<li>Charged interest is calculated until the charge-off date and appears on the charge-off transaction, including for periods closed and marked fully paid by early repayment where interest for remaining days is recognized in the next period.</li>
+</ul>
+<h3>Scheduled jobs and exclusions</h3>
+<p>Scheduled jobs skip loans that have an unreverted charge-off transaction. When a charge-off loan is reversed, the accrual job runs and creates the accruals.</p>
+<p>The charge-off exclusion applies to these scheduled jobs:</p>
+<ul>
+<li>Accrual Activity Posting</li>
+<li>Add Accrual Transactions</li>
+<li>Add Accrual Transactions For Loans With Income Posted As Transactions</li>
+<li>Add Periodic Accrual Transactions</li>
+<li>Recalculate Interest for Loans</li>
+</ul>
+<h3>Charge-off accounting treatments</h3>
+<p>Charge-off accounting uses charge-off reasons when they are configured. Users map charge-off reason codes to expense GL accounts through an Advanced Accounting Rule. When such a rule exists, it takes priority over the standard Charge-off Expense and Charge-off Expense fraud configuration; otherwise the system falls back to the original configuration based on the fraud flag set at the loan account.</p>
+<p>The following rules apply to charge-off reason-to-GL-account mapping:</p>
+<ul>
+<li>Multiple rules can be configured, but the same reason code cannot be configured twice.</li>
+<li>For one charge-off reason code, only one GL account can be configured.</li>
+<li>The same GL account can be configured for multiple charge-off reasons.</li>
+<li>Only an Expense account can be configured.</li>
+<li>The charge-off reason code value id must be a valid, existing id of a charge-off reason code value.</li>
+<li>The expense GL account id must be a valid, existing Expense GL account id.</li>
+<li>Backend validation is performed.</li>
+<li>An Advanced Accounting Rule maps charge-off reason code with accounting mapping.</li>
+</ul>
+<p>The following UI and backend capabilities support charge-off accounting mapping:</p>
+<ul>
+<li>Users can map charge-off reasons to any expense GL account dropdown.</li>
+<li>Users can map one or multiple charge-off reason codes to GL account(s).</li>
+<li>A new Advanced Accounting Rule configuration is added to UI and backend to map charge-off reason code with accounting mapping.</li>
+<li>When advance accounting is mapped, the default mapping for fraud flag is overridden.</li>
+</ul>
+<h3>Charge-off reason code configuration constraints</h3>
+<p>A charge-off reason code is stored as a Long value. If a reason code is configured on any loan product as an Advanced Accounting rule for Charge-off reason, it cannot be deleted. Before deleting a reason code, check whether it is configured on any loan product as an Advanced Accounting rule for Charge-off reason and prevent deletion if it is.</p>
+<p>New charge-off options may be available for non-interest bearing, progressive loan products.</p>
+<p>For interest bearing products, interest accrual can be suspended once a loan charges off.</p>
+<p>Interest till charge-off date = (total interest of the period) / (number of days of the period) * (number of days till charge-off date).</p>
+<h3>Worked examples</h3>
+<p>Example figures are illustrative. A progressive loan product charges interest on a principal of 1,000 at 12% a year, which is 1% a month. The loan has three monthly installments and 30-day months. Interest accrues until the charge-off date, which falls on day 15 of the second period. The schedule removes interest on all future periods, prorates interest on the current period up to the charge-off date, and adds the removed interest to the principal due on that period. If the product uses zero interest after charge-off instead of prorated interest, the current-period interest is removed entirely and added to principal.</p>
+<p>The table shows the schedule before charge-off, the adjusted current period, the future period with zero interest, and the totals before and after.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Day 30</td>
+<td>340.00</td>
+<td>330.00</td>
+<td>10.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2 (original)</td>
+<td>Day 60</td>
+<td>340.00</td>
+<td>333.30</td>
+<td>6.70</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>2 (charge-off day 15)</td>
+<td>Day 60</td>
+<td>340.00</td>
+<td>336.65</td>
+<td>3.35</td>
+<td>333.35</td>
+</tr>
+<tr>
+<td>3 (future)</td>
+<td>Day 90</td>
+<td>333.35</td>
+<td>333.35</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals before</td>
+<td>-</td>
+<td>1,020.07</td>
+<td>1,000.00</td>
+<td>20.07</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Totals after</td>
+<td>-</td>
+<td>1,013.35</td>
+<td>1,000.00</td>
+<td>13.35</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>A charged-off loan writes off principal of 800.00, interest of 120.00, fees of 50.00 and a penalty of 30.00. Accounting entries depend on the charge-off reason. When no advanced accounting rule is configured, the fraud flag chooses the expense account: a fraud reason debits Credit Loss/Bad Debt Fraud for the principal, while a delinquent reason debits Credit Loss/Bad Debt. Interest, fees and penalty use their fixed charge-off accounts. If an advanced accounting rule maps the reason to a custom expense account, that account takes priority over the default fraud configuration.</p>
+<p>The table compares default accounting entries for fraud and delinquent reasons and shows that a configured advanced accounting rule replaces the default fraud account.</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th>Component</th>
+<th>Amount</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fraud (default)</td>
+<td>Principal</td>
+<td>800.00</td>
+<td>Credit Loss/Bad Debt Fraud</td>
+<td>Loans Receivable</td>
+</tr>
+<tr>
+<td>Fraud (default)</td>
+<td>Interest</td>
+<td>120.00</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Delinquent (default)</td>
+<td>Principal</td>
+<td>800.00</td>
+<td>Credit Loss/Bad Debt</td>
+<td>Loans Receivable</td>
+</tr>
+<tr>
+<td>Delinquent (default)</td>
+<td>Interest</td>
+<td>120.00</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Advanced rule (fraud)</td>
+<td>Principal</td>
+<td>800.00</td>
+<td>Charge-off-fraud expense</td>
+<td>Loans Receivable</td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000 is disbursed on day 1 with a single 30-day period carrying 10.00 interest. An early repayment on day 15 fully pays the period, bringing the balance to zero. The loan is then charged off on day 20. Because the period was closed and fully paid early, the interest for the remaining days until charge-off is still recognized on the charge-off transaction.</p>
+<p>The table traces the disbursement, the early repayment, and the charge-off interest recognized for days 16 through 20.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursed</td>
+<td>Day 1</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Early repayment fully pays period</td>
+<td>Day 15</td>
+<td>-1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Charge-off recognizes interest for days 16-20</td>
+<td>Day 20</td>
+<td>0.00</td>
+<td>1.67</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Charge-off transaction interest portion</td>
+<td>-</td>
+<td>-</td>
+<td>1.67</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="charge-off-balances"><ri:page ri:content-title="Charge-Off Balances"/><ac:plain-text-link-body><![CDATA[Charge-Off Balances: Charge-Off Balances]]></ac:plain-text-link-body></ac:link>.</p>

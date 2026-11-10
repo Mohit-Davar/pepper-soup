@@ -1,0 +1,152 @@
+<h2>Financial Year-End</h2>
+<p>Financial year-end lets you close a fiscal year by manually calculating profit and loss and posting the result as a manual journal entry. Manual journal entries can be posted at asset owner level when asset externalization is enabled, and you can specify the asset owner for each entry.</p>
+<p>The trial balance summary report reflects manual journal entries that include asset owner details.</p>
+<ul>
+<li>The trial balance summary report includes manual journal entry data with asset owner details.</li>
+</ul>
+<p>A four-installment loan of 1,000 is disbursed on 1-Aug. A 250 down payment reduces the principal to 750 and the first installment to 0. A payment holiday approved on 5-Aug extends the remaining installments. The figures below are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Holiday</th>
+<th>New maturity</th>
+<th>Installment 2</th>
+<th>Installment 3</th>
+<th>Installment 4</th>
+<th>Final balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 month</td>
+<td>1-Dec</td>
+<td>10/1</td>
+<td>11/1</td>
+<td>12/1</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2 months</td>
+<td>1-Jan</td>
+<td>11/1</td>
+<td>12/1</td>
+<td>1/1</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>With a two-month holiday, every remaining due date shifts one month later compared with a one-month holiday.</p>
+<p>A four-installment loan of 1,000 is disbursed on 1-Aug. The down payment fails, so the principal stays at 1,000 and all four installments of 250 remain due. A two-month payment holiday approved on 5-Aug extends only future installments; the installment already due on 8/1 is not extended.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Installment due</th>
+<th>Treatment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Aug</td>
+<td>Disbursed</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>Down payment failed</td>
+</tr>
+<tr>
+<td>8/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>Past due, not extended</td>
+</tr>
+<tr>
+<td>5-Aug</td>
+<td>Holiday approved</td>
+<td>1,000.00</td>
+<td>-</td>
+<td>Maturity moved to 1-Jan</td>
+</tr>
+<tr>
+<td>1-Oct</td>
+<td>Payment</td>
+<td>500.00</td>
+<td>250.00</td>
+<td>Principal reduced</td>
+</tr>
+<tr>
+<td>1-Nov</td>
+<td>Payment</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>Principal reduced</td>
+</tr>
+<tr>
+<td>1-Dec</td>
+<td>Payment</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>Loan repaid</td>
+</tr>
+</tbody></table>
+<p>A four-installment loan of 1,000 is disbursed on 1-Aug. The down payment is completed and then reversed, restoring the principal to 1,000. An NSF fee adds 15 to the penalty balance, making the second installment 265. A real-time payment on 3-Aug reduces the principal to 750 and settles the first installment. A one-month payment holiday approved on 5-Aug extends the remaining installments.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Penalty</th>
+<th>Installment due</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Aug</td>
+<td>Disbursed</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>2-Aug</td>
+<td>Down payment reversed</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>Principal restored</td>
+</tr>
+<tr>
+<td>2-Aug</td>
+<td>NSF fee applied</td>
+<td>1,000.00</td>
+<td>15.00</td>
+<td>265.00</td>
+<td>Fee added to installment 2</td>
+</tr>
+<tr>
+<td>3-Aug</td>
+<td>Real-time payment</td>
+<td>750.00</td>
+<td>15.00</td>
+<td>0.00</td>
+<td>Installment 1 settled</td>
+</tr>
+<tr>
+<td>5-Aug</td>
+<td>Holiday approved</td>
+<td>750.00</td>
+<td>15.00</td>
+<td>-</td>
+<td>Maturity moved to 1-Dec</td>
+</tr>
+<tr>
+<td>1-Oct</td>
+<td>Payment</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>265.00</td>
+<td>Principal and penalty paid</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="pay-in-3-and-4"><ri:page ri:content-title="BNPL"/><ac:plain-text-link-body><![CDATA[BNPL: Pay in 3 and 4]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="asset-externalization"><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization: Asset Externalization]]></ac:plain-text-link-body></ac:link>.</p>

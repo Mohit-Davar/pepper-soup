@@ -1,0 +1,144 @@
+<h2>Fixed-Length Loans</h2>
+<p>Fixed-length loans let you set a fixed tenure for a loan account. The feature applies only to zero-interest bearing loan accounts that use the advance payment allocation strategy. Fixed length and fixed length frequency appear under the term section of the loan product configuration, and values stored at the product level are inherited by the loan account. You can also change the fixed length value at the loan account creation level.</p>
+<p>The following rules govern fixed-length loans:</p>
+<ul>
+<li>Fixed length frequency always matches the frequency set at the product level or the loan account level.</li>
+<li>Frequency stays the same for loan term, repay every, and fixed length.</li>
+<li>All installments honor the repayment frequency, and fixed length tenure days adjust to the last installment only.</li>
+<li>Already paid installments remain intact when you extend the repayment schedule.</li>
+<li>Unpaid installments before the reschedule from installment date remain intact.</li>
+<li>Extending the repayment period can change the fixed length as configured for the loan.</li>
+<li>Changing the repayment date, introducing a midterm grace period, or adjusting the interest rate for the remainder of the loan does not affect the duration of the last installment adjusted due to fixed length configuration.</li>
+<li>Payment holiday, skip payment, or reschedule keeps the length in days of the last installment the same as before and honors the fixed length defined.</li>
+<li>Post maturity scenarios, N+1, chargeback, and CBR functionalities work as designed and are not affected by fixed length configuration.</li>
+<li>Extending the schedule by changing the repayment schedule is fine.</li>
+</ul>
+<p>Validation and configuration behaviour:</p>
+<ul>
+<li>The system does not approve a fixed length configuration when it cannot derive the number of repayments entered.</li>
+<li>Fixed length is a user-entered field at both loan product and loan account level.</li>
+<li>The repay every frequency field value appears next to the fixed length field in the UI because the frequency field is not introduced and inherits from the loan regular frequency.</li>
+</ul>
+<p>A loan officer creates a zero-interest fixed-length loan with a principal of 900.00, three repayments every 15 days, and a fixed length of 40 days. The figures are illustrative. The normal term would be 45 days, so the system keeps the first two installments at 15 days each and shortens only the last installment to 10 days so the schedule ends on day 40. If the fixed length were 50 days instead, the last installment would run 20 days rather than 10.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Day</th>
+<th>Days</th>
+<th>Principal paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>0</td>
+<td>—</td>
+<td>900.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Installment 1</td>
+<td>15</td>
+<td>15</td>
+<td>300.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>30</td>
+<td>15</td>
+<td>300.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>40</td>
+<td>10</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>—</td>
+<td>40</td>
+<td>900.00</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>A product administrator enters a fixed length of five months for a zero-interest loan that requires six monthly repayments with one month between repayments. The system does not approve the setup because the fixed length cannot derive six repayments: five monthly intervals already require six months, leaving no days for the final installment. This shows the validation that blocks a fixed length too short to produce the requested number of repayments.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Number of repayments</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Repay every</td>
+<td>1 month</td>
+</tr>
+<tr>
+<td>Minimum fixed length</td>
+<td>6 months</td>
+</tr>
+<tr>
+<td>Entered fixed length</td>
+<td>5 months</td>
+</tr>
+<tr>
+<td>System decision</td>
+<td>Not approved</td>
+</tr>
+</tbody></table>
+<p>A loan officer reschedules a zero-interest loan with three repayments every 15 days and a fixed length of 40 days. The second installment is moved from day 30 to day 35, and the third installment moves to day 45. The system keeps the last installment at 10 days, so the fixed-length adjustment on the final installment is unchanged even though the middle gap widens. A normal reschedule shifts dates but leaves the last installment’s day count untouched; only an extend-term reschedule may alter the fixed length itself.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Day</th>
+<th>Days</th>
+<th>Principal paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>0</td>
+<td>—</td>
+<td>900.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Installment 1</td>
+<td>15</td>
+<td>15</td>
+<td>300.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Installment 2 (rescheduled)</td>
+<td>35</td>
+<td>20</td>
+<td>300.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>45</td>
+<td>10</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>—</td>
+<td>45</td>
+<td>900.00</td>
+<td>—</td>
+</tr>
+</tbody></table>

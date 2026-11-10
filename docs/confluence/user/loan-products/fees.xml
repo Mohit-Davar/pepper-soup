@@ -1,0 +1,1393 @@
+<h2>Buy-Down Fees</h2>
+<h3>Feature overview</h3>
+<p>Buy-down fees are a unique transaction type used to post the buy-down fee to the loan account. They allow merchant fees to be collected at disbursement and amortized into interest income over the loan lifecycle. The buy-down fee amount does not affect the schedule calculation or interest calculation, and it can be recorded as either interest income or fees income.</p>
+<p>Buy-down fees can be added in two ways:</p>
+<ul>
+<li>Added at the time of disbursement through API.</li>
+<li>Added from the UI as well.</li>
+</ul>
+<h3>Configuration and enablement</h3>
+<p>Buy Down fees on a loan are enabled and inherited from the loan product. Buy Down fees are configurable at the loan product level and only supported for progressive loans. Once a loan is created, the Buy Down fees configuration is copied from the loan product.</p>
+<p>The loan product capitalized income step screen includes the following Buy Down fee fields:</p>
+<ul>
+<li>Enable Buy down fee.</li>
+<li>Buy down fee calculation type (required).</li>
+<li>Buy down fee strategy (required).</li>
+<li>Buy down fee income type (required).</li>
+<li>Merchant Buy down fee.</li>
+</ul>
+<p>The loan buy down fees tab screen shows:</p>
+<ul>
+<li>Buy Down Fees.</li>
+<li>No Data Found.</li>
+<li>Date.</li>
+<li>Fee Amount.</li>
+<li>Amortized Amount.</li>
+<li>Not Yet Amortized Amount.</li>
+<li>Adjusted Amount.</li>
+<li>Charged Off Amount.</li>
+</ul>
+<p>Buy Down fees configuration is included in the same tab as Capitalized Income configuration, renamed to &#39;Deferred Income Recognition&#39;.</p>
+<h3>Adding buy-down fees</h3>
+<p>You can add Buy Down fees to a loan after disbursement through the API or manually through the UI. The transaction date must be on or after the first disbursement date. Supported fields are Amount, Transaction date, Payment type, Note, and External id.</p>
+<p>Adding Buy Down fees produces the following results:</p>
+<ul>
+<li>A new transaction of type Buy Down fees is created with the Buy Down fees amount.</li>
+<li>Buy Down fees is treated as an Income portion (Interest or Fees).</li>
+<li>Buy Down fees does not affect the loan schedule calculation, recalculation, or interest calculation.</li>
+</ul>
+<p>Buy Down fees events include:</p>
+<ul>
+<li>Adding Buy Down fees.</li>
+<li>Daily amortization.</li>
+<li>Buy Down fees Adjustment.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> When a Buy Down fees transaction is reversed, all already amortized amounts are corrected in a Buy Down fees amortization adjustment transaction using mirror JE entries, handled by COB, and the related buy down fee balance is deleted.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Loan Disbursed" as n1
+  state "Loan Active" as n2
+  state "Buy Down Fees Added" as n3
+  state "Buy Down Fees Reversed" as n4
+  n1 --> n2
+  n2 --> n3 : Add Buy Down Fees
+  n3 --> n4 : Reverse Transaction]]></ac:plain-text-body></ac:structured-macro>
+<h3>Amortization and income recognition</h3>
+<p>Buy-down fees amortize daily like Capitalized Income, moving deferred income to income over time. A daily job performs the amortization and updates the buy-down fee balance to track amortized and not yet amortized amounts. The configured amortization strategy determines the amortization portion, the GL mapping, and whether the fee is treated as fee or interest.</p>
+<p>Amortization rules:</p>
+<ul>
+<li>Equal amortization divides the fee by the number of days.</li>
+<li>Formula-based amortization applies when configured.</li>
+<li>Rounding uses the configured rounding mode on the calculated amount.</li>
+<li>If a loan is preclosed on the same day, final amortization recognizes all remaining deferred income as income at once.</li>
+<li>Once a loan is paid off, realized income is not reversed.</li>
+<li>An adjustment transaction can correct deferred income recognized at end of day.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Daily amortization job runs"]
+  n2["Calculate amortization amount"]
+  n3["Round calculated amount"]
+  n4["Update buy down fee balance"]
+  n5["Recognize deferred income"]
+  n6["Loan preclosed same day"]
+  n7["Final amortization of remaining balance"]
+  n8["Adjustment transaction if needed"]
+  n9["Income realized, no reversal"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 -->|"Same day preclose"| n7
+  n7 --> n8
+  n8 --> n9
+  n5 --> n9]]></ac:plain-text-body></ac:structured-macro>
+<h3>Buy-down fee balance tracking</h3>
+<p>The system maintains a current deferred buy-down fee balance at the loan level. Balances are tracked on both the loan and the buy-down fee transaction basis and are maintained over buy-down fee events.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan</td>
+<td>The loan the buy-down fee balance record links to.</td>
+</tr>
+<tr>
+<td>Buy-down fee transaction</td>
+<td>The transaction the balance record links to.</td>
+</tr>
+<tr>
+<td>Buy-down fee amount</td>
+<td>The amount stored on the balance record.</td>
+</tr>
+<tr>
+<td>Date</td>
+<td>The date stored on the balance record.</td>
+</tr>
+<tr>
+<td>Not yet recognized income</td>
+<td>Income stored on the balance record that has not yet been recognized.</td>
+</tr>
+<tr>
+<td>Charged-off buy-down fee amount</td>
+<td>The charged-off amount stored on the balance record.</td>
+</tr>
+<tr>
+<td>Adjustment buy-down fee amount</td>
+<td>The adjustment amount stored on the balance record.</td>
+</tr>
+</tbody></table>
+<p>For example, a buy-down fee dated 2/1/2025 has an amount of 50.</p>
+<h3>Early payoff and charge-off</h3>
+<p>When a loan is paid off early, any remaining deferred income balance is accelerated. When a loan balance is charged off, any deferred income balance is charged off as well.</p>
+<p>Early payoff and charge-off handling works as follows:</p>
+<ul>
+<li>Early payoff scenarios include full prepayment with balance acceleration and partial prepayment handling.</li>
+<li>Charge-off charges off the Buy Down fees and stops daily amortization after the charge-off date.</li>
+<li>Any not yet recognized balance moves to Charge-off and a final amortization with journal entries is created.</li>
+<li>The amount that should have been amortized is calculated and differences are corrected with Amortization/Amortization Adjustment journal entries.</li>
+<li>Undo charge-off undoes the charge-off final amortization transaction and adjusts accounting entries, but does not undo the amortization transaction because it is a catch-up.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> No further amortization occurs after a charge-off date.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Active loan" as n1
+  state "Early payoff" as n2
+  state "Charge-off" as n3
+  state "Undo charge-off" as n4
+  n1 --> n2 : Full or partial prepayment
+  n1 --> n3 : Loan balance charged off
+  n3 --> n4 : Undo charge-off]]></ac:plain-text-body></ac:structured-macro>
+<h3>Buy-down fee adjustments</h3>
+<p>You can add a Buy-down fee adjustment transaction to a loan account through the API or UI. It adjusts or credits the deferred income and does not affect the loan balance.</p>
+<p>The following rules apply to Buy-down fee adjustments:</p>
+<ul>
+<li>An adjustment can only be invoked on an existing Buy-down fees transaction and uses relation type ADJUSTMENT from the adjustment to the original transaction.</li>
+<li>Multiple adjustments are allowed on the same original Buy-down fees transaction, provided the transaction is not reverted.</li>
+<li>The adjustment transaction date cannot be earlier than the original transaction date.</li>
+<li>The total adjustment amount cannot exceed the original transaction amount, and total Buy-down fees adjustment cannot be more than the original Buy-down fees transaction.</li>
+<li>An adjustment can be done backdated and its accounting entries mirror Buy-down fees entries.</li>
+<li>There is no allocation strategy for Buy-down Fees Adjustment.</li>
+</ul>
+<p>The system updates balances and relations as follows:</p>
+<ul>
+<li>The related Buy-down Fee Balance is updated by adding the adjustment amount to the adjustment amount.</li>
+<li>Created adjustment transactions list relations with relation type ADJUSTMENT between the original Buy-down fees transaction and the Buy-down fees Adjustment transaction.</li>
+</ul>
+<p>Reversal behaviour:</p>
+<ul>
+<li>A not yet reversed Buy-down fees transaction can be reversed if there is no not yet reversed Buy-down fees Adjustment belonging to that transaction.</li>
+<li>A not yet reversed Buy-down fees Adjustment transaction can be reversed with mirror JE entries passed for the reversal entry.</li>
+<li>Reversing a Buy-down fees Adjustment transaction updates the related buy-down fee balance by subtracting the amount from the adjustment amount.</li>
+</ul>
+<h3>Accounting entries</h3>
+<p>Buy-down fee accounting uses journal entries that differ between merchant and non-merchant lending. The customer sees no impact or visibility for fee amortization or daily income recognition, and buy-down fees do not appear in customer-facing schedules or statements.</p>
+<p>Accounting treatment depends on the lending type:</p>
+<ul>
+<li>For merchant lending, the EXPENSE parameter is shown for mapping at the UI loan product level.</li>
+<li>For non-merchant lending, the EXPENSE parameter is hidden and the system takes the Fund Source parameter mapped GL for accounting.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Buy-down fee (non-merchant)</td>
+<td>Parameter Fund Source Type ASSET GL cash at hand</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+</tr>
+<tr>
+<td>Buy-down fee amortization (non-merchant)</td>
+<td>NEW parameter Buy Down fees Amoritzation Type Income GL Interest/fees Income</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+</tr>
+<tr>
+<td>Buy-down fee amortization in charge-off (non-merchant)</td>
+<td>charge-off expense/charge-off expense-bad dept GL credit loss-bad dept/credit loss-bad dept-fraud</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+</tr>
+<tr>
+<td>Buy-down fee adjustment (non-merchant)</td>
+<td>Parameter Fund Source Type ASSET GL cash at hand</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+</tr>
+</tbody></table>
+<p>Adding a buy-down fee adjustment transaction has no impact on the loan balance.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Deferred Income mapping (Liability, GL: Deferred Income)</th>
+<th>Second mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Daily Amortization (charge-off)</td>
+<td>charge-off expense/charge-off expense-bad dept or credit loss-bad dept/credit loss-bad dept-fraud</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Daily Amortization (buy-down fee amortization)</td>
+<td>Buy Down fees Amortization parameter (Income, GL: Interest/fees Income)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Daily Amortization (pay-off)</td>
+<td>Buy Down fees Amortization parameter (Income, GL: Interest/fees Income)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Daily Amortization (write-off)</td>
+<td>Losses written off parameter (Expense, GL: Written off)</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>A new type of origination fees adjustment or credit is introduced. If the fees adjustment amount is greater than unrecognized income, the difference is credited or debited from the Income account.</p>
+<p>When Buy Down fees is enabled on a loan product, the following accounts and mappings apply:</p>
+<ul>
+<li>A new Expense account named Buy Down Expense is configured for periodical accounting, available only for progressive loans.</li>
+<li>A new Income account named Buy Down fees Amortization is configured for periodical accounting, available only for progressive loans.</li>
+<li>Buy Down Expense and Buy Down fees Amortization mappings are configurable on a loan product.</li>
+<li>New GL account mappings for a loan product are added for Buy Down Expense and Buy Down fees Amortization.</li>
+<li>Buy Down Expense and Buy Down fees Amortization mappings are mandatory fields if Buy Down fees is enabled.</li>
+<li>New mappings are returned as part of loan product details.</li>
+<li>Update of mappings during loan product update is permitted.</li>
+</ul>
+<h3>UI screens and navigation</h3>
+<p>The loan details view includes a Buy Down fees tab when buy down fee capabilities are allowed on the loan, and each buy down fee entry appears in its own details row. You can also open the loan buy down fees tab screen from the loans view by choosing &quot;Buy Down Fees&quot; from the tab links.</p>
+<ol>
+<li>Open the Create Loan Product page.</li>
+<li>Choose &quot;DEFERRED INCOME RECOGNITION&quot; from the stepper to open the loan product capitalized income step screen.</li>
+</ol>
+<h3>Calculation limits and defaults</h3>
+<p>Buy-down fees use a flat calculation mode, with flat as the default and only option. The transaction amount equals whatever amount is given for the buy-down fees. The maximum allowed amount equals the approved loan amount minus the total disbursed amount minus total capitalized income, with total buy-down fees removed from the calculation.</p>
+<p>The following configuration defaults apply to buy-down fees:</p>
+<ul>
+<li>Calculation mode is FLAT.</li>
+<li>Strategy is EQUAL_AMORTIZATION, with daily buy-down fee recognition done by equal portions based on the number of days between the buy-down fee date and the loan maturity date.</li>
+<li>Income type is FEE or INTEREST, with FEE as the default.</li>
+</ul>
+<p>Buy-down fees also follow these rules:</p>
+<ul>
+<li>Deferred balance tracks correctly through the loan lifecycle.</li>
+<li>Payoff and charge-off scenarios are handled correctly.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A loan officer disburses a loan and adds a buy-down fee at disbursement. The fee is collected up front and later amortized into interest income, but it does not alter the repayment schedule or the interest calculation. The figures in this example are illustrative. The buy-down fee appears as a separate deferred amount and never changes the installment amounts shown to the customer.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Payment</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Disbursement plus buy-down fee 120.00</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2/1</td>
+<td>Installment 1</td>
+<td>330.02</td>
+<td>10.00</td>
+<td>340.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Installment 2</td>
+<td>333.32</td>
+<td>6.70</td>
+<td>340.02</td>
+<td>336.66</td>
+</tr>
+<tr>
+<td>4/1</td>
+<td>Installment 3 (final)</td>
+<td>336.66</td>
+<td>3.37</td>
+<td>340.03</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,000.00</td>
+<td>20.07</td>
+<td>1,020.07</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A product administrator sets up equal amount amortization for a buy-down fee. Each day the system moves a fixed portion of the deferred fee into interest or fees income, reducing the deferred balance until it reaches zero. The customer does not see this amortization on statements or schedules. The deferred balance declines by the same amount every day until the fee is fully recognized.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amortization</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Buy-down fee posted</td>
+<td>-</td>
+<td>90.00</td>
+</tr>
+<tr>
+<td>1/2</td>
+<td>Daily amortization</td>
+<td>1.00</td>
+<td>89.00</td>
+</tr>
+<tr>
+<td>1/3</td>
+<td>Daily amortization</td>
+<td>1.00</td>
+<td>88.00</td>
+</tr>
+<tr>
+<td>1/4</td>
+<td>Daily amortization</td>
+<td>1.00</td>
+<td>87.00</td>
+</tr>
+<tr>
+<td>1/5</td>
+<td>Daily amortization</td>
+<td>1.00</td>
+<td>86.00</td>
+</tr>
+<tr>
+<td>3/31</td>
+<td>Final daily amortization</td>
+<td>1.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan officer posts a buy-down fee adjustment to credit part of the deferred income before the loan matures. The adjustment lowers the deferred fee balance but has no effect on the outstanding loan balance or the repayment schedule. Multiple adjustments are allowed, but their total cannot exceed the original buy-down fee. If an adjustment is later reversed, mirror journal entries restore the deferred balance.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Deferred fee balance</th>
+<th>Loan balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Buy-down fee posted</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1/6</td>
+<td>Daily amortization (5 days × 2.00)</td>
+<td>10.00</td>
+<td>90.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Buy-down fee adjustment</td>
+<td>30.00</td>
+<td>60.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3/6</td>
+<td>Daily amortization (5 days × 2.00)</td>
+<td>10.00</td>
+<td>50.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>
+<p>When a borrower pays off a loan early, any buy-down fee that has not yet been amortized is recognized immediately at payoff. After payoff, no further daily amortization occurs and the deferred balance is zero. The unamortized fee is fully recognized at early payoff, so the deferred balance does not carry forward after the loan closes.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amortization</th>
+<th>Deferred balance</th>
+<th>Loan balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Buy-down fee posted</td>
+<td>-</td>
+<td>60.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1/15</td>
+<td>Cumulative daily amortization</td>
+<td>14.00</td>
+<td>46.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1/30</td>
+<td>Scheduled amortization to payoff date</td>
+<td>15.00</td>
+<td>31.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1/30</td>
+<td>Acceleration of remaining deferred income</td>
+<td>31.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<h2>Capitalized Income</h2>
+<h3>Overview and purpose</h3>
+<p>Capitalized Income, formerly referred to as Origination Fee, is a fee-based or interest-based income item added to the principal of a loan at disbursement and amortized over time. It is treated as part of the loan&#39;s principal for repayment and interest calculations, enabling financial institutions to recognize deferred income systematically over the loan term in line with regulatory requirements. This improves income recognition accuracy.</p>
+<h3>Supported loan types</h3>
+<p>Capitalized income is supported only for progressive loans and progressive loan schedules. You can add capitalized income to a loan after disbursement through the API.</p>
+<h3>Configuration at loan product level</h3>
+<p>Capitalized income is configurable at the loan product level. You enable it with a boolean toggle that defaults to disabled. The calculation mode defaults to FLAT and is the only option, while the amortization strategy defaults to Equal amortization and supports only EQUAL_AMORTIZATION. Income type defines allocation rules with FEE as default and INTEREST as option.</p>
+<p>The configuration includes the following options:</p>
+<ul>
+<li>Calculation Mode supports only Flat, which is the default.</li>
+<li>Amortization Strategy supports only EQUAL_AMORTIZATION, with daily equal portions recognized over the life of the loan.</li>
+<li>Income Type offers FEE as the default and INTEREST as an option.</li>
+<li>GL Mapping includes Deferred Income as a Liability and Income from Capitalization as Income.</li>
+</ul>
+<p>Daily capitalized income recognition is done by equal portions based on the number of days between capitalized income date and loan maturity date.</p>
+<p>The system stores the configuration on the loan product as enable_income_capitalization, capitalized_income_calculation_type, capitalized_income_strategy, and capitalized_income_type.</p>
+<h3>Configuration copied to loan</h3>
+<p>When a loan is created, the system copies the Capitalized Income configuration from the loan product to the loan. The copied configuration includes enable_income_capitalization, capitalized_income_calculation_type, capitalized_income_strategy, and capitalized_income_type. Loan-level balances include capitalized_income_derived and capitalized_income_adjustment_derived.</p>
+<h3>GL mapping and accounting setup</h3>
+<p>When income capitalization is enabled on a progressive loan product, you configure GL mapping based on income type (FEE/INTEREST). Proper GL accounts must be set for Deferred Income and Income from Capitalization to enable Capitalized Income functionality.</p>
+<p>The following rules apply to GL mapping for capitalized income:</p>
+<ul>
+<li>A new Liability account named Deferred income must be configured for periodical accounting when capitalized income is enabled on a loan product.</li>
+<li>The Deferred income liability and Income Capitalization income GL mappings can be configured on the loan product when it is a progressive loan and income capitalization is enabled.</li>
+<li>The new GL account mapping for the loan product is a mandatory field if income capitalization is enabled.</li>
+<li>Correct business events are fired for all operations.</li>
+</ul>
+<p>The allocation strategy for Capitalized Income Adjustment applies payments in this order:</p>
+<ul>
+<li>past due Principal</li>
+<li>past due Int</li>
+<li>Past due fees</li>
+<li>Past due Penalty</li>
+<li>due Principal</li>
+<li>due Int</li>
+<li>due fees</li>
+<li>due Penalty</li>
+<li>advance Principal</li>
+<li>advance Int</li>
+<li>advance fees</li>
+<li>advance Penalty</li>
+</ul>
+<h3>Adding capitalized income</h3>
+<p>You add capitalized income to a loan account at disbursement level on the disbursement date only, using the API. The loan must be active, and the transaction date can be any date on or after the first disbursement date.</p>
+<p>The following rules apply when adding capitalized income:</p>
+<ul>
+<li>The system supports payment type, note, and external id for the transaction.</li>
+<li>The amount given is the transaction amount of the capitalized income.</li>
+<li>Capitalized income is available only for progressive loans with income capitalization enabled.</li>
+<li>Validation changes so that disbursement amount plus capitalized income is less than or equal to the approved amount.</li>
+<li>Validation changes so that disbursement amount plus capitalized income is less than or equal to the applied amount.</li>
+</ul>
+<p>Capitalized income is treated as a principal portion that recalculates the repayment schedule and updates interest and amortization schedules to include the capitalized income amount.</p>
+<p>Capitalized income amortization is recognized daily using the configured strategy, moving portions from Deferred Income to Income from Capitalization; on preclosure the remaining balance is recognized in full on the preclosure date; on charge-off amortization stops and the remaining balance is charged off.</p>
+<h3>Validation rules</h3>
+<p>Validation for capitalized income enforces amount limits and date restrictions. Capitalized income and capitalized income adjustment transaction dates cannot be in the future. The disbursement amount plus capitalized income must not exceed the applied amount.</p>
+<h3>Principal treatment and schedule impact</h3>
+<p>Capitalized income is treated as part of the loan principal. It increases outstanding principal and affects both schedule calculation and interest calculation, while allocation and other monetary transactions remain unchanged.</p>
+<p>The capitalized income amount behaves as follows:</p>
+<ul>
+<li>It is added to the loan principal as a deferred income item booked as part of principal.</li>
+<li>It creates a distinct loan transaction tracked separately.</li>
+<li>It updates the repayment schedule to include the added amount in outstanding principal.</li>
+<li>It follows daily amortization through Capitalized Income Amortization transactions.</li>
+<li>It triggers accounting entries debiting Loan Portfolio (Asset) and crediting Deferred Income (Liability).</li>
+<li>A not yet reversed Capitalized Income transaction can be reversed if there is no not yet reversed Capitalized Income Adjustment belonging to it.</li>
+<li>When a Capitalized Income transaction is reversed, all already amortized amounts are corrected in a Capitalized income amortization adjustment transaction with mirror JE entries.</li>
+</ul>
+<h3>Repayment schedule recalculation</h3>
+<p>When a loan is rescheduled and its maturity date changes, the amortization schedule changes with the new maturity date. If the loan is preclosed on the same day, final amortization is done for the balance amount and all remaining not yet recognized capitalized income is recognized as income in one shot. Once a loan is paid off, there is no reversal or anything that undoes the realized income.</p>
+<p>Capitalized income recalculation applies as follows:</p>
+<ul>
+<li>When Capitalized Income is applied on closed or overpaid loans, future installments from the Capitalized Income posting date are recalculated accordingly.</li>
+</ul>
+<h3>Daily amortization process</h3>
+<p>Capitalized income amortization runs daily at close of business for origination fees. It recognizes a portion of deferred income as income each day until maturity or full amortization.</p>
+<p>The daily amortization process works as follows:</p>
+<ul>
+<li>A background close-of-business job performs daily amortization of capitalized income.</li>
+<li>The system uses the Equal Amortization strategy, which divides total capitalized income evenly over the remaining days until maturity.</li>
+<li>The amortization amount equals <code>not yet amortized capitalized income / days between current date and loan maturity date</code>.</li>
+<li>The calculated amount is rounded according to the rounding mode configuration.</li>
+<li>The system creates a new loan transaction of type Capitalized Income Amortization for each daily interest recognition and triggers a new business event.</li>
+<li>Each daily amortization creates new journal entries that debit Deferred Income (Liability) and credit Income from Capitalization (Income).</li>
+<li>Fineract tracks both the amortized and not yet amortized capitalized income balances.</li>
+</ul>
+<p>Amortization posts automatically each day from the capitalized income date until maturity or full amortization. Adjustment transactions must not predate the original capitalized income.</p>
+<p>Once capitalized income is added, a new Capitalized income transaction is created with the capitalized income amount, which is considered a principal portion on the loan transaction.</p>
+<p>Adjustment logic includes proper balance reduction and accounting splits, and reversal handling covers transaction dependencies and mirror entries. No automatic reversal is supported; reversal must be handled manually via dedicated transactions.</p>
+<p>Capitalized Income works with charge-off, preclose, and reschedule integration. All accounting entries must be balanced with proper GL mapping.</p>
+<p>The amortization strategy is based on the configured income type (Fee vs Interest), which determines the GL mapping used.</p>
+<h3>Balance tracking</h3>
+<p>The system tracks capitalized income balances on a loan and on each capitalized income transaction, keeping one balance entry per transaction per loan.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Stored value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan</td>
+<td>Link to the loan</td>
+</tr>
+<tr>
+<td>Capitalized income transaction</td>
+<td>Link to the capitalized income transaction</td>
+</tr>
+<tr>
+<td>Capitalized income amount</td>
+<td>Amount of capitalized income</td>
+</tr>
+<tr>
+<td>Date of capitalized income</td>
+<td>Date the capitalized income was added</td>
+</tr>
+<tr>
+<td>Not yet recognized income</td>
+<td>Income not yet recognized</td>
+</tr>
+<tr>
+<td>Charged-off capitalized income amount</td>
+<td>Amount charged off</td>
+</tr>
+<tr>
+<td>Adjustment capitalized income amount</td>
+<td>Amount adjusted</td>
+</tr>
+</tbody></table>
+<p>Database balances are maintained over events including adding capitalized income and daily amortization of capitalized income.</p>
+<p>Capitalized Income Amortization stops on preclosure by triggering final amortization for remaining unrecognized income, and on charge-off by halting further amortization and charging off the remaining deferred income. If the original Capitalized Income transaction is reversed, all associated amortization transactions are reversed via Capitalized Income Amortization Adjustment transactions.</p>
+<p>The system maintains the fees balance during Amortization as balance minus Capitalized income minus fee credits/adjustments minus fee income recognized.</p>
+<h3>Charge-off behavior</h3>
+<p>Charge-off charges off the capitalized income and stops daily amortization after the charge-off date. Any not yet recognized balance moves to charge-off. Undoing charge-off reverses this behavior and adjusts the accounting entries.</p>
+<p>Once a loan is paid off, nothing reverses or undoes the realized income.</p>
+<h3>Capitalized Income Adjustment</h3>
+<p>A Capitalized Income Adjustment is a credit transaction that reduces the capitalized income balance. You can create it only against an existing capitalized income transaction, and multiple adjustments are allowed against the same original transaction.</p>
+<p>The following rules apply to a Capitalized Income Adjustment:</p>
+<ul>
+<li>The adjustment transaction date cannot be earlier than the original transaction date.</li>
+<li>The total adjustment amount cannot exceed the original transaction amount.</li>
+<li>The adjustment amount is deducted from the remaining not yet recognized amount of the capitalized income balance.</li>
+<li>The adjustment can have its own allocation strategy set.</li>
+<li>The created adjustment transaction lists an ADJUSTMENT relation between the original capitalized income transaction and the adjustment transaction.</li>
+<li>An unreversed adjustment transaction can be reversed, and mirror journal entries are used as the basis for the reversal entry.</li>
+<li>The adjustment can be backdated.</li>
+<li>Accounting entries work like a mirror of capitalized income entries.</li>
+<li>The adjustment reduces loan balances as per the allocation set.</li>
+<li>If a loan is in overpaid state or goes into overpaid, Principal maps to Overpayment amount during Capitalized Income reverse-replay.</li>
+<li>Reverse-replay reuses the same logic as Repayment transaction handling.</li>
+<li>Accounting entry for Capitalized Income on closed or overpaid loans remains CR GL Loan Receivable (Parameter: Loan Portfolio), CR GL Deferred Income GL (Parameter: Defered income mapping).</li>
+<li>It is possible to add a Capitalized Income Adjustment transaction with value equal to the original Capitalized Income transaction.</li>
+<li>Reversing a Capitalized Income transaction triggers a Capitalized Income Amortization Adjustment event, and also triggers standard balance and status update events if the loan is affected.</li>
+</ul>
+<p>Accounting entries depend on whether the adjustment stays within the unrecognized balance.</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Adjustment within the unrecognized balance</td>
+<td>Deferred Income (Liability)</td>
+<td>Loan Portfolio (Asset)</td>
+</tr>
+<tr>
+<td>Adjustment exceeds the unrecognized balance</td>
+<td>Deferred Income plus Income</td>
+<td>Loan Portfolio (Asset)</td>
+</tr>
+</tbody></table>
+<p>The adjustment triggers a Capitalized Income Adjustment event, updates the loan balance and possibly the loan status depending on impact, reduces the amortization basis, and may modify future amortization amounts. It does not directly affect the repayment schedule unless recalculated manually.</p>
+<p>On closed or overpaid loans, the adjustment follows the payment allocation strategy set, and the overpaid amount credits the overpaid portion. No changes are made to the repayment schedule side for the overpaid portion.</p>
+<h3>Capitalized Income Amortization Adjustment</h3>
+<p>A Capitalized Income Amortization Adjustment is generated automatically when a Capitalized Income transaction is reversed. It reverses all amortized income recognized up to that point, restoring Deferred Income balances and reversing income recognition. The adjustment debits Income from Capitalization and credits Deferred Income, and it links to the original Capitalized Income transaction for traceability. It cannot be created manually through the API or UI.</p>
+<h3>Transaction types and accounting entries</h3>
+<p>Capitalized income uses four transaction types: Capitalized Income, Capitalized Income Amortization, Capitalized Income Adjustment, and Capitalized Income Amortization Adjustment. These transactions support backdating.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized Income</td>
+<td>Loan Portfolio (Asset)</td>
+<td>Deferred Income (Liability)</td>
+</tr>
+<tr>
+<td>Capitalized Income Amortization</td>
+<td>Deferred Income (Liability)</td>
+<td>Income from Capitalization (Income)</td>
+</tr>
+<tr>
+<td>Capitalized Income Adjustment</td>
+<td>Deferred Income (Liability) / Income from Capitalization (Income)</td>
+<td>Loan Portfolio (Asset)</td>
+</tr>
+</tbody></table>
+<h3>Business events</h3>
+<p>Fineract triggers external business events when capitalized income is added, adjusted, amortized, or reversed.</p>
+<p>Creating a capitalized income transaction produces two business events:</p>
+<ul>
+<li>LoanCapitalizedIncomeTransactionCreatedBusinessEvent</li>
+<li>LoanBalanceChangedBusinessEvent</li>
+</ul>
+<p>Creating a capitalized income adjustment transaction produces two business events:</p>
+<ul>
+<li>LoanCapitalizedIncomeAdjustmentTransactionCreatedBusinessEvent</li>
+<li>LoanBalanceChangedBusinessEvent</li>
+</ul>
+<p>A capitalized income adjustment updates the loan balance and may update the loan status depending on its impact.</p>
+<p>Daily amortization produces two business events:</p>
+<ul>
+<li>LoanCapitalizedIncomeAmortizationTransactionCreatedBusinessEvent</li>
+<li>LoanCapitalizedIncomeAmortizationAdjustmentTransactionCreatedBusinessEvent</li>
+</ul>
+<p>Reversing a capitalized income transaction produces one business event:</p>
+<ul>
+<li>LoanAdjustTransactionBusinessEvent</li>
+</ul>
+<p>When a capitalized income adjustment exists and the loan is closed or overpaid, the system calculates and creates the capitalized income amortization adjustment in real time during end-of-day processing.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[sequenceDiagram
+  participant n1 as Create Capitalized Income
+  participant n2 as Create Capitalized Income Adjustment
+  participant n3 as Daily Amortization
+  participant n4 as Reversal
+  participant n5 as External Business Events
+  n1->>n5: LoanCapitalizedIncomeTransactionCreatedBusinessEvent, LoanBalanceChangedBusinessEvent
+  n2->>n5: LoanCapitalizedIncomeAdjustmentTransactionCreatedBusinessEvent, LoanBalanceChangedBusinessEvent
+  n3->>n5: LoanCapitalizedIncomeAmortizationTransactionCreatedBusinessEvent, LoanCapitalizedIncomeAmortizationAdjustmentTransactionCreatedBusinessEvent
+  n4->>n5: LoanAdjustTransactionBusinessEvent]]></ac:plain-text-body></ac:structured-macro>
+<h3>UI behavior and display</h3>
+<p>Capitalized income appears on the UI when a progressive loan is selected or when capitalized income capabilities are allowed on the loan.</p>
+<p>The UI shows capitalized income details as follows:</p>
+<ul>
+<li>Each row represents one capitalized income entry.</li>
+<li>The loan deferred income tab shows Deferred income, Capitalized Income, Amount, Amortized Amount, Unrecognized Amount, and Adjustment Amount.</li>
+<li>A Capitalized Income Adjustment transaction does not appear in the Transaction list until the page is refreshed.</li>
+<li>Creating a Capitalized Income Adjustment transaction with a value equal to the Capitalized Income transaction shows an invalid validation message.</li>
+</ul>
+<h3>API response fields</h3>
+<p>Capitalized Income lets you add capitalized income to a loan after disbursement through the API. User documentation for Capitalized Income briefly introduces the functionality and its benefits, refers to the API endpoints in concern, and refers to any configuration that affects it.</p>
+<p>The supported fields are:</p>
+<ul>
+<li>amount</li>
+<li>transaction date on or after the first disbursement date</li>
+<li>payment type</li>
+<li>note</li>
+<li>external id</li>
+</ul>
+<p>Available disbursement amount equals approved loan amount minus total disbursed amount minus total capitalized income when capitalized income functionality is enabled. Schedule calculation and interest calculation are both based on disbursement amount plus capitalized income.</p>
+<p>The Capitalized Income and adjustment transaction response returns office ID, client ID, loan ID, resource ID, changes, and resource external ID like other transactions. Omitting changes in Capitalized Income and adjustment transaction responses is acceptable.</p>
+<h3>Worked examples</h3>
+<p>A loan officer disburses a progressive loan of 1,000 and adds 200 of capitalized income at disbursement. The figures are illustrative. The total principal becomes 1,200. Interest accrues on 1,200 at 12% per year, or 1% per month, and the loan has 3 monthly installments with 30-day months. The 200 capitalized income is treated as principal for the repayment schedule and is amortized daily from deferred income to income from capitalization. This example shows that capitalized income increases the loan principal and is repaid through the normal installments.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>EMI</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Disbursement</td>
+<td></td>
+<td>1,000.00</td>
+<td></td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Capitalized income</td>
+<td></td>
+<td>200.00</td>
+<td></td>
+<td>1,200.00</td>
+</tr>
+<tr>
+<td>2/1</td>
+<td>Installment 1</td>
+<td>408.03</td>
+<td>396.03</td>
+<td>12.00</td>
+<td>803.97</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Installment 2</td>
+<td>408.03</td>
+<td>399.99</td>
+<td>8.04</td>
+<td>403.98</td>
+</tr>
+<tr>
+<td>4/1</td>
+<td>Installment 3</td>
+<td>408.02</td>
+<td>403.98</td>
+<td>4.04</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,224.08</td>
+<td>1,200.00</td>
+<td>24.08</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A capitalized income adjustment reduces the deferred income balance. On a loan with 1,000 disbursed and 200 capitalized income added at disbursement, a loan officer posts an adjustment of 100 on 3/1. The figures are illustrative. The adjustment is a credit transaction. Because 100 does not exceed the remaining unrecognized amount, the entry debits deferred income and credits loan portfolio for 100. The deferred income balance falls from 200 to 100, and future amortization is calculated on the lower amount. If the adjustment exceeded the unrecognized balance, the excess would also debit income from capitalization.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Deferred income balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Capitalized income added</td>
+<td></td>
+<td>200.00</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Adjustment posted</td>
+<td>100.00</td>
+<td></td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>4/1</td>
+<td>Remaining amount recognized</td>
+<td></td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>When a loan ends early, any capitalized income not yet recognized is handled according to the exit type. On the same loan, suppose 100 of the capitalized income remains unrecognized when the loan closes on 3/1. The figures are illustrative. If the loan is preclosed, the remaining 100 is recognized in full on the preclosure date. If the loan is charged off, amortization stops and the remaining 100 is charged off instead. With preclosure the remaining balance becomes income immediately; with charge-off it is charged off and no further daily amortization occurs.</p>
+<table>
+<thead>
+<tr>
+<th>Exit type</th>
+<th>Date</th>
+<th>Unrecognized balance</th>
+<th>Accounting entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Preclosure</td>
+<td>3/1</td>
+<td>100.00</td>
+<td>Debit deferred income, credit income from capitalization 100.00</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>3/1</td>
+<td>100.00</td>
+<td>Debit charge-off expense, credit deferred income 100.00</td>
+</tr>
+</tbody></table>
+<p>Capitalized income is amortized daily using the equal amount strategy. On a loan with 90 of capitalized income and a maturity 90 days after disbursement, the system recognizes 90 divided by 90 each day. The figures are illustrative. Each day recognizes 1.00, reducing the unrecognized balance by the same amount until it reaches zero at maturity. The equal amount strategy spreads the capitalized income evenly across every day until maturity.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Date</th>
+<th>Recognized</th>
+<th>Unrecognized balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1/1</td>
+<td>1.00</td>
+<td>89.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1/2</td>
+<td>1.00</td>
+<td>88.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1/3</td>
+<td>1.00</td>
+<td>87.00</td>
+</tr>
+<tr>
+<td>89</td>
+<td>3/30</td>
+<td>1.00</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>90</td>
+<td>3/31</td>
+<td>1.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>90.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="buy-down-fees"><ri:page ri:content-title="Fees and Capitalized Income"/><ac:plain-text-link-body><![CDATA[Buy-Down Fees]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Fee Classification</h2>
+<p>You can classify capitalized income and BuyDown fee transactions. Classification selection is optional, and when you create such a transaction you may provide a classification that Fineract stores at transaction level; if you do not set one, it remains null. Fineract checks whether a provided classification is valid based on the related codes.</p>
+<p>Classification affects how amortization is stored and reported:</p>
+<ul>
+<li>The system calculates and stores Daily Amortization schedules at each classification level.</li>
+<li>When an adjustment transaction happens, the system recalculates.</li>
+<li>A Daily Amortization transaction can be aggregated to one entry at transaction level, but you can drill down to classification level if required.</li>
+<li>The UI loan transaction details view lists the classification if it is not null.</li>
+</ul>
+<p>An adjustment transaction created for an existing capitalized income or BuyDown fee transaction inherits the target transaction classification, and you cannot set a different classification. This inheritance rule does not apply to amortization transactions because those contain only an aggregated amount.</p>
+<p>You can map a different income GL account for Daily Amortization based on the classification:</p>
+<ul>
+<li>You can map a different income account for Daily Amortization based on the classification at the Advanced accounting rule section.</li>
+<li>You can select a different income GL for Daily Amortization depending on the classification selected.</li>
+<li>For a classification added at a code value, you can define a different credit income account at Advance Accounting rule.</li>
+<li>For different reason code values, you can add a GL entry for Buydown fee or Capitalized income classification mapping.</li>
+</ul>
+<p>Default amortization GL accounts when no classification is selected:</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Debit parameter</th>
+<th>Credit parameter</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized income</td>
+<td>Deferred Income mapping Type Liability GL Deferred Income</td>
+<td>Income from Amortization Type Income GL Interest/fees Income</td>
+</tr>
+<tr>
+<td>Buy Down fees</td>
+<td>Deferred Income mapping Type Liability GL Deferred Income</td>
+<td>Buy Down fees Amortization Type Income GL Interest/fees Income</td>
+</tr>
+</tbody></table>
+<p>When multiple capitalized income or BuyDown fee transactions exist, the system determines the amortization amount as follows:</p>
+<ul>
+<li>When only one transaction exists, the full amount is considered.</li>
+<li>When multiple transactions exist with the same classification, the full amount is considered.</li>
+<li>When multiple transactions exist with different classifications, the system fetches the allocation mapping from the amortization mapping table.</li>
+<li>If the mapping table does not exist or has no entry, the system calculates today’s amortization for each transaction on the fly, groups them by classification, and uses the appropriate income GL account.</li>
+</ul>
+<p>Advanced accounting rules support classification mappings:</p>
+<ul>
+<li>The Advanced accounting rules view adds an option for Capitalized Income with mapping options Classification code values capitalized_income_transaction_classification and GL Income account; one GL account per classification code value maximum; mappings can be added, updated, deleted.</li>
+<li>The Advanced accounting rules view adds an option for Buy down fee with mapping options Classification code values buydown_fee_transaction_classification and GL Income account; one GL account per classification code value maximum; mappings can be added, updated, deleted.</li>
+</ul>
+<p>A new fee type named originiation fees is introduced at the product level. A user can map the originiation fees to a loan product at loan product level. The origination fees amount is flat based and entered by the user. Origination fees are added to the loan account at disbursement level and on disbursement date only.</p>
+<p>Amortization ready schedule source is Amortization Ready Schedule.</p>
+<p>A loan officer creates a $200 buy-down fee on a $1,000 loan and leaves the Classification blank. Because no classification is selected, the system applies the default mapping: it debits the deferred income liability account and credits the standard interest and fees income account as the fee amortizes. The fee is spread evenly over five days at $40.00 per day. The figures in this example are illustrative. This example shows the default ledger postings when no classification is selected.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Deferred income debit</th>
+<th>Interest and fees income credit</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>160.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>120.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>80.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A product administrator adds a classification named Usage Fees and, under the loan product&#39;s Advanced accounting rule, maps it to a dedicated Usage Fees Income account. A loan officer then creates a $300 capitalized income fee and selects Usage Fees. Each day the system debits the deferred income liability account and credits the Usage Fees Income account instead of the default income account. The fee amortizes over six days at $50.00 per day. This example shows that a classification can route daily amortization to a different income account.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Deferred income debit</th>
+<th>Usage Fees Income credit</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>150.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan carries two capitalized income fees: one for $60 and one for $40. When both fees use the same classification, the system treats the full $100 as one pool and posts a single amortization amount under that classification. When the fees use different classifications, the system checks the amortization mapping table; if no entry exists, it calculates each fee&#39;s daily amortization separately and groups the postings by classification. If both fees shared the same classification, the full $100 would post under one classification instead of being split.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>First classification credit</th>
+<th>Second classification credit</th>
+<th>Total credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>20.00</td>
+<td>0.00</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>60.00</td>
+<td>40.00</td>
+<td>100.00</td>
+</tr>
+</tbody></table>
+<p>A buy-down fee of $100 was created with the Setup Fees classification. A loan officer later posts a $25 adjustment against that fee. The adjustment automatically inherits Setup Fees and the officer cannot choose a different classification. Because amortization entries are aggregated, they do not carry a classification. The remaining $75 balance amortizes over five days at $15.00 per day. This example shows that an adjustment inherits the original fee&#39;s classification and cannot be overridden.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Deferred income debit</th>
+<th>Income credit</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>15.00</td>
+<td>15.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>15.00</td>
+<td>15.00</td>
+<td>45.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>15.00</td>
+<td>15.00</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>15.00</td>
+<td>15.00</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>15.00</td>
+<td>15.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="buy-down-fees"><ri:page ri:content-title="Fees and Capitalized Income"/><ac:plain-text-link-body><![CDATA[Buy-Down Fees]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="capitalized-income"><ri:page ri:content-title="Fees and Capitalized Income"/><ac:plain-text-link-body><![CDATA[Capitalized Income]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Charge Amortization</h2>
+<h3>Purpose and accounting basis</h3>
+<p>Some loan charges are earned over the life of the loan rather than when they are booked or paid. Origination, arrangement and processing fees are deferred and recognized as a yield adjustment over the loan term under IFRS 9 5.4.1, B5.4.1–B5.4.3 and US GAAP ASC 310-20.</p>
+<h3>Feature scope and defaults</h3>
+<p>Charge amortization applies to progressive loans and loan fees with the eligible charge time types. It does not apply to cumulative loans, penalties, installment and overdue fees, savings charges, or recalculating historical periods under the effective rate method.</p>
+<p>Patterns, naming and lifecycle semantics match Capitalized Income and Buy-down Fee, and the flat calculation uses shared code rather than a copy.</p>
+<p>The default is NONE everywhere. Existing charges, products and loans behave the same, no data migration is needed, and API changes only add fields.</p>
+<h3>Product and charge setup</h3>
+<p>Charge amortization lets you spread a loan fee over time instead of recognizing it all at once. It applies only to progressive loans that use the advanced-payment-allocation strategy, and only when the loan product has charge amortization enabled. Amortized charges can be attached to a product or added to its loans only while the flag is on; otherwise the system returns a validation error.</p>
+<p>Each loan charge definition carries the following amortization settings:</p>
+<ul>
+<li>Amortization period type: NONE (default), FULL_LOAN_TERM, or NUMBER_OF_DAYS.</li>
+<li>NUMBER_OF_DAYS requires a positive integer amortization days value.</li>
+<li>Amortization calculation type: FLAT (default) or EFFECTIVE_RATE.</li>
+<li>Amortization income type: FEE (default) or INTEREST.</li>
+<li>Only loan fees can be amortized; penalties cannot. Allowed charge time types are DISBURSEMENT, TRANCHE_DISBURSEMENT, and SPECIFIED_DUE_DATE.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Period type</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NONE</td>
+<td>Keeps today&#39;s behaviour: periodic or upfront accrual accrues, cash based recognizes on payment, and none posts no journal entries.</td>
+</tr>
+<tr>
+<td>FULL_LOAN_TERM</td>
+<td>Amortizes over the full loan term.</td>
+</tr>
+<tr>
+<td>NUMBER_OF_DAYS</td>
+<td>Amortizes over the configured positive integer number of days.</td>
+</tr>
+</tbody></table>
+<p>The following rules apply to how amortization is configured and copied:</p>
+<ul>
+<li>EFFECTIVE_RATE is allowed only with FULL_LOAN_TERM.</li>
+<li>The charge definition configuration is copied onto the loan charge when the loan charge is created; later changes to the charge definition do not affect existing loan charges.</li>
+<li>A product can optionally override the charge-level amortization configuration for each attached charge.</li>
+</ul>
+<h3>How amortization works</h3>
+<p>Amortization spreads a charge&#39;s income over the loan term or over a fixed number of days instead of recognizing it all at once. It applies only to charges that have an amortization configuration; charges without one keep today&#39;s behaviour. Amortization runs daily at close of business for origination fees.</p>
+<p>When an amortized charge is applied, the following occurs:</p>
+<ul>
+<li>The full charge amount goes to a deferred income liability and the receivable is booked against it.</li>
+<li>Daily amortization transactions move income from deferred income into income over the configured period and method.</li>
+<li>Accrual does not recognize income for that charge, so income is never counted twice.</li>
+<li>The remaining deferred balance releases in one shot when the loan is fully paid, overpaid, written off or sold, and releases immediately when the loan is charged off.</li>
+<li>Final amortization is done for the balance amount if the loan is preclosed on the same day.</li>
+</ul>
+<p>The system maintains the fees balance during amortization as origination fee minus fee credits minus fee income recognized. No changes occur in any other monetary transactions and their accounting entries.</p>
+<p>The feature reuses the Capitalized Income / Buy-down Fee rulebook: a deferred balance per source, daily close-of-business amortization, allocation mappings, one-shot release on closure, and release linked to the charge-off.</p>
+<p>Today Fineract recognizes charge income depending on the product&#39;s accounting rule: ACCRUAL_PERIODIC accrues periodically (installment or daily accrual), ACCRUAL_UPFRONT accrues fully at disbursement, CASH_BASED is recognized when paid, and NONE creates no journal entries. None of these can spread a fee&#39;s income over the loan term or over a fixed number of days independently of when the fee is due or paid.</p>
+<h3>Daily amortization processing</h3>
+<p>Daily amortization processing runs as part of end-of-day processing and creates at most one amortization transaction per loan per business date. It does nothing for loans without open deferred charge balances.</p>
+<p>The following rules govern how the amortization window and income recognition are determined:</p>
+<ul>
+<li>The amortization window runs from the balance date to either the window end date or the loan&#39;s current maturity date.</li>
+<li>NUMBER_OF_DAYS windows end at the earlier of the start date plus X days or the maturity date.</li>
+<li>A COB run for business date D recognizes income through the end of D, using the day after D as the exclusive end.</li>
+<li>Running COB again for the same business date creates no new transaction; backdated events are corrected by the next run.</li>
+</ul>
+<p>Balance lookups use indexes on loan ID and closed status.</p>
+<h3>Calculation methods</h3>
+<p>The EFFECTIVE_RATE calculation method spreads deferred income across periods and recalculates the effective rate forward after specified events.</p>
+<p>Income is booked daily under EFFECTIVE_RATE as follows:</p>
+<ul>
+<li>Daily booking spreads income evenly by day within each period.</li>
+<li>The group amount is split across charges in proportion to their unrecognized amounts, with the last period receiving the remainder so the total equals the deferred amount.</li>
+<li>After a reschedule, re-age, re-amortization, variable rate change, prepayment that changes future interest, or a new effective-rate charge, the rate is solved again going forward using the current carrying amount, the unrecognized balance, and the remaining cash flows.</li>
+</ul>
+<h3>Transaction handling and allocation</h3>
+<p>When a loan carries several amortized charges, the system combines their amounts into one transaction per day. Each amount remains traceable to its charge through allocation mappings, the read API, and fee income accounts mapped to individual charges. Charge-off releases link to the charge-off transaction.</p>
+<p>The following transaction types are excluded from payment allocation and replay:</p>
+<ul>
+<li>The three new transaction types</li>
+<li>Accrual amortization</li>
+<li>Capitalized Income amortization</li>
+</ul>
+<h3>Permissions and documentation</h3>
+<p>Read access to the new endpoints requires the existing READ_LOAN permission, while configuration changes use the existing charge and loan product permissions. The fineract-doc documentation covers configuration, accounting and the lifecycle rulebook. A loan charge holds a copy of the configuration and verifies that the charge is allowed when added to a loan.</p>
+<h3>Waivers, adjustments, deletions and inactivation</h3>
+<p>When a charge is waived or adjusted, the system increases the charge adjustment from that date, recalculates amortization, and reverses any income already recognized above the new amount using AM_ADJ. Undoing a waiver or reversing a charge adjustment restores the charge adjustment and recalculates amortization. Deleting or inactivating a charge reverses the deferred charge transaction, marks the balance deleted, reverses all recognized income with AM_ADJ, and closes the balance.</p>
+<p>Backdated repayments and reversals are handled as follows:</p>
+<ul>
+<li>A backdated repayment or reversal replay has no effect for FLAT loans.</li>
+<li>For EFFECTIVE_RATE loans, the system recalculates the effective rate only if the cash flows changed.</li>
+</ul>
+<p>Rescheduling, re-aging, re-amortizing, or changing maturity affects amortization as follows:</p>
+<ul>
+<li>FULL_LOAN_TERM picks up the new maturity.</li>
+<li>NUMBER_OF_DAYS is unaffected apart from the maturity cap.</li>
+<li>The system recalculates the effective rate.</li>
+</ul>
+<h3>Closure, charge-off, reopening and sale</h3>
+<p>When a loan closes, is charged off, reopens, or is sold or transferred to an external asset owner, any remaining deferred charge balance is recognized or released according to the event. Listeners apply charge amortization only when charge amortization is enabled and the loan has open balances. Before charge-off, amortization catches up to the business date.</p>
+<p>The following events release or recognize the remaining deferred balance:</p>
+<ul>
+<li>Paid off or overpaid: the remaining amount is released on the closed or overpaid date.</li>
+<li>Written off: the remaining amount is released and credited to Losses written off.</li>
+<li>Closed obligations met: the remaining deferred balance is recognized in one shot.</li>
+<li>Charge-off: amortization catches up to the charge-off date first, then the remaining balance is released immediately in one amortization transaction linked to the charge-off; charged_off_amount equals unrecognized_amount, then unrecognized_amount equals 0, and the credit goes to charge-off expense, charge-off fraud expense, or the account mapped to the charge-off reason.</li>
+<li>External asset owner sale or transfer: when settlement occurs, the remaining balance is recognized on the settlement date.</li>
+</ul>
+<p>Reversals and adjustments work as follows:</p>
+<ul>
+<li>Reopening after closure: the next run recalculates against the real window and reverses any over-recognized income.</li>
+<li>Undoing a charge-off reverses the linked amortization transaction and restores the unrecognized balance.</li>
+<li>Undoing disbursement reverses or removes all Deferred Charge transactions, amortizations and balances.</li>
+<li>When recognized income has to go down, a Deferred Charge Amortization Adjustment posts the reverse; triggers are a waiver, a charge adjustment, a deletion, a loan reopening or a recalculation.</li>
+</ul>
+<p>Repayment of an amortized charge follows the standard accrual repayment path:</p>
+<ul>
+<li>Repayment of an amortized charge posts DEBIT Fund source / CREDIT Fee receivable.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Open loan" as n1
+  state "Charge-off" as n2
+  state "Closed / overpaid" as n3
+  state "Closed written off" as n4
+  state "Reopened" as n5
+  state "Sold / transferred" as n6
+  n1 --> n2 : Charge-off
+  n2 --> n5 : Undo charge-off
+  n1 --> n3 : Paid off or overpaid
+  n1 --> n4 : Written off
+  n1 --> n6 : External sale or transfer settles
+  n3 --> n5 : Reopened after closure
+  n4 --> n5 : Reopened after closure]]></ac:plain-text-body></ac:structured-macro>
+<h3>Accrual interaction and exclusions</h3>
+<p>Charge amortization applies to ACCRUAL_PERIODIC, ACCRUAL_UPFRONT and NONE, and is rejected for CASH_BASED. With NONE, balances and transactions are tracked but no journal entries are posted.</p>
+<p>Accrual processing excludes amortized charges in the following cases:</p>
+<ul>
+<li>Periodic accrual processing.</li>
+<li>Upfront accrual processing.</li>
+<li>Accrual adjustment processing.</li>
+<li>Accrual activity processing.</li>
+<li>Accrual on closure or charge-off.</li>
+</ul>
+<p>With accrual accounting, the product must have GL mappings for fee receivable, deferred income liability, fee income, and interest income if any attached charge uses income type INTEREST.</p>
+<h3>Worked examples</h3>
+<p>A disbursement fee of 120.00 is added to a 1,000.00 loan with a 120-day term made of four 30-day months. The charge is set to amortize flat over the full loan term, so the full fee is deferred at disbursement and earned at 1.00 per day. The figures in this example are illustrative. The loan is paid off after 30 days, so the remaining unearned balance is released in one shot on the closure date. If the same fee used a fixed number of days instead of the full term, the window would end at the earlier of the start date plus the day count or maturity, making the daily amount larger and stopping recognition after the day count.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Deferred charge</th>
+<th>Amortized today</th>
+<th>Released on closure</th>
+<th>Deferred balance</th>
+<th>Recognized total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Fee applied at disbursement</td>
+<td>120.00</td>
+<td>—</td>
+<td>—</td>
+<td>120.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>30 days of daily amortization</td>
+<td>—</td>
+<td>30.00</td>
+<td>—</td>
+<td>90.00</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Loan paid off, one-shot release</td>
+<td>—</td>
+<td>—</td>
+<td>90.00</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+</tbody></table>
+<p>A disbursement fee of 100.00 is added to a loan with a 100-day term and amortized flat over the full term, earning 1.00 per day. After 60 days, 60.00 has been earned and 40.00 remains deferred. A waiver then cuts the charge by 60.00, so the new charge amount is 40.00. Because 60.00 was already earned, the excess 20.00 is reversed through an AM_ADJ entry and no further amortization is posted.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Deferred charge</th>
+<th>Amortized today</th>
+<th>Reversal (AM_ADJ)</th>
+<th>Deferred balance</th>
+<th>Recognized total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Fee applied at disbursement</td>
+<td>100.00</td>
+<td>—</td>
+<td>—</td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 60</td>
+<td>60 days of daily amortization</td>
+<td>—</td>
+<td>60.00</td>
+<td>—</td>
+<td>40.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>Day 60</td>
+<td>Waiver cuts charge to 40.00; excess reversed</td>
+<td>—</td>
+<td>—</td>
+<td>20.00</td>
+<td>0.00</td>
+<td>40.00</td>
+</tr>
+</tbody></table>
+<p>A disbursement fee of 120.00 is added to a loan with a 120-day term and amortized flat over the full term, earning 1.00 per day. After 40 days, 40.00 has been earned and 80.00 remains deferred. The loan is then charged off, so the remaining 80.00 is released in one shot and posted to the charge-off or losses-written-off account.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Deferred charge</th>
+<th>Amortized today</th>
+<th>Released on charge-off</th>
+<th>Deferred balance</th>
+<th>Recognized total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>Fee applied at disbursement</td>
+<td>120.00</td>
+<td>—</td>
+<td>—</td>
+<td>120.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 40</td>
+<td>40 days of daily amortization</td>
+<td>—</td>
+<td>40.00</td>
+<td>—</td>
+<td>80.00</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>Day 40</td>
+<td>Loan charged off, one-shot release</td>
+<td>—</td>
+<td>—</td>
+<td>80.00</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+</tbody></table>
+<p>A specified-due-date fee of 60.00 is attached to a 90-day loan and becomes due on day 30. It is amortized flat from its due date to maturity, a 60-day window, earning 1.00 per day. The deferred balance starts on the due date and is fully earned by the end of the term.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Deferred charge</th>
+<th>Amortized today</th>
+<th>Released on closure</th>
+<th>Deferred balance</th>
+<th>Recognized total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 30</td>
+<td>Charge becomes effective on due date</td>
+<td>60.00</td>
+<td>—</td>
+<td>—</td>
+<td>60.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 60</td>
+<td>30 days of daily amortization</td>
+<td>—</td>
+<td>30.00</td>
+<td>—</td>
+<td>30.00</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>Day 90</td>
+<td>30 days of daily amortization to maturity</td>
+<td>—</td>
+<td>30.00</td>
+<td>—</td>
+<td>0.00</td>
+<td>60.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="capitalized-income"><ri:page ri:content-title="Fees and Capitalized Income"/><ac:plain-text-link-body><![CDATA[Capitalized Income]]></ac:plain-text-link-body></ac:link>.</p>

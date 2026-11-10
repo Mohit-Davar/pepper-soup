@@ -1,0 +1,285 @@
+<h2>Delayed Captures and Full-Term Tranches</h2>
+<h3>Full term tranche configuration</h3>
+<p>Full term tranche configuration lets each tranche disbursement keep the actual term length of the loan instead of adjusting to the remaining future installments. You can enable it at the loan product level and at the account level, and it applies only to the progressive type repayment strategy. The option is disabled by default.</p>
+<p>The following rules govern full term tranche configuration:</p>
+<ul>
+<li>The full term tranche option appears only when tranche disbursement is enabled at the loan product.</li>
+<li>When enabled, the system uses full term schedule calculation for each tranche disbursement.</li>
+<li>When disabled, the system works normally.</li>
+<li>The enable or disable option is available at the tranche setting screen.</li>
+</ul>
+<h3>Schedule generation and installment handling</h3>
+<p>When full term length for each tranche is enabled, the system generates a schedule and calculation for the full term for each disbursement of the loan account. Installment dates always follow the first disbursement date pattern, and overlapped installments from multiple disbursements aggregate into one single installment. Features added to the schedule affect the whole aggregated schedule rather than each disbursement-level schedule.</p>
+<p>The system handles N+1 installments during disbursement as follows:</p>
+<ul>
+<li>When an existing N+1 installment fully overlaps a new installment, they merge together.</li>
+<li>When an existing N+1 installment does not fully overlap a new installment, the system creates a new installment and the N+1 installment becomes shorter.</li>
+<li>When a charge is added after the maturity date, an N+1 installment is created if one does not already exist.</li>
+<li>When a chargeback is added after the maturity date, an N+1 installment is created.</li>
+</ul>
+<h3>Scope exclusions</h3>
+<p>The system does not support the full term length for each tranche disbursement, delayed capture beyond one billing period, refund amounts that trigger reamortization of the remaining repayment schedule, or monetary transactions and repayment allocations.</p>
+<p>When the full term tranche configuration is enabled, the following behaviour applies:</p>
+<ul>
+<li>A user can undo the last disbursement.</li>
+<li>After undoing the last disbursement, the system reprocesses the schedule chronologically based on the remaining disbursements and transactions.</li>
+</ul>
+<h3>Monetary operations and transaction allocation</h3>
+<p>Transaction allocation happens normally on the repayment schedule and affects the current schedule.</p>
+<p>The system reprocesses the repayment schedule and transactions in these situations:</p>
+<ul>
+<li>Backdated monetary operations, including transactions, charges, reschedule and interest pause.</li>
+<li>Reversal of existing monetary operations.</li>
+</ul>
+<p>No differences are required to handle backdated monetary operations or reversal of existing monetary operations compared to normal operations.</p>
+<h3>Features working normally with full term tranche</h3>
+<p>The following features work normally on tranche loans with full term tranche enabled.</p>
+<p>Features that work normally on tranche loans with full term tranche enabled:</p>
+<ul>
+<li>Downpayment works normally.</li>
+<li>Interest pause works normally on the full term tranche schedule.</li>
+<li>Capitalised Income works normally on the full term tranche schedule.</li>
+<li>BuyDown fees work normally.</li>
+<li>Charge-back works normally.</li>
+<li>Write-off works normally.</li>
+<li>Re-age works normally on all 3 options.</li>
+<li>Re-amortization works normally on all 3 options.</li>
+<li>Payment Holiday/Reschedule works normally on the full term tranche schedule.</li>
+<li>Contract termination works normally.</li>
+<li>After repayment or charges work as normal, matching the requirements for loans without full term tranches.</li>
+<li>Charges and Penalties work normally on the schedule as per the configured charge calculation type and charge time type.</li>
+<li>Charge off works normally on all 3 options.</li>
+</ul>
+<p>Features that do not work normally on tranche loans with full term tranche enabled:</p>
+<ul>
+<li>Further disbursements are not allowed on the charged-off or written-off loan account.</li>
+<li>Disbursement after maturity date is TBD.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A loan officer enables full-term tranche on a loan product that uses the progressive repayment strategy. The customer receives a single disbursement of 1,000 at a 12% annual interest rate, to be repaid in 3 monthly installments with 30-day months. These figures are illustrative. Because full-term tranche is enabled, the schedule runs for the full term of the disbursement rather than being shortened by any remaining loan term.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Disbursement</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>–</td>
+<td>343.33</td>
+<td>333.33</td>
+<td>10.00</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>–</td>
+<td>340.00</td>
+<td>333.33</td>
+<td>6.67</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>–</td>
+<td>336.67</td>
+<td>333.34</td>
+<td>3.33</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan officer disburses a loan in two tranches of 500 each, one month apart, with full-term tranche enabled. Each tranche carries a 3-month term and 12% annual interest. Installment dates follow the first disbursement, so the second tranche’s installments fall due in months 2, 3, and 4 while the first tranche’s installments fall due in months 1, 2, and 3. The installments due in months 2 and 3 overlap and are aggregated into a single installment each month. Overlapping installments from different tranches are combined into one payment, though if the second disbursement date is on or before an existing installment due date the installments merge into one, while if it is after, a new installment is created and the existing one shortens.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Disbursement</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 0</td>
+<td>500.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>500.00</td>
+<td>171.67</td>
+<td>166.67</td>
+<td>5.00</td>
+<td>833.33</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>–</td>
+<td>341.66</td>
+<td>333.33</td>
+<td>8.33</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>–</td>
+<td>338.34</td>
+<td>333.34</td>
+<td>5.00</td>
+<td>166.66</td>
+</tr>
+<tr>
+<td>Month 4</td>
+<td>–</td>
+<td>168.33</td>
+<td>166.66</td>
+<td>1.67</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>With full-term tranche enabled, a loan officer disburses 500, collects one installment, then disburses a second 500. The officer later undoes the second disbursement. The system removes the second tranche from the schedule while keeping the repayment already made, and the account continues on the original term for the first tranche. Undo is available only while full-term tranche is enabled and the account has not been charged off or written off.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Disbursement</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 0</td>
+<td>500.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>–</td>
+<td>171.67</td>
+<td>166.67</td>
+<td>5.00</td>
+<td>333.33</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>500.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>833.33</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>(500.00)</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>333.33</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>–</td>
+<td>170.00</td>
+<td>166.66</td>
+<td>3.34</td>
+<td>166.67</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>–</td>
+<td>168.33</td>
+<td>166.67</td>
+<td>1.66</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan with full-term tranche enabled matures after its third installment. A flat charge of 20 is added after the maturity date. Because the charge falls after the final installment, the system creates a new N+1 installment for the charge rather than adding it to an existing installment. If the same charge is added before maturity, it is added to the next scheduled installment rather than creating a new N+1 installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Disbursement</th>
+<th>Installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Fees</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 0</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Month 1</td>
+<td>–</td>
+<td>343.33</td>
+<td>333.33</td>
+<td>10.00</td>
+<td>–</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>–</td>
+<td>340.00</td>
+<td>333.33</td>
+<td>6.67</td>
+<td>–</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>–</td>
+<td>336.67</td>
+<td>333.34</td>
+<td>3.33</td>
+<td>–</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Month 4</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>20.00</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>Month 4</td>
+<td>–</td>
+<td>20.00</td>
+<td>–</td>
+<td>–</td>
+<td>20.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

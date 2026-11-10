@@ -1,0 +1,390 @@
+<h2>Interest Rate Changes</h2>
+<h3>Eligibility and timing</h3>
+<p>You can change the interest rate on an active loan account at any point during the loan life cycle. The new rate takes effect on a future date you choose, starting from the business date plus one day.</p>
+<p>The following rules apply to interest rate changes:</p>
+<ul>
+<li>You can select any future date as the starting date of the new interest rate.</li>
+<li>You can change the rate from day 1, day 15, or even the very last day of the loan.</li>
+<li>You cannot apply more than one interest rate change for the same start date.</li>
+<li>Progressive loans are supported only for interest rate change on active loan accounts.</li>
+</ul>
+<h3>Scope of rate changes</h3>
+<p>An interest rate change applies from the date you apply it. Installments before that date keep the old interest rate, while installments from that date use the new rate. Paid installments and their interest amounts stay unchanged.</p>
+<h3>Recalculation behavior</h3>
+<p>When you change an interest rate, the system recalculates the EMI from the reschedule date using the new rate. Only future, unpaid installments are included; any period already fully paid is excluded from changes and recalculation.</p>
+<p>The recalculation follows these rules:</p>
+<ul>
+<li>The repayment schedule is recalculated with the new interest rate based on the recalculation strategy and configuration.</li>
+<li>The EMI is reduced or increased based on the selected interest rate.</li>
+<li>The actual period and all future periods are recalculated except when they were already fully paid.</li>
+<li>The calculated EMI and the last installment EMI difference are kept minimal.</li>
+</ul>
+<h3>Progressive loans</h3>
+<p>For a Progressive loan, you can change the interest rate from a particular date, even when the date belongs to an installment that was already fully paid. If the first installment period falls between 1 January and 1 February and was fully paid, you may still change the rate on any date between 1 January and 1 February, including 11 January or later.</p>
+<p>The following rules apply to the new interest rate:</p>
+<ul>
+<li>There is no restriction on the provided interest rate value.</li>
+<li>The new interest value inherits the interest frequency from the loan product.</li>
+</ul>
+<h3>Repayment and reversal handling</h3>
+<p>You can view the interest rates for a loan account through the list of interest rate periods or changes on the loan tab. Repayments and reversals dated before an interest rate change remain possible after the modification takes effect. Installments already paid, including their EMI and interest amounts, do not change when the interest rate changes. Interest refunds calculate the first installments using the old interest rate and the next installment using the new interest rate.</p>
+<p>The following limits apply to interest rate changes:</p>
+<ul>
+<li>Only one operation is supported at a time; a due date change counts as another reschedule operation.</li>
+<li>Created new interest rates cannot be modified.</li>
+<li>An interest rate change affects only the EMI; installments remain the same.</li>
+<li>When a loan is overdue by 1 installment, the EMI value is 17.01.</li>
+<li>When a loan is overdue by 2 installments, the EMI value is 17.01.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>A loan officer changes the interest rate on an active loan after the first installment has been paid. The figures are illustrative: principal 1,000, annual interest 12%, three monthly installments, 30-day months. The first installment is paid under the old rate. On the first day of the second month, the rate is changed to 6% annual for the remaining balance. The paid installment keeps its original EMI and interest; only the two unpaid installments are recalculated at the new rate. For progressive loans, the result is the same even if the change date falls inside an already paid installment period: the paid installment stays unchanged and only future installments move to the new rate. This shows that earlier paid installments keep the old rate and EMI, while future installments are recalculated at the new rate.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Balance start</th>
+<th>Rate</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>EMI</th>
+<th>Balance end</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>12%</td>
+<td>10.00</td>
+<td>330.03</td>
+<td>340.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>2</td>
+<td>669.97</td>
+<td>6%</td>
+<td>3.35</td>
+<td>334.15</td>
+<td>337.50</td>
+<td>335.82</td>
+</tr>
+<tr>
+<td>3</td>
+<td>335.82</td>
+<td>6%</td>
+<td>1.68</td>
+<td>335.82</td>
+<td>337.50</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>15.03</td>
+<td>1,000.00</td>
+<td>1,015.03</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan officer records an early payment and then changes the interest rate on the same active loan. The figures are illustrative: principal 1,000, annual interest 12%, three monthly installments, 30-day months. The customer pays the first installment early on day 15 of the first month at the old rate. On day 20 of the first month, the rate is changed to 6% annual. The early payment keeps the old interest and EMI; the two remaining unpaid installments are recalculated at the new rate. This shows that amounts already paid, including early payments, are not changed by a later rate modification.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Balance start</th>
+<th>Rate</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Balance end</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Early payment, day 15</td>
+<td>1,000.00</td>
+<td>12%</td>
+<td>10.00</td>
+<td>330.03</td>
+<td>340.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>669.97</td>
+<td>6%</td>
+<td>3.35</td>
+<td>334.15</td>
+<td>337.50</td>
+<td>335.82</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>335.82</td>
+<td>6%</td>
+<td>1.68</td>
+<td>335.82</td>
+<td>337.50</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>15.03</td>
+<td>1,000.00</td>
+<td>1,015.03</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A product administrator changes the interest rate on the final day of an active loan. The figures are illustrative: principal 1,000, annual interest 12%, three monthly installments, 30-day months. The first two installments remain under the old rate. On the last day of the third month, before the final installment is paid, the rate is changed to 6% annual. Because the final installment is still unpaid, it is recalculated at the new rate; earlier installments are untouched. This shows that a rate change can take effect on the very last day and applies only to the installment that remains unpaid.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Balance start</th>
+<th>Rate</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>EMI</th>
+<th>Balance end</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>12%</td>
+<td>10.00</td>
+<td>330.03</td>
+<td>340.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>2</td>
+<td>669.97</td>
+<td>12%</td>
+<td>6.70</td>
+<td>333.33</td>
+<td>340.03</td>
+<td>336.64</td>
+</tr>
+<tr>
+<td>3</td>
+<td>336.64</td>
+<td>6%</td>
+<td>1.68</td>
+<td>336.64</td>
+<td>338.32</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>18.38</td>
+<td>1,000.00</td>
+<td>1,018.38</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="backdated-loans"><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans: Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="emi-calculation"><ri:page ri:content-title="Interest Calculation"/><ac:plain-text-link-body><![CDATA[Interest Calculation: EMI Calculation]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Backdated Rate Changes</h2>
+<h3>Eligible loans and scope</h3>
+<p>Backdated rate changes apply to progressive loans only, including changing the interest rate from zero or to zero.</p>
+<h3>Backdated interest modification basics</h3>
+<p>You can modify an interest rate from any date starting on the first disbursement date, and the change takes effect from the date you apply it.</p>
+<h3>Schedule and EMI recalculation</h3>
+<p>When a backdated rate change is applied, the system recalculates the repayment schedule from the date the interest rate changed. The number of installments stays the same, while the EMI and interest amounts are updated. The recalculation uses the new EMI and interest from the interest applied schedule date.</p>
+<h3>Installment handling</h3>
+<p>A backdated rate change can apply to installments that have already been paid, as well as to unpaid or partially paid installments. The system recalculates the EMI for those installments according to the new calculated EMI, while respecting the installment multiple used during EMI amount calculation.</p>
+<h3>Transaction reversal and replay</h3>
+<p>The system reverses and replays transactions when allocations change, applying the new interest rate from the applied date to installments already paid. Accrual adjustments occur during reverse replay as part of the COB process.</p>
+<h3>Charged-off loans</h3>
+<p>You can apply a backdated interest modification to a loan that has been charged off. The behaviour remains the same whether the charge-off configuration is set to regular or to zero interest after charge-off.</p>
+<p>When a repayment made before charge-off is reversed and replayed because of the backdated interest modification, the accounting entries follow standard accounting rules rather than charge-off accounting rules.</p>
+<ul>
+<li>When a repayment made before charge-off is reversed and replayed because of the backdated interest modification, the accounting entries follow standard accounting rules rather than charge-off accounting rules.</li>
+</ul>
+<h3>Closed and overpaid loans</h3>
+<p>You can apply a backdated interest modification to a closed loan or an overpaid loan where the credit balance recovery (CBR) is complete. The system performs a chronological reverse-replay and allocates the schedule and transactions accordingly.</p>
+<p>The following rules apply to closed and overpaid loans:</p>
+<ul>
+<li>Any action that triggers recalculation on a CBR loan treats CBR as a credit transaction during reverse-replay.</li>
+<li>The same logic applies when backdated interest modification is allowed on CBR loan accounts.</li>
+<li>If a repayment made before an asset owner change is reversed and replayed due to backdated interest modification, both the reversed transaction and the replayed transaction carry the tag of the current asset owner.</li>
+<li>Backdated interest modification is allowed on loan accounts where the asset owner has changed.</li>
+</ul>
+<h3>Zero interest rate changes</h3>
+<p>You can change a loan interest rate from zero to a non-zero rate, or from a non-zero rate to zero. The system recalculates the repayment schedule using the EMI calculator and model, and the change may move the loan between ACTIVE, CLOSED and OVERPAID status.</p>
+<blockquote>
+<p><strong>Note:</strong> Documentation must refer to any configuration that affects backdated interest modification.</p>
+</blockquote>
+<h3>Worked examples</h3>
+<p>A loan officer backdates an interest-rate change on an active progressive loan. The figures are illustrative. The loan disburses 1,000 at 12 percent per year and repays in three monthly installments over 30-day months. The first installment of 340.03 is paid on 2/1 at the old rate, leaving a balance of 669.97. On 2/15 the officer changes the rate to 8 percent per year, effective from 2/1. Because the change is backdated, the paid installment is reversed and replayed at the new rate, and the remaining installments are recalculated. The number of installments stays at three, and only the EMI and interest amounts change. The same calculation applies when the loan is charged off, whether charge-off accounting is regular or zero-interest-after-charge-off; accounting entries follow standard rules rather than charge-off rules.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Installment</th>
+<th>Rate</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1</td>
+<td>8%</td>
+<td>337.79</td>
+<td>6.67</td>
+<td>331.12</td>
+<td>668.88</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>2</td>
+<td>8%</td>
+<td>337.79</td>
+<td>4.46</td>
+<td>333.33</td>
+<td>335.55</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>3</td>
+<td>8%</td>
+<td>337.79</td>
+<td>2.24</td>
+<td>335.55</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>1013.37</td>
+<td>13.37</td>
+<td>1000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A borrower makes an early repayment on a progressive loan, and the officer backdates an interest-rate change. The figures are illustrative. The loan disburses 1,000 at 12 percent per year over three monthly installments of 30-day months. On 1/15, before the first installment is due, the borrower pays 340.03 toward principal, reducing the balance to 659.97. On 1/20 the officer changes the rate to 8 percent per year, effective from 1/20. The system recalculates the remaining two installments at the new rate while keeping the installment count at three. When the iterate flag is on, the system applies a small rounding adjustment; when it is off, the schedule is used as calculated.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Rate</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/15/24</td>
+<td>Early payment</td>
+<td>12%</td>
+<td>340.03</td>
+<td>0.00</td>
+<td>340.03</td>
+<td>659.97</td>
+</tr>
+<tr>
+<td>2/1/24</td>
+<td>Installment 2</td>
+<td>8%</td>
+<td>333.29</td>
+<td>4.40</td>
+<td>328.89</td>
+<td>331.08</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>Installment 3</td>
+<td>8%</td>
+<td>333.29</td>
+<td>2.21</td>
+<td>331.08</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>1006.61</td>
+<td>6.61</td>
+<td>1000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>An officer changes the interest rate on a closed progressive loan. The figures are illustrative. The loan disbursed 1,000 at 12 percent per year and was repaid in three monthly installments over 30-day months, after which the loan closed. On 4/15 the officer changes the rate to 8 percent per year, effective from 2/1. The system performs a chronological reverse replay: it reverses the paid installments in order and replays them at the new rate. The number of installments stays at three and the final balance remains zero; only the interest and principal portions are restated. On closed or overpaid loans, any overpaid amount is treated as a credit during reverse replay.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Installment</th>
+<th>Rate</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1</td>
+<td>12%</td>
+<td>340.03</td>
+<td>10.00</td>
+<td>330.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>2</td>
+<td>12%</td>
+<td>340.03</td>
+<td>6.70</td>
+<td>333.33</td>
+<td>336.64</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>3</td>
+<td>12%</td>
+<td>340.01</td>
+<td>3.37</td>
+<td>336.64</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2/1/24</td>
+<td>1</td>
+<td>8%</td>
+<td>337.79</td>
+<td>6.67</td>
+<td>331.12</td>
+<td>668.88</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>2</td>
+<td>8%</td>
+<td>337.79</td>
+<td>4.46</td>
+<td>333.33</td>
+<td>335.55</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>3</td>
+<td>8%</td>
+<td>337.79</td>
+<td>2.24</td>
+<td>335.55</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

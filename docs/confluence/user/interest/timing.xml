@@ -1,0 +1,432 @@
+<h2>First-Day Interest</h2>
+<h3>Day 0 interest behaviour</h3>
+<p>The disbursement date is Day 0 for interest purposes, and interest is calculated and accrued for that day at end of day based on the actual total outstanding principal at end of day. Intra-day actions such as repayment affect the daily interest amount, and payable interest stays in sync with the daily periodic accrual calculation.</p>
+<p>The following rules apply to Day 0 interest behaviour:</p>
+<ul>
+<li>A customer who fully repays on the disbursement date can do so without paying any interest before end of day.</li>
+<li>The obligation to pay interest starts on the day after disbursement.</li>
+<li>The 0th day of a repayment period is not excluded from interest calculations.</li>
+<li>The disbursement date is Day 0 from an interest perspective and Day 1 of the repayment period.</li>
+</ul>
+<h3>Repayment period date boundaries</h3>
+<p>Interest for a repayment period runs from the period from date through the day before the due date. The from date is inclusive for interest, while the due date is excluded from interest even though actions on that date belong to the period it falls on.</p>
+<p>Date boundaries for repayment periods:</p>
+<ul>
+<li>The from date is exclusive for most actions except Day 0.</li>
+<li>The due date is inclusive for most actions but not for interest.</li>
+<li>The due date of one period and the from date of the next period are the same date with no gap.</li>
+<li>Actions on the due date belong to the period that due date falls on, except interest.</li>
+</ul>
+<h3>Interest charged from date configuration</h3>
+<p>The interest charged from date controls when interest starts accruing on a loan. It depends on two product-level settings: interest charged from disbursement date and interest charged from date same as disbursal date.</p>
+<table>
+<thead>
+<tr>
+<th>Interest charged from disbursement date</th>
+<th>Interest charged from date same as disbursal date</th>
+<th>Interest charged from date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FALSE</td>
+<td>FALSE</td>
+<td>Disbursement date + 1 day</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>FALSE</td>
+<td>Disbursement date</td>
+</tr>
+<tr>
+<td>FALSE</td>
+<td>TRUE</td>
+<td>Disbursement date</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>TRUE</td>
+<td>Disbursement date</td>
+</tr>
+</tbody></table>
+<h3>Progressive loan accrual allocation</h3>
+<p>For progressive loans, the system allocates the interest amount of each accrual transaction across repayment periods in order of instalment number, from oldest to newest, up to the charged interest amount for each period. Relationships between accrual transactions and repayment schedule instalments might be removed for a progressive schedule. The combined total of positive accrual transaction balances and negative accrual adjustments cannot exceed the charged interest on the repayment schedule.</p>
+<h3>Day 0 versus Day 1 interest logic</h3>
+<p>Interest can be charged starting from Day 0 or Day 1. Day 0 is excluded and Day 1 is the first day interest is charged, with the maturity date as the last day. Under the alternative logic, Day 0 is included and interest runs through the day before the maturity date.</p>
+<p>Either logic produces exactly the same amount of payable interest until the maturity date is excluded from interest calculation.</p>
+<h3>Interest recognition timing and accrual</h3>
+<p>Interest recognition timing decides when interest is accrued and when it becomes payable. Interest is recognised as part of end of day Day X and becomes payable as start of day Day X+1, which expedites accrual. Interest recognition on the disbursement date is supported only for progressive loan schedule type. You can update the setting if the loan was created but not yet approved or disbursed.</p>
+<p>The interest recognition on disbursement date field controls when interest recognition starts:</p>
+<ul>
+<li>If TRUE, interest recognition happens on Day 0 (disbursement date) end of day and interest charging starts from Day 0 end of day, calculating interest based on current date + 1.</li>
+<li>If not provided or FALSE, interest recognition happens on Day 1 (disbursement date+1) end of day as legacy default behaviour and interest charging starts from Day 1 end of day, calculating interest based on current date.</li>
+</ul>
+<h3>Partial period rate factor</h3>
+<p>The partial period rate factor determines how interest accrues for a partial period when interest recognition starts on the disbursement date.</p>
+<p>The logic applies as follows:</p>
+<ul>
+<li>When interest recognition from disbursement date is true, the partial period rate factor includes the very first day and excludes the due date.</li>
+<li>When interest recognition from disbursement date is not true, no amendments are made to the partial period rate factor logic.</li>
+</ul>
+<p>Interest calculation from Day 0 (the disbursement date) is supported based on configuration, and the number of days in month and year is considered according to the configuration.</p>
+<p>The legacy interest recognition starting date is controlled by interest charged from date if provided during loan creation, secondly by the interest-charged-from-date-same-as-disbursal-date global configuration parameter, otherwise it starts with the disbursement date plus one day. The field is stored at loan product level and can be overridden when the loan is created.</p>
+<blockquote>
+<p><strong>Note:</strong> Additional scenarios can be created where the disbursement date is not 1 January and may include backdated or reversed transactions.</p>
+</blockquote>
+<h3>Daily accrual calculation and transactions</h3>
+<p>Each day at end of day, the system calculates the total interest that should be accrued through the day being closed as part of the ADD_PERIODIC_ACCRUAL_ENTRIES business step of Loan COB. It uses an up to date ProgressiveLoanInterestScheduleModel and ProgressiveEmiCalculator for this calculation.</p>
+<p>The system then compares the calculated total interest with the interest already accrued:</p>
+<ul>
+<li>If the calculated amount is higher, it creates an Accrual transaction for the difference and allocates the accrued amount on repayment instalments from oldest to newest.</li>
+<li>If the calculated amount is equal, it accrues no interest.</li>
+<li>If the calculated amount is lower, it creates an Accrual Adjustment transaction for the difference and lifts the accrued amount from instalments from newest to oldest.</li>
+</ul>
+<p>If interest recognition on disbursement date is enabled, COB creates an accrual transaction with daily interest on the disbursement date at end of day, and the calculated daily interest is based on the current date plus one day using the EMICalculator.</p>
+<p>Total interest till date is also calculated using an up to date ProgressiveLoanInterestScheduleModel and ProgressiveEmiCalculator.</p>
+<blockquote>
+<p><strong>Note:</strong> An alternative calculation uses actual total outstanding principal multiplied by the interest rate for one day based on the days in year configuration, but the model and EMICalculator are the safest course.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Loan COB EoD"]
+  n2["ADD_PERIODIC_ACCRUAL_ENTRIES"]
+  n3["Calculate total interest till date"]
+  n4["Compare accrued vs calculated"]
+  n5["Create Accrual transaction"]
+  n6["No accrual needed"]
+  n7["Create Accrual Adjustment transaction"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 -->|"Calculated higher"| n5
+  n4 -->|"Equal"| n6
+  n4 -->|"Calculated lower"| n7]]></ac:plain-text-body></ac:structured-macro>
+<h3>Worked examples</h3>
+<p>Figures in this example are illustrative. A loan of 3,600 is disbursed on 1 January at an annual interest rate of 12 percent, using a 360-day year and 30-day months. The product is configured to charge interest from the disbursement date, so the disbursement date is Day 0. Interest accrues at the end of each day and becomes payable at the start of the next day.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Date</th>
+<th>Interest accrued today</th>
+<th>Cumulative accrued</th>
+<th>Interest payable</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>1 Jan</td>
+<td>1.20</td>
+<td>1.20</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 1</td>
+<td>2 Jan</td>
+<td>1.20</td>
+<td>2.40</td>
+<td>1.20</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>3 Jan</td>
+<td>1.20</td>
+<td>3.60</td>
+<td>2.40</td>
+</tr>
+</tbody></table>
+<p>This shows that under the new behaviour the first day of disbursement already produces an accrual, while the matching amount only becomes payable on the following day.</p>
+<p>A customer takes a loan of 1,000 on 1 January at an annual interest rate of 12 percent and repays the full amount later that same day before the end of day. Because repayment happens on Day 0, no interest obligation arises.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Amount</th>
+<th>Balance after step</th>
+<th>Interest due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Full repayment on Day 0</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The loan closes with zero interest because the full repayment precedes the end-of-day accrual on the disbursement date.</p>
+<p>A loan of 3,600 is disbursed on 1 January at an annual interest rate of 7 percent on a 360-day year, giving a daily interest of 0.70. The product flag that controls whether interest starts on the disbursement date is switched on, so Day 0 is the first interest day.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Date</th>
+<th>Accrual at end of day</th>
+<th>Payable at start of day</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>1 Jan</td>
+<td>0.70</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 1</td>
+<td>2 Jan</td>
+<td>0.70</td>
+<td>0.70</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>3 Jan</td>
+<td>0.70</td>
+<td>1.40</td>
+</tr>
+</tbody></table>
+<p>If the flag is switched off, the first accrual of 0.70 is created on 2 January instead of 1 January, and every payable date shifts one day later.</p>
+<p>A loan of 3,600 at an annual interest rate of 12 percent runs from 13 December to 13 January using a 360-day year, so the daily interest is 1.20. When interest recognition starts on the disbursement date, the period includes the from date and excludes the due date.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Days in December</th>
+<th>Days in January</th>
+<th>Total days</th>
+<th>Interest for period</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>New logic</td>
+<td>19</td>
+<td>12</td>
+<td>31</td>
+<td>37.20</td>
+</tr>
+<tr>
+<td>Legacy logic</td>
+<td>18</td>
+<td>13</td>
+<td>31</td>
+<td>37.20</td>
+</tr>
+</tbody></table>
+<p>Both settings yield the same total interest because the period length is unchanged; only the split across the year boundary moves.</p>
+<h2>Early and Late Repayment Interest</h2>
+<h3>Early and late repayment interest effects</h3>
+<p>Early repayment lowers the principal balance, so less interest accrues over the remaining life of the loan and the final installment is relatively lower than the other installments. Late payments add interest on the higher balance, so the final installment is relatively higher than the other installments. These adjustments affect the final payment on the plan.</p>
+<h3>Early repayment interest recalculation</h3>
+<p>Interest accrues daily based on principal balance. When you make an early repayment, interest is recalculated and collected as of the transaction date for that installment period, and remaining installments are recalculated based on the new outstanding principal balance with interest amounts adjusted accordingly.</p>
+<p>Early repayment interest is handled as follows:</p>
+<ul>
+<li>Early partial payments collect the recalculated interest of that installment period as of the payment date, and the collected interest becomes the interest portion of that installment period.</li>
+<li>Early payment of an EMI or greater amount closes the installment period with interest recalculated.</li>
+<li>If the only unpaid installment is the current installment, the payable interest is calculated and must be paid.</li>
+<li>If the installment is a future installment but not the current one, there is no payable interest because there were no past days.</li>
+<li>Any advance amounts out of early repayments are allocated to the next installment or last installment based on the configuration set.</li>
+<li>Calculated interest is collected only for early payments with adjust to next installment configurations.</li>
+<li>No interest is collected when the early payment happens with adjust to last installment configuration; only principal is collected.</li>
+<li>Calculated interest is collected only for early payments of the current installment.</li>
+</ul>
+<h3>Late repayment interest handling</h3>
+<p>Late repayment interest is calculated and collected only until the installment date, and payable interest for the late period matches the repayment schedule interest due balance. No installment is created for late repayments.</p>
+<p>Late repayments are handled as follows:</p>
+<ul>
+<li>Any advance amounts from late repayments are adjusted to the next installment, the last installment, or first to the next installment with the remainder to the last installment.</li>
+<li>The repayment schedule remaining installments are recalculated based on the new principal balance and interest is adjusted accordingly.</li>
+<li>A repayment can be late for some periods and pay some periods in advance.</li>
+<li>Late repayments made after the maturity date collect the installment interest they are fulfilling.</li>
+</ul>
+<h3>Advance payment adjustment strategies</h3>
+<p>An advance payment can adjust the last unpaid period by amending that period’s EMI. The change takes effect only at the end of the loan term, while the EMIs for all other periods stay the same. If the last installment was already fully paid, the system amends the last but one period instead.</p>
+<p>Advance payment adjustment for progressive interest bearing loan products works as follows:</p>
+<ul>
+<li>When Recalculate interest is enabled, the Advance payments adjustment type includes the option Adjust last, unpaid period.</li>
+<li>Adjust last, unpaid period is the only supported adjustment rule for progressive loans.</li>
+<li>Recalculation considers the reverse replay of all transaction types, including accruals.</li>
+</ul>
+<h3>Product configuration requirements</h3>
+<p>Early and late repayment interest applies to progressive interest bearing loan products when interest recalculation is enabled. Recalculation runs only until the maturity date and never after it.</p>
+<p>Configure the product with these settings:</p>
+<ul>
+<li>Set Interest calculation Period to Daily.</li>
+<li>Set Recalculate Interest to Enabled.</li>
+<li>Set Frequency Interval for Recalculation to 1.</li>
+<li>Set Frequency for recalculate outstanding principal to Daily.</li>
+<li>Set the repayment transaction future installment allocation rule to Last installment.</li>
+</ul>
+<p>The product configuration shows these values:</p>
+<ul>
+<li>Interest calculation Period is Daily.</li>
+<li>Recalculate Interest is Enabled.</li>
+<li>Frequency Interval for Recalculation is 1.</li>
+<li>Frequency for recalculate outstanding principal is Daily.</li>
+<li>Future installment allocation rule is Next installment.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The configured future installment allocation rule is Next installment, but early and late payment calculations require Last installment.</p>
+</blockquote>
+<p>If there is an N+1 installment, it is open whether recalculation still calculates till the actual maturity date.</p>
+<p>When the rest frequency type is daily and the pre-close interest calculation strategy is till rest frequency date, or the rest frequency type is same as repayment period and the pre-close interest calculation strategy is till pre-closure date, interest is calculated at the end of the actual period anyway.</p>
+<p>Overdue interest is collected first and then principal.</p>
+<h3>Schedule recalculation and interest collection rules</h3>
+<p>When a repayment changes the outstanding balance, the system recalculates the remaining installments based on that balance and adjusts interest accordingly.</p>
+<p>Interest for an installment is calculated as follows:</p>
+<ul>
+<li>Payable interest for the current installment equals the total interest for the past days of that installment plus the daily interest for the current date.</li>
+</ul>
+<h3>Worked examples</h3>
+<p>Early partial repayment with the advance applied to the next installment (figures are illustrative). A customer takes a 1,000.00 loan at 12% a year, with 30-day months and three monthly installments. The first installment is paid on time. Halfway through the second month the customer pays the next installment early, and the advance payments adjustment type is set to apply the advance to the next installment. Interest is recalculated as of the payment date on the balance then outstanding; that interest becomes the interest part of the installment, the principal part reduces the balance, and the remaining installment is recalculated on the new balance. The schedule is not re-amortized, so only the final installment changes and it comes out lower than the earlier installments. If the adjustment type is instead set to apply the advance to the last installment, the early payment collects principal only, no interest is taken at that time, and the advance reduces the final installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>333.33</td>
+<td>343.33</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>2/15</td>
+<td>Early payment toward installment 2</td>
+<td>666.67</td>
+<td>3.33</td>
+<td>333.33</td>
+<td>336.66</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Final installment recalculated</td>
+<td>333.34</td>
+<td>1.67</td>
+<td>333.34</td>
+<td>335.01</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>15.00</td>
+<td>1,000.00</td>
+<td>1,015.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Early payoff of the final installment before it is due (figures are illustrative). The same 1,000.00 loan at 12% a year with 30-day months reaches the point where only the last installment is unpaid: principal 333.34 with scheduled interest 3.33, due on 4/1. The customer pays it early on 3/15. Because this is the only installment left, payable interest is calculated as of the payment date for the days that have passed in the installment period and must be paid together with the principal. The loan then closes, so no further interest accrues. The final payment is lower than the scheduled installment, and the total interest for the loan is lower than in the original schedule.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>333.33</td>
+<td>343.33</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Installment 2 due</td>
+<td>666.67</td>
+<td>6.67</td>
+<td>333.33</td>
+<td>340.00</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3/15</td>
+<td>Early payoff of final installment</td>
+<td>333.34</td>
+<td>1.56</td>
+<td>333.34</td>
+<td>334.90</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>18.23</td>
+<td>1,000.00</td>
+<td>1,018.23</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Late repayment before maturity (figures are illustrative). The same 1,000.00 loan at 12% a year with 30-day months and three monthly installments. The first installment is paid on time. The second installment, due on 3/1, is paid ten days late on 3/11. The scheduled interest and principal for that installment are still paid, but additional interest is charged on the higher balance for the overdue days. That extra interest is not spread into the earlier installments; it is added to the final installment, so the final installment is higher than the others and the total cost of the loan rises.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>333.33</td>
+<td>343.33</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>3/11</td>
+<td>Installment 2 paid late</td>
+<td>666.67</td>
+<td>6.67</td>
+<td>333.33</td>
+<td>340.00</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>4/1</td>
+<td>Final installment with late interest</td>
+<td>333.34</td>
+<td>5.55</td>
+<td>333.34</td>
+<td>338.89</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>22.22</td>
+<td>1,000.00</td>
+<td>1,022.22</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="backdated-loans"><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans: Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="emi-calculation"><ri:page ri:content-title="Interest Calculation"/><ac:plain-text-link-body><![CDATA[Interest Calculation: EMI Calculation]]></ac:plain-text-link-body></ac:link>.</p>

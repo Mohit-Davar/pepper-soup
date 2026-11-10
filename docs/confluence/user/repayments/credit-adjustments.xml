@@ -1,0 +1,117 @@
+<h2>Credit Adjustments</h2>
+<p>A credit adjustment records a charge against a loan account. You can add a loan charge to a closed, overpaid, or matured loan. If a closed loan receives a charge, it reopens as an outstanding balance occurs. If an overpaid loan receives a charge and the overpaid amount is greater than the charge amount, it remains overpaid.</p>
+<p>Payment allocation rules determine how monies are applied:</p>
+<ul>
+<li>Monies apply to the interest balance of a single amount due first, from the oldest due amount to the most current due amount.</li>
+<li>For future balances, monies apply to principal balances only.</li>
+<li>Where applicable, future interest accrued but not yet due can be satisfied, such as in early payoff.</li>
+<li>Rules define how many future payments are satisfied before triggering a re-amortization of the repayment schedule.</li>
+<li>Rules define whether monies apply to the next installment due or the last installment due.</li>
+</ul>
+<p>Interest calculation rules include:</p>
+<ul>
+<li>For interest bearing loans with decreasing balance and Equal Installments (Daily) interest calculation, interest is calculated properly for the installments.</li>
+<li>For each normal repayment installment, interest is calculated based on the outstanding balance.</li>
+<li>Advance payment allocation disbursement supports decreasing balance interest calculation.</li>
+<li>Interest is not allocated for the down-payment installment when down-payment installment is enabled.</li>
+</ul>
+<p>Pre-closure interest calculation rules define when interest stops calculating:</p>
+<ul>
+<li>Calculate till pre closure date calculates interest till the closing date; for example, if the loan closing date is 20th February, interest is calculated till 20th February.</li>
+<li>Calculate till rest frequency date calculates interest till the rest period; for example, if the loan closing date is 20th February, interest is calculated till the repayment period due date.</li>
+</ul>
+<p>A refund is any type of credit adjustment.</p>
+<p>Charge adjustment transactions appear in the UI as follows:</p>
+<ul>
+<li>A charge adjustment transaction button is added to the UI to invoke the charge-adjustment transaction.</li>
+<li>A charge adjustment transaction row in the transaction tab has the undo button enabled and the edit and charge-back buttons disabled.</li>
+<li>A reversed charge adjustment transaction row has the undo, edit, and charge-back buttons all disabled.</li>
+<li>Clicking a charge adjustment transaction row shows the linked loan charge account.</li>
+</ul>
+<p>Figures are illustrative. A loan officer disburses a declining-balance loan of 1,200 at 12 percent per year, to be repaid in three equal monthly installments over 30-day months. Interest is calculated on the outstanding balance at the start of each month, and the first installment falls due one month after disbursement. If an additional disbursement is made after the first installment, the opening balance for the next installment rises and its interest charge increases accordingly.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,200.00</td>
+<td>12.00</td>
+<td>396.02</td>
+<td>803.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>803.98</td>
+<td>8.04</td>
+<td>399.98</td>
+<td>404.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>404.00</td>
+<td>4.04</td>
+<td>404.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>24.08</td>
+<td>1,200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan officer disburses a 1,000 loan at 12 percent per year with three equal monthly installments. After the first installment, the borrower makes a partial repayment before the next due date, and the remaining schedule is re-amortized over the two months left. If a partial repayment is made before the next due date, the balance falls and the remaining installments are re-amortized, so later interest is lower.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1st installment</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>Partial repayment</td>
+<td>669.98</td>
+<td>0.00</td>
+<td>200.00</td>
+<td>469.98</td>
+</tr>
+<tr>
+<td>2nd installment</td>
+<td>469.98</td>
+<td>4.70</td>
+<td>233.82</td>
+<td>236.16</td>
+</tr>
+<tr>
+<td>3rd installment</td>
+<td>236.16</td>
+<td>2.36</td>
+<td>236.16</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>17.06</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>

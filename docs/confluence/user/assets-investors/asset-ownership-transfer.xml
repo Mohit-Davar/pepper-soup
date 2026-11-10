@@ -1,0 +1,27 @@
+<h2>Asset Ownership Transfer</h2>
+<p>Asset ownership transfer supports real-time loan transfers to external investors.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>External owner ID</td>
+<td>TEXT, optional</td>
+<td>Loan_externalisation table external_owner_id column</td>
+</tr>
+<tr>
+<td>Settlement date</td>
+<td>Date</td>
+<td>Loan_externalisation table settlement date column</td>
+</tr>
+<tr>
+<td>Purchase price ratio</td>
+<td>String</td>
+<td>m_external_asset_owner_transfer.purchase_price_ratio</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="asset-externalization"><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization: Asset Externalization]]></ac:plain-text-link-body></ac:link>.</p>

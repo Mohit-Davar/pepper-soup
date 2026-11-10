@@ -1,0 +1,938 @@
+<h2>Re-aging</h2>
+<h3>Re-aging overview</h3>
+<p>Re-aging, also known as Settlement Plan, assists customers in duress around repaying their loans by creating a new set of Installments for the same loan account from the principal outstanding pending on the loan account.</p>
+<h3>Eligibility and timing</h3>
+<p>Re-aging applies to interest-bearing, progressive loan accounts with interest handling set to default behavior. You can configure re-aging from any date of the loan cycle after the first disbursement date, including before the maturity date. The re-aging date must not be before the last repayment date.</p>
+<h3>Charge-off loans</h3>
+<p>Re-aging can be applied to a charge-off loan account. Charge-back amount has no impact on re-aging.</p>
+<p>The following rules apply to charges, fees, iteration, and fixed amounts during re-aging:</p>
+<ul>
+<li>Charges or fees with a due date after the re-age date are waived off.</li>
+<li>Charges or fees with a due date before the re-age date are split equally among new installments.</li>
+<li>Iteration is disabled with should iterate set to FALSE and iterate value 0.00.</li>
+<li>EMI is fixed at 17.01.</li>
+<li>Interest rate is 7% per annum with daily rate 0.000194444.</li>
+</ul>
+<p>The following behaviours apply to backdated repayments, reversals, and reverse replay:</p>
+<ul>
+<li>Backdated repayment or reversal is allowed and re-aging will be reversed and replayed accordingly.</li>
+<li>The N+1 instalment amount will be adjusted as part of reverse replay.</li>
+</ul>
+<p>Interest handling configuration is available on the Re-age screen and is not required on the loan product. Charge-off accelerate maturity date logic works the same as contract termination.</p>
+<h3>Reversing re-aging</h3>
+<p>You can reverse a re-aging transaction until it is the latest transaction on the loan. Reversing it replays and re-applies the scheduled transactions accordingly.</p>
+<p>The following rules apply when reversing re-aging:</p>
+<ul>
+<li>A reversed re-age transaction is not found during validations when initiating a new re-age.</li>
+<li>Backdated repayment or reversal is allowed and re-aging is reversed and replayed accordingly.</li>
+<li>When re-aged installments are added and an N+1 installment already exists, the N+1 installment is updated to become one of the re-aged installments.</li>
+</ul>
+<p>Interest handling options can be configured for interest-bearing loans during re-age from both the UI and API:</p>
+<ul>
+<li>Default Behavior</li>
+<li>Waive Interest</li>
+<li>Equal Amortization</li>
+<li>Outstanding payable Interest</li>
+<li>Outstanding FULL Interest</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Charge or fee due date</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>After the re-age date</td>
+<td>Waived off</td>
+</tr>
+<tr>
+<td>Before the re-age date</td>
+<td>Split equally among new installments</td>
+</tr>
+</tbody></table>
+<h3>Default behavior interest handling</h3>
+<p>Under Default Behavior interest handling, overdue interest and charge-back interest move to the first new re-age installment, while charge-back principal is re-aged. Overdue fees and charge-back fees remain as is on the existing installment. Fees and penalties with a due date after re-age remain as is and are adjusted to the relevant installment.</p>
+<p>For interest-bearing loans under Default Behavior interest handling, overdue interest moves to the first new re-age installment, charge-back principal is re-aged, charge-back interest moves to the first new re-age installment, overdue fees remain as is on the existing installment, charge-back fees remain as is on the existing installment, and fees and penalties with a due date after re-age remain as is and are adjusted to the relevant installment.</p>
+<h3>Waive interest handling</h3>
+<p>Waive interest handling applies when interest handling is configured as Waive Interest. It waives overdue interest and outstanding payable interest, while charge-back principal is re-aged and charge-back interest is waived.</p>
+<p>Charge-back fees and other fees or penalties behave as follows:</p>
+<ul>
+<li>Charge-back fees remain as is on the existing installment.</li>
+<li>Fees or penalties added before re-age remain as is and are adjusted to the relevant installment.</li>
+<li>Fees or penalties with a due date after re-age remain as is and are adjusted to the relevant installment.</li>
+</ul>
+<p>Overdue charges and charge-back principal behave as follows:</p>
+<ul>
+<li>Overdue charge remains as is on the existing installments.</li>
+<li>Charge-back principal is re-aged.</li>
+</ul>
+<h3>Equal amortization interest handling</h3>
+<p>Equal amortization interest handling splits outstanding interest among new installments without recalculating interest after re-aging.</p>
+<p>The following rules apply under Equal Amortization of Outstanding amount interest handling:</p>
+<ul>
+<li>Outstanding interest is equally split among new installments based on either the outstanding payable interest or outstanding full interest option selected by the user.</li>
+<li>Outstanding charges and penalties are equally split among new installments.</li>
+<li>Charge-back interest and principal amounts are equally split among new installments.</li>
+<li>Charge-back amount portions are equally split among new installments.</li>
+<li>Declining balance interest calculation is turned off.</li>
+</ul>
+<p>Charges and penalties with a due date after the re-age date are handled as follows:</p>
+<ul>
+<li>Charges and penalties with a due date after the re-age date are equally split among new installments.</li>
+<li>Penalties or fees with a due date after the re-age date remain as is on the respective installment.</li>
+</ul>
+<h3>Interest recalculation and rate</h3>
+<p>Re-aging applies only to loans using the Progressive loan strategy. Interest recalculation is turned off during re-aging, and declining balance interest calculation is also turned off. For interest-bearing loans, the interest rate and interest recalculation setting remain the same during re-aging.</p>
+<p>When interest recalculation is true, the model is updated and used; when it is false, only repayment installments are used.</p>
+<ul>
+<li>When interest recalculation is true, the model is updated and used.</li>
+<li>When interest recalculation is false, only repayment installments are used.</li>
+</ul>
+<p>Re-aging affects installments and existing amounts as follows:</p>
+<ul>
+<li>N+1 installments are reapplied to the new installments during re-aging for interest-bearing loans.</li>
+<li>Existing charge-back interest and principal amount also go through equal split during re-aging.</li>
+</ul>
+<h3>Installment and schedule changes</h3>
+<p>Re-aging overrides existing installments and rebuilds the repayment schedule around reaged installments.</p>
+<p>When re-aging occurs before the maturity date, existing installments are overridden as follows:</p>
+<ul>
+<li>The first 4 installment periods remain as-is.</li>
+<li>The 5th period is converted into a reaged installment with the reage flag applied and its due date recalculated.</li>
+<li>The 6th period is converted into a reaged installment with the reage flag applied and its due date recalculated.</li>
+<li>4 more installments are created based on the reage payment plan.</li>
+</ul>
+<p>The system applies these additional rules to the rebuilt schedule:</p>
+<ul>
+<li>N+1 installment amount is adjusted as part of reverse replay.</li>
+<li>N+1 installments remain unless they overlap with reaged installments.</li>
+<li>N+1 installments are reapplied accordingly to the new installments.</li>
+<li>All outstanding balances are evenly amortized into a fixed repayment plan with equal installments.</li>
+<li>If re-aging makes the repayment schedule shorter, all normal installments after the new maturity date (the last due date of reaged installments) are deleted.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Re-age before maturity"]
+  n2["First 4 periods remain AS-IS"]
+  n3["5th period reaged installment"]
+  n4["6th period reaged installment"]
+  n5["Create 4 installments from reage plan"]
+  n6["Delete normal installments after new maturity"]
+  n7["N+1 installments reapplied"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 -->|"Schedule shorter"| n6
+  n6 --> n7
+  n5 -->|"Schedule not shorter"| n7]]></ac:plain-text-body></ac:structured-macro>
+<h3>Charges and fees handling</h3>
+<p>Re-aging updates the charge-to-repayment-installment mapping and redistributes charges and fees across the new installments. Down-payment amounts are not affected by re-aging.</p>
+<p>Charges and fees are handled during re-aging as follows:</p>
+<ul>
+<li>Charges or fees with a due-date after the re-age date remain unchanged on that installment.</li>
+<li>Charges or fees with a due-date before the re-age date are split equally among the new installments.</li>
+<li>The same handling applies to interest-bearing and non-interest bearing products, with no special treatment for either.</li>
+</ul>
+<h3>Principal and charge-back handling</h3>
+<p>Re-aging applies only to the unpaid portion of installments before the re-age date; any partial amount already paid remains unchanged. Excess payments allocated to installments after the re-age date go to a special installment created as of the re-age start date, and this behaviour applies to both non-interest bearing and interest bearing loan accounts. Users with Re-age permission can generate and preview a re-age schedule based on selected parameters at both UI and API level.</p>
+<p>Charge-back handling follows these rules:</p>
+<ul>
+<li>Charge-back interest and principal amounts from the previous period are split accordingly.</li>
+<li>Charge-back amount does not affect the re-age process.</li>
+</ul>
+<h3>Transaction template and validation</h3>
+<p>The re-age transaction template returns metadata about the loan schedule relative to the current business date, including counts of future and past installments, the next current installment due date, and the calculated start date. A re-age transaction with an amount of 0 is not allowed when there are no outstanding balances to re-age.</p>
+<p>The template call returns the following values:</p>
+<ul>
+<li>The current business date.</li>
+<li>The number of future installments where the installment due date is later than the current business date.</li>
+<li>The number of past installments where the installment due date is on or before the current business date.</li>
+<li>The next current installment due date, which is the earliest period with a due date later than the current business date.</li>
+<li>The calculated start date, which is the current date plus one unit of the original frequency type.</li>
+</ul>
+<p>Validation rules for a zero-amount re-age transaction are:</p>
+<ul>
+<li>A re-age transaction with an amount of 0 is not allowed when there are no outstanding balances to re-age.</li>
+<li>If a zero-amount re-age situation occurs during reverse-replay, the re-age transaction is reverted.</li>
+<li>When a zero-amount re-age is triggered in real time, a HTTP 403 domain rule violation exception is raised explaining that there are no outstanding balances to re-age.</li>
+</ul>
+<h3>Edge cases and examples</h3>
+<p>Re-aging handles three edge cases on interest bearing loan accounts with Default Behavior and interest recalculation enabled: a charge-off during re-aging, a chargeback before re-age, and a backdated re-age. The system applies logic for each case.</p>
+<h3>Frequency and iteration settings</h3>
+<p>Re-aging can change due dates and repayment frequency types when interest recalculation is enabled. Principal only is re-amortized, while unpaid interest is waived off.</p>
+<h3>Worked examples</h3>
+<p>A customer holds an interest-bearing progressive loan with a principal of 1,000, an annual interest rate of 12%, monthly installments, and 30-day months. After one installment is paid, the outstanding principal is 900 and accrued interest is 30, so the total outstanding balance is 930. The loan is re-aged from the next due date into three new equal installments. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Opening balance</th>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Re-age start</td>
+<td>930.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>930.00</td>
+</tr>
+<tr>
+<td>Installment 1</td>
+<td>930.00</td>
+<td>310.00</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>620.00</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>620.00</td>
+<td>310.00</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>310.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>310.00</td>
+<td>310.00</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>–</td>
+<td>930.00</td>
+<td>30.00</td>
+<td>900.00</td>
+<td>–</td>
+</tr>
+</tbody></table>
+<p>The example shows that under default interest handling the full outstanding principal and interest are re-amortized into equal installments; with Waive Interest, the 30.00 interest would be waived and only the 900.00 principal would be re-aged, giving three installments of 300.00 each.</p>
+<p>A customer holds the same loan, but the installment due before re-aging is only partially paid. The installment calls for principal of 200 and interest of 20. The customer pays 120, of which 100 is principal and 20 is interest. The paid amount remains on the original installment; only the unpaid principal of 100 is re-aged together with the remaining principal of 500, giving a re-aged principal of 600 and no outstanding interest. The loan is re-aged into three equal installments.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Opening principal</th>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing principal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before re-age</td>
+<td>600.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Installment 1</td>
+<td>600.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>200.00</td>
+<td>400.00</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>400.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>200.00</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>200.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>200.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>–</td>
+<td>600.00</td>
+<td>0.00</td>
+<td>600.00</td>
+<td>–</td>
+</tr>
+</tbody></table>
+<p>This shows that partial payments before re-aging stay as paid and only the unpaid principal enters the new schedule.</p>
+<p>A re-aging transaction creates a new installment schedule and remains reversible until it is the latest transaction on the loan. After the loan above is re-aged into three installments of 310, the re-aging transaction is reversed. The system replays the original schedule, restores the pre-re-age outstanding balance of 930 (principal 900, interest 30), and removes the re-aged installments.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Schedule state</th>
+<th>Outstanding principal</th>
+<th>Outstanding interest</th>
+<th>Total outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before re-aging</td>
+<td>Original schedule</td>
+<td>900.00</td>
+<td>30.00</td>
+<td>930.00</td>
+</tr>
+<tr>
+<td>Re-aging applied</td>
+<td>New schedule: 3 x 310.00</td>
+<td>900.00</td>
+<td>30.00</td>
+<td>930.00</td>
+</tr>
+<tr>
+<td>Re-aging reversed</td>
+<td>Original schedule replayed</td>
+<td>900.00</td>
+<td>30.00</td>
+<td>930.00</td>
+</tr>
+</tbody></table>
+<p>This shows that reversing the latest re-aging transaction restores the original schedule and balances without loss of data.</p>
+<p>A loan re-aged into three installments carries two fees: a 60 fee due before the re-age date and a 40 fee due after the re-age date. The fee due before re-aging is split equally across the three new installments, adding 20 to each. The fee due after re-aging is waived off and does not appear in the new schedule. The principal of 900 is re-aged as 300 per installment.</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Amount</th>
+<th>Treatment</th>
+<th>Per installment</th>
+<th>Total in new schedule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>900.00</td>
+<td>Re-aged equally</td>
+<td>300.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Fee due before re-age</td>
+<td>60.00</td>
+<td>Split equally</td>
+<td>20.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>Fee due after re-age</td>
+<td>40.00</td>
+<td>Waived off</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>New installment total</td>
+<td>–</td>
+<td>–</td>
+<td>320.00</td>
+<td>960.00</td>
+</tr>
+</tbody></table>
+<p>This shows that pre-re-age fees are shared across new installments while post-re-age fees are removed.</p>
+<h2>Re-amortization</h2>
+<h3>Eligibility and applicability</h3>
+<p>Re-amortization applies to interest bearing loan accounts that use the Progressive repayment strategy. You cannot apply it after the maturity date or to charge-off and written-off loan accounts.</p>
+<p>Schedule handling after re-amortization depends on the selected behaviour:</p>
+<ul>
+<li>Default behaviour applies to interest bearing loan accounts with interest recalculation enabled.</li>
+<li>Interest Waiver behaviour applies to both non-interest bearing and interest bearing loan accounts.</li>
+<li>Equal Overdue Interest split behaviour applies to both non-interest bearing and interest bearing loan accounts.</li>
+</ul>
+<h3>Re-amortization behaviors</h3>
+<p>Re-amortization recalculates interest and equated monthly installments based on the new principal balance, while the treatment of overdue amounts, charges, and fees depends on the selected behavior option.</p>
+<p>The default behavior applies the following rules:</p>
+<ul>
+<li>Overdue interest including chargeback interest moves to the first installment after the re-amortization date.</li>
+<li>Overdue charge including chargeback charge remains as is on the existing installment.</li>
+<li>Fees or penalties with a due date after re-amortization remain as is.</li>
+</ul>
+<p>The waive option applies the following rules:</p>
+<ul>
+<li>Overdue interest including chargeback interest is waived off.</li>
+<li>Overdue charge including chargeback charge remains as is on existing installments.</li>
+<li>Fees or penalties with a due date after re-amortization remain as is.</li>
+</ul>
+<p>The equal overdue interest split option applies the following rules:</p>
+<ul>
+<li>Outstanding payable interest including chargeback interest is equally split among future installments.</li>
+<li>Outstanding charges or penalties are equally split among new installments.</li>
+<li>Charge or penalty with a due date after re-amortization remains as is on the existing installment.</li>
+</ul>
+<h3>Default behavior details</h3>
+<p>Default re-amortization recalculates interest and EMI from the new principal balance and moves overdue interest, including chargeback interest, to the first installment after the re-amortization date.</p>
+<p>Other amounts keep their existing placement:</p>
+<ul>
+<li>Overdue charge, including chargeback charge, remains on its existing installment.</li>
+<li>Fees and penalties with a due date after re-amortization remain as is.</li>
+<li>Partial or excess paid amounts on installments before re-amortization stay on their allocated installments; only the unpaid amount is re-amortized, whether allocation targets the last installment or the next installment.</li>
+</ul>
+<h3>Waive interest behavior details</h3>
+<p>When re-amortization is applied with waive interest behaviour, the system recalculates actual interest and EMI based on the new principal balance.</p>
+<p>Waive interest behaviour affects overdue amounts, charges, fees, down payments, and partial payments as follows:</p>
+<ul>
+<li>Overdue interest including chargeback interest is waived off.</li>
+<li>Overdue charge including chargeback charge remains as is on existing installments.</li>
+<li>Fees or penalties with a due date after re-amortization remain as is.</li>
+<li>Down-payment amounts have no impact from re-amortization.</li>
+<li>Partial or excess paid amount on installments before re-amortization remains as is on allocated installments; only the unpaid amount is re-amortized, whether allocation is to the last installment or the next installment.</li>
+</ul>
+<h3>Equal overdue interest split behavior details</h3>
+<p>Equal Overdue Interest Split applies to future installments when re-amortization is applied. It splits outstanding payable interest, including chargeback interest, equally among those installments.</p>
+<p>The following amounts are treated as follows under Equal Overdue Interest Split:</p>
+<ul>
+<li>Outstanding charges or penalties are equally split among new installments.</li>
+<li>A charge or penalty with a due date after the re-amortization date remains unchanged on its existing installment.</li>
+<li>The N+1 installment remains unchanged.</li>
+<li>Down-payment amounts are not affected by re-amortization.</li>
+<li>Partial or excess paid amounts on installments before re-amortization remain allocated to those installments; only the unpaid amount is re-amortized, whether allocation is to the last installment or the next installment.</li>
+</ul>
+<h3>Schedule structure and recalculation</h3>
+<p>Re-amortization keeps the existing repayment schedule structure intact: no installments are added or removed, no due dates change, and no repayment periods are recreated. It recalculates current and all future installment EMIs based on current outstanding principal, while past due installments keep their total paid balances plus charges and are not re-amortized.</p>
+<p>The following amounts are not changed by re-amortization:</p>
+<ul>
+<li>N+1 installment remains as is.</li>
+<li>Down-payment amounts have no impact.</li>
+<li>Partial paid amounts on installments before re-amortization remain as is; only the unpaid amount is re-amortized.</li>
+<li>Partial paid amount will remain as it is on the installment, unpaid overdue amount will be re-amortized accordingly.</li>
+<li>Fees and penalties remain where they were.</li>
+<li>Payable interest does not change.</li>
+<li>Chargeback amount remains as it is.</li>
+</ul>
+<p>Principal and unpaid interest and fees are handled as follows:</p>
+<ul>
+<li>Principal only is re-amortized.</li>
+<li>Unpaid interest and fees are split equally across all further installments.</li>
+<li>Split interest and fees act like standalone amounts and do not take part in recalculation or interest calculation.</li>
+</ul>
+<p>Paid amounts are not moved or recreated:</p>
+<ul>
+<li>Paid amounts are not moved anywhere.</li>
+<li>No special installments or any treatment are applied.</li>
+</ul>
+<h3>Reversal and repetition</h3>
+<p>You can reverse a re-amortization transaction until it is the latest transaction on the loan, and reversal is allowed at any point in the loan life cycle even when monetary transactions occur after the re-amortization. You can perform multiple re-amortizations on a loan account, but not more than one on the same date, and every re-amortization must use the same interest options as the first one.</p>
+<h3>Accrual handling</h3>
+<p>Accruals are recalculated and adjusted as of the re-amortization business date at end of day. Accrual activity for overdue installments being re-amortized is reversed or reverse-replayed on that date in real time.</p>
+<p>Periodic accrual follows the new installment interest:</p>
+<ul>
+<li>Periodic accrual is calculated and posted periodically based on the new installment interest.</li>
+<li>Accrual activity posts regularly as per the new future installment dates on installment dates at end of day.</li>
+</ul>
+<p>Backdated repayments and reversals trigger real-time accrual handling:</p>
+<ul>
+<li>Any backdated repayment or reversal before the re-amortization date recalculates and posts the difference accrual or accrual adjustment as of current business date end of day.</li>
+<li>Any backdated repayment results in installment re-calculation before re-amortization creating a new accrual activity as of the installment date in real time.</li>
+<li>Any backdated repayment reversal results in installment re-calculation and re-amortization reversing the respective accrual activity transaction in real time.</li>
+</ul>
+<h3>Backdated transactions</h3>
+<p>Backdated repayment or reversal of backdated repayments are allowed; re-amortization is reversed and replayed accordingly.</p>
+<h3>Interest and fee options</h3>
+<p>Re-amortization applies to principal and interest, and fees can also be re-amortized.</p>
+<p>The following interest and fee options are available:</p>
+<ul>
+<li>Zero interest carry forward is an option.</li>
+<li>Interest recalculation based on new dates and charges stays as it is.</li>
+<li>Interest equal splits and charges stays as it is.</li>
+<li>Interest and charges equal splits is an option.</li>
+</ul>
+<h3>Iteration and maturity constraints</h3>
+<p>Iteration is disabled, so re-amortization does not iterate. You cannot re-amortize after the new maturity date.</p>
+<h3>Transaction support and preview</h3>
+<p>The system allows any type of transaction and feature to work normally on the re-amortization schedule, including credit transactions such as disbursements and capitalised income. Interest calculation follows the re-amortization interest handling setting. A preview schedule feature is available at both UI and API level.</p>
+<p>The system applies the following validation and workflow rules:</p>
+<ul>
+<li>Validation prevents re-amortization on a Charge-off loan account.</li>
+<li>The system recalculates and reapplies the repayment schedule.</li>
+<li>Reversal of a re-amortization transaction recalculates and reapplies the repayment schedule.</li>
+</ul>
+<p>If payable interest on the current date was $1.23, it remains $1.23 after re-amortization.</p>
+<h3>Worked examples</h3>
+<p>An interest-bearing loan uses a principal of 1,000.00, an annual interest rate of 12 percent (1 percent per 30-day month), and four monthly installments due on 2/1/24, 3/1/24, 4/1/24, and 5/1/24. The first installment of 260.00, made up of 10.00 interest and 250.00 principal, is paid on 2/1/24 and leaves a balance of 750.00. The second installment due on 3/1/24 is not paid, so its interest of 7.50 and principal of 252.50 are overdue. Re-amortization runs on 3/15/24 under default behavior. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Balance after</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>250.00</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Paid</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>252.50</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Overdue</td>
+</tr>
+<tr>
+<td>3/15/24</td>
+<td>750.00</td>
+<td>3.75 accrued</td>
+<td>—</td>
+<td>—</td>
+<td>750.00</td>
+<td>Re-amortization date</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>373.13</td>
+<td>388.13</td>
+<td>376.87</td>
+<td>Recalculated</td>
+</tr>
+<tr>
+<td>5/1/24</td>
+<td>376.87</td>
+<td>3.77</td>
+<td>376.87</td>
+<td>380.64</td>
+<td>0.00</td>
+<td>Recalculated</td>
+</tr>
+</tbody></table>
+<p>Default behavior recalculates the EMI on the outstanding principal and moves the overdue interest to the first installment after the re-amortization date.</p>
+<p>The same loan and payment history apply: principal 1,000.00, 12 percent annual interest, first installment paid on 2/1/24 leaving 750.00, and the second installment of 260.00 (interest 7.50, principal 252.50) overdue on 3/1/24. Re-amortization runs on 3/15/24 with the waive-interest option, so the overdue interest of 7.50 is waived off and is not added to any future installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Balance after</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>250.00</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Paid</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>252.50</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Overdue</td>
+</tr>
+<tr>
+<td>3/15/24</td>
+<td>750.00</td>
+<td>0.00 waived</td>
+<td>—</td>
+<td>—</td>
+<td>750.00</td>
+<td>Re-amortization date</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>373.13</td>
+<td>380.63</td>
+<td>376.87</td>
+<td>Recalculated</td>
+</tr>
+<tr>
+<td>5/1/24</td>
+<td>376.87</td>
+<td>3.77</td>
+<td>376.87</td>
+<td>380.64</td>
+<td>0.00</td>
+<td>Recalculated</td>
+</tr>
+</tbody></table>
+<p>Compared with default behavior, waiving interest removes the 7.50 overdue interest, so the first recalculated installment is 380.63 instead of 388.13.</p>
+<p>The same loan and payment history apply: principal 1,000.00, 12 percent annual interest, first installment paid on 2/1/24 leaving 750.00, and the second installment overdue on 3/1/24 with interest 7.50 and principal 252.50. Re-amortization runs on 3/15/24 with equal overdue interest split, so the 7.50 overdue interest is divided equally across the two remaining installments as 3.75 each and added as a standalone amount.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Balance after</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>250.00</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Paid</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>252.50</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Overdue</td>
+</tr>
+<tr>
+<td>3/15/24</td>
+<td>750.00</td>
+<td>3.75 split</td>
+<td>—</td>
+<td>—</td>
+<td>750.00</td>
+<td>Re-amortization date</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>373.13</td>
+<td>384.38</td>
+<td>376.87</td>
+<td>Recalculated</td>
+</tr>
+<tr>
+<td>5/1/24</td>
+<td>376.87</td>
+<td>3.77</td>
+<td>376.87</td>
+<td>384.39</td>
+<td>0.00</td>
+<td>Recalculated</td>
+</tr>
+</tbody></table>
+<p>Compared with default behavior, equal split spreads the 7.50 overdue interest as 3.75 on each of the two remaining installments instead of moving it entirely to the first installment.</p>
+<p>A loan with principal 1,000.00 and 12 percent annual interest has its first installment paid on 2/1/24, leaving 750.00. The installment due on 3/1/24 is not paid and the account is charged off on 3/1/24, which sets all future installment interest to zero. Re-amortization runs on 3/15/24 and is permitted on the charged-off account; the remaining principal is re-amortized over the two remaining installments with zero interest.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Balance after</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/24</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>250.00</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Paid</td>
+</tr>
+<tr>
+<td>3/1/24</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>252.50</td>
+<td>260.00</td>
+<td>750.00</td>
+<td>Charged off</td>
+</tr>
+<tr>
+<td>3/15/24</td>
+<td>750.00</td>
+<td>0.00</td>
+<td>—</td>
+<td>—</td>
+<td>750.00</td>
+<td>Re-amortization date</td>
+</tr>
+<tr>
+<td>4/1/24</td>
+<td>750.00</td>
+<td>0.00</td>
+<td>375.00</td>
+<td>375.00</td>
+<td>375.00</td>
+<td>Principal only</td>
+</tr>
+<tr>
+<td>5/1/24</td>
+<td>375.00</td>
+<td>0.00</td>
+<td>375.00</td>
+<td>375.00</td>
+<td>0.00</td>
+<td>Principal only</td>
+</tr>
+</tbody></table>
+<p>Compared with a normal account, charge-off sets future interest to zero, so re-amortization yields principal-only installments of 375.00.</p>
+<h2>Schedule Recalculation for Overdue Loans</h2>
+<h3>Interest recalculation scope and behavior</h3>
+<p>When interest recalculation is enabled for a loan account, the system recalculates and regenerates the repayment schedule if an instalment is not paid on its instalment date for overdue loans. Interest is recalculated for all instalments according to their overdue days. If the loan is not interest-bearing, there is nothing to do during interest recalculation.</p>
+<p>The recalculation behaves as follows:</p>
+<ul>
+<li>The new business step recalculates interest of a loan similarly as the existing RECALCULATE_INTEREST_FOR_LOAN job does.</li>
+<li>Progressive interest-bearing loans handle overdue installments similar to cumulative loans when interest recalculation is enabled.</li>
+<li>Late repayment on the loan triggers recalculation of the loan repayment schedule.</li>
+</ul>
+<h3>Overdue installment handling</h3>
+<p>Overdue installments hold and display additional interest on overdue principal on the repayment schedule so that repayment amounts remain correct for late repayments. Interest recalculation applies to interest-bearing progressive loans when an installment becomes overdue.</p>
+<p>The model calculates overdue interest and creates a new installment only when a repayment happens.</p>
+<ul>
+<li>When a late repayment comes after the maturity date, a new installment is created as of the repayment date.</li>
+<li>Interest for that installment is calculated for the extra days from the last maturity date on the current reducing principal balance.</li>
+<li>A repayment after maturity collects only the interest in the repayment schedule for the installment it fulfills.</li>
+</ul>
+<h3>COB job configuration and execution</h3>
+<p>The Loan COB job includes a configurable business step that recalculates interest for overdue loans. Interest recalculation must be enabled on the loan, and the recalculate interest step must be set as the last step in the COB job. The job runs at start of business day using the actual business date and executes after all end of business day business steps.</p>
+<p>The RECALCULATE_INTEREST_FOR_LOAN job partitions loan IDs into chunks and processes each chunk in parallel using a custom ThreadPoolTaskExecutor.</p>
+<p>The batch job &quot;Recalculate Interest For Loans&quot; handles interest recalculation and requires review for progressive loan configurations with interest recalculation enabled.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Start of business day"]
+  n2["RECALCULATE_INTEREST_FOR_LOAN"]
+  n3["Partition loan IDs"]
+  n4["Recalculate interest chunks"]
+  n5["End of business day steps"]
+  n1 -->|"actual business date"| n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h3>Repayment schedule coverage and limitations</h3>
+<p>Repayment schedule recalculation applies when the COB job&#39;s interest recalculation business step is enabled and covers daily and same-as-repayment-period strategies only. Weekly, monthly and mixed strategies are not covered, and last installment overdues are not covered. No new installment is created during the COB job process, and no new interest is added, calculated or collected post maturity date.</p>
+<p>The repayment schedule updates correctly after running COB for daily and same-as-repayment-period strategies in these situations:</p>
+<ul>
+<li>One overdue installment.</li>
+<li>Two or more installments overdue in a row.</li>
+<li>Late repayment on the next installment due date.</li>
+<li>Late repayment on a day between the start and due dates.</li>
+<li>Partial late repayment on the same day where the sum of partial repayments fully repays the overdue installment.</li>
+<li>Partial late repayment on different business days during the same installment period.</li>
+</ul>
+<p>When repayment happens, interest recalculation is applied and the repayment schedule remains valid for the business day.</p>
+<h3>Rate factor formulas</h3>
+<p>The rate factor depends on the repayment frequency: monthly, weekly, or daily. Each formula uses the rate of interest, repaid every, days in year, actual days in period, and calculated days in period.</p>
+<table>
+<thead>
+<tr>
+<th>Frequency</th>
+<th>Rate factor formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly</td>
+<td>1 + rate of interest × repaid every × days in month ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+<tr>
+<td>Weekly</td>
+<td>1 + rate of interest × 7 × repaid every ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+<tr>
+<td>Daily</td>
+<td>1 + rate of interest × repaid every ÷ days in year × actual days in period ÷ calculated days in period</td>
+</tr>
+</tbody></table>
+<h3>Worked examples</h3>
+<p>A customer takes a loan of 1,000 at 12% annual interest, repayable in 3 monthly installments over 30-day months. The figures are illustrative. With no overdue installments, the system generates a fixed amortization schedule: each period interest is calculated on the opening balance, the installment covers interest and principal, and the closing balance becomes the next opening balance. No interest recalculation is triggered because every installment is paid on its due date.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2024/02/01</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2024/03/01</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>333.30</td>
+<td>340.00</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2024/04/01</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>336.70</td>
+<td>340.07</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 at 12% annual interest with 3 monthly installments and 30-day months is used. The first installment is paid on time, but the second installment due on 2024/03/01 is not paid. Under the same-as-repayment-period strategy, the system keeps the overdue installment on the schedule, recalculates its interest for the overdue days, and creates no new installment. When the borrower pays the overdue amount on 2024/03/10, the overdue interest is added to that installment and the remaining schedule continues unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Overdue interest</th>
+<th>Principal repaid</th>
+<th>Total paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2024/02/01</td>
+<td>Paid on time</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>330.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2024/03/01</td>
+<td>Overdue</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2024/03/10</td>
+<td>Paid late</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>1.00</td>
+<td>333.30</td>
+<td>341.00</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2024/04/01</td>
+<td>Paid on time</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>0.00</td>
+<td>336.70</td>
+<td>340.07</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 at 12% annual interest with 3 monthly installments and 30-day months is used. The second installment is overdue. Under the daily interest strategy, the system splits the overdue period at each repayment date and calculates interest on the overdue principal for the actual number of days. If the borrower repays the full overdue installment on 2024/03/10, overdue interest stops on that date. If the repayment is partial, the overdue period is split again at each repayment date and interest continues to accrue on the remaining overdue principal until it is cleared. No new installment is created during recalculation.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Date</th>
+<th>Event</th>
+<th>Days overdue</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Overdue interest</th>
+<th>Principal repaid</th>
+<th>Total paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2024/02/01</td>
+<td>Paid on time</td>
+<td>0</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>330.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2024/03/01</td>
+<td>Overdue</td>
+<td>0</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2024/03/10</td>
+<td>Paid late in full</td>
+<td>9</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>1.00</td>
+<td>333.30</td>
+<td>341.00</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>4</td>
+<td>2024/04/01</td>
+<td>Paid on time</td>
+<td>0</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>0.00</td>
+<td>336.70</td>
+<td>340.07</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="early-and-late-repayment-interest"><ri:page ri:content-title="Interest and Accruals"/><ac:plain-text-link-body><![CDATA[Interest and Accruals: Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="emi-calculation"><ri:page ri:content-title="Interest and Accruals"/><ac:plain-text-link-body><![CDATA[Interest and Accruals: EMI Calculation]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="loan-payoff"><ri:page ri:content-title="Repayment and Allocation"/><ac:plain-text-link-body><![CDATA[Repayment and Allocation: Loan Payoff]]></ac:plain-text-link-body></ac:link>.</p>

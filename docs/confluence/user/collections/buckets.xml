@@ -1,0 +1,197 @@
+<h2>Delinquency Buckets</h2>
+<h3>Delinquency bucket setup</h3>
+<p>A delinquency bucket is a set of preconfigured delinquency ranges that a loan product refers to. Each bucket has a name shown on the user interface, and the same range can belong to more than one bucket.</p>
+<ol>
+<li>Open &quot;Manage Delinquency Buckets&quot;.</li>
+<li>Enter Name, Frequency, Frequency Type, Minimum Payment and Minimum Payment Type.</li>
+<li>Choose Add, Delete, Cancel or Submit.</li>
+</ol>
+<p>The delinquency bucket screen shows the following columns and controls:</p>
+<ul>
+<li>Name and Type columns.</li>
+<li>A Filter field.</li>
+<li>Create, Regular and Working Capital buttons.</li>
+</ul>
+<p>Viewing a delinquency bucket shows the following details:</p>
+<ul>
+<li>Type, Name, Frequency, Frequency Type, Minimum Payment, Minimum Payment Type, Classification, Days From and Days Till.</li>
+<li>Edit and Delete buttons.</li>
+</ul>
+<p>Editing a delinquency bucket requires entering the following fields:</p>
+<ul>
+<li>Name.</li>
+<li>Frequency.</li>
+<li>Frequency Type.</li>
+<li>Minimum Payment.</li>
+<li>Minimum Payment Type.</li>
+</ul>
+<h3>Delinquency configuration at loan product level</h3>
+<p>You can configure delinquency at the installment level for a loan product. Delinquency bucket selection is optional when you create or update a loan product, and the option is available in both the UI and backend.</p>
+<p>The configuration works as follows:</p>
+<ul>
+<li>A checkbox enables delinquency buckets at the installment level.</li>
+<li>The delinquency bucket classification configuration remains the same for both levels.</li>
+<li>The UI lists delinquency buckets and shows which installments have outstanding amounts or dates that make them delinquent.</li>
+</ul>
+<h3>Delinquency calculation and bucket assignment</h3>
+<p>The system calculates delinquency at the installment level and assigns each overdue installment to its delinquency bucket for the loan account. When any installment is overdue, the loan is marked delinquent and its delinquency bucket equals the longest overdue bucket. The calculation runs in real time and stores the bucket and related information in the database.</p>
+<p>The following rules apply to bucket assignment and repayment:</p>
+<ul>
+<li>When an installment moves from one bucket to another, it appears only in the new bucket; no history of the old bucket is stored.</li>
+<li>If one overdue installment is paid in full, only that installment leaves the delinquency bucket; the loan remains delinquent until all installments leave the bucket.</li>
+<li>When a reverse or backdated repayment occurs, each installment&#39;s delinquency is recalculated and assigned to its new bucket.</li>
+<li>The system stores the loan ID, installment, bucket, outstanding amount, and first overdue date for each bucket assignment.</li>
+</ul>
+<p>Close of business calculates delinquency buckets.</p>
+<h3>Delinquency display at loan level</h3>
+<p>On the Delinquency tab of a loan, the system lists every configured delinquency bucket and shows the delinquent amount under each bucket. Multiple installments can feed past-due amounts into the same bucket, and the bucket shows the aggregated amount. A bucket range with zero delinquent amount still appears in the response so the UI can draw the full table.</p>
+<p>The following rules apply to the delinquency display at loan level:</p>
+<ul>
+<li>The current loan-level delinquent display remains unchanged until all installments come out of delinquency.</li>
+<li>Empty delinquency ranges are not shown.</li>
+</ul>
+<h3>Special cases in delinquency</h3>
+<p>A loan inherits its delinquency level configuration from its loan product. Delinquency classification also considers down-payment installments, and charge-off tagged loan accounts follow normal delinquency processing. When grace options for installment delinquency are not required, the past due bucket configured for 1-3 days acts as the grace period.</p>
+<h3>Worked examples</h3>
+<p>A loan product is configured for delinquency at the installment level, and the loan inherits that configuration. Consider a loan of 1,000.00 with two monthly installments of 500.00 each and 30-day months; the figures are illustrative. The first installment is due on 1 January and today is 10 January, so it is nine days past due with no payment received. Bucket 1 covers three to fourteen days past due, and Bucket 2 covers fifteen to twenty-nine days past due. Because the past due balance is greater than zero and the installment is nine days overdue, the system assigns the installment to Bucket 1, sets the delinquency amount to 500.00, and marks the loan as delinquent. The loan’s delinquency bucket is Bucket 1, the longest overdue bucket for the account. This example shows that a single overdue installment places the loan in the matching bucket and marks the loan delinquent.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Days past due</th>
+<th>Past due amount</th>
+<th>Bucket</th>
+<th>Delinquency amount</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Installment 1</td>
+<td>1 Jan</td>
+<td>9</td>
+<td>500.00</td>
+<td>Bucket 1 (3–14 days)</td>
+<td>500.00</td>
+<td>Delinquent</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>1 Feb</td>
+<td>0</td>
+<td>0.00</td>
+<td>—</td>
+<td>0.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>—</td>
+<td>—</td>
+<td>500.00</td>
+<td>Bucket 1</td>
+<td>500.00</td>
+<td>Delinquent</td>
+</tr>
+</tbody></table>
+<p>A loan has three monthly installments of 500.00 each on a 1,000.00 principal, with 30-day months. Installment 1, due on 1 January, is twenty days past due and falls in Bucket 2 (fifteen to twenty-nine days). Installment 2, due on 1 February, is ten days past due and falls in Bucket 1 (three to fourteen days). Installment 3 is current. Before repayment, Bucket 1 holds 500.00 and Bucket 2 holds 500.00, so the loan’s delinquency bucket is Bucket 2 and the loan is delinquent. When the user repays Installment 1 in full, only that installment leaves its bucket; Bucket 2 falls to zero while Bucket 1 keeps 500.00. The loan remains delinquent because Installment 2 is still overdue, and Bucket 1 becomes the loan’s delinquency bucket. This example shows that repaying one installment removes only that installment from its bucket, while the loan stays delinquent until every installment is current.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Days past due</th>
+<th>Bucket before repayment</th>
+<th>Amount before</th>
+<th>Bucket after repayment</th>
+<th>Amount after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Installment 1</td>
+<td>20</td>
+<td>Bucket 2 (15–29 days)</td>
+<td>500.00</td>
+<td>—</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>10</td>
+<td>Bucket 1 (3–14 days)</td>
+<td>500.00</td>
+<td>Bucket 1 (3–14 days)</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>0</td>
+<td>—</td>
+<td>0.00</td>
+<td>—</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Loan’s delinquency bucket</td>
+<td>—</td>
+<td>Bucket 2</td>
+<td>—</td>
+<td>Bucket 1</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Loan status</td>
+<td>—</td>
+<td>Delinquent</td>
+<td>—</td>
+<td>Delinquent</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>A user opens the delinquency tab on a loan account. The product is configured with buckets Past Due (D0), D3, D10, D15, D30, D45, D60, D90, D120, D150 and D180. The loan holds 300.00 in D3 and 250.00 in D90; every other bucket is zero. The screen lists all configured buckets, shows the aggregated delinquency amount under each, keeps zero buckets in the response so the interface can draw the full table, and marks the loan delinquent because at least one bucket contains an amount. The API returns the same bucket rows as the screen; only the channel changes. This example shows that the delinquency tab aggregates amounts per bucket and retains empty buckets so the full range table can be rendered.</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Days past due band</th>
+<th>Delinquent amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D0 (past due)</td>
+<td>0 days</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>D3</td>
+<td>3–14 days</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>D15</td>
+<td>15–29 days</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>D30</td>
+<td>30–59 days</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>D90</td>
+<td>60–89 days</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>—</td>
+<td>550.00</td>
+</tr>
+</tbody></table>

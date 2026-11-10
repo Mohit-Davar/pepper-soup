@@ -1,0 +1,23 @@
+<h2>Primary Key Generation</h2>
+<p>Primary key generation controls how the system assigns identifiers to records before they are persisted. DB-enforced auto-increment keys require a flush or commit because the database generates the ID only at that point, while Snowflake-style BIGINT IDs are generated at the application level and are available immediately in memory.</p>
+<p>DB-enforced auto-increment primary keys create several drawbacks:</p>
+<ul>
+<li>They complicate batching, caching, and testability and cause issues around multiple flushes per transaction.</li>
+<li>Code often performs additional flushes just to obtain generated IDs, introducing unnecessary round-trips and slowing down persistence at scale.</li>
+<li>Sequential IDs are trivially guessable, which can pose a security and privacy concern when exposed via APIs.</li>
+<li>Relying solely on DB-generated sequences ties identity generation to persistence, reducing flexibility for service decomposition, replication, or multi-tenant setups.</li>
+</ul>
+<p>Snowflake-style BIGINT IDs use application-level ID generation with a 64-bit ID containing timestamp, machine ID, and sequence:</p>
+<ul>
+<li>They are available immediately in memory with no flush required.</li>
+<li>They are globally unique across instances.</li>
+<li>They are roughly time-ordered, which helps with debugging and querying.</li>
+<li>They remove guessability of plain sequential IDs.</li>
+<li>They remain compact BIGINT values for indexing and joins.</li>
+<li>No migration is needed for Snowflake-style IDs.</li>
+</ul>
+<p>Snowflake-style IDs have the following requirements and trade-offs:</p>
+<ul>
+<li>They require a generator implementation and clock synchronization safeguards.</li>
+<li>They are less human-friendly than sequential integers.</li>
+</ul>

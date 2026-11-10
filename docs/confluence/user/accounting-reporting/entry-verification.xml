@@ -1,0 +1,1360 @@
+<h2>Accounting Entry Verification</h2>
+<h3>Charge-off and charge adjustment mappings</h3>
+<p>Charge-off and charge adjustment mappings determine which accounts receive debits and credits when non-fraud fees or penalties are charged off or adjusted.</p>
+<table>
+<thead>
+<tr>
+<th>Mapping</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Income accounts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge off Non Fraud Fees portion</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+<td>charge-off fees Income</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud Penalty portion</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+<td>charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>charge adjustment Fees portion</td>
+<td>Fee Income</td>
+<td>Other Credit liability</td>
+<td>income from fees and charge-off fees Income</td>
+</tr>
+<tr>
+<td>charge adjustment Penalty portion</td>
+<td>Fee Income</td>
+<td>Fee Charge off</td>
+<td>income from penalties and charge-off Penalty Income</td>
+</tr>
+</tbody></table>
+<h3>OCA repayment mappings</h3>
+<p>OCA repayment mappings determine how the system posts fees, unallocated credit and penalty portions during repayment verification.</p>
+<table>
+<thead>
+<tr>
+<th>OCA repayment portion</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Fund source</th>
+<th>Income account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fees</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+<td>/advance accounting</td>
+<td>Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Other receivables</td>
+<td>Other Credit liability</td>
+<td>/advance accounting</td>
+<td>Overpayment Liability</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+<td>/advance accounting</td>
+<td>Income from Recovery payment</td>
+</tr>
+</tbody></table>
+<p>A loan disbursement with Principal allocation type and Cash Out status debits account 112601 and credits account 145023.</p>
+<h3>Transaction Refund/Provisional Credit Cash in entries</h3>
+<p>Transaction Refund/Provisional Credit Cash in entries post according to the repayment allocation type.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Transaction Refund/Provisional Credit Cash in reversal entries</h3>
+<p>A Transaction Refund/Provisional Credit Cash in reversal entry debits account 145023 and credits an account based on the repayment allocation type. This applies when the reversal indicator is Y.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transaction Refund/Provisional Credit with Interest</td>
+<td>404001</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit with Late Fee Payment</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit with NSF Fee Payment</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit with Snooze Fee Payment</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit with Principal Payment</td>
+<td>744007/740037</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit with Unallocated Credit (UNC)</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Transaction Refund/Provisional Credit Cash Out reversal entries</h3>
+<p>Transaction Refund/Provisional Credit Cash Out reversal entries apply when the reversal indicator is Y and the status is Cash Out. The debit account depends on the repayment allocation type, while the credit account is always 145023.</p>
+<table>
+<thead>
+<tr>
+<th>Repayment allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<h3>Transaction Refund/Provisional Credit Cash Out charged-off entries</h3>
+<p>A Transaction Refund/Provisional Credit Cash Out reversal on a charged-off account posts to the accounts shown below, depending on the repayment allocation type. The credit account is always 145023.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transaction Refund/Provisional Credit with Interest</td>
+<td>404001</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>744007/740037</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<h3>Good Will No Cash entries</h3>
+<p>Good Will No Cash entries record goodwill adjustments without moving cash. The debit and credit accounts depend on the repayment allocation type.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will with Interest</td>
+<td>404001</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will with Late Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will with NSF Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will with Snooze Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will with Principal Payment</td>
+<td>744003</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Good Will with Unallocated Credit (UNC)</td>
+<td>744003</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Good Will No Cash charged-off entries</h3>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will with Interest</td>
+<td>404001</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will with Late Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will with NSF Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will with Snooze Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+</tbody></table>
+<h3>Late Fee Waiver entries</h3>
+<p>A Late Fee Waiver entry with Late Fee Payment allocation type and No Cash status debits account 404007 and credits account 112603.</p>
+<p>When the Reversal Indicator is Y, the entry posts as follows:</p>
+<ul>
+<li>With Late Fee Payment allocation type, No Cash status, and Reversal Indicator Y, the entry debits account 404007 and credits account 404008.</li>
+<li>With Late Fee Payment allocation type, No Cash status, Reversal Indicator Y, and Charged off Flag Y, the entry debits account 404008 and credits account 404007.</li>
+</ul>
+<h3>NSF Fee Waiver entries</h3>
+<p>An NSF Fee Waiver entry with NSF Fee Payment allocation type and No Cash status debits account 404007 and credits account 112603.</p>
+<p>When Reversal Indicator Y applies, the entry depends on the charged off flag:</p>
+<ul>
+<li>With Charged off Flag Y, the entry debits account 112603 and credits account 404007.</li>
+<li>Without Charged off Flag Y, the entry debits account 404007 and credits account 404008.</li>
+</ul>
+<h3>Auto Payment Cash in charged-off entries</h3>
+<p>Auto Payment Cash in charged-off entries apply when an auto payment is received on a charged-off loan. The debit and credit accounts depend on the repayment allocation type. All allocation types debit account 145023; most credit account 744008, while Unallocated Credit credits account 245000.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Auto Payment Cash Out reversal entries</h3>
+<p>Auto Payment Cash Out reversal entries apply when an Auto Payment reversal has Cash Out status. The debit and credit accounts depend on the repayment allocation type. The system credits account 145023 for every reversal entry listed here. The debit account is 112603 for interest, late fee, NSF fee and snooze fee allocations, 112601 for principal allocations, and 245000 for unallocated credit allocations.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Status</th>
+<th>Reversal indicator</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>Cash Out</td>
+<td>Y</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>Cash Out</td>
+<td>Y</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>Cash Out</td>
+<td>Y</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Cash in</td>
+<td>Y</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>Cash Out</td>
+<td>Y</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Cash Out</td>
+<td>Y</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<h3>Auto Payment Cash Out charged-off reversal entries</h3>
+<p>Auto Payment Cash Out charged-off reversal entries apply when an Auto Payment has Cash Out status, reversal indicator Y, and charged off flag Y. The debit and credit accounts depend on the repayment allocation type.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>744008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>744008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>744008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>744008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<p>Snooze Fee Payment entries use Cash in status rather than Cash Out status.</p>
+<h3>Scheduled Payment Cash in entries</h3>
+<p>Scheduled Payment Cash in entries record the accounting effect when a scheduled payment is received, with the debit and credit accounts depending on the allocation type.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Scheduled Payment Cash in charged-off entries</h3>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h3>Scheduled Payment Cash Out reversal entries</h3>
+<p>Scheduled Payment Cash Out reversal entries apply when a scheduled payment has Cash Out status and Reversal Indicator Y. The debit account depends on the allocation type, while the credit account stays the same.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest - Repayment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<p>Apply Fee Return with Late Fee Payment allocation type and No Cash status has no accounting entries, whether or not Reversal Indicator Y is set.</p>
+<p>A Loan Disbursement Principal Cash Out entry debits account 112601 and credits account 145023 with status pass, mapping Loan portfolio to Fund source.</p>
+<h3>Verified Transaction Refund/Provisional Credit Cash in entries</h3>
+<p>A Verified Transaction Refund/Provisional Credit Cash in entry posts to account 145023 as a debit and credits the receiving account with status pass, mapping the fund source to the relevant receivable, liability, or loan portfolio account.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+<th>Fund source mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest - Repayment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Principal Payment Cash in</td>
+<td>145023</td>
+<td>112601</td>
+<td>pass</td>
+<td>Loan portfolio</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash in</td>
+<td>145023</td>
+<td>245000</td>
+<td>pass</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h3>Verified Transaction Refund/Provisional Credit Cash in reversal entries</h3>
+<p>A Transaction Refund/Provisional Credit Cash in entry with the Y flag debits account 145023 and credits an income or expense account based on the payment type, with the Fund source mapped to the corresponding charge-off income or expense account.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Fund source mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest - Repayment</td>
+<td>145023</td>
+<td>404001</td>
+<td>Income from ChargeOff Interest</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>744007/740037</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h3>Verified Transaction Refund/Provisional Credit Cash Out reversal entries</h3>
+<p>A Verified Transaction Refund/Provisional Credit Cash Out entry reverses a cash-out payment by debiting a cash account and crediting the fund source account. The entry applies when the Y flag is set and carries a pass status.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest repayment</td>
+<td>112603</td>
+<td>145023</td>
+<td>pass</td>
+<td>Interest Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Late fee payment</td>
+<td>112603</td>
+<td>145023</td>
+<td>pass</td>
+<td>Penalties Receivable to Fund source</td>
+</tr>
+<tr>
+<td>NSF fee payment</td>
+<td>112603</td>
+<td>145023</td>
+<td>pass</td>
+<td>Fees Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Snooze fee payment</td>
+<td>112603</td>
+<td>145023</td>
+<td>pass</td>
+<td>Fees Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Principal payment</td>
+<td>112601</td>
+<td>145023</td>
+<td>pass</td>
+<td>Loan portfolio to Fund source</td>
+</tr>
+<tr>
+<td>Unallocated credit</td>
+<td>245000</td>
+<td>145023</td>
+<td>pass</td>
+<td>Over payment liability to Fund source</td>
+</tr>
+</tbody></table>
+<h3>Verified Transaction Refund/Provisional Credit Cash Out charged-off reversal entries</h3>
+<p>Verified Transaction Refund/Provisional Credit Cash Out charged-off reversal entries post with Y Y flags and credit account 145023 while debiting the account mapped to the payment type. Each entry has a status of in development.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transaction Refund/Provisional Credit Interest - Repayment Cash Out</td>
+<td>404001</td>
+<td>145023</td>
+<td>Income from ChargeOff Interest to Fund source</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit Late Fee Payment Cash Out</td>
+<td>404008</td>
+<td>145023</td>
+<td>Income from ChargeOff Penalty to Fund source</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit NSF Fee Payment Cash Out</td>
+<td>404008</td>
+<td>145023</td>
+<td>Income from ChargeOff Fees to Fund source</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit Snooze Fee Payment Cash Out</td>
+<td>404008</td>
+<td>145023</td>
+<td>Income from ChargeOff Fees to Fund source</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit Principal Payment Cash Out</td>
+<td>744007/740037</td>
+<td>145023</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense to Fund source</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash Out</td>
+<td>245000</td>
+<td>145023</td>
+<td>Over payment liability to Fund source</td>
+</tr>
+</tbody></table>
+<h3>Verified Good Will No Cash entries</h3>
+<p>Verified Good Will No Cash entries record goodwill credit adjustments without moving cash, mapping income or expense to receivable or loan portfolio accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will Interest - Repayment No Cash</td>
+<td>404001</td>
+<td>112603</td>
+<td>TBD</td>
+<td>Income from Goodwill Credit Interest to Interest Receivable</td>
+</tr>
+<tr>
+<td>Good Will Late Fee Payment No Cash</td>
+<td>404008</td>
+<td>112603</td>
+<td>pass</td>
+<td>Income from Goodwill Credit Penalty to Penalties Receivable</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash</td>
+<td>404008</td>
+<td>112603</td>
+<td>pass</td>
+<td>Income from Goodwill Credit Fees to Fees Receivable</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash</td>
+<td>404008</td>
+<td>112603</td>
+<td>pass</td>
+<td>Income from Goodwill Credit Fees to Fees Receivable</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash</td>
+<td>744003</td>
+<td>112601</td>
+<td>pass</td>
+<td>Expense from Goodwill Credit to Loan portfolio</td>
+</tr>
+<tr>
+<td>Good Will Unallocated Credit (UNC) No Cash</td>
+<td>744003</td>
+<td>245000</td>
+<td>pass</td>
+<td>Expense from Goodwill Credit to Over payment liability</td>
+</tr>
+</tbody></table>
+<h3>Verified Good Will No Cash charged-off entries</h3>
+<p>A Verified Good Will No Cash charged-off entry applies when a goodwill repayment entry carries the Y flag and the underlying account is charged off. It debits one goodwill income or expense account and credits account 744008, mapping the goodwill income or expense to Income from Recovery Repayment.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will Interest - Repayment No Cash</td>
+<td>404001</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Interest to Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Late Fee Payment No Cash</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Penalty to Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Fees to Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Fees to Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash</td>
+<td>744003</td>
+<td>744008</td>
+<td>Expense from Goodwill Credit to Income from Recovery Repayment</td>
+</tr>
+</tbody></table>
+<h3>Verified Late Fee Waiver entries</h3>
+<p>A Verified Late Fee Waiver entry records a late fee waiver without cash movement and uses one of four account mappings depending on the flag combination.</p>
+<table>
+<thead>
+<tr>
+<th>Flags</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>None</td>
+<td>404007</td>
+<td>112603</td>
+<td>Income from Penalties to Penalties Receivable</td>
+</tr>
+<tr>
+<td>Y</td>
+<td>404007</td>
+<td>404008</td>
+<td>Income from Penalties to Income from ChargeOff Penalty</td>
+</tr>
+<tr>
+<td>Y</td>
+<td>112603</td>
+<td>404007</td>
+<td>Penalties Receivable to Income from Penalties</td>
+</tr>
+<tr>
+<td>Y Y</td>
+<td>404008</td>
+<td>404007</td>
+<td>Income from ChargeOff Penalty to Income from Penalties</td>
+</tr>
+</tbody></table>
+<h3>Verified NSF Fee Waiver entries</h3>
+<p>A Verified NSF Fee Waiver entry records an NSF Fee Payment No Cash transaction with one of four flag combinations, each mapping fee income to a different receivable or income account.</p>
+<table>
+<thead>
+<tr>
+<th>Flags</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>No flag</td>
+<td>404007</td>
+<td>112603</td>
+<td>Income from Fees to Fees Receivable</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>404007</td>
+<td>404008</td>
+<td>Income from Fees to Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>112603</td>
+<td>404007</td>
+<td>Fees Receivable to Income from Fees</td>
+</tr>
+<tr>
+<td>Y Y flags</td>
+<td>404008</td>
+<td>404007</td>
+<td>Income from ChargeOff Fees to Income from Fees</td>
+</tr>
+</tbody></table>
+<h3>Verified Auto Payment Cash in entries</h3>
+<p>A verified Auto Payment Cash in entry records the accounting mapping for each payment component when the entry passes verification.</p>
+<table>
+<thead>
+<tr>
+<th>Payment component</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+<th>Fund source mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Late fee payment</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>NSF fee payment</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Snooze fee payment</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Principal payment</td>
+<td>145023</td>
+<td>112601</td>
+<td>pass</td>
+<td>Loan portfolio</td>
+</tr>
+<tr>
+<td>Unallocated credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+<td>pass</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h3>Verified Auto Payment Cash in charged-off entries</h3>
+<p>A verified Auto Payment Cash in charged-off entry uses the Y flag and maps the fund source to income or liability accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Fund source mapping</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Auto Payment Late Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Auto Payment NSF Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Auto Payment Snooze Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Auto Payment Principal Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Auto Payment Unallocated Credit (UNC) Cash in</td>
+<td>145023</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>in development</td>
+</tr>
+</tbody></table>
+<h3>Verified Auto Payment Cash Out reversal entries</h3>
+<p>Verified Auto Payment Cash Out reversal entries apply to Auto Payment entries marked with a Y flag and use status pass.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>112603</td>
+<td>145023</td>
+<td>Interest Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Late Fee Payment Cash Out</td>
+<td>112603</td>
+<td>145023</td>
+<td>Penalties Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment NSF Fee Payment Cash Out</td>
+<td>112603</td>
+<td>145023</td>
+<td>Fees Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Snooze Fee Payment Cash in</td>
+<td>112603</td>
+<td>145023</td>
+<td>Fees Receivable to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Principal Payment Cash Out</td>
+<td>112601</td>
+<td>145023</td>
+<td>Loan portfolio to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Unallocated Credit (UNC) Cash Out</td>
+<td>245000</td>
+<td>145023</td>
+<td>Over payment liability to Fund source</td>
+</tr>
+</tbody></table>
+<h3>Verified Auto Payment Cash Out charged-off reversal entries</h3>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>744008</td>
+<td>145023</td>
+<td>Income from Recovery Repayment to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Late Fee Payment Cash Out</td>
+<td>744008</td>
+<td>145023</td>
+<td>Income from Recovery Repayment to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment NSF Fee Payment Cash Out</td>
+<td>744008</td>
+<td>145023</td>
+<td>Income from Recovery Repayment to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Snooze Fee Payment Cash in</td>
+<td>744008</td>
+<td>145023</td>
+<td>Income from Recovery Repayment to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Principal Payment Cash Out</td>
+<td>744008</td>
+<td>145023</td>
+<td>Income from Recovery Repayment to Fund source</td>
+</tr>
+<tr>
+<td>Auto Payment Unallocated Credit (UNC) Cash Out</td>
+<td>245000</td>
+<td>145023</td>
+<td>Over payment liability to Fund source</td>
+</tr>
+</tbody></table>
+<h3>Verified Scheduled Payment Cash in entries</h3>
+<p>A verified Scheduled Payment Cash in entry records the accounting mapping for each repayment component when the payment status is pass.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+<th>Fund source mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Scheduled Payment Interest - Repayment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Scheduled Payment Late Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>Scheduled Payment NSF Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Scheduled Payment Snooze Fee Payment Cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Scheduled Payment Principal Payment Cash in</td>
+<td>145023</td>
+<td>112601</td>
+<td>pass</td>
+<td>Loan portfolio</td>
+</tr>
+<tr>
+<td>Scheduled Payment Unallocated Credit (UNC) Cash in</td>
+<td>145023</td>
+<td>245000</td>
+<td>pass</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h3>Verified Scheduled Payment Cash in charged-off entries</h3>
+<p>A Verified Scheduled Payment Cash in charged-off entry posts to the recovery repayment account when the Y flag is set.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Fund source mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Scheduled Payment Interest - Repayment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Scheduled Payment Late Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Scheduled Payment NSF Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Scheduled Payment Snooze Fee Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Scheduled Payment Principal Payment Cash in</td>
+<td>145023</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+</tbody></table>
+<p>A Verified Scheduled Payment Unallocated Credit Cash in entry debits account 145023 and credits account 245000, mapping the Fund source to Over payment liability.</p>
+<h3>Worked examples</h3>
+<p>A fraudulent loan with a principal of 1,000 has overdue amounts of 100.00 interest, 50.00 fees, and 30.00 penalties. An operations user verifies the charge-off entries before posting them. The figures are illustrative. The example shows how interest, fees, and penalties split into different debit and credit accounts during a fraud charge-off.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fraud interest</td>
+<td>Interest income charge off</td>
+<td>Interest Receivable</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Fraud fees</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>Fraud penalty</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>180.00</td>
+</tr>
+</tbody></table>
+<p>A non-fraud loan with a principal of 1,000 carries 40.00 in overdue fees and 20.00 in overdue penalties. A product administrator verifies the charge-off entries for both portions. The fee portion credits Fee Receivable while the penalty portion credits Penalty Receivable.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non-fraud fees</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>Non-fraud penalty</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>60.00</td>
+</tr>
+</tbody></table>
+<p>A recovered payment of 80.00 includes 60.00 in fees and 20.00 in penalties. An operations user posts the OCA repayment entries and checks the debit and credit accounts. Both portions debit Other receivables and credit recoveries, so changing the portion type does not change the accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>OCA fees</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>OCA penalty</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>80.00</td>
+</tr>
+</tbody></table>
+<p>A loan disbursement of 1,000 uses the Principal allocation type and Cash Out status. A loan officer verifies that the entry debits Loans Receivable and credits the Suspense/Clearing account. The entry moves the disbursed principal from the clearing account to the loan portfolio.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disburse principal</td>
+<td>Loans Receivable (112601)</td>
+<td>Suspense/Clearing (145023)</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>
