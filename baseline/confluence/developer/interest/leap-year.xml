@@ -1,0 +1,134 @@
+<p>Leap year interest calculation applies when days in year is set to ACTUAL on a progressive loan product. The setting is inherited by loans created from that product. It controls how many days in the year are used when calculating interest. The dropdown appears only when ACTUAL is selected for days in year.</p>
+<p>The dropdown has two values:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Days in year used</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FULL_LEAP_YEAR</td>
+<td>366 if the year is a leap year, otherwise 365</td>
+</tr>
+<tr>
+<td>FEB_29_PERIOD_ONLY</td>
+<td>366 for the period that contains 29 February, otherwise 365</td>
+</tr>
+</tbody></table>
+<p>Interest uses the simplified formula: interest rate * days in month / days in year.</p>
+<p>Limits:</p>
+<ul>
+<li>366 days applies only to the period that contains 29 February.</li>
+<li>365 days applies to all other periods, even in a leap year.</li>
+</ul>
+<p>A Progressive loan uses ACTUAL days in a year with the FEB_29_PERIOD_ONLY option. The principal is 1,000, the annual interest rate is 12%, and the loan is repaid in three monthly installments with fixed principal of 333.33, 333.33, and 333.34. Disbursement is on 1 January 2024, a leap year, so the period from 1 February to 1 March contains 29 February and uses 366 days; the other periods use 365 days. The figures are illustrative. This option applies only to Progressive loans; overdue loans do not change the calculation, and interest is not recalculated after the maturity date or because of additional installments. With FULL_LEAP_YEAR instead, every period in this leap year would use 366 days.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Days in month</th>
+<th>Days in year</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal paid</th>
+<th>Installment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>31</td>
+<td>365</td>
+<td>1,000.00</td>
+<td>10.19</td>
+<td>333.33</td>
+<td>343.52</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>2</td>
+<td>29</td>
+<td>366</td>
+<td>666.67</td>
+<td>6.34</td>
+<td>333.33</td>
+<td>339.67</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3</td>
+<td>31</td>
+<td>365</td>
+<td>333.34</td>
+<td>3.40</td>
+<td>333.34</td>
+<td>336.74</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td>19.93</td>
+<td>1,000.00</td>
+<td>1,019.93</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A Progressive loan uses ACTUAL days in a year with FEB_29_PERIOD_ONLY, but its term runs from 1 March to 1 June 2024, so no period contains 29 February even though 2024 is a leap year. The principal is 1,000, the annual interest rate is 12%, and the loan is repaid in three monthly installments with fixed principal of 333.33, 333.33, and 333.34. Every period therefore uses 365 days. In a non-leap year the same schedule would also use 365 days for every period.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Days in month</th>
+<th>Days in year</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal paid</th>
+<th>Installment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>31</td>
+<td>365</td>
+<td>1,000.00</td>
+<td>10.19</td>
+<td>333.33</td>
+<td>343.52</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>2</td>
+<td>30</td>
+<td>365</td>
+<td>666.67</td>
+<td>6.58</td>
+<td>333.33</td>
+<td>339.91</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3</td>
+<td>31</td>
+<td>365</td>
+<td>333.34</td>
+<td>3.40</td>
+<td>333.34</td>
+<td>336.74</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td>20.17</td>
+<td>1,000.00</td>
+<td>1,020.17</td>
+<td></td>
+</tr>
+</tbody></table>

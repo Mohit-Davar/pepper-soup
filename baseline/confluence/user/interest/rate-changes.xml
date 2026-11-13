@@ -1,0 +1,361 @@
+<h2>Overview</h2>
+<h3>About interest rate changes</h3>
+<p>You can change the interest rate on an active loan account during the loan lifecycle. The change applies to future dates only, starting the day after the current date. Progressive loans are supported.</p>
+<h3>Change the interest rate on a loan</h3>
+<p>Use the loan reschedule screen to change the interest rate for the rest of an active loan&#39;s lifecycle.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Reschedule</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reschedule from Installment On</td>
+<td>Yes</td>
+<td>Enter the installment from which the reschedule applies; this field is required.</td>
+</tr>
+<tr>
+<td>Reason for Rescheduling</td>
+<td>Yes</td>
+<td>Enter the reason for rescheduling; this field is required.</td>
+</tr>
+<tr>
+<td>Submitted On</td>
+<td>Yes</td>
+<td>Enter the date the reschedule was submitted; this field is required.</td>
+</tr>
+<tr>
+<td>Comments</td>
+<td>No</td>
+<td>Enter any comments about the reschedule.</td>
+</tr>
+<tr>
+<td>Adjust interest rates for remainder of loan</td>
+<td>No</td>
+<td>Select this option to adjust the interest rates for the remainder of the loan.</td>
+</tr>
+<tr>
+<td>New Interest Rate</td>
+<td>No</td>
+<td>Enter the new interest rate; there is no restriction on the provided interest rate value.</td>
+</tr>
+</tbody></table>
+<p>After you submit, the EMI is recalculated based on the new interest rate and the future schedule and outstanding balances are instantly recalculated.</p>
+<h3>Eligibility and timing</h3>
+<p>The change can apply from day 1, day 15, or the last day of a period.</p>
+<p>Timing rules:</p>
+<ul>
+<li>You can schedule an interest rate change for any date from the business date plus one day onward.</li>
+<li>You cannot set more than one interest rate change to start on the same date.</li>
+</ul>
+<h3>How to change the interest rate</h3>
+<p>You can change a loan&#39;s interest rate from a chosen installment onward, with the new rate taking effect immediately. For progressive loans, you can instead set a future date when the new interest rate starts.</p>
+<h3>Schedule recalculation and EMI</h3>
+<p>When you change an interest rate, the system recalculates the EMI for the current period and all future periods that are not fully paid. Installments stay the same; only the EMI changes.</p>
+<p>The recalculation works as follows:</p>
+<ul>
+<li>The repayment schedule is recalculated from the reschedule date using the new interest rate.</li>
+<li>Earlier installments up to the interest rate change date keep the old interest rate; new installments from that date use the new rate.</li>
+<li>If the rate changes in the middle of a period, interest is calculated for that period and the EMI changes based on the difference between the last installment and the calculated EMI.</li>
+<li>Interest modification instantly recalculates the future schedule and outstanding balances.</li>
+</ul>
+<h3>Interest calculation and refunds</h3>
+<p>Interest on the next installment uses the new rate. Earlier dates for interest and accrual do not change.</p>
+<h3>Events and audit trail</h3>
+<p>You can view the list of interest rate periods and changes made for a loan account on a new tab for the loan.</p>
+<h3>System processing and supported features</h3>
+<p>The system applies interest rate changes to loan periods during schedule generation and reprocessing. It fetches all interest rate variations and uses them to calculate the proper EMI and interest. The new interest value keeps the interest frequency from the loan product. Progressive loan schedules and advanced payment allocation support interest rate changes through loan term variations. Backdated repayments or reversals remain allowed after an interest modification. There is no restriction on the interest rate value you provide.</p>
+<h3>Worked examples</h3>
+<p>Situation: an active progressive loan with a principal of 1,000, an annual interest rate of 12 %, three monthly instalments and 30-day months. The first instalment falls due on 1 Feb and is paid at the old rate. On business date 10 Feb, a loan officer changes the interest rate to 8 % effective from 1 Mar. The figures are illustrative. The first instalment keeps the 12 % rate; only the unpaid instalments are recalculated at 8 %, so the EMI falls from 340.02 to 338.37 and the final instalment absorbs the cent difference. Choosing a later effective date would keep more instalments at the old rate.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+<th>Rate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 Feb</td>
+<td>1,000.00</td>
+<td>340.02</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>669.98</td>
+<td>12 %</td>
+</tr>
+<tr>
+<td>1 Mar</td>
+<td>669.98</td>
+<td>338.37</td>
+<td>4.47</td>
+<td>333.90</td>
+<td>336.08</td>
+<td>8 %</td>
+</tr>
+<tr>
+<td>1 Apr</td>
+<td>336.08</td>
+<td>338.32</td>
+<td>2.24</td>
+<td>336.08</td>
+<td>0.00</td>
+<td>8 %</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,016.71</td>
+<td>16.71</td>
+<td>1,000.00</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Situation: an active progressive loan with a principal of 1,000, an annual interest rate of 12 %, three monthly instalments and 30-day months. The borrower makes an early payment of 340.02 on 15 Jan, covering the first instalment ahead of its 1 Feb due date. On business date 19 Jan, a loan officer changes the interest rate to 8 % effective from 20 Jan. The early payment reduces the balance before the change, and the remaining instalments are recalculated at the new rate from the changed date. The figures are illustrative. An early payment lowers the outstanding balance, so the interest charged after the rate change is calculated on a smaller amount and the future EMI drops accordingly. Applying the change to the last instalment instead of the next would move the entire recalculation to the final payment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Opening balance</th>
+<th>Payment / EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+<th>Rate</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>15 Jan (early payment)</td>
+<td>1,000.00</td>
+<td>340.02</td>
+<td>4.67</td>
+<td>335.35</td>
+<td>664.65</td>
+<td>12 %</td>
+</tr>
+<tr>
+<td>1 Mar</td>
+<td>664.65</td>
+<td>335.68</td>
+<td>4.43</td>
+<td>331.25</td>
+<td>333.40</td>
+<td>8 %</td>
+</tr>
+<tr>
+<td>1 Apr</td>
+<td>333.40</td>
+<td>335.62</td>
+<td>2.22</td>
+<td>333.40</td>
+<td>0.00</td>
+<td>8 %</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,011.32</td>
+<td>11.32</td>
+<td>1,000.00</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="early-and-late-repayment-interest"><ri:page ri:content-title="Interest Timing"/><ac:plain-text-link-body><![CDATA[Interest Timing: Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Backdated Rate Changes</h2>
+<h3>Backdated interest modification</h3>
+<p>You can apply an interest modification retroactively, and the system adjusts accrued interest automatically from the applied date.</p>
+<h3>Apply a backdated interest rate change</h3>
+<p>Use the loan reschedule screen to modify the interest rate from a backdated date, which recalculates the repayment schedule with new EMI and interest from the applied schedule date.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Reschedule</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reschedule from Installment On</td>
+<td>Yes</td>
+<td>Select the installment from which the reschedule applies; this field is required.</td>
+</tr>
+<tr>
+<td>Reason for Rescheduling</td>
+<td>Yes</td>
+<td>Enter the reason for rescheduling; this field is required.</td>
+</tr>
+<tr>
+<td>Submitted On</td>
+<td>Yes</td>
+<td>Enter the date the reschedule was submitted; this field is required.</td>
+</tr>
+<tr>
+<td>Comments</td>
+<td>No</td>
+<td>Add any comments about the reschedule.</td>
+</tr>
+<tr>
+<td>Adjust interest rates for remainder of loan</td>
+<td>No</td>
+<td>Turn this on to adjust interest rates for the remainder of the loan.</td>
+</tr>
+<tr>
+<td>New Interest Rate</td>
+<td>No</td>
+<td>Enter the new interest rate to apply from the backdated date.</td>
+</tr>
+</tbody></table>
+<p>The system recalculates the repayment schedule with a new EMI and interest from the interest applied schedule date, while the number of installments stays the same.</p>
+<h3>Eligibility and timing</h3>
+<p>You can change the interest rate from any date starting on the first disbursement date. Backdated interest modification is supported for progressive loans only.</p>
+<h3>Schedule and balance recalculation</h3>
+<p>When you apply a backdated rate change, the system reprocesses the loan schedule from the interest applied schedule date. The number of installments stays the same; only the EMI and interest change.</p>
+<p>The recalculation covers:</p>
+<ul>
+<li>The EMI is recalculated from the date the interest rate was changed and must respect the installment in multiples of configuration.</li>
+<li>Discount fees amortization is recalculated.</li>
+<li>Outstanding balances are recalculated.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Backdated rate change"]
+  n2["Reprocess loan schedule"]
+  n3["Recalculate EMI and interest"]
+  n4["Recalculate discount fees amortization"]
+  n5["Recalculate outstanding balances"]
+  n6["Schedule updated with same installments"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6]]></ac:plain-text-body></ac:structured-macro>
+<h3>Reverse replay and accounting</h3>
+<p>A backdated repayment or reversal triggers a reverse replay of previously paid installments that calculated interest under the earlier rate. Paid interest is reverse replayed from the applied date using the new interest rate, and all subsequent transactions and their associated accounting entries are replayed. Accrual adjustments occur during reverse replay as part of the close of business process.</p>
+<p>Reverse replay also applies when:</p>
+<ul>
+<li>Backdated interest modification is made on already paid installments.</li>
+<li>Paid installments and unpaid or partially paid installment EMIs change to match the newly calculated EMI.</li>
+<li>Any change in transaction allocations reverses and replays the transactions.</li>
+</ul>
+<h3>Charged-off loans</h3>
+<p>You can backdate interest modification on a loan that is charged off. This applies whether the charge-off configuration is set to regular, accelerate maturity to charge-off date, or zero interest after charge-off. If repayment made before charge-off is reversed and replayed due to backdated interest modification, the accounting entry of the reversed transaction and replayed transaction follows standard accounting rules and not charge-off accounting rules.</p>
+<h3>Closed loans</h3>
+<p>You can keep backdated interest modification open on a closed loan. When you change backdated interest on a closed loan, the system performs chronological reverse-replay and allocates the schedule and transactions accordingly.</p>
+<h3>Asset owner changes</h3>
+<p>You can apply a backdated interest modification to a loan account even after its asset owner changes. If a repayment made before the asset owner change is reversed and replayed because of that modification, the accounting entries for both the reversed transaction and the replayed transaction carry the tag of the current asset owner. A backdated interest modification can also change the loan status, such as from ACTIVE to CLOSED or OVERPAID, or from CLOSED to OVERPAID.</p>
+<h3>Overpaid loans</h3>
+<p>You can apply a backdated interest modification to an overpaid loan once close of business replay (CBR) is complete. Any action that triggers recalculation on a CBR loan treats CBR as a credit transaction during reverse-replay.</p>
+<h3>Progressive loans and zero interest</h3>
+<p>You can change the interest rate on a progressive loan from zero to a higher rate, or from a higher rate to zero. Every progressive loan uses the EmiCalculator and model to calculate the repayment schedule even when the interest rate is zero.</p>
+<h3>Worked examples</h3>
+<p>Situation: a progressive loan is disbursed for 1,000 at 12% annual interest and repaid in 3 monthly installments over 30-day months. At 12% the original schedule has an EMI of 340.02 and total interest of 20.07. Before the first installment is paid, the officer changes the interest rate to 8% and backdates the change to the first installment date, which is on or after the first disbursement date. The figures are illustrative. The system keeps the number of installments at three and recalculates the EMI and interest from the applied date; any already-paid installment is reverse-replayed at the new rate. Changing the rate to 0% or from 0% uses the same recalculation, but only progressive loans allow a move to or from zero. The example shows that the installment count stays at three while the EMI falls from 340.02 to 337.79 and total interest falls from 20.07 to 13.37.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Principal repaid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>4/1/2025</td>
+<td>1,000.00</td>
+<td>6.67</td>
+<td>337.79</td>
+<td>331.12</td>
+<td>668.88</td>
+</tr>
+<tr>
+<td>2</td>
+<td>5/1/2025</td>
+<td>668.88</td>
+<td>4.46</td>
+<td>337.79</td>
+<td>333.33</td>
+<td>335.55</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6/1/2025</td>
+<td>335.55</td>
+<td>2.24</td>
+<td>337.79</td>
+<td>335.55</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>13.37</td>
+<td>1,013.37</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Situation: a progressive loan of 1,000 at 12% annual interest, repaid in 3 monthly installments over 30-day months, has already been closed or charged off with a zero balance. The officer backdates a rate change to 8% effective from an earlier installment date. The change is allowed on closed, charged-off, and overpaid progressive loans, and the result is the same whether charge-off accounting is regular, accelerates maturity to the charge-off date, or applies zero interest after charge-off. The figures are illustrative. The system performs a chronological reverse-replay: earlier transactions are reversed and replayed at the new rate, and the schedule and transactions are reallocated accordingly. Accounting entries for reversed and replayed transactions follow standard rules, not charge-off rules, and the loan status can change, for example from closed to overpaid. The example shows that reversing and replaying at the lower rate creates an interest credit, so a closed loan can become overpaid while the accounting entries follow standard rules rather than charge-off rules.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Original interest at 12%</th>
+<th>Reversed interest</th>
+<th>Replayed interest at 8%</th>
+<th>Interest difference</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>10.00</td>
+<td>-10.00</td>
+<td>6.67</td>
+<td>-3.33</td>
+</tr>
+<tr>
+<td>2</td>
+<td>6.70</td>
+<td>-6.70</td>
+<td>4.46</td>
+<td>-2.24</td>
+</tr>
+<tr>
+<td>3</td>
+<td>3.37</td>
+<td>-3.37</td>
+<td>2.24</td>
+<td>-1.13</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>20.07</td>
+<td>-20.07</td>
+<td>13.37</td>
+<td>-6.70</td>
+</tr>
+</tbody></table>

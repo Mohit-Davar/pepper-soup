@@ -1,0 +1,430 @@
+<h2>Investor Module 2.0 overview</h2>
+<p>Investor Module 2.0 lets you sell a loan account before the sale is complete.</p>
+<h2>Intermediary sale lifecycle</h2>
+<p>An intermediary sale lets you start a sale on an active loan account before the actual sale takes place. The sale moves through Pending-Intermediary and Active-Intermediary statuses before it reaches Pending and then Active status. The COB job processes Pending-Intermediary sales each night.</p>
+<p>Lifecycle steps:</p>
+<ul>
+<li>You initiate the intermediary sale on an active loan account, which sets the sale status to Pending-Intermediary.</li>
+<li>The COB job picks up the Pending-Intermediary sale and sets its status to Active-Intermediary.</li>
+<li>The COB job declines the Pending-Intermediary sale when the loan account is closed or overpaid.</li>
+<li>You initiate the sale on an Active-Intermediary loan account, which sets the sale status to Pending.</li>
+<li>The COB job picks up the Pending sale and sets its status to Active.</li>
+</ul>
+<h2>Status transitions and allowed sequences</h2>
+<p>An asset transfer moves through statuses in a fixed sequence. Each lifecycle starts at Pending-Intermediary and ends at Buyback, Reverse, or another terminal status. Some status change orders are not allowed.</p>
+<table>
+<thead>
+<tr>
+<th>Lifecycle</th>
+<th>Status sequence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pending-Active-Settled-Buyback</td>
+<td>Pending-Intermediary → Active-Intermediary → Active → Buyback</td>
+</tr>
+<tr>
+<td>Active-Repayment-Settle-Reverse</td>
+<td>Pending-Intermediary → Active-Intermediary → Repayment → Active → Reverse</td>
+</tr>
+<tr>
+<td>Settle-Zero-Balance-Reverse</td>
+<td>Pending-Intermediary → Active-Intermediary → Paid-off → Active → Reverse</td>
+</tr>
+<tr>
+<td>Asset transfer</td>
+<td>Pending-Intermediary → Active-Intermediary → Repayment → Buyback</td>
+</tr>
+<tr>
+<td>Asset transfer</td>
+<td>Pending-Intermediary → Active-Intermediary → Active → Buyback</td>
+</tr>
+<tr>
+<td>Asset transfer</td>
+<td>Pending-Intermediary → Active-Intermediary → Repayment → Active → Reverse</td>
+</tr>
+<tr>
+<td>Asset transfer</td>
+<td>Pending-Intermediary → Active-Intermediary → Paid-off → Active → Reverse</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Lifecycle</th>
+<th>Asset transfer record status sequence</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pending-Active-Settled-Buyback</td>
+<td>PENDING-Intermediary, ACTIVE-Intermediary, PENDING, ACTIVE, BUYBACK</td>
+</tr>
+<tr>
+<td>Active-Repayment-Settle-Reverse</td>
+<td>PENDING-Intermediary, ACTIVE-Intermediary, PENDING, ACTIVE</td>
+</tr>
+<tr>
+<td>Settle-Zero-Balance-Reverse</td>
+<td>PENDING-Intermediary, ACTIVE-Intermediary, PENDING, ACTIVE</td>
+</tr>
+</tbody></table>
+<p>The following status change orders are not allowed:</p>
+<ul>
+<li>Pending-Intermediary → Pending → Active</li>
+<li>Pending-Intermediary → Active</li>
+<li>Pending-Intermediary → Active-Intermediary → Decline</li>
+<li>Pending-Intermediary → Active-Intermediary → Pending → Active → Decline</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Pending-Intermediary" as n1
+  state "Active-Intermediary" as n2
+  state "Pending" as n3
+  state "Active" as n4
+  state "Buyback" as n5
+  state "Repayment" as n6
+  state "Paid-off" as n7
+  state "Reverse" as n8
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n2 --> n6
+  n6 --> n4
+  n4 --> n8
+  n2 --> n7
+  n7 --> n4]]></ac:plain-text-body></ac:structured-macro>
+<h2>Buyback and decline</h2>
+<p>You can buy back a loan account when its status is Active, which moves it to Buyback status. You can buy back an intermediary loan account when its status is Active-Intermediary, which moves it to Buyback-Intermediary status. Both actions are invoked through the API.</p>
+<p>When a loan account is in Active-Intermediary state:</p>
+<ul>
+<li>You can move it to the next status.</li>
+<li>You can cancel the decline status through the API, and this action has no accounting entries.</li>
+</ul>
+<h2>COB processing rules</h2>
+<p>The close of business (COB) job processes loan accounts based on their status and balance state.</p>
+<table>
+<thead>
+<tr>
+<th>Loan status</th>
+<th>Closed or overpaid</th>
+<th>COB result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Pending</td>
+<td>Yes or no</td>
+<td>Moves to Active</td>
+</tr>
+<tr>
+<td>Pending-Intermediary</td>
+<td>Yes</td>
+<td>Moves to Declined</td>
+</tr>
+<tr>
+<td>Pending-Intermediary</td>
+<td>No</td>
+<td>Stays in Pending-Intermediary</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Yes or no</td>
+<td>Stays in Active</td>
+</tr>
+<tr>
+<td>Active-Intermediary</td>
+<td>Yes or no</td>
+<td>Stays in Active-Intermediary</td>
+</tr>
+</tbody></table>
+<h2>Accounting entries</h2>
+<p>The system posts accounting entries only for monetary transactions. It does not post entries for zero amounts.</p>
+<p>The following status changes create no accounting entries:</p>
+<ul>
+<li>When the status changes from Pending to Active on a loan with zero balance, no accounting entries are passed for zero amount, the status transfers to the new asset owner, and any new monetary transaction after that is tagged to the new asset owner.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A loan account has a principal of 1,000 and a current balance of 1,000; the figures are illustrative. On day 1 the owner starts an intermediary sale to owner 999, which creates status PENDING-Intermediary with no accounting entries. At COB the account moves to ACTIVE-Intermediary. On day 2 a repayment of 200 reduces the balance to 800 and is tagged to owner 999. On day 5 owner 999 starts a sale to owner 10001, creating status PENDING with no accounting entries. At COB the account moves to ACTIVE with owner 10001. On day 10 a buyback is invoked from ACTIVE.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Status before</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Posted?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Start intermediary sale</td>
+<td>–</td>
+<td>PENDING-Intermediary</td>
+<td>999</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>No</td>
+</tr>
+<tr>
+<td>1</td>
+<td>COB</td>
+<td>PENDING-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>146000 All</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1</td>
+<td>COB</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>112601 Principal</td>
+<td>900.00</td>
+<td>900.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1</td>
+<td>COB</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>112603 Fees</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>1</td>
+<td>COB</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>112603 Interest</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>145023 All</td>
+<td>200.00</td>
+<td>–</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>112601 Principal</td>
+<td>–</td>
+<td>150.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment</td>
+<td>ACTIVE-Intermediary</td>
+<td>ACTIVE-Intermediary</td>
+<td>999</td>
+<td>112603 Fees</td>
+<td>–</td>
+<td>50.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Start sale</td>
+<td>ACTIVE-Intermediary</td>
+<td>PENDING</td>
+<td>10001</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>No</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COB</td>
+<td>PENDING</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>146000 All</td>
+<td>800.00</td>
+<td>800.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COB</td>
+<td>ACTIVE</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>112601 Principal</td>
+<td>800.00</td>
+<td>800.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Buyback</td>
+<td>ACTIVE</td>
+<td>BUYBACK</td>
+<td>10001</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>No</td>
+</tr>
+</tbody></table>
+<p>The example shows that PENDING-Intermediary and PENDING are created by API with no accounting entries, COB advances the account to ACTIVE-Intermediary and then ACTIVE, repayments while in ACTIVE-Intermediary are tagged to the intermediary owner, and a buyback from ACTIVE creates BUYBACK with no accounting entries at initiation.</p>
+<p>A loan account is repaid to a balance of 0; the figures are illustrative. On day 5 the owner starts a sale to owner 10001 while the balance is 0, creating status PENDING with no accounting entries. At COB the account moves to ACTIVE with owner 10001; COB posts zero amounts, so no accounting entries are passed, but the status and owner transfer. On day 10 a repayment reversal restores the balance to 1,000 and is tagged to owner 10001. If the account had been in PENDING-Intermediary while closed or overpaid, COB would move it to DECLINED; in ACTIVE-Intermediary it would remain unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Balance before</th>
+<th>Balance after</th>
+<th>Status before</th>
+<th>Status after</th>
+<th>Owner</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Posted?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>Repayment to zero</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>145023 All</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Repayment to zero</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>112601 Principal</td>
+<td>–</td>
+<td>900.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Repayment to zero</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>112603 Fees</td>
+<td>–</td>
+<td>100.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Start sale</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>–</td>
+<td>PENDING</td>
+<td>10001</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>No</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COB</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>PENDING</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>146000 All</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>No</td>
+</tr>
+<tr>
+<td>5</td>
+<td>COB</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>ACTIVE</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>112601 Principal</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>No</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Repayment reversal</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>ACTIVE</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>145023 All</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Repayment reversal</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>ACTIVE</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>112601 Principal</td>
+<td>900.00</td>
+<td>–</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Repayment reversal</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>ACTIVE</td>
+<td>ACTIVE</td>
+<td>10001</td>
+<td>112603 Fees</td>
+<td>100.00</td>
+<td>–</td>
+<td>Yes</td>
+</tr>
+</tbody></table>
+<p>The example shows that a zero balance still transfers ownership and status at COB, that zero amounts are not posted as accounting entries, and that transactions after the transfer are tagged to the new owner.</p>

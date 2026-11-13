@@ -1,0 +1,5 @@
+<p>Pay in 30 Days lets you disburse a loan in multiple amounts without tranches. The loan page in the web app supports disbursal of non-tranche multiple disbursals through the new loan wizard.</p>
+<p>A disbursement must not be dated before the last disbursement date.</p>
+<ul>
+<li>A disbursement posted before the last disbursement date throws LoanDisbursalException with error code actualdisbursementdate.before.lastdusbursedate.</li>
+</ul>

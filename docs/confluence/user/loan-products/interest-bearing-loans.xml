@@ -1,197 +1,391 @@
-<h2>Interest-Bearing Loan Products</h2>
-<p>Interest-bearing loan products support progressive configurations with validations that apply only to that setup. You can set or update allocation rules for these products.</p>
-<p>Multidisbursal progressive loans follow these rules:</p>
-<ul>
-<li>A loan configured with one tranche allows creating two or more disbursements, such as 70$ and 30$, when &#39;Disallow Expected Disbursements&#39; is disabled at loan level.</li>
-<li>Undoing the last disbursement returns a 403 error when the number of disbursements exceeds the number of tranches configured with disbursement details.</li>
-</ul>
-<p>Charge-off behaves as follows:</p>
-<ul>
-<li>Charge-off is prevented if there is any transaction after the charge-off date, but reversed transactions are excluded from this check.</li>
-<li>After a charge is waived and the waive loan charges transaction is undone, charge-off with an earlier date is allowed even though the charge still exists.</li>
-<li>The charge-off transaction is reversed if the amount balance becomes zero after reprocessing.</li>
-</ul>
-<p>Interest and chargeback rules include:</p>
-<ul>
-<li>Interest pause is forbidden for a progressive loan with interest recalculation enabled and interest rate zero.</li>
-<li>When a CBR is replayed and the overpayment amount is not lower than the CBR amount, the system reflects it as credit on the EmiModel and calculates interest based on the outstanding amount.</li>
-<li>CBR behaves like Chargeback, so the actual current installment EMI gets increased.</li>
-<li>Each day the 1st installment interest gets recalculated until the maturity date is reached.</li>
-<li>When CBR is more than the overpayment amount, the loan schedule is credited with the difference between CBR amount and overpayment amount, which in this situation is 100.</li>
-</ul>
-<p>Penalty accrual follows this schedule:</p>
-<ul>
-<li>The Accrual for penalty is created during COB along with Accrual activity.</li>
-<li>Five or any random number of days later, when a repayment is made to pay off the penalty, the backdated accrual is created along with this repayment.</li>
-</ul>
-<p>Static limits and dates apply to interest-bearing loan products.</p>
+<p>Interest-bearing loans accrue interest daily until the maturity date is reached. Interest pause is not allowed on a progressive loan that has interest recalculation enabled and a zero interest rate. The effective rate limit is 0.09995 and can change.</p>
+<h2>Set up loan product settings</h2>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong>.</li>
+<li>Select <strong>Create Loan Product</strong>.</li>
+<li>Select <strong>Classic</strong>.</li>
+<li>Select <strong>SETTINGS</strong>.</li>
+<li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
+</ol>
 <table>
 <thead>
 <tr>
-<th>Setting</th>
-<th>Value</th>
+<th>Field</th>
+<th>Required</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Effective Rate Limit</td>
-<td>0.09995</td>
-</tr>
-<tr>
-<td>Loan Start Date</td>
-<td>1/1/23</td>
-</tr>
-<tr>
-<td>Transaction Range</td>
-<td>0.01 - 98.99</td>
-</tr>
-</tbody></table>
-<p>PayPal currently has two consumer-facing interest-bearing longer term installment lending products that are live in US and German markets.</p>
-<p>A product administrator creates an interest-bearing loan product with a principal of 1,000 and a term of three months. The system compares the effective rate against the effective rate limit of 0.09995. The figures are illustrative. This example shows that rates at or below the limit are accepted, while rates above it are rejected, and that tightening the limit rejects more rates.</p>
-<table>
-<thead>
-<tr>
-<th>Limit</th>
-<th>Nominal rate</th>
-<th>Effective rate</th>
-<th>Result</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>0.09995</td>
-<td>0.0900</td>
-<td>0.0900</td>
-<td>Accepted</td>
-</tr>
-<tr>
-<td>0.09995</td>
-<td>0.1050</td>
-<td>0.1050</td>
-<td>Rejected</td>
-</tr>
-<tr>
-<td>0.09990</td>
-<td>0.09985</td>
-<td>0.09985</td>
-<td>Accepted</td>
-</tr>
-<tr>
-<td>0.09990</td>
-<td>0.1050</td>
-<td>0.1050</td>
-<td>Rejected</td>
-</tr>
-</tbody></table>
-<p>A loan officer disburses an interest-bearing loan of 300 with three monthly installments. The borrower repays 100 and then reverses that repayment. Interest accruals do not restart on the reversal date; they resume from the next scheduled repayment date and continue daily until maturity. This example shows that reversing a repayment does not move accruals back to the reversal date.</p>
-<table>
-<thead>
-<tr>
-<th>Business date</th>
-<th>Event</th>
-<th>Principal balance</th>
-<th>Accrual status</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Day 1</td>
-<td>Loan disbursed</td>
-<td>300.00</td>
-<td>Accruals start</td>
-</tr>
-<tr>
-<td>Day 5</td>
-<td>Repayment of 100.00</td>
-<td>200.00</td>
-<td>Accruals continue</td>
-</tr>
-<tr>
-<td>Day 15</td>
-<td>Repayment reversed</td>
-<td>300.00</td>
-<td>Reversal date recorded</td>
-</tr>
-<tr>
-<td>Day 22</td>
-<td>COB run</td>
-<td>300.00</td>
-<td>Accruals resume from next schedule date</td>
-</tr>
-<tr>
-<td>Day 23</td>
-<td>Daily COB</td>
-<td>300.00</td>
-<td>Accrual posted each day</td>
-</tr>
-</tbody></table>
-<p>An interest-bearing loan of 1,000 with three monthly installments reaches maturity. The borrower pays off the principal with a 1,000 repayment on the maturity date, and a penalty charge of 20 is added the same day. At end-of-day processing, the system creates a penalty accrual even though the principal balance is zero. Five days later the borrower repays the penalty, and a backdated accrual is created with that repayment. This example shows that penalty accrual is generated during COB on the maturity date and that a later penalty repayment creates a backdated accrual.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Event</th>
-<th>Principal balance</th>
-<th>Penalty balance</th>
-<th>Accrual created</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Maturity date</td>
-<td>Repayment of 1,000.00</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Maturity date</td>
-<td>Penalty charge of 20.00</td>
-<td>0.00</td>
-<td>20.00</td>
-<td>No</td>
-</tr>
-<tr>
-<td>Maturity date</td>
-<td>End-of-day COB</td>
-<td>0.00</td>
-<td>20.00</td>
+<td>Amortization</td>
 <td>Yes</td>
 </tr>
 <tr>
-<td>Five days later</td>
-<td>Repayment of 20.00</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>Yes (backdated)</td>
+<td>Net Present Value Day Count</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Delinquency Bucket</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Delinquency Grace Days</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Delinquency Start Type</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Breach</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Near Breach</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Breach Grace Days</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Breach Start Type</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Near Breach Threshold</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Near Breach Evaluation Frequency</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Near Breach Evaluation Frequency Type</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Interest Method</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Interest calculation period</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Is Equal Amortization?</td>
+<td>No</td>
+</tr>
+<tr>
+<td>To be used with SAME AS REPAYMENT PERIOD- for  calculating exact interest with partial period  ex: Interest charged from is 5th of April , Principal is 10000 and interest is 1% per month then the interest will be (10000 * 1%)* (25/30) , it calculates for the month first then calculates exact periods between start date and end date(can be a decimal)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Loan Schedule Type</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Repayment strategy</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Loan Schedule Processing Type</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. See additional fields for additional information required for this type of loan.</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Maximum Tranche count</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Maximum allowed outstanding balance</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Disallow Expected Disbursements</td>
+<td>No</td>
+</tr>
+<tr>
+<td>When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type.</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Disbursed Amount Percentage Down Payment</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Enable or disable the auto repayment of down-payment. When “auto repayment for the down-payments“ is enabled,  the disbursements will trigger an auto down payment transaction for the down payment amount</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Loan Charge-off behaviour</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Grace on principal payment</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Grace on interest payment</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Enable installment level Delinquency</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Interest free period</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Arrears tolerance</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Days in year</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Days in year custom strategy</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Days in month</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Allow fixing of the installment amount</td>
+<td>No</td>
+</tr>
+<tr>
+<td>On arrears ageing</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Overdue days for NPA</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Account moves out of NPA only after all arrears have been cleared</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Principal Threshold (%) for Last Instalment</td>
+<td>No</td>
+</tr>
+<tr>
+<td>These fields are used to define the minimum, maximum gap that should be present between the installments for the loan product</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Minimum gap between Installments</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Maximum gap between Installments</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>If selected, the Loan Product can be used to apply for Top Up Loans.</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Recalculate Interest</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Pre-closure interest calculation rule</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Advance payments adjustment type</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Interest recalculation compounding on</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Frequency Interval for compounding</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Frequency Interval for recalculation</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Frequency for compounding</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Frequency for recalculate Outstanding Principal</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Is Arrears recognization based on original schedule</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Do not calculate interest on past due principal balances</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Place Guarantee Funds On-Hold</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Mandatory Guarantee(%)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Minimum Guarantee from Own Funds(%)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Minimum Guarantee from Guarantor Funds(%)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Use or not the Global Configurations values to the Repayment Event (notifications)</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Due days for repayment event</td>
+<td>No</td>
+</tr>
+<tr>
+<td>OverDue days for repayment event</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Allow overriding select terms and settings in loan accounts</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Interest method</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Repaid every</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Moratorium</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Number of days a loan may be overdue before moving into arrears</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Also allows overriding the near breach, breach grace days and breach start type on the loan account.</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Also allows overriding the delinquency grace days and delinquency start type on the loan account.</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Discount Default</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Period Payment Frequency</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Period Payment Frequency Type</td>
+<td>No</td>
 </tr>
 </tbody></table>
-<p>A loan officer enters a transaction for a three-month loan of 100 at a nominal rate that produces an effective rate above the 0.09995 limit. The system rejects the total amount of 105. When the rate is lowered so the effective rate falls below the limit, the new total amount is 104, a difference of 1 cent. This example shows that exceeding the effective rate limit forces a rate adjustment that changes the collected total by one cent.</p>
+<h2>Worked examples</h2>
+<p>Figures in this example are illustrative. A loan officer disburses a loan of $1,000.00. After the charge-off date has passed, a repayment of $100.00 is posted, which blocks a new charge-off because it is a non-reversed transaction after the charge-off date. Later the same day, a Merchant Issued Refund of $900.00 repays the remaining balance in full. Because the amount balance becomes zero, the charge-off transaction is reversed; the refund itself is treated as a reversed transaction and does not count toward the block check.</p>
 <table>
 <thead>
 <tr>
-<th>Case</th>
-<th>Nominal rate</th>
-<th>Effective rate</th>
-<th>Total amount</th>
+<th>Step</th>
+<th>Event</th>
+<th>Amount</th>
+<th>Balance</th>
+<th>Charge-off result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Disbursement</td>
+<td>+$1,000.00</td>
+<td>$1,000.00</td>
+<td>Loan opened</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment</td>
+<td>-$100.00</td>
+<td>$900.00</td>
+<td>Blocked: non-reversed transaction after charge-off date</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Merchant Issued Refund</td>
+<td>-$900.00</td>
+<td>$0.00</td>
+<td>Ignored for block check (reversed transaction)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Charge-off transaction</td>
+<td>reversed</td>
+<td>$0.00</td>
+<td>Reversed: amount balance is zero</td>
+</tr>
+</tbody></table>
+<p>A refund that clears the balance forces reversal of the charge-off, while an earlier non-reversed repayment still stops a new charge-off.</p>
+<p>An administrator opens a progressive loan of $900.00 with interest recalculation enabled and an annual interest rate of 0.00%, then attempts to add an interest pause. The application forbids the pause for this combination, so the repayment schedule is not broken and installments continue to post as scheduled.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Setting</th>
+<th>Value</th>
 <th>Result</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Rejected transaction</td>
-<td>0.1200</td>
-<td>0.1050</td>
-<td>105.00</td>
-<td>Rejected</td>
+<td>1</td>
+<td>Loan type</td>
+<td>Progressive</td>
+<td>—</td>
 </tr>
 <tr>
-<td>Accepted transaction</td>
-<td>0.0945</td>
-<td>0.0609</td>
-<td>104.00</td>
-<td>Accepted</td>
+<td>2</td>
+<td>Interest recalculation</td>
+<td>Enabled</td>
+<td>—</td>
 </tr>
 <tr>
-<td>Difference</td>
-<td>-</td>
-<td>-</td>
-<td>1.00</td>
-<td>1 cent</td>
+<td>3</td>
+<td>Annual interest rate</td>
+<td>0.00%</td>
+<td>—</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Interest pause</td>
+<td>Add pause</td>
+<td>Forbidden</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Installment 1</td>
+<td>$300.00</td>
+<td>Posted on schedule</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Balance after installment 1</td>
+<td>$600.00</td>
+<td>Schedule intact</td>
 </tr>
 </tbody></table>
+<p>With a zero rate and interest recalculation on, the system blocks an interest pause so the repayment schedule stays correct.</p>

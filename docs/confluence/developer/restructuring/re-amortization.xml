@@ -1,0 +1,153 @@
+<h2>Re-amortization overview</h2>
+<p>Re-amortization provides relief to customers with past due payments by spreading the overdue amount across future installments so the loan no longer has a past due balance. It is available for non-interest bearing loans, and the existing schedule end date typically remains the same.</p>
+<p>The re-amortization flow works as follows:</p>
+<ul>
+<li>The system identifies the overdue amount.</li>
+<li>The system spreads the overdue amount to future installments.</li>
+<li>Future installments increase and the loan moves out of overdue.</li>
+</ul>
+<h2>Eligibility and supported loans</h2>
+<p>Re-amortization applies only to active loan accounts that use the Interest bearing Progressive loan repayment strategy. It cannot be applied after the maturity date.</p>
+<p>Charge-off loan accounts:</p>
+<ul>
+<li>Re-amortization is allowed on charge-off loan accounts.</li>
+</ul>
+<blockquote>
+</blockquote>
+<h2>Interest handling options</h2>
+<p>You choose how re-amortization handles interest, charges, penalties and fees. The options are Default Behavior, Waive options and Equal Overdue Interest Split. All three re-calculate the actual interest and equated monthly installment (EMI) based on the new principal balance.</p>
+<table>
+<thead>
+<tr>
+<th>Interest handling option</th>
+<th>Overdue interest including chargeback interest</th>
+<th>Overdue charge including chargeback charge</th>
+<th>Fees and penalties due after re-amortization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Default Behavior</td>
+<td>Moved to the first installment after the re-amortization date</td>
+<td>Remains as is on the existing installment</td>
+<td>Remain as is</td>
+</tr>
+<tr>
+<td>Waive options</td>
+<td>Waived off</td>
+<td>Remains as is on the existing installments</td>
+<td>Remain as is</td>
+</tr>
+<tr>
+<td>Equal Overdue Interest Split</td>
+<td>Equally split among future installments</td>
+<td>Equally split among new installments</td>
+<td>Remain as is</td>
+</tr>
+</tbody></table>
+<h2>Applying re-amortization</h2>
+<p>Re-amortization redistributes the past due principal amount across the remaining future installments of a loan account. It is applied as of the current business date and does not change the maturity date. The loan amount is distributed to existing future installments only.</p>
+<p>The following amounts are re-amortized or left unchanged:</p>
+<ul>
+<li>The complete past due principal amount plus the current day due amount is re-amortized when an installment falls on the same day as re-amortization.</li>
+<li>Partial paid amounts on installments before re-amortization remain as they are; only the unpaid amount is re-amortized.</li>
+<li>Only principal is re-amortized; outstanding fees and penalties remain outstanding for their particular installments and must be paid or waived.</li>
+<li>Charges and interest remain as they are for their respective installments.</li>
+<li>The N+1 installment is not impacted by re-amortization; no amount is re-amortized to it.</li>
+<li>Future down-payment installments, if they exist, are considered for re-amortization.</li>
+<li>Chargeback amounts remain as they are.</li>
+</ul>
+<p>The following timing rules apply:</p>
+<ul>
+<li>Re-amortization applies only to future installments; it is not applied to installments that fall on the same day as re-amortization.</li>
+<li>All future installments from the date re-amortization is applied go through re-amortization.</li>
+<li>A loan cannot be re-amortized after the new maturity date.</li>
+<li>The schedule shows unpaid principal as zero for unpaid installments on or before the re-amortized date.</li>
+</ul>
+<p>The following behavior applies to interest:</p>
+<ul>
+<li>For interest bearing loans, interest is recalculated based on the new principal balances and as per the loan configuration.</li>
+<li>Interest recalculation for re-amortization is on hold because progressive repayment schedule handling or advance repayment strategy does not support interest loan accounts.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> No validation is done from Fineract for existing unpaid charge or interest.</p>
+</blockquote>
+<h2>Schedule behavior after re-amortization</h2>
+<p>It recalculates the current and all future installments based on the current outstanding principal, without changing the repayment schedule structure, due dates, accruals, payable interest, fees, penalties, or paid amounts. Interest calculation follows the re-amortization interest handling setting, and all transaction types and features continue to work normally on the re-amortized schedule. Interest waiver and equal overdue interest split behavior apply to both non-interest bearing and interest bearing loan accounts.</p>
+<p>Past due periods:</p>
+<ul>
+<li>The EMI for each past due period is set to the total amount of the paid balances plus charges and is not re-amortized.</li>
+</ul>
+<p>Fees and penalties:</p>
+<ul>
+<li>Fees and penalties remain where they were and are not re-amortized.</li>
+</ul>
+<h2>Multiple re-amortizations</h2>
+<p>You can re-amortize a loan account more than once, but not on the same date. Each re-amortization after the first must use the same interest options as the first re-amortization. No additional events or parameters are required for re-amortization.</p>
+<h2>Undoing re-amortization</h2>
+<p>You can undo the last re-amortization applied to a loan account. Undoing recalculates the schedule and replays it at that time.</p>
+<p>Undo is allowed only when:</p>
+<ul>
+<li>Re-amortization is the latest transaction on the loan.</li>
+<li>There are no future payments done after re-amortization (non reversed payments only).</li>
+</ul>
+<h2>Accruals and delinquency</h2>
+<p>Re-amortization recalculates accruals as of the re-amortization business date at end of day (COB, the nightly job that posts interest and fees).</p>
+<p>Accrual activity is handled as follows:</p>
+<ul>
+<li>Periodic accrual is calculated and posted periodically based on the new installment interest.</li>
+<li>Accrual activity of overdue installments being re-amortized is reversed or reverse-replayed on the re-amortization business date in real time.</li>
+<li>Any backdated repayment or reversal before the re-amortization date recalculates and posts the difference accrual or accrual adjustment as of current business date EOD.</li>
+<li>Any backdated repayment that results in installment recalculation before re-amortization creates a new accrual activity as of the installment date in real time.</li>
+<li>Any backdated repayment reversal that results in installment recalculation and re-amortization reverses the respective accrual activity transaction in real time.</li>
+<li>Accrual activity is posted regularly as per the new future installment dates on installment dates at EOD.</li>
+</ul>
+<p>Delinquency and events are handled as follows:</p>
+<ul>
+<li>Delinquency calculation is triggered when re-amortization is triggered on the loan account.</li>
+<li>Re-amortization triggers the DelinquencyRangeChange event and AccountStatusChange event when the repayment schedule and delinquency buckets are modified.</li>
+</ul>
+<p>Installment adjustment:</p>
+<ul>
+<li>The installment after the last one is adjusted as part of reverse replay.</li>
+</ul>
+<h2>Backdated transactions and reverse replay</h2>
+<p>You can post backdated transactions on a loan account after re-amortization. Any backdated transaction triggers reverse replay, which reverses and replays the re-amortization based on the new past due amount.</p>
+<p>The following events change the past due amount and cause reverse replay:</p>
+<ul>
+<li>Undoing old repayments.</li>
+<li>Posting backdated repayments.</li>
+<li>Posting backdated disbursements.</li>
+<li>Adding backdated charges.</li>
+<li>Undoing re-amortization.</li>
+</ul>
+<p>After reverse replay:</p>
+<ul>
+<li>The repayment schedule is recalculated and reapplied.</li>
+<li>The schedule replays the re-amortization and installment amounts based on the new past due principal amount plus the current date due amount when an installment falls on the same day as re-amortization.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Backdated transaction"]
+  n2["Reverse replay triggered"]
+  n3["Reverse re-amortization"]
+  n4["Replay re-amortization & recalculate schedule"]
+  n5["Schedule reapplied"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Preview and API</h2>
+<p>You can preview a re-amortization schedule through both the UI and the API.</p>
+<h2>Extend repayment schedule</h2>
+<p>Extending the repayment schedule keeps already paid installments intact and leaves unpaid installments before the reschedule from installment date unchanged. The system recalculates interest from that date using the principal balance as of that date and the loan account settings, then adds new installments covering the existing installments from that date plus the number of installments to extend.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Reschedule from installment date"]
+  n2["Paid installments remain intact"]
+  n3["Unpaid installments before date remain intact"]
+  n4["Use principal balance as of date"]
+  n5["Recalculate interest per new balances and settings"]
+  n6["Add new installments from date"]
+  n1 --> n2
+  n1 --> n3
+  n1 --> n4
+  n4 --> n5
+  n5 --> n6]]></ac:plain-text-body></ac:structured-macro>

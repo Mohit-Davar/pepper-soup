@@ -1,119 +1,136 @@
 # Loan Payoff
 
-## Loan Payoff
+## About payoff and prepayment
 
-### Pay-off definition and scope
+A pay-off is a repayment transaction that settles a borrower's loan obligations as of a specified date, with interest calculated as of that date. A prepayment is a pay-off that fully settles and closes an active loan account by paying the exact outstanding amount required as of the payoff date. Prepayment behaves similarly to a standard repayment transaction.
 
-A pay-off is a repayment done as of the current date with interest calculated as of that date. It can be done as of any date from the last repayment date till the current date.
+## Prepay a loan
 
-The pay-off amount includes:
+Use this screen to fully settle and close an active loan account by paying the exact outstanding amount required as of a specified payoff date.
 
-- all principal, interest, fee, and penalty balances
-- any accrued interest through the current day
-- the pay-off amount required to close the loan on that day
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Select **Prepay Loan**.
+4. Open the **Prepay Loan** screen.
+5. Enter the details described below, then select **Submit**.
 
-For PIN30 product with 6 installments and advanced payment allocation, the loan balance must be 0 at the end of the repayment schedule.
+| Field | Required | Description |
+| --- | --- | --- |
+| Transaction Date | Yes | Enter the date of the payoff transaction. Interest is calculated as of this date, and it cannot be in the future or earlier than the latest payment transaction date on the loan. |
+| Transaction Amount | Yes | Enter the payoff amount. The system calculates the exact amount required to close the loan, including total outstanding principal, fees, and penalties as of the transaction date, and users cannot edit these calculated values. |
+| Payment Type | No | Select the payment type for the prepayment transaction. |
+| Show Payment Details | No | Show payment details for the transaction. |
+| Account | No | Select the loan account to prepay. |
+| Cheque | No | Enter cheque details if paying by cheque. |
+| Routing Code | No | Enter the routing code for the payment. |
+| Receipt | No | Enter the receipt number for the payment. |
+| Bank | No | Select the bank for the payment. |
+| Note | No | Enter a note for the prepayment transaction. |
 
-The system calculates and collects the interest as of the pay-off date entered.
+The loan outstanding balance becomes zero, the loan status is marked as closed, and the amortization schedule is updated with the repayment payment.
 
-### Pay-off status and accounting
+## Eligibility and timing
 
-Marking a loan as Pay-off closes the loan status. A backdated pay-off triggers reverse replay of the loan account, updates the loan status accordingly, and reverts accrual transactions that occurred after that date.
+You can pay off a loan as of any date from the last repayment date through the current business date. If interest recalculation is enabled, the same date range applies.
 
-The following rules apply to pay-off accounting and transactions:
+The payoff amount depends on the transaction date:
 
-- The accounting entry of a pay-off transaction is the same as of a repayment transaction.
-- Disbursement chargeback is not allowed yet on the pay-off loan account.
+- If the transaction date is on or before the first disbursement date, you pay all principal and no interest on an interest-bearing loan product.
+- If the transaction date is on or after the maturity date, you pay all outstanding balances.
 
-### Interest recalculation rules
+The system rejects a prepayment transaction when:
 
-Interest recalculation decides how much interest is payable when you pay off a loan before maturity.
+- The prepayment date is in the future.
+- The prepayment date is earlier than the latest repayment, prepayment, or payment transaction date on the loan.
 
-When interest recalculation is disabled:
+## How to pay off or prepay
 
-- You must pay the full principal, calculated interest, fees, and other amounts to fully pay off the loan.
-- Payable interest is the same whether you pay off the loan in the middle of its lifecycle or on the maturity date.
+When you pay off or prepay a loan, the system calculates interest as of the pay-off date you enter and collects it as part of the payoff amount. The payoff amount equals total outstanding principal plus fees and penalties as of the transaction date.
 
-When interest recalculation is enabled:
+## Interest recalculation options
 
-- You must pay the full principal and the calculated interest up to the pay-off date to fully pay off the loan.
-- Payable interest is only the recognized interest up to the pay-off date, so it matters whether you pay off in the middle of the lifecycle or on the maturity date.
+Interest recalculation decides how much interest you pay when you pay off a loan early. It applies to pay-off transactions and changes how the system calculates the payable interest and modifies installments. The setting is enabled or disabled for the loan product.
 
-For progressive loans:
+| Interest recalculation | What you pay to fully pay off the loan |
+| --- | --- |
+| Disabled | Full principal, calculated interest, fees and any other charges; payable interest is the same whether pay-off happens mid-lifecycle or on the maturity date. |
+| Enabled | Full principal and calculated interest only until the pay-off date; payable interest is only the recognized interest until that date. |
 
-- When interest recalculation is disabled, the pay-off amount is allocated across each installment rather than modifying the current period to reflect the full amount paid.
-- When interest recalculation is enabled, payable interest is calculated up to the pay-off date, the current installment is modified, and interest from upcoming installments is lifted if the transaction amount is enough to fully pay the outstanding principal on that installment.
+For progressive loans, interest recalculation works as follows:
 
-### Pay-off amount calculation
+- When interest recalculation is enabled, the system calculates payable interest until the pay-off date, modifies the current installment, and lifts interest from upcoming installments if the payment covers the outstanding principal on that installment.
+- When interest recalculation is disabled, the pay-off amount is allocated across each installment instead of modifying the current period to reflect the full amount paid.
 
-The pay-off amount is the exact amount required to close the loan as of the transaction date. It equals total outstanding principal plus fees plus penalties. The calculation includes all outstanding balances calculated up to the pay-off date or the end of the pay-off period due date, depending on configuration, and adds all past due installment outstanding balances rather than only the current period's payable details.
+The pay-off calculation includes all outstanding balances calculated until the pay-off date or until the end of the pay-off period due date, based on configuration.
 
-Special conditions apply at the start and end of the loan term:
+## Schedule and status changes
 
-- If the transaction date is on or before the first disbursement date, all principal must be paid but no interest for an interest-bearing loan product.
-- If the transaction date is on or after the maturity date, all outstanding balances must be paid.
-- The advanced payment allocation processor decides whether repayment starts from the next installment or the last installment.
+After payoff or prepayment, the amortization schedule is updated with the repayment payment, and repayments can be closed as fully paid or overpaid. The loan outstanding balance becomes zero, and the loan status is marked as closed.
 
-### Pay-off results and prepayment
+## Accounting entries
 
-A pay-off result equals the outstanding loan amount, and after prepayment the loan is closed. You cannot edit calculated payoff values.
+A payoff transaction creates the same accounting entries as a repayment transaction.
 
-Prepayment follows these rules:
+## Balance and schedule updates
 
-- A Working Capital loan can be prepaid by repaying the full outstanding balance.
-- Prepayment uses the Repayment allocation strategy and the same accounting treatment as repayments.
-- Reversals of prepayments are supported.
-- Backdated prepayments are supported.
-- The prepayment date cannot be earlier than the latest payment transaction date.
-- The prepayment date cannot be in the future.
-- After successful prepayment processing, the outstanding balance becomes zero and the loan is closed.
+When you make a repayment, the system adjusts outstanding balances, updates the amortization schedule, and recalculates future periods.
 
-### User interface and API access
+## Overpayment and credit balance refund
 
-You can pay off or prepay an active loan account from the user interface or through the API. The repayment view pre-fills the transaction amount using the prepayment amounts endpoint.
+When a loan account is overpaid, the system refunds the excess through a Credit Balance Refund (CBR) transaction. The refund reduces the credit balance and updates loan balances accordingly.
 
-The following actions are available for an active loan account:
+Rules for a Credit Balance Refund:
 
-- Pay off or prepay from the user interface.
-- Undo the pay-off or prepayment transaction from the transaction tab.
-- Trigger a full repayment (prepayment) transaction from the user interface.
-- Perform a pay-off transaction through the API.
+- The refund date cannot be before the smallest repayment transaction date.
+- The overpayment amount is reduced by the refund amount.
+- No amortization schedule recalculation is triggered.
+- No delinquency or breach payment-application flow is triggered.
 
-The API works as follows:
+If the refund is backdated or reversed:
 
-- The GET endpoint fetches prepayment amounts, including principal, fee, penalty and total.
-- The existing repayment endpoint is used for prepayment.
+- On backdated execution, the system reprocesses subsequent transactions and recalculates balances and accounting entries.
+- On reversal, the system recomputes balances accordingly.
 
-### Worked examples
+## Backdated transactions and reversals
 
-A customer takes a loan of 1,000 at 12 percent annual interest, repayable in three monthly installments over 30-day months. The figures are illustrative. After the first installment is paid, the outstanding principal is 700. Fifteen days later, the customer requests a payoff. The system adds the outstanding principal and the interest that has accrued since the last installment, then closes the loan once the payoff is received.
+A backdated transaction or reversal of an older transaction triggers reverse replay of the loan account, and the system updates the loan status accordingly. When a payoff happens backdated, the system reverts accrual transactions that occurred after that date.
 
-| Date | Event | Principal paid | Interest paid | Balance |
-| --- | --- | --- | --- | --- |
-| Day 30 | Installment 1 paid | 300.00 | 10.00 | 700.00 |
-| Day 45 | Payoff | 700.00 | 3.50 | 0.00 |
-| Total |  | 1,000.00 | 13.50 |  |
+## User actions and undoing
 
-The same loan of 1,000 at 12 percent annual interest is set up with interest recalculation disabled. When the customer requests a payoff on day 45, the system does not prorate interest for the partial month. Instead, it collects the full remaining scheduled interest, so the amount due is higher than when recalculation is enabled.
+You can pay off or prepay an active loan account from the user interface. You cannot edit the calculated payoff values; the system uses them as-is. You can undo the payoff or prepayment transaction from the transaction tab.
 
-| Date | Event | Principal paid | Interest due | Balance |
-| --- | --- | --- | --- | --- |
-| Day 30 | Installment 1 paid | 300.00 | 10.00 | 700.00 |
-| Day 45 | Payoff | 700.00 | 11.00 | 0.00 |
-| Total |  | 1,000.00 | 21.00 |  |
+## Repayment application
 
-A loan of 1,000 has its first installment of 275, made up of 250 principal and 25 interest, past due. The customer requests a payoff 30 days after the installment was due. The system adds the entire past due installment balance, the remaining principal not yet due, and the interest that has accrued on that remaining principal since the due date.
+When you make a repayment, the system applies the amount up to the outstanding obligation to that obligation. Any excess amount is recorded as an overpayment.
 
-| Date | Event | Principal | Interest | Total due | Balance |
+## Chargeback and disbursement on payoff loans
+
+You can disburse funds on a pay-off loan account. Chargeback on a pay-off loan account is not allowed yet.
+
+## Worked examples
+
+A borrower takes a loan of 1,000 at an annual interest rate of 12 percent, to be repaid in two equal monthly installments. The office uses 30-day months and a 360-day year. The first installment is paid when due. Before the second installment falls due, the borrower asks to settle the loan early. The figures in this example are illustrative. With interest recalculation enabled, only the interest that has accrued up to the payoff date is collected; interest for the remaining period is not charged.
+
+| Date | Transaction | Principal | Interest | Total | Balance |
 | --- | --- | --- | --- | --- | --- |
-| Day 30 | Installment 1 past due | 250.00 | 25.00 | 275.00 | 1,000.00 |
-| Day 60 | Payoff | 750.00 | 7.50 | 757.50 | 0.00 |
-| Total |  | 1,000.00 | 32.50 | 1,032.50 |  |
+| Jan 1 | Disbursement | - | - | - | 1,000.00 |
+| Feb 1 | Installment 1 | 497.51 | 10.00 | 507.51 | 502.49 |
+| Feb 15 | Payoff | 502.49 | 2.51 | 505.00 | 0.00 |
 
-A loan of 1,000 is disbursed on day 1 and the customer requests a payoff on the same day. Because the transaction date is on or before the first disbursement date, the customer must repay the full principal and no interest is charged.
+The same loan of 1,000 at 12 percent per year with two monthly installments reaches its final due date. The borrower does not pay the second installment on time and instead requests a payoff on or after the maturity date. Because no future installment remains, the full outstanding principal and all recognized interest are due. On or after the maturity date, all outstanding balances are payable and no future interest is lifted because there are no upcoming installments.
 
-| Date | Event | Principal paid | Interest paid | Balance |
-| --- | --- | --- | --- | --- |
-| Day 1 | Disbursement | — | — | 1,000.00 |
-| Day 1 | Payoff | 1,000.00 | 0.00 | 0.00 |
-| Total |  | 1,000.00 | 0.00 |  |
+| Date | Transaction | Principal | Interest | Total | Balance |
+| --- | --- | --- | --- | --- | --- |
+| Jan 1 | Disbursement | - | - | - | 1,000.00 |
+| Feb 1 | Installment 1 | 497.51 | 10.00 | 507.51 | 502.49 |
+| Mar 1 | Payoff on maturity | 502.49 | 5.02 | 507.51 | 0.00 |
+
+A borrower requests a payoff of 505.00 but pays 600.00. The payoff settles the loan in full, and the extra 95.00 is recorded as an overpayment. The office then refunds the excess to the borrower through a credit balance refund, bringing the credit balance back to zero. The loan schedule is not recalculated by the refund. Any amount paid above the payoff obligation is held as an overpayment and can be refunded to the borrower without changing the loan schedule.
+
+| Item | Amount |
+| --- | --- |
+| Payoff amount due | 505.00 |
+| Amount received | 600.00 |
+| Overpayment recorded | 95.00 |
+| Credit balance refund issued | 95.00 |
+| Credit balance after refund | 0.00 |

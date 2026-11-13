@@ -1,0 +1,493 @@
+<h2>Working Capital business events</h2>
+<p>A Working Capital business event carries the generic loan details from LoanAccountDataV1 together with Working Capital-specific fields. The system triggers Working Capital business events for the same actions as progressive loans.</p>
+<p>Progressive loan lifecycle events and their Working Capital equivalents:</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Working Capital business events</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Create new loan</td>
+<td>WorkingCapitalLoanCreatedBusinessEvent</td>
+</tr>
+<tr>
+<td>Modified</td>
+<td>WorkingCapitalLoanApplicationModifiedBusinessEvent</td>
+</tr>
+<tr>
+<td>Approve</td>
+<td>WorkingCapitalLoanApprovedBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Undo approve</td>
+<td>WorkingCapitalLoanUndoApprovalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Reject</td>
+<td>WorkingCapitalLoanRejectedBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Disburse</td>
+<td>WorkingCapitalLoanDisbursalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>WorkingCapitalLoanChargeOffBusinessEvent</td>
+</tr>
+<tr>
+<td>Undo charge-off</td>
+<td>WorkingCapitalLoanUndoChargeOffBusinessEvent</td>
+</tr>
+<tr>
+<td>Fully-paid</td>
+<td>WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Overpaid</td>
+<td>WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent</td>
+</tr>
+</tbody></table>
+<h2>Payment type on working capital loans</h2>
+<p>Payment type is optional for monetary transactions on working capital loans. You can provide a payment type id, which the system assigns to the transaction and stores. You can fetch payment type details through the loan transaction details API.</p>
+<h2>Delinquency and breach bucket overrides</h2>
+<p>You can override the delinquency bucket and breach bucket configuration when you create a working capital loan. The loan level override takes effect instead of the product level default. Changing the repayment percentage updates how the system evaluates delinquency and breach for the loan.</p>
+<h2>Working Capital loan data model</h2>
+<p>WorkingCapitalLoanAccountDataV1 exposes pre-calculated fields from Loan.java such as isApproved and isDisbursed when applicable.</p>
+<p>WorkingCapitalLoanAccountDataV1 fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>accountNo</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>externalId</td>
+<td>string (ExternalIdMapper)</td>
+<td>matches LoanAccountDataV1</td>
+</tr>
+<tr>
+<td>status</td>
+<td>LoanStatusEnumData (loan.v1.LoanStatusEnumDataV1)</td>
+<td>matches LoanAccountDataV1</td>
+</tr>
+<tr>
+<td>clientId</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>clientAccountNo</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.totalWrittenOff</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.totalOutstanding</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.totalRecovered</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.overdueSinceDate</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.writeoffReasonId</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>summary.writeoffReason</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>product.repaymentEvery</td>
+<td>matches LoanAccountDataV1</td>
+<td></td>
+</tr>
+<tr>
+<td>product.repaymentFrequencyType</td>
+<td>StringEnumOptionDataV1</td>
+<td>legacy LoanAccountDataV1 uses EnumOptionDataV1</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.classification</td>
+<td>flattened</td>
+<td>legacy nests under delinquencyRange</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.minimumAgeDays</td>
+<td>flattened</td>
+<td>legacy nests under delinquencyRange</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.maximumAgeDays</td>
+<td>flattened</td>
+<td>legacy nests under delinquencyRange</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.delinquentAmount</td>
+<td>single amount per range</td>
+<td>legacy uses principal/interest/fee/penalty breakdown</td>
+</tr>
+</tbody></table>
+<h2>LoanAccountDataV1 exposed fields</h2>
+<p>LoanAccountDataV1 exposes these fields with no comment unless noted.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>getId</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getExternalId</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getStatus.getId</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getTimeline.getSubmittedOnDate</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getTimeline.getActualDisbursementDate</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getPrincipalOutstanding</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getFeeChargesOutstanding</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getPenaltyChargesOutstanding</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getTotalOverpaid</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getCharges[].getAmountOutstanding</td>
+<td>None</td>
+</tr>
+<tr>
+<td>list of charges</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getChargeOffReason</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getSummary.getPrincipalDisbursed</td>
+<td>None</td>
+</tr>
+<tr>
+<td>getDelinquent.getNextPaymentAmount</td>
+<td>Can we give this as next breach amount</td>
+</tr>
+</tbody></table>
+<p>One field is derived from getTimeline.getClosedOnDate, getSummary.getTotalOutstanding, and getTotalOverpaid.</p>
+<h2>Transaction events</h2>
+<p>Transaction events record activity on a loan account, such as disbursal, payout refund, adding or waiving a fee, adding or reversing a repayment, goodwill credit, goodwill reversal, charge-off, discount fee amortization, chargeback, balance write-off, debt sale, and account closure.</p>
+<p>Each transaction event maps to a business event:</p>
+<ul>
+<li>Repayment triggers WorkingCapitalLoanRepaymentTransactionBusinessEvent.</li>
+<li>Goodwill credit triggers WorkingCapitalLoanGoodWillCreditTransactionBusinessEvent.</li>
+<li>Payout refund triggers WorkingCapitalLoanPayoutRefundTransactionBusinessEvent.</li>
+<li>Discount fee triggers WorkingCapitalLoanDiscountFeeTransactionBusinessEvent.</li>
+<li>Discount fee adjustment triggers WorkingCapitalLoanDiscountFeeAdjustmentTransactionBusinessEvent.</li>
+<li>Discount fee amortization triggers WorkingCapitalLoanDiscountFeeAmortizationTransactionBusinessEvent.</li>
+<li>Discount fee amortization adjustment triggers WorkingCapitalLoanDiscountFeeAmortizationAdjustmentTransactionBusinessEvent.</li>
+<li>Charge adjustment triggers WorkingCapitalLoanChargeAdjustmentBusinessEvent.</li>
+<li>Credit balance refund triggers WorkingCapitalLoanCreditBalanceRefundTransactionBusinessEvent.</li>
+<li>Disbursement triggers WorkingCapitalLoanDisbursalTransactionBusinessEvent.</li>
+<li>Charge-off triggers WorkingCapitalLoanChargeOffTransactionBusinessEvent.</li>
+<li>Accrual triggers WorkingCapitalLoanAccrualTransactionBusinessEvent.</li>
+<li>Accrual adjustment triggers WorkingCapitalLoanAccrualAdjustmentTransactionBusinessEvent.</li>
+<li>Write-off triggers WorkingCapitalLoanWriteOffTransactionBusinessEvent.</li>
+<li>Adding a charge triggers WorkingCapitalLoanAddChargeBusinessEvent.</li>
+</ul>
+<h2>Delinquency and breach events</h2>
+<p>Delinquency and breach events notify integrators when a working capital loan enters or leaves a delinquent state, moves between delinquency buckets, or changes breach status. The system also emits events when delinquency or breach is paused, resumed, reset, enabled, disabled, or rescheduled. Delinquent amount changes do not trigger any event.</p>
+<p>Event triggers</p>
+<table>
+<thead>
+<tr>
+<th>Trigger</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Delinquency range changed or lifted</td>
+<td>WorkingCapitalLoanDelinquencyRangeChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency paused</td>
+<td>WorkingCapitalLoanDelinquencyPauseBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency resumed</td>
+<td>WorkingCapitalLoanDelinquencyResumeBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency rescheduled</td>
+<td>WorkingCapitalLoanDelinquencyRescheduleBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency reset</td>
+<td>WorkingCapitalLoanDelinquencyResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency reset undone</td>
+<td>WorkingCapitalLoanDelinquencyUndoResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency disabled</td>
+<td>WorkingCapitalLoanDelinquencyDisableBusinessEvent</td>
+</tr>
+<tr>
+<td>Delinquency enabled</td>
+<td>WorkingCapitalLoanDelinquencyEnableBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach or not breach</td>
+<td>WorkingCapitalLoanBreachChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Near breach</td>
+<td>WorkingCapitalLoanNearBreachChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach past due changed</td>
+<td>WorkingCapitalLoanBreachPastDueChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach paused</td>
+<td>WorkingCapitalLoanBreachPauseBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach resumed</td>
+<td>WorkingCapitalLoanBreachResumeBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach rescheduled</td>
+<td>WorkingCapitalLoanBreachRescheduleBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach reset</td>
+<td>WorkingCapitalLoanBreachResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach reset undone</td>
+<td>WorkingCapitalLoanBreachUndoResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach disabled</td>
+<td>WorkingCapitalLoanBreachDisableBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach enabled</td>
+<td>WorkingCapitalLoanBreachEnableBusinessEvent</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A working capital loan is created with a principal of 1,000.00, three monthly installments, and 30-day months; the figures are illustrative. The WorkingCapitalLoanAccountDataV1 event carries the generic loan details found in LoanAccountDataV1, but it omits fields that belong to investor or loan-sale workflows and to sub-status tracking, because working capital loans do not support those features. This example shows that investor-related and sub-status fields are absent from the WC event.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>In LoanAccountDataV1</th>
+<th>In WorkingCapitalLoanAccountDataV1</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>externalOwnerId</td>
+<td>Yes</td>
+<td>No</td>
+<td>No investor or loan-sale functionality in WC</td>
+</tr>
+<tr>
+<td>settlementDate</td>
+<td>Yes</td>
+<td>No</td>
+<td>No investor or loan-sale functionality in WC</td>
+</tr>
+<tr>
+<td>purchasePriceRatio</td>
+<td>Yes</td>
+<td>No</td>
+<td>No investor or loan-sale functionality in WC</td>
+</tr>
+<tr>
+<td>subStatus</td>
+<td>Yes</td>
+<td>No</td>
+<td>No sub-status in WC</td>
+</tr>
+</tbody></table>
+<p>For the same 1,000.00 working capital loan, the summary block omits totals that WC does not track or that appear elsewhere in the event. The overdue total is not repeated because it is carried by delinquent.delinquentAmount. This example shows that summary totals are omitted when WC does not track them or when another field carries the value.</p>
+<table>
+<thead>
+<tr>
+<th>Summary field</th>
+<th>In LoanAccountDataV1</th>
+<th>In WorkingCapitalLoanAccountDataV1</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>totalCostOfLoan</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not in WC summary</td>
+</tr>
+<tr>
+<td>totalWaived</td>
+<td>Yes</td>
+<td>No</td>
+<td>No waiver in WC summary</td>
+</tr>
+<tr>
+<td>totalOverdue</td>
+<td>Yes</td>
+<td>No</td>
+<td>Overdue total carried by delinquent.delinquentAmount</td>
+</tr>
+<tr>
+<td>totalMerchantRefund</td>
+<td>Yes</td>
+<td>No</td>
+<td>Per-transaction-type totals not in WC summary</td>
+</tr>
+</tbody></table>
+<p>The product block of the event omits every rate and term field because there is no WC product equivalent, and the delinquent block omits installment delinquency bucket amounts and charges because they are not carried by the WC element record. This example shows that product and delinquency bucket fields disappear from the WC event when they have no WC equivalent or carrier.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>In LoanAccountDataV1</th>
+<th>In WorkingCapitalLoanAccountDataV1</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>product.numberOfRepayments</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.minNumberOfRepayments</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.maxNumberOfRepayments</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.interestRatePerPeriod</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.minInterestRatePerPeriod</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.maxInterestRatePerPeriod</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.interestRateFrequencyType</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>product.annualInterestRate</td>
+<td>Yes</td>
+<td>No</td>
+<td>No WC product equivalent</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.amount</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.amount.principalAmount</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.amount.interestAmount</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.amount.feeAmount</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.amount.penaltyAmount</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+<tr>
+<td>delinquent.installmentDelinquencyBuckets.charges</td>
+<td>Yes</td>
+<td>No</td>
+<td>Not carried by WC element record</td>
+</tr>
+</tbody></table>

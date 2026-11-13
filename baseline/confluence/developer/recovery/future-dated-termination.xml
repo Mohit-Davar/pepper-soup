@@ -1,0 +1,280 @@
+<h2>Feature overview</h2>
+<p>Contract termination supports a user-selected transaction date, including a future date before the loan’s current maturity date. Loan withdrawal is a separate transaction type with comparable early termination behavior, so business processes can distinguish loan withdrawal from contract termination while sharing date validation, interest calculation, and transaction processing. Both operations use the shared early termination service, LoanEarlyTerminationServiceImpl, which runs through the legacy command pipeline. Each operation supplies its own transaction type, loan substatus, validation rules, and business events.</p>
+<h2>Transaction date rules</h2>
+<p>You supply an optional transaction date as the effective date for contract termination or loan withdrawal. When omitted, the system uses the current tenant business date. UI and API apply the same business rules, and server validation is authoritative.</p>
+<p>An explicitly supplied date must parse successfully; a malformed date fails validation and does not fall back to the business date.</p>
+<ul>
+<li>An explicitly supplied date that cannot be parsed produces a validation error.</li>
+</ul>
+<p>The requested date D is compared with the business date B and the loan maturity date M.</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Contract termination</th>
+<th>Loan withdrawal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D &lt; B</td>
+<td>Rejected</td>
+<td>Allowed only when D is not earlier than the latest relevant transaction or charge submission</td>
+</tr>
+<tr>
+<td>D = B</td>
+<td>Allowed when eligible</td>
+<td>Allowed when eligible</td>
+</tr>
+<tr>
+<td>B &lt; D &lt; M</td>
+<td>Allowed when eligible</td>
+<td>Allowed when eligible</td>
+</tr>
+<tr>
+<td>D ≥ M</td>
+<td>Rejected</td>
+<td>Rejected</td>
+</tr>
+</tbody></table>
+<p>Same-day and same-maturity edge cases:</p>
+<ul>
+<li>Same-day termination after maturity retains existing behavior.</li>
+<li>A future date equal to maturity is rejected.</li>
+<li>A future date after maturity is rejected.</li>
+<li>For past-dated withdrawal, equal dates are permitted by the current date comparisons.</li>
+<li>Existing transaction ordering determines ordering within the same day.</li>
+</ul>
+<p>Historical withdrawal conditions:</p>
+<ul>
+<li>Historical withdrawal after all relevant transactions and charge submissions is accepted.</li>
+<li>Historical withdrawal before a relevant transaction is rejected.</li>
+<li>Historical withdrawal before an active charge submission is rejected.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Contract termination before the business date is rejected.</p>
+</blockquote>
+<p>Contract termination and loan withdrawal date rules:</p>
+<ul>
+<li>Loan withdrawal allows the current business date, eligible future dates, and eligible past dates.</li>
+<li>The current implementation applies the maturity boundary specifically to future dates.</li>
+</ul>
+<p>Business-date operations:</p>
+<ul>
+<li>Either operation on the business date is accepted when eligible.</li>
+<li>A future date before maturity is accepted when eligible.</li>
+</ul>
+<h2>Request parameters</h2>
+<p>The request accepts a date, an optional external transaction identifier, and an optional transaction note. The date format and locale determine how the date is parsed. The external identifier is optional and subject to existing validation. The note is optional.</p>
+<h2>Eligibility and permissions</h2>
+<p>Future-dated termination and loan withdrawal keep the existing loan eligibility, permission, and transaction processing restrictions. The service requires an open loan, an active client or group, and a progressive repayment schedule, and it applies the remaining existing eligibility checks.</p>
+<p>The validator applies these date rules:</p>
+<ul>
+<li>For loan withdrawal, the system rejects a date earlier than the last user transaction date, excluding amortization transactions.</li>
+<li>For loan withdrawal, the system rejects a date earlier than the submission date of any active charge.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> When maturity is absent, the validator skips the maturity comparison. Whether such a loan permits future termination remains a business-rule decision.</p>
+</blockquote>
+<h2>Endpoints</h2>
+<p>Use these endpoints to terminate a loan contract or withdraw a loan at a future date. The same routes support undoing either action.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>POST /fineract-provider/api/v1/loans/{loanId}?command=contractTermination</td>
+<td>Terminate a loan contract at a future date</td>
+</tr>
+<tr>
+<td>POST /fineract-provider/api/v1/loans/{loanId}?command=loanWithdrawal</td>
+<td>Withdraw a loan at a future date</td>
+</tr>
+<tr>
+<td>POST /fineract-provider/api/v1/loans/{loanId}?command=undoContractTermination</td>
+<td>Undo a contract termination</td>
+</tr>
+<tr>
+<td>POST /fineract-provider/api/v1/loans/{loanId}?command=undoLoanWithdrawal</td>
+<td>Undo a loan withdrawal</td>
+</tr>
+</tbody></table>
+<h2>Processing flow</h2>
+<p>The service records the transaction with that future date, updates the loan substatus, and processes the financial consequences immediately; no scheduled job waits until the selected date.</p>
+<p>The processing flow runs as follows:</p>
+<ul>
+<li>The UI or API request resolves the operation and transaction date.</li>
+<li>The service validates loan eligibility and date rules.</li>
+<li>It creates the early termination transaction.</li>
+<li>It recalculates the schedule and processes the transaction.</li>
+<li>It persists the transaction and loan changes.</li>
+<li>It publishes the existing balance-change and operation-specific post-business events.</li>
+<li>It returns the transaction identifier and changes.</li>
+</ul>
+<h2>Interest and schedule</h2>
+<p>Interest is calculated up to the selected termination or withdrawal date using the loan’s configured calculation conventions, and the selected transaction date is used throughout the early termination calculation.</p>
+<p>The system applies the following rules:</p>
+<ul>
+<li>Existing interest, rounding, allocation, and schedule calculation logic is reused.</li>
+<li>For interest-bearing loans with interest recalculation enabled, the repayment schedule is regenerated and transactions are reprocessed with the new transaction.</li>
+<li>Otherwise, the new transaction is processed through the existing latest-transaction path.</li>
+<li>Existing rules for principal, fees, penalties, and transaction allocation apply.</li>
+<li>The revised schedule and outstanding balances reflect early termination.</li>
+<li>Subsequent business-date processing does not introduce interest beyond the effective termination date contrary to the revised schedule.</li>
+</ul>
+<h2>Transaction types and identifiers</h2>
+<p>The system records loan withdrawal as a distinct transaction type and keeps it distinguishable from withdrawal of a loan application. Transaction responses, history, reporting, and event mappings retain the distinction between loan withdrawal and contract termination.</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Transaction type</th>
+<th>Transaction type ID</th>
+<th>Loan substatus</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Contract termination</td>
+<td>CONTRACT_TERMINATION</td>
+<td>38</td>
+<td>CONTRACT_TERMINATION — 900</td>
+</tr>
+<tr>
+<td>Loan withdrawal</td>
+<td>LOAN_WITHDRAWAL</td>
+<td>48</td>
+<td>LOAN_WITHDRAWAL — 901</td>
+</tr>
+</tbody></table>
+<h2>Persistence and events</h2>
+<p>The system persists the transaction, loan changes, and related accounting changes within the existing transaction boundary. It preserves the effective transaction date, transaction type, external identifier, notes, and existing command audit information. It applies existing permission and maker-checker mechanisms where configured. The response contains the created transaction identifier, loan identifier, and applicable changes.</p>
+<h2>Undo</h2>
+<p>You can undo a future-dated termination when the termination transaction is the last user transaction on the loan account. Undo reverses the transaction, clears the early termination substatus, regenerates the schedule where applicable, reprocesses transactions, and emits the corresponding events.</p>
+<h2>Errors</h2>
+<p>The system rejects malformed dates and unsupported parameters with meaningful errors, and retains operation-specific error context so clients can identify the failed action.</p>
+<p>Date validation errors use these suffixes:</p>
+<ul>
+<li>Supplied date cannot be parsed — invalid.date.format.</li>
+<li>Contract termination predates the business date — cannot.be.before.business.date.</li>
+<li>Future date is on or after the maturity date — must.be.before.maturity.date.</li>
+<li>Withdrawal predates the last relevant transaction — cannot.be.before.last.transaction.date.</li>
+<li>Withdrawal predates an active charge submission — cannot.be.before.charge.submitted.on.date.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A customer terminates an open loan on a scheduled due date. The illustrative loan has a principal of 1,000, an annual interest rate of 12%, three monthly installments, and 30-day months. The figures are illustrative. Interest accrues at 1% per month. The first installment falls due after 30 days and the second after 60 days. Termination is requested for the second due date, so interest is calculated only up to that date and the outstanding principal is repaid in full.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Interest</th>
+<th>Principal repaid</th>
+<th>Amount paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>Disbursement</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>30</td>
+<td>Installment 1</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>60</td>
+<td>Termination</td>
+<td>6.70</td>
+<td>670.00</td>
+<td>676.70</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The same loan is terminated between installments. The business date is day 60, the maturity date is day 90, and the customer requests termination for day 45, which is after the first installment on day 30 and before the second due date on day 60. Because the requested date is before maturity, it is accepted. Interest accrues on the outstanding principal of 670 for the 15 days from day 30 to day 45.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Interest</th>
+<th>Principal repaid</th>
+<th>Amount paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>Disbursement</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>30</td>
+<td>Installment 1</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>45</td>
+<td>Termination</td>
+<td>3.35</td>
+<td>670.00</td>
+<td>673.35</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Date eligibility differs between the two operations. The business date is day 60, maturity is day 90, and the last relevant transaction or charge submission is day 30. A request dated day 45 is in the past relative to the business date. Contract termination, transaction type CONTRACT_TERMINATION with ID 38 and substatus CONTRACT_TERMINATION — 900, rejects any date before the business date. Loan withdrawal, transaction type LOAN_WITHDRAWAL with ID 48 and substatus LOAN_WITHDRAWAL — 901, accepts a past date only when it is not earlier than the last relevant transaction or charge submission. A date on or after maturity is rejected for both operations.</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Requested date</th>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Contract termination</td>
+<td>Day 45</td>
+<td>Day 45 is before business date day 60</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Loan withdrawal</td>
+<td>Day 45</td>
+<td>Day 45 is on or after last transaction day 30</td>
+<td>Accepted</td>
+</tr>
+<tr>
+<td>Loan withdrawal</td>
+<td>Day 20</td>
+<td>Day 20 is before last transaction day 30</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Contract termination</td>
+<td>Day 90</td>
+<td>Day 90 is on or after maturity day 90</td>
+<td>Rejected</td>
+</tr>
+<tr>
+<td>Loan withdrawal</td>
+<td>Day 100</td>
+<td>Day 100 is after maturity day 90</td>
+<td>Rejected</td>
+</tr>
+</tbody></table>

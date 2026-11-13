@@ -1,0 +1,284 @@
+<p>The Projected Amortization Schedule shows the expected payment path for a Working Capital (WC) loan. The system generates it automatically when the loan is created and keeps it current across the full loan life cycle. It updates based on approval, disbursement, and repayment activity, including payments made, missed, or overpaid.</p>
+<p>The schedule includes the following columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Amortization Installment No</td>
+<td>Serial number of the installment</td>
+</tr>
+<tr>
+<td>Amortization Installment Date</td>
+<td>Date of the installment</td>
+</tr>
+<tr>
+<td>Expected Payment Amount</td>
+<td>Calculated period payment amount</td>
+</tr>
+<tr>
+<td>Discount Factor</td>
+<td>Factor used in the calculation</td>
+</tr>
+<tr>
+<td>NPV Value</td>
+<td>Net present value of the installment</td>
+</tr>
+<tr>
+<td>Balance</td>
+<td>Remaining loan balance</td>
+</tr>
+<tr>
+<td>Net Amortization Amount</td>
+<td>Calculated amortized amount</td>
+</tr>
+<tr>
+<td>Actual Payment Amount</td>
+<td>Amount actually paid</td>
+</tr>
+<tr>
+<td>Actual Amortization Amount</td>
+<td>Amount actually amortized</td>
+</tr>
+<tr>
+<td>Income Modification</td>
+<td>Total expected amortization minus actual amortization as of the payment date</td>
+</tr>
+<tr>
+<td>Deferred Balance</td>
+<td>Discount amount balance</td>
+</tr>
+</tbody></table>
+<p>For Working Capital loans, the schedule uses DUE and IN ADVANCE transaction allocation balances; PAST DUE is not applicable:</p>
+<ul>
+<li>DUE PRINCIPAL is the projected principal payment.</li>
+<li>DUE FEE and DUE PENALTY are current or older charges based on their specific due date.</li>
+<li>IN ADVANCE PRINCIPAL is over projected principal payment.</li>
+<li>IN ADVANCE FEE and IN ADVANCE PENALTY are future charges based on their specific due date.</li>
+</ul>
+<p>Other behaviour of the schedule:</p>
+<ul>
+<li>Totals in the amortization table can be off by a couple of cents because of rounding from the precise model to the currency of the loan, handled the same way as with progressive loans.</li>
+<li>Zero-filled rows do not create an actual transaction; they are cosmetic changes on the schedule.</li>
+<li>Zero-filled rows are considered as actual payments by the expected payment schedule, so expectations are recalculated as if a zero-amount repayment transaction landed.</li>
+<li>When input field values become too low and calculated values cannot be calculated, the system throws a valid error message referencing the issue, such as unable to calculate a valid EIR.</li>
+</ul>
+<p>The loan account view screen shows the Projected Amortization Schedule with serial number of the installment, installment date, amortization installment date, expected payment as the calculated period payment amount value, and expected amortization amount as the calculated value.</p>
+<p>The screen also shows the Amortization Schedule/running schedule with serial number of the transaction, amortization date as per input frequency, expected payment as the calculated period payment amount value, expected amortization amount as the calculated value, paid date, actual payment amount, balance of the loan which adds disbursement and discount amount and subtracts payment amount when payment is made, actual amortization amount as the calculated amortized amount, fees amount if any, penalty amount if any, income modification as total expected amortization minus actual amortization as of the payment date, and deferred balance as discount amount balance.</p>
+<h2>Hide projected balances</h2>
+<p>Use the loan amortization schedule tab to view the projected amortization schedule, which the system automatically generates and maintains across the full loan lifecycle.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Hide Projected</td>
+<td>No</td>
+<td>Hide the projected balances from the schedule.</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A working capital loan is disbursed with a principal of 990, an annual interest rate of 12 percent, three monthly installments, and 30-day months. The figures are illustrative. The system creates the projected amortization schedule at disbursement and shows one row for each installment. The balance falls to zero by the last installment, and the NPV column shows each payment discounted to its present value.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Date</th>
+<th>Expected payment</th>
+<th>Discount factor</th>
+<th>NPV value</th>
+<th>Balance</th>
+<th>Net amortization</th>
+<th>Actual payment</th>
+<th>Actual amortization</th>
+<th>Income modification</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2/1/2024</td>
+<td>339.90</td>
+<td>0.9901</td>
+<td>336.53</td>
+<td>660.00</td>
+<td>-9.90</td>
+<td>339.90</td>
+<td>330.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3/1/2024</td>
+<td>336.60</td>
+<td>0.9803</td>
+<td>329.97</td>
+<td>330.00</td>
+<td>-6.60</td>
+<td>336.60</td>
+<td>330.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4/1/2024</td>
+<td>333.30</td>
+<td>0.9706</td>
+<td>323.50</td>
+<td>0.00</td>
+<td>-3.30</td>
+<td>333.30</td>
+<td>330.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The same loan is used, but the borrower pays 400 on the first installment, misses the second installment entirely, and pays 520 on the third installment to close the loan. Interest is a flat 10 per month and the discount factor is 1.0000 so the arithmetic stays easy to check by hand. The system recalculates the schedule after every payment, so the balance drops faster after the overpayment and stays flat after the missed payment. An overpayment appears as IN ADVANCE principal, while a missed payment leaves DUE principal until it is paid. If the first payment were 300 instead of 400, the balance would decline more slowly and the income modification would be positive rather than negative.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Date</th>
+<th>Expected payment</th>
+<th>Discount factor</th>
+<th>NPV value</th>
+<th>Balance</th>
+<th>Net amortization</th>
+<th>Actual payment</th>
+<th>Actual amortization</th>
+<th>Income modification</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2/1/2024</td>
+<td>310.00</td>
+<td>1.0000</td>
+<td>310.00</td>
+<td>510.00</td>
+<td>-10.00</td>
+<td>400.00</td>
+<td>390.00</td>
+<td>90.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3/1/2024</td>
+<td>310.00</td>
+<td>1.0000</td>
+<td>310.00</td>
+<td>510.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>-300.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4/1/2024</td>
+<td>310.00</td>
+<td>1.0000</td>
+<td>310.00</td>
+<td>0.00</td>
+<td>-10.00</td>
+<td>520.00</td>
+<td>510.00</td>
+<td>210.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A working capital loan has a principal of 900 and an origination discount fee of 100, so the total amount to collect is 1,000 over five monthly installments of 200. The figures are illustrative. The system amortizes 10 percent of each payment toward the discount fee and holds the unearned part in a deferred balance. If the discount fee were reduced to 50 after the first payment, the deferred balance would fall by the unearned portion and an income modification would post for the change.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Date</th>
+<th>Expected payment</th>
+<th>Discount factor</th>
+<th>NPV value</th>
+<th>Balance</th>
+<th>Net amortization</th>
+<th>Actual payment</th>
+<th>Actual amortization</th>
+<th>Income modification</th>
+<th>Deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>2/1/2024</td>
+<td>200.00</td>
+<td>1.0000</td>
+<td>200.00</td>
+<td>720.00</td>
+<td>-20.00</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>80.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3/1/2024</td>
+<td>200.00</td>
+<td>1.0000</td>
+<td>200.00</td>
+<td>540.00</td>
+<td>-20.00</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>4/1/2024</td>
+<td>200.00</td>
+<td>1.0000</td>
+<td>200.00</td>
+<td>360.00</td>
+<td>-20.00</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>5/1/2024</td>
+<td>200.00</td>
+<td>1.0000</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>-20.00</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>20.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>6/1/2024</td>
+<td>200.00</td>
+<td>1.0000</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>-20.00</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

@@ -1,0 +1,320 @@
+<h2>Interest Payment Waiver overview</h2>
+<p>An Interest Payment Waiver reduces interest balances on a loan. Waivers apply to interest balances first. The Interest Payment Waiver transaction type works the same as the goodwill credit transaction and refund transaction.</p>
+<h2>Posting an Interest Payment Waiver</h2>
+<p>You can post an Interest Payment Waiver transaction on an active or closed loan account. Use the Loans transaction API endpoint with the command interestPaymentWaiver. The loan transaction template fields are transaction date, transaction amount, payment type, external id, and note.</p>
+<h2>Undoing, modifying, and charge-back</h2>
+<p>You can undo, modify, revert, replay, or charge back a posted Interest Payment Waiver transaction from the UI. Reverse replay works the same for Interest Payment Waiver as for any other transaction type, and reverse replay allocation for Payment Waiver works the same as for other transaction types.</p>
+<h2>Payment allocation</h2>
+<p>Payment allocation for an interest waiver follows the advance allocation strategy configured for the loan product. You can configure payment allocations for the Payment waiver transaction type at loan product level during loan product creation and modification. When Advanced payment allocation is set, allocation rules can be configured.</p>
+<h2>Accounting entries</h2>
+<p>The accounting entries depend on whether the loan account is charged off. For non charge-off accounts, the Payment Waiver debits Income from Interest and credits Loan portfolio, Interest Receivable, Fees Receivable, Penalties Receivable, and Overpayment. For charge-off accounts, it debits Income from Interest and credits Income from charge-off Interest and Overpayment. Reversals post the opposite entries.</p>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non charge-off loan account</td>
+<td>Income from Interest (GL 404000) for the total amount entered</td>
+<td>Loan portfolio (GL 112601) for total principal portion allocated; Interest Receivable (GL 112603) for total interest portion allocated; Fees Receivable (GL 112603) for total fees portion allocated; Penalties Receivable (GL 112603) for total penalties portion allocated; Overpayment (GL 245000) for total overpayment portion allocated</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Income from Interest (GL 404000) for the total amount entered</td>
+<td>Income from charge-off Interest (GL 404001) for total principal, interest, fees, and penalties portions allocated; Overpayment (GL 245000) for total overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non charge-off loan account</td>
+<td>Loan portfolio (GL 112601), Interest Receivable (GL 112603), Fees Receivable (GL 112603), Penalties Receivable (GL 112603), and Overpayment (GL 245000) for their respective allocated portions</td>
+<td>Income from Interest (GL 404000) for the total amount entered</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Income from charge-off Interest (GL 404001) for total principal, interest, fees, and penalties portions allocated; Overpayment (GL 245000) for total overpayment portion allocated</td>
+<td>Income from Interest (GL 404000) for the total amount entered</td>
+</tr>
+</tbody></table>
+<h2>Configuration and API visibility</h2>
+<p>The loan product template call returns the new Interest Payment Waiver transaction type.</p>
+<h2>Worked examples</h2>
+<p>A loan of 1,000 is disbursed on 1 January. Three monthly installments fall due on 1 February, 1 March and 1 April. Before any waiver the schedule shows: 1 February principal 300, interest 20, EMI 320, due 320; 1 March principal 300, interest 15, EMI 315, due 315; 1 April principal 400, interest 10, EMI 410, due 410. A Payment Waiver of 250 is posted on 1 February. Interest waivers apply to interest balances first, so 20 settles the interest due and the remaining 230 reduces principal. The figures in this example are illustrative. The waiver reduces the balance by the principal portion only; the interest portion settles the receivable without changing the loan balance.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 Feb</td>
+<td>Payment Waiver</td>
+<td>250.00</td>
+<td>20.00</td>
+<td>230.00</td>
+<td>770.00</td>
+</tr>
+<tr>
+<td>1 Mar</td>
+<td>Installment</td>
+<td>385.00</td>
+<td>15.00</td>
+<td>370.00</td>
+<td>400.00</td>
+</tr>
+<tr>
+<td>1 Apr</td>
+<td>Installment</td>
+<td>410.00</td>
+<td>10.00</td>
+<td>400.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000 is disbursed on 1 January. A fee charge of 50 is posted on 15 January; the loan balance stays 1,000 because fees are tracked separately. A Payment Waiver of 100 is posted on 1 February. The waiver applies to interest first: 20 settles the interest due, 30 reduces principal, and the remaining 50 clears the fee. The loan balance falls to 970. This example differs from the basic waiver only by the presence of a fee charge, which adds a fee portion to the allocation.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Fee</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>15 Jan</td>
+<td>Fee charge</td>
+<td>50.00</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 Feb</td>
+<td>Payment Waiver</td>
+<td>100.00</td>
+<td>20.00</td>
+<td>30.00</td>
+<td>50.00</td>
+<td>970.00</td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000 is disbursed on 1 January. Repayments of 320 on 1 February, 385 on 1 March and 330 on 1 April repay the principal in full, leaving a balance of 0 and an unpaid interest amount of 10. A Payment Waiver of 60 is posted on 10 April. It allocates 10 to the outstanding interest and the remaining 50 to overpayment. The balance stays at 0. This example differs from the basic waiver only because the loan is already fully repaid, so any amount beyond interest becomes overpayment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Overpayment</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 Feb</td>
+<td>Repayment</td>
+<td>320.00</td>
+<td>20.00</td>
+<td>300.00</td>
+<td>—</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>1 Mar</td>
+<td>Repayment</td>
+<td>385.00</td>
+<td>15.00</td>
+<td>370.00</td>
+<td>—</td>
+<td>330.00</td>
+</tr>
+<tr>
+<td>1 Apr</td>
+<td>Repayment</td>
+<td>330.00</td>
+<td>—</td>
+<td>330.00</td>
+<td>—</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>10 Apr</td>
+<td>Payment Waiver</td>
+<td>60.00</td>
+<td>10.00</td>
+<td>—</td>
+<td>50.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000 is disbursed on 1 January. A Payment Waiver of 40 is posted on 15 January, allocating 10 to interest and 30 to principal, leaving a balance of 970. A repayment of 300 is posted on 1 February, allocating 20 to interest and 280 to principal, leaving a balance of 690. The waiver is then undone on 2 February; the reversal restores 10 to interest and 30 to principal, bringing the balance back to 720. The repayment is replayed on 1 February and now allocates 40 to interest and 260 to principal, leaving a balance of 460. This example shows that undoing a waiver recalculates balances and that a replayed repayment can allocate differently once the waived amounts are restored.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 Jan</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>—</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>15 Jan</td>
+<td>Payment Waiver</td>
+<td>40.00</td>
+<td>10.00</td>
+<td>30.00</td>
+<td>970.00</td>
+</tr>
+<tr>
+<td>1 Feb</td>
+<td>Repayment</td>
+<td>300.00</td>
+<td>20.00</td>
+<td>280.00</td>
+<td>690.00</td>
+</tr>
+<tr>
+<td>2 Feb</td>
+<td>Undo waiver (reversal)</td>
+<td>40.00</td>
+<td>10.00</td>
+<td>30.00</td>
+<td>720.00</td>
+</tr>
+<tr>
+<td>1 Feb</td>
+<td>Repayment (replayed)</td>
+<td>300.00</td>
+<td>40.00</td>
+<td>260.00</td>
+<td>460.00</td>
+</tr>
+</tbody></table>
+<p>For a non charge-off loan account, a Payment Waiver of 250 posted on 1 February allocates 200 to principal, 40 to interest and 10 to fees. The transaction debits Income from Interest (GL 404000) for 250 and credits Loan portfolio (GL 112601) for 200, Interest Receivable (GL 112603) for 40, Fees Receivable (GL 112603) for 10 and Overpayment (GL 245000) for 0. The reversal posts the exact opposite entries. For a charge-off account the same waiver debits Income from Interest (GL 404000) for 250 and credits Income from charge-off Interest (GL 404001) for 250 across the principal, interest, fees and penalties portions, plus Overpayment (GL 245000) for any overpayment; the reversal debits those accounts and credits Income from Interest (GL 404000). The figures are illustrative. The result changes with the account status: charge-off postings route the receivable portions through Income from charge-off Interest (GL 404001) instead of the individual receivable accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Account (GL)</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Waiver posting</td>
+<td>Income from Interest (404000)</td>
+<td>250.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Waiver posting</td>
+<td>Loan portfolio (112601)</td>
+<td>—</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>Waiver posting</td>
+<td>Interest Receivable (112603)</td>
+<td>—</td>
+<td>40.00</td>
+</tr>
+<tr>
+<td>Waiver posting</td>
+<td>Fees Receivable (112603)</td>
+<td>—</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>Waiver posting</td>
+<td>Overpayment (245000)</td>
+<td>—</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Waiver reversal</td>
+<td>Income from Interest (404000)</td>
+<td>—</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>Waiver reversal</td>
+<td>Loan portfolio (112601)</td>
+<td>200.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Waiver reversal</td>
+<td>Interest Receivable (112603)</td>
+<td>40.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Waiver reversal</td>
+<td>Fees Receivable (112603)</td>
+<td>10.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Waiver reversal</td>
+<td>Overpayment (245000)</td>
+<td>0.00</td>
+<td>—</td>
+</tr>
+</tbody></table>

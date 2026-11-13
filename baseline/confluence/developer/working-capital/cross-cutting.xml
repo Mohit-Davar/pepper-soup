@@ -1,0 +1,418 @@
+<p>Charges are amounts applied to a loan account during the loan lifecycle, such as fees or penalties. A charge can be applied at disbursement or on a specified due date. Charges increase the charge receivable and charge income, and they add to the amount to be collected under fees or penalties based on configuration. A charge does not impact principal.</p>
+<p>Charge timing and calculation rules:</p>
+<ul>
+<li>Disbursement charges support flat or percentage-of-amount calculation.</li>
+<li>Specified due date charges support flat calculation only.</li>
+<li>Charge payment mode is Regular by default when not specified.</li>
+</ul>
+<p>When you can add a charge:</p>
+<ul>
+<li>You can add a charge backdated up to the current date.</li>
+<li>You can add a specified due date charge on a disbursed or active loan account on the current date or a future date.</li>
+<li>You can add a charge on closed or overpaid loans, or after the maturity date.</li>
+<li>Adding charges after charge-off is not allowed.</li>
+</ul>
+<p>What happens when a charge is added:</p>
+<ul>
+<li>A charge transaction is created when the charge is applied at the loan account level.</li>
+<li>The charge amount increases the charge receivable and charge income.</li>
+<li>The charge amount adds to the amount to be collected under fees or penalties based on configuration.</li>
+<li>If an overpaid loan receives a charge and the overpaid amount is greater than the charge amount, the loan remains overpaid.</li>
+<li>If the overpaid amount matches the charge amount, the loan gets closed.</li>
+<li>If the overpaid amount is lower than the charge amount, the loan gets active (reopened).</li>
+<li>The new maturity date is the date of the charge due date.</li>
+<li>Delinquency and breach periods are created if any outstanding balance appears on the loan after adding a charge.</li>
+</ul>
+<p>Charge waiver:</p>
+<ul>
+<li>You can waive an unpaid charge on an active loan account.</li>
+<li>Charge deletion is prevented if the charge is assigned to a Working Capital Loan.</li>
+</ul>
+<p>Charge adjustment:</p>
+<ul>
+<li>A charge adjustment is a monetary transaction used to offset charges that have already been paid.</li>
+<li>Charge adjustment is triggered when previously paid charges need to be adjusted or refunded.</li>
+<li>Charge adjustment results in reduction of collected amount.</li>
+<li>Charge adjustment is adjusted to principal or charge balances depending on the allocation strategy priority.</li>
+<li>Charge adjustment triggers accounting entries.</li>
+<li>Charge adjustment works similar to a repayment transaction.</li>
+<li>Charge adjustment applies only to fees, penalty, or principal components based on allocation priority.</li>
+<li>Charge adjustment cannot exceed the paid charge amount.</li>
+<li>Charge adjustment cannot exceed the available charge balance.</li>
+<li>Charge adjustment can be performed only if charges have been previously paid.</li>
+<li>Charge adjustment amount must be greater than zero.</li>
+<li>Charge adjustment amount must not exceed the paid charge amount.</li>
+<li>Charge adjustment date must comply with business date rules.</li>
+<li>Charge adjustment date must comply with backdating rules.</li>
+<li>Charge adjustment results in nullification of receivables or reversal of income standard accounting entry.</li>
+<li>When charges are paid via repayment, the receivable is reduced.</li>
+<li>When charges are adjusted via charge adjustment, previously recognized income is reversed.</li>
+<li>Charge receivables are created at charge application.</li>
+<li>Charge receivables are cleared during payment or adjustment.</li>
+<li>Charge adjustment supports backdated processing.</li>
+<li>Charge adjustment transactions support reversal subject to validations.</li>
+</ul>
+<p>Credit Balance Refund (CBR):</p>
+<ul>
+<li>CBR is a monetary transaction executed on a loan account in OVERPAID status.</li>
+<li>CBR is allowed only when loan status is OVERPAID and overpaymentAmount is greater than zero.</li>
+<li>CBR validation requires transactionAmount greater than zero and less than or equal to overpaymentAmount.</li>
+<li>CBR transaction date must follow standard transaction date rules.</li>
+<li>CBR results in reduction of overpaymentAmount by the refund amount.</li>
+<li>CBR results in persistence of transaction and allocation records.</li>
+<li>CBR results in loan status transition evaluation based on resulting balance fields.</li>
+<li>No amortization schedule recalculation is triggered by CBR.</li>
+<li>No delinquency or breach payment-application flow is triggered by CBR.</li>
+<li>CBR reversal is allowed subject to no dependency conflicts and valid loan or account status.</li>
+<li>CBR reversal behavior creates a linked reversal transaction.</li>
+<li>CBR reversal reverses credit balance adjustment and accounting entries.</li>
+</ul>
+<p>Charge-off:</p>
+<ul>
+<li>Charge-off is an accounting classification, not a loan closure.</li>
+<li>On charge-off, the loan account status is updated from Active Delinquent to Charged-Off.</li>
+<li>On charge-off, a one-time amortization is performed for the total deferred income as of the charge-off date.</li>
+<li>On charge-off, corresponding accounting entries are posted as defined in the accounting configuration.</li>
+<li>Any transactions after the charge-off date must follow charge-off-specific accounting rules.</li>
+<li>Backdated charge-off is allowed but must not precede the last monetary transaction date.</li>
+<li>Backdated repayments and reversals before the charge-off date are allowed.</li>
+<li>Charge-off reversal is supported subject to configuration and controls.</li>
+<li>Charge-off reversal is not supported if any transactions were done after the charge-off transaction.</li>
+</ul>
+<p>Write-off:</p>
+<ul>
+<li>The loan account status is updated to Closed (Written-Off).</li>
+<li>Backdated repayments or reversals before the write-off date are allowed.</li>
+<li>The following fields must be captured at the time of write-off: Write-Off Date, Write-Off Reason, External ID, Notes.</li>
+</ul>
+<p>Transaction rules:</p>
+<ul>
+<li>Backdated transactions are supported for most transaction types.</li>
+<li>Transactions can be reversed subject to no dependency conflicts and valid loan status.</li>
+<li>All undo or deletion actions must be captured in the audit trail.</li>
+</ul>
+<p>Monetary transaction types:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>Release of approved loan funds to the borrower; marks activation of the loan account, initiates repayment obligations, and triggers related accounting and schedule generation.</td>
+</tr>
+<tr>
+<td>Repayment</td>
+<td>Payment toward the loan.</td>
+</tr>
+<tr>
+<td>Discount fees Amortization</td>
+<td>System-driven recognition of deferred income aligned with payment events; no accounting entries are generated and it does not impact GL accounts or financial balances.</td>
+</tr>
+<tr>
+<td>Prepayment</td>
+<td>Payment made before the due date.</td>
+</tr>
+<tr>
+<td>Charge Adjustment</td>
+<td>Monetary transaction used to offset charges that have already been paid.</td>
+</tr>
+<tr>
+<td>Discount Fees</td>
+<td>Upfront income adjustment applied to a loan, typically at or as of disbursement.</td>
+</tr>
+<tr>
+<td>Credit Balance Refund</td>
+<td>Refund of excess funds paid by the borrower when the loan has an overpayment balance.</td>
+</tr>
+<tr>
+<td>Goodwill Credit Transaction</td>
+<td>Credit adjustment provided to the borrower, typically as a gesture of goodwill.</td>
+</tr>
+<tr>
+<td>Recovery Payment</td>
+<td>Payment made after write-off.</td>
+</tr>
+<tr>
+<td>Payout Refund</td>
+<td>Refund transaction on a loan account.</td>
+</tr>
+</tbody></table>
+<p>Non-monetary transaction types:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge Application</td>
+<td>Application of a charge to a loan account.</td>
+</tr>
+<tr>
+<td>Charge Waiver</td>
+<td>Waiver of a charge.</td>
+</tr>
+<tr>
+<td>Write-Off / Charge-Off</td>
+<td>Accounting treatment for write-off or charge-off.</td>
+</tr>
+<tr>
+<td>Adjustments / Reversals</td>
+<td>Adjustment or reversal of transactions.</td>
+</tr>
+</tbody></table>
+<p>Transaction allocation:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Penalties, Fees, Principal</td>
+<td>Amounts are distributed into these components.</td>
+</tr>
+</tbody></table>
+<p>Charge-off removes a loan balance from the active portfolio when repayment is no longer expected. Charge-off reversal restores the previously charged-off amounts. Credit balance refund (CBR) returns excess payments to the customer. Chargeback reverses a credit balance refund when the refunded excess must be recovered.</p>
+<p>Charge-off accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit GL code</th>
+<th>Credit GL code</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off principal</td>
+<td>744007</td>
+<td>112601</td>
+<td>Charge off expense / charge-off fraud expense / Loan Portfolio</td>
+</tr>
+<tr>
+<td>Charge-off fees</td>
+<td>404008</td>
+<td>112603</td>
+<td>Income from ChargeOff Fees / Fees Receivable</td>
+</tr>
+<tr>
+<td>Charge-off penalties</td>
+<td>404008</td>
+<td>112603</td>
+<td>Income from ChargeOff Penalties / Penalty Receivable</td>
+</tr>
+</tbody></table>
+<p>Charge-off reversal accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit GL code</th>
+<th>Credit GL code</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off reversal fees</td>
+<td>112603</td>
+<td>404008</td>
+<td>Fees Receivable / Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Charge-off reversal penalties</td>
+<td>112603</td>
+<td>404008</td>
+<td>Penalty Receivable / Income from ChargeOff Penalties</td>
+</tr>
+</tbody></table>
+<p>Credit balance refund (CBR) and reversal accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit GL code</th>
+<th>Credit GL code</th>
+<th>Mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CBR</td>
+<td>245000</td>
+<td>145023</td>
+<td>Overpayment Liability / Fund source for excess</td>
+</tr>
+<tr>
+<td>CBR Reversal</td>
+<td>145023</td>
+<td>245000</td>
+<td>Fund source for excess / Overpayment Liability</td>
+</tr>
+</tbody></table>
+<p>Charges, refunds and chargebacks describe how fees and penalties are added to a Working Capital loan, reversed when needed, and recorded when a loan is charged off. Charge-off is supported with 180, 360 or full tenure charge-offs, and the charge-off period is 6 monthly. Charge-backs are supported, and repayment reversals are used.</p>
+<p>Charge-off and charge-back behaviour for the Interest Rate modification row:</p>
+<ul>
+<li>Charge off is N, Charge Back is R, Re-age is N, Re-amortisation is R, Backdate is R, Delayed Schedule Captures is N, Instalment Due date change is R, Maturity date change is R, Interest refund is N, Accrual Activity is N, Working Capital Product (WCP) is N, Loan origination is N.</li>
+<li>Interest Recalculation, Accounting, Buy-Down fees, Contract Termination, Capitalized income, Asset Externalization, Delinquency pause, Delinquency bucket calculation, Arears, Write off, Interest Waiver, Late payment fee, EMI Calculation, N+1 Installments, Interest Pause Period, Downpayments, Merchant Issued/Payout Refund transactions, Credit Balance Refund, Payments on closed loans, Disbursement (post action) are blank.</li>
+</ul>
+<p>Charge-off and charge-back behaviour for the Credit Balance Refund row:</p>
+<ul>
+<li>Charge off is R, Charge Back is N, Re-age is R, Re-amortisation is N, Backdate is R, Delayed Schedule Captures is N, Instalment Due date change is N, Maturity date change is N, Interest refund is I, Credit Balance Refund is &#39;-&#39;, Payments on closed loans is N, Working Capital Product (WCP) is N, Loan origination is N.</li>
+<li>Interest Recalculation, Accounting, Buy-Down fees, Contract Termination, Capitalized income, Asset Externalization, Interest Rate modification, Delinquency pause, Delinquency bucket calculation, Arears, Write off, Interest Waiver, Late payment fee, EMI Calculation, N+1 Installments, Interest Pause Period, Downpayments, Merchant Issued/Payout Refund transactions, Disbursement (post action), Accrual Activity are blank.</li>
+</ul>
+<p>Charge-off and charge-back behaviour for the Interest refund row:</p>
+<ul>
+<li>Charge off is R, Charge Back is N, Re-age is R, Re-amortisation is R, Backdate is R, Interest Recalculation is R, Accounting is R, Buy-Down fees is N, Contract Termination is N, Capitalized income is R, Asset Externalization is R, Interest Rate modification is N, Delinquency pause is N, Delinquency bucket calculation is N, Arears is N, Write off is R, Interest Waiver is R, Late payment fee is N, EMI Calculation is N, Delayed Schedule Captures is R, N+1 Installments is N, Interest Pause Period is R, Downpayments is N, Merchant Issued/Payout Refund transactions is N, Credit Balance Refund is N, Payments on closed loans is N, Disbursement (post action) is N, Interest refund is &#39;-&#39;, Accrual Activity is N, Working Capital Product (WCP) is N, Loan origination is N.</li>
+</ul>
+<p>Charge addition and waive accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge addition</td>
+<td>112603 Fee Receivable (Fees Receivable, Asset, fees)</td>
+<td>404007 Fee Income (Income from Fees, Income, fees)</td>
+</tr>
+<tr>
+<td>Charge waive</td>
+<td>404007 Fee Income (Income from Fees, Income, fees)</td>
+<td>112603 Fee Receivable (Fees Receivable, Asset, fees)</td>
+</tr>
+</tbody></table>
+<p>Working Capital loan events:</p>
+<ul>
+<li>Creating a new Working Capital loan triggers WorkingCapitalLoanCreatedBusinessEvent.</li>
+<li>Charging off a Working Capital loan triggers WorkingCapitalLoanChargeOffBusinessEvent.</li>
+<li>Adding a new charge to a Working Capital loan triggers WorkingCapitalLoanAddChargeBusinessEvent.</li>
+<li>A Working Capital loan payout refund triggers WorkingCapitalLoanPayoutRefundTransactionBusinessEvent.</li>
+<li>A Working Capital loan charge adjustment triggers WorkingCapitalLoanChargeAdjustmentBusinessEvent.</li>
+<li>A Working Capital loan credit balance refund triggers WorkingCapitalLoanCreditBalanceRefundTransactionBusinessEvent.</li>
+<li>A Working Capital loan charge-off triggers WorkingCapitalLoanChargeOffTransactionBusinessEvent.</li>
+</ul>
+<p>Payout Refund submission:</p>
+<ul>
+<li>The user enters the refund amount.</li>
+<li>The user selects the transaction date.</li>
+<li>The system validates eligibility.</li>
+<li>The system applies the refund amount against the outstanding principal and Fees/Penalty balance as per allocation rules.</li>
+</ul>
+<p>Other behaviour:</p>
+<ul>
+<li>If a closed loan receives a charge, it is reopened as an outstanding balance occurs.</li>
+<li>The delinquency pause is applied as of the current business date at the time of initiation.</li>
+<li>Balance is recalculated/updated when a loan is disbursed, a repayment is posted, income is accrued, income is realized, adjustments or reversals happen, or COB processing executes.</li>
+</ul>
+<p>A working capital loan with a principal of 1,000.00 reaches maturity on Day 0. Ten days later, a specified due date charge of 50.00 is added with a due date on Day 15. The charge creates an N+1 row while the original maturity date stays unchanged. A repayment made before Day 15 does not clear the charge; only a repayment after the due date settles it. The same behavior applies when the loan is CLOSED or OVERPAID. These figures are illustrative. This example shows that post-maturity specified due date charges generate an N+1 row and are payable only after their due date, without moving maturity.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Charge receivable</th>
+<th>Maturity date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0</td>
+<td>Loan reaches maturity</td>
+<td>0.00</td>
+<td>Day 0</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Specified due date charge of 50.00 added</td>
+<td>50.00</td>
+<td>Day 0 (unchanged)</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Repayment of 50.00 after due date</td>
+<td>0.00</td>
+<td>Day 0 (unchanged)</td>
+</tr>
+</tbody></table>
+<p>A working capital loan is OVERPAID with an overpaymentAmount of 100.00. The borrower requests a Credit Balance Refund of 60.00, which reduces the overpayment by the refund amount and triggers a status evaluation. A second Credit Balance Refund of 40.00 clears the remaining credit balance and moves the loan to CLOSED_OBLIGATIONS_MET. CBR does not recalculate the amortization schedule and does not start a delinquency flow; a CBR on a CLOSED loan is rejected. This example shows that Credit Balance Refund reduces only the overpayment amount and that repeated refunds can close the loan when the credit balance reaches zero.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Transaction</th>
+<th>Refund amount</th>
+<th>Overpayment before</th>
+<th>Overpayment after</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Overpayment recorded</td>
+<td>-</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>OVERPAID</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Credit Balance Refund #1</td>
+<td>60.00</td>
+<td>100.00</td>
+<td>40.00</td>
+<td>OVERPAID</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Credit Balance Refund #2</td>
+<td>40.00</td>
+<td>40.00</td>
+<td>0.00</td>
+<td>CLOSED_OBLIGATIONS_MET</td>
+</tr>
+</tbody></table>
+<p>A working capital loan is ACTIVE DELINQUENT with principal outstanding of 500.00 and deferred income of 100.00. A non-fraud charge-off of 500.00 is posted as a non-monetary transaction, so the loan balance does not change; the status moves to CHARGED_OFF and the deferred income is amortized in one entry. A reversal of the charge-off, completed in error with no intervening transactions, restores the amortization and schedule. A second charge-off or a charge-off dated before the last monetary transaction is rejected. This example shows that charge-off is an accounting classification with no balance impact, and that its reversal restores prior amortization when no later transactions exist.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Event</th>
+<th>Transaction type</th>
+<th>Principal balance</th>
+<th>Status</th>
+<th>Deferred income</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Delinquency identified</td>
+<td>-</td>
+<td>500.00</td>
+<td>ACTIVE DELINQUENT</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Charge-off (non-fraud)</td>
+<td>Non-monetary</td>
+<td>500.00</td>
+<td>CHARGED_OFF</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Undo charge-off</td>
+<td>Reversal</td>
+<td>500.00</td>
+<td>ACTIVE DELINQUENT</td>
+<td>100.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Batch Jobs"/><ac:plain-text-link-body><![CDATA[Batch Jobs]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Accounting"/><ac:plain-text-link-body><![CDATA[Accounting]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Collections Programs"/><ac:plain-text-link-body><![CDATA[Collections Programs]]></ac:plain-text-link-body></ac:link>.</p>

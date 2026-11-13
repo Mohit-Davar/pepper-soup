@@ -1,0 +1,318 @@
+<h2>Refund and provisional credit entries</h2>
+<p>Refund and provisional credit entries move money between the Fund source account and a receivable, liability or loan portfolio account. A Cash in entry debits the Fund source account and credits the other account; a Cash Out entry with the Y flag reverses the debit and credit.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest - Repayment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Interest Receivable account 112603</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Penalties Receivable account 112603</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Principal Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Loan portfolio account 112601</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash in</td>
+<td>Fund source account 145023</td>
+<td>Over payment liability account 245000</td>
+</tr>
+<tr>
+<td>Interest - Repayment Cash Out with Y flag</td>
+<td>Interest Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash Out with Y flag</td>
+<td>Penalties Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash Out with Y flag</td>
+<td>Fees Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash Out with Y flag</td>
+<td>Fees Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Principal Payment Cash Out with Y flag</td>
+<td>Loan portfolio account 112601</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash Out with Y flag</td>
+<td>Over payment liability account 245000</td>
+<td>Fund source account 145023</td>
+</tr>
+</tbody></table>
+<h2>Goodwill entries</h2>
+<p>Goodwill entries record accounting entries when the bank waives a charge without receiving cash.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debits</th>
+<th>Credits</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will Late Fee Payment No Cash</td>
+<td>Income from Goodwill Credit Penalty account 404008</td>
+<td>Penalties Receivable account 112603</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash</td>
+<td>Income from Goodwill Credit Fees account 404008</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash</td>
+<td>Income from Goodwill Credit Fees account 404008</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash</td>
+<td>Expense from Goodwill Credit account 744003</td>
+<td>Loan portfolio account 112601</td>
+</tr>
+<tr>
+<td>Good Will Unallocated Credit (UNC) No Cash</td>
+<td>Expense from Goodwill Credit account 744003</td>
+<td>Over payment liability account 245000</td>
+</tr>
+</tbody></table>
+<h2>Auto payment entries</h2>
+<p>Auto payment entries record how cash moves between the Fund source account and receivable, liability, or loan portfolio accounts when a payment posts automatically. Each entry lists the account debited and the account credited.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debits</th>
+<th>Credits</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Interest Receivable account 112603</td>
+</tr>
+<tr>
+<td>Auto Payment Late Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Penalties Receivable account 112603</td>
+</tr>
+<tr>
+<td>Auto Payment NSF Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Auto Payment Snooze Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Auto Payment Principal Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Loan portfolio account 112601</td>
+</tr>
+<tr>
+<td>Auto Payment Unallocated Credit (UNC) Cash in</td>
+<td>Fund source account 145023</td>
+<td>Over payment liability account 245000</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out with Y flag</td>
+<td>Interest Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Auto Payment Late Fee Payment Cash Out with Y flag</td>
+<td>Penalties Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Auto Payment NSF Fee Payment Cash Out with Y flag</td>
+<td>Fees Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Auto Payment Snooze Fee Payment Cash Out with Y flag</td>
+<td>Fees Receivable account 112603</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Auto Payment Principal Payment Cash Out with Y flag</td>
+<td>Loan portfolio account 112601</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Auto Payment Unallocated Credit (UNC) Cash Out with Y flag</td>
+<td>Over payment liability account 245000</td>
+<td>Fund source account 145023</td>
+</tr>
+<tr>
+<td>Loan Disbursement Principal Cash Out</td>
+<td>Loan portfolio account 112601</td>
+<td>Fund source account 145023</td>
+</tr>
+</tbody></table>
+<h2>Scheduled payment entries</h2>
+<p>A scheduled payment entry records the accounting effect when a borrower pays an installment. Every entry debits Fund source account 145023; the credit account depends on what the payment covers.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Scheduled Payment Interest - Repayment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Interest Receivable account 112603</td>
+</tr>
+<tr>
+<td>Scheduled Payment Late Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Penalties Receivable account 112603</td>
+</tr>
+<tr>
+<td>Scheduled Payment NSF Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Scheduled Payment Snooze Fee Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Fees Receivable account 112603</td>
+</tr>
+<tr>
+<td>Scheduled Payment Principal Payment Cash in</td>
+<td>Fund source account 145023</td>
+<td>Loan portfolio account 112601</td>
+</tr>
+<tr>
+<td>Scheduled Payment Unallocated Credit (UNC) Cash in</td>
+<td>Fund source account 145023</td>
+<td>Over payment liability account 245000</td>
+</tr>
+</tbody></table>
+<h2>Fee return entries</h2>
+<p>Fee return entries record the reversal of a fee payment when no cash changes hands. Two entry types apply, depending on whether the late fee payment carries the Y flag.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Apply Fee Return Late Fee Payment No Cash</td>
+<td>R290</td>
+</tr>
+<tr>
+<td>Apply Fee Return Late Fee Payment No Cash with Y flag</td>
+<td>R291</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A borrower pays 250.00 toward principal on a 1,000.00 loan. The loan carries a 12% annual interest rate, 3 monthly installments, and 30-day months; the figures are illustrative. The user verifies the cash-in accounting entry for a scheduled principal payment. This example shows that every cash-in receipt debits Fund source 145023 and credits the account matching the payment type.</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fund source 145023</td>
+<td>250.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Loan portfolio 112601</td>
+<td></td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+</tbody></table>
+<p>A refund of 250.00 principal is posted with the Y flag, or a 1,000.00 loan is disbursed to a borrower. The entry moves money out of the fund source and adjusts the loan asset. This example shows that every cash-out with Y flag entry, and every loan disbursement, credits Fund source 145023 and debits the account matching the payment type.</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan portfolio 112601</td>
+<td>250.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Fund source 145023</td>
+<td></td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+</tbody></table>
+<p>An administrator waives a 100.00 unallocated credit as goodwill. No cash moves; the entry adjusts an expense account and a liability account. This example shows that a goodwill no-cash adjustment debits an expense or income account and credits the related receivable or liability account without touching cash.</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Expense from Goodwill Credit 744003</td>
+<td>100.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Over payment liability 245000</td>
+<td></td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+</tbody></table>

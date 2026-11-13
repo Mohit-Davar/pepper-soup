@@ -1,0 +1,440 @@
+<h2>Investor Module overview</h2>
+<p>The Investor Module, also known as the asset Externalization module, supports selling and buying back loan account assets from one owner to another.</p>
+<p>Ownership transfer records use these fields.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Effective date range</td>
+<td>The period, inclusively bounded by start and end dates, during which the ownership entry is valid.</td>
+</tr>
+<tr>
+<td>Externalization status</td>
+<td>Stores loan id, status, and effective date range with from and to dates.</td>
+</tr>
+<tr>
+<td>Externalisation request and history</td>
+<td>Stores incoming externalisation requests and executed externalisation request outcomes.</td>
+</tr>
+</tbody></table>
+<h2>Roles and users</h2>
+<p>An investor is a legal entity referred to as an external owner. A business manager is an employee of the organisation who offers the loan to its customer and either makes a decision on asset sale or whose work uses data related to it.</p>
+<h2>Ownership transfer fields</h2>
+<p>An investor can transfer ownership of a loan using Asset Owner ID, optional Sales Transaction ID, Purchase Price Ratio, and Settlement Date. Asset Owner ID identifies the investor who owns the loan. Sales Transaction ID is an external transaction ID that the system generates if you do not provide one. Purchase Price Ratio is a percentage from 0% to 100% representing the fraction of investor ownership in the loan. Settlement Date is the last date the previous owner holds the asset; new ownership starts the next day.</p>
+<p>Ownership transfer fields</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Constraints</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Asset Owner ID</td>
+<td>String</td>
+<td>Required for SALE</td>
+<td>Any string value, no specific format, maximum 100 characters</td>
+</tr>
+<tr>
+<td>Sales Transaction ID</td>
+<td>String</td>
+<td>Optional</td>
+<td>Any string value, no specific format, maximum 100 characters; generated if not provided</td>
+</tr>
+<tr>
+<td>Purchase Price Ratio</td>
+<td>Number</td>
+<td>Required for SALE</td>
+<td>Percentage between 0% and 100%</td>
+</tr>
+<tr>
+<td>Settlement Date</td>
+<td>DATE</td>
+<td>Required</td>
+<td>Cannot be in the past</td>
+</tr>
+</tbody></table>
+<h2>Eligibility and timing</h2>
+<p>Ownership transfer requests are accepted only for loans with status ACTIVE; any other status is rejected.</p>
+<p>During COB, the system processes an ownership transfer when its settlement date arrives:</p>
+<ul>
+<li>The transfer becomes active when the loan balance is greater than 0.</li>
+<li>The transfer becomes declined when the loan balance is less than or equal to 0.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> A rejected ownership transfer response returns HTTP 403 with a reason.</p>
+</blockquote>
+<h2>Transfer statuses</h2>
+<p>A transfer can have one of five statuses. PENDING means the request has been made but COB has not yet made it active. ACTIVE means the transfer is active and all journal entries are made against the investor. BUYBACK means the loan&#39;s ownership was bought back. DECLINED means the request has been made but COB has not run and the loan was paid back or overpaid, so there is nothing for the investor to buy. CANCELLED means the request was made but cancelled before execution.</p>
+<h2>Initiating a sale or buyback</h2>
+<p>You initiate a sale or buyback by posting a transfer request for a loan. A sale identifies the loan by its internal id, while a buyback identifies it by its external id.</p>
+<p>Request details</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Target</th>
+<th>URL</th>
+<th>Body fields</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>sale</td>
+<td>Loan by id</td>
+<td>POST /external-asset-owners/transfers?loanId=1&amp;command=sale</td>
+<td>settlement_date, owner_external_id, transfer_external_id, purchase_price_ratio, dateformat, locale</td>
+</tr>
+<tr>
+<td>buyback</td>
+<td>Loan by external id</td>
+<td>POST /external-asset-owners/transfers?loanExternalId=35462342345234523764&amp;command=buyback</td>
+<td>settlement_date, owner_external_id, transfer_external_id, purchase_price_ratio, dateformat, locale</td>
+</tr>
+</tbody></table>
+<p>You cancel a transfer by posting a cancel request that identifies the loan by its external id and names the transfer to cancel.</p>
+<p>Cancel request details</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Target</th>
+<th>URL</th>
+<th>Body field</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>cancel</td>
+<td>Loan by external id</td>
+<td>POST /external-asset-owners/transfers?loanExternalId=35462342345234523764&amp;command=cancel</td>
+<td>transfer_external_id</td>
+</tr>
+</tbody></table>
+<h2>Transfer responses</h2>
+<p>A transfer response returns the technical details of an ownership transfer, including its resource id, owner id, status, and sales transaction id.</p>
+<table>
+<thead>
+<tr>
+<th>Response type</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sale</td>
+<td>resourceId, resourceExternalId, subResourceId, subResourceExternalId, changes with settlementDate, ownerExternalId, transferExternalId, purchasePriceRatio, dateformat, locale</td>
+</tr>
+<tr>
+<td>Buyback</td>
+<td>resourceId, resourceExternalId, subResourceId, subResourceExternalId, changes with settlementDate, ownerExternalId, transferExternalId, purchasePriceRatio, dateformat, locale</td>
+</tr>
+<tr>
+<td>Cancel</td>
+<td>resourceId, resourceExternalId, subResourceId, subResourceExternalId, changes with transfer_external_id, status CANCELLED, subStatus USER_REQUESTED, dateformat, locale</td>
+</tr>
+</tbody></table>
+<p>The ownership transfer response includes:</p>
+<ul>
+<li>resource id (internal id)</li>
+<li>owner id</li>
+<li>sales transaction id (generated if not provided)</li>
+</ul>
+<p>Technical information associated with a transfer includes:</p>
+<ul>
+<li>transfer timestamp</li>
+<li>effective date range from submitted on date to 9999-12-31</li>
+</ul>
+<h2>Fetching transfers</h2>
+<p>Fetch transfer requests using GET /external-asset-owners/transfers with a transfer external ID, loan ID, or loan external ID. Create asset transfer requests using POST /external-asset-owners/transfers/loans/&lt;loan_id&gt;?command=&lt;action&gt; or POST /external-asset-owners/transfers/loans/external-id/&lt;loan_external_id&gt;?command=&lt;action&gt;.</p>
+<p>The response body includes:</p>
+<ul>
+<li>totalFilteredRecords</li>
+<li>pageItems with transferId, owner.externalId, loan.id, loan.externalId, transferExternalId, purchasePriceRatio, settlementDate, status, effectiveFrom, effectiveTo, dateformat, and locale</li>
+</ul>
+<h2>COB processing</h2>
+<p>The system completes actual transfers during close of business (COB) processing and creates journal entries when asset ownership status changes.</p>
+<p>Journal entries are created during COB for these ownership status changes:</p>
+<ul>
+<li>PENDING to ACTIVE.</li>
+<li>PENDING to BUYBACK through PENDING → ACTIVE then ACTIVE → BUYBACK.</li>
+<li>ACTIVE to BUYBACK.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "PENDING" as n1
+  state "ACTIVE" as n2
+  state "BUYBACK" as n3
+  n1 --> n2 : COB
+  n2 --> n3 : COB
+  n1 --> n3 : COB via ACTIVE]]></ac:plain-text-body></ac:structured-macro>
+<h2>Buyback</h2>
+<p>A business manager can buy back loans with pending or active ownership transfer from investors when the loan account becomes fraud or for any other reason. Buyback is another activity with its own external Buyback Transfer ID.</p>
+<p>When both PENDING and BUYBACK transfers are cancelled:</p>
+<ul>
+<li>No journal entries are made.</li>
+</ul>
+<h2>Journal entries and accounting</h2>
+<p>The system creates accounting entries for investor journal entries using the configured mappings. Interest entries post to the Interest receivables GL mapping. The same posting date applies to both the moving-from and moving-to entries during a portfolio transfer. Storing a journal entry also creates a new relationship entry when the entry is owned by an external owner. A mapping table stores the relationship between journal entries and external investors. The Accounting module and Investor module are coupled through internal business events.</p>
+<h2>Journal entry APIs</h2>
+<p>Use the journal entry APIs to fetch journal entries for a transfer or for an owner.</p>
+<p>Fetch transfer journal entries with:</p>
+<ul>
+<li>GET /external-asset-owners/transfers/external-id/{ownerExternalId}/journal-entries</li>
+</ul>
+<p>Fetch owner journal entries with:</p>
+<ul>
+<li>GET /external-asset-owners/owners/external-id/{ownerExternalId}/journal-entries</li>
+</ul>
+<p>The transfer journal entries response body includes:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>transferData.transferId</td>
+<td>Identifier of the transfer</td>
+</tr>
+<tr>
+<td>transferData.owner.externalId</td>
+<td>External identifier of the owner</td>
+</tr>
+<tr>
+<td>transferData.loan.loanId</td>
+<td>Identifier of the loan</td>
+</tr>
+<tr>
+<td>transferData.loan.externalId</td>
+<td>External identifier of the loan</td>
+</tr>
+<tr>
+<td>transferData.details.detailsId</td>
+<td>Identifier of the transfer details</td>
+</tr>
+<tr>
+<td>transferData.details.totalOutstanding</td>
+<td>Total outstanding amount</td>
+</tr>
+<tr>
+<td>transferData.details.totalPrincipalOutstanding</td>
+<td>Total principal outstanding</td>
+</tr>
+<tr>
+<td>transferData.details.totalInterestOutstanding</td>
+<td>Total interest outstanding</td>
+</tr>
+<tr>
+<td>transferData.details.totalFeeChargesOutstanding</td>
+<td>Total fee charges outstanding</td>
+</tr>
+<tr>
+<td>transferData.details.totalPenaltyChargesOutstanding</td>
+<td>Total penalty charges outstanding</td>
+</tr>
+<tr>
+<td>transferData.details.totalOverpaid</td>
+<td>Total overpaid amount</td>
+</tr>
+<tr>
+<td>transferData.details.transferExternalId</td>
+<td>External identifier of the transfer</td>
+</tr>
+<tr>
+<td>transferData.details.purchasePriceRatio</td>
+<td>Purchase price ratio</td>
+</tr>
+<tr>
+<td>transferData.details.settlementDate</td>
+<td>Settlement date</td>
+</tr>
+<tr>
+<td>transferData.details.status</td>
+<td>Status of the transfer</td>
+</tr>
+<tr>
+<td>transferData.details.subStatus</td>
+<td>Sub-status of the transfer</td>
+</tr>
+<tr>
+<td>transferData.details.effectiveFrom</td>
+<td>Effective from date</td>
+</tr>
+<tr>
+<td>transferData.details.effectiveTo</td>
+<td>Effective to date</td>
+</tr>
+<tr>
+<td>journalEntryData.content</td>
+<td>Journal entry content</td>
+</tr>
+<tr>
+<td>journalEntryData.pageable</td>
+<td>Pagination information</td>
+</tr>
+</tbody></table>
+<p>The owner journal entries response body includes:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ownerData.externalId</td>
+<td>External identifier of the owner</td>
+</tr>
+<tr>
+<td>journalEntryData.content</td>
+<td>Journal entry content</td>
+</tr>
+<tr>
+<td>journalEntryData.pageable</td>
+<td>Pagination information</td>
+</tr>
+</tbody></table>
+<h2>Audit and reporting</h2>
+<p>An auditor can see the history of a loan&#39;s ownership changes. Only transfer initiation is captured by API.</p>
+<p>A loan transaction has no relationship to an external investor.</p>
+<p>Storing the relationship between a journal entry and an external owner enables auditing, easier fetching of owner journal entries, and less complex reporting queries.</p>
+<h2>UI screens and views</h2>
+<p>When the investor module is enabled in the environment configuration file, you can view asset owner details at the loan account level. The investor screen shows loan account details associated with investors and summarises the total loan amount at each investor level. Investors and their total balance appear as a pie chart, and you can drill down to each loan account by clicking on any loan from the view screen.</p>
+<p>On the loan account view screen, you can see:</p>
+<ul>
+<li>The status of each transfer of the loan account once updated in the close of business (COB).</li>
+<li>The history of all previous transfer requests and their status.</li>
+<li>The current owner of the loan account, highlighted by the UI.</li>
+<li>Asset transfer details with amount allocations on a separate tab similar to transactions.</li>
+</ul>
+<h2>Interest balance handling</h2>
+<p>Sale and buyback amounts include all balances on the loan, including any interest due.</p>
+<h2>Worked examples</h2>
+<p>A business manager sells an active loan to the external owner Investor A. The loan carries a principal balance of 1,000.00 and interest due of 100.00, so the asset transfer amount is 1,100.00. The purchase price ratio is 100 percent, and the settlement date is in the future. These figures are illustrative.</p>
+<p>The sale posts the full balance, including interest, from the organization’s books to the external owner through a clearing account.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Receivable/clearing account</td>
+<td>1,100.00</td>
+<td></td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loan receivables</td>
+<td></td>
+<td>1,000.00</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest fees receivables</td>
+<td></td>
+<td>100.00</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,100.00</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Loan receivables</td>
+<td>1,000.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Interest fees receivables</td>
+<td>100.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>2,200.00</td>
+<td>2,200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A business manager buys back the same loan from Investor A after the loan account becomes fraud. The buyback amount includes all balances on the loan: principal of 1,000.00 and interest due of 100.00, totaling 1,100.00.</p>
+<p>The buyback reverses the sale and returns the loan balances, including interest, to the organization’s books.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,100.00</td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loan receivables</td>
+<td>1,000.00</td>
+<td></td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest fees receivables</td>
+<td>100.00</td>
+<td></td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Receivable/clearing account</td>
+<td>1,100.00</td>
+<td></td>
+<td>(none)</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Loan receivables</td>
+<td></td>
+<td>1,000.00</td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Interest fees receivables</td>
+<td></td>
+<td>100.00</td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>2,200.00</td>
+<td>2,200.00</td>
+<td></td>
+</tr>
+</tbody></table>

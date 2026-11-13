@@ -1,0 +1,96 @@
+<h2>BNPL Products</h2>
+<ul>
+<li>The product now supports zero-interest bearing BNPL products.</li>
+<li>New transaction types relevant to BNPL were introduced, such as goodwill, credit, and refund transactions.</li>
+</ul>
+<p>See also: <ac:link ac:anchor="pay-in-30-days"><ri:page ri:content-title="BNPL Products"/><ac:plain-text-link-body><![CDATA[BNPL Products: Pay in 30 Days]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="pay-in-3-and-pay-in-4"><ri:page ri:content-title="BNPL Products"/><ac:plain-text-link-body><![CDATA[BNPL Products: Pay in 3 and Pay in 4]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Buy-Down Fees</h2>
+<ul>
+<li>The maximum allowed amount equals the approved amount of the loan minus the total disbursed amount minus the total capitalized income; total buy down fees are removed from the calculation.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Buy-Down Fees"/><ac:plain-text-link-body><![CDATA[Buy-Down Fees]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Capitalized Income</h2>
+<ul>
+<li>Fees amortization starts from the disbursement date, same as accruals.</li>
+<li>Fees amortization sits in a new bucket rather than the principal portion or fee portion bucket.</li>
+<li>Deferred Income is a LIABILITY account.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Capitalized Income"/><ac:plain-text-link-body><![CDATA[Capitalized Income]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Fee Classification</h2>
+<ul>
+<li>Origination fees can be added to multi disbursements, with each disbursement able to enable or disable them.</li>
+<li>Origination fees adjustments or fee credits are shared.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Fee Classification"/><ac:plain-text-link-body><![CDATA[Fee Classification]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Delinquency Restrictions</h2>
+<ul>
+<li>Delinquency grace days now applies to the schedule; delinquency grace days extends the first delinquency period by the configured grace days, resulting in an extended longer first period.</li>
+<li>The first delinquency period start date is the original start date (submitted on / disbursed on date) and its end date is shifted by the configured grace days.</li>
+<li>Breach grace days calculation is modified; the first breach period start date is the original start date (submitted on / disbursed on date) and its end date is shifted by the configured grace days.</li>
+<li>The first breach/delinquency period is now repayable when the customer pays it before the grace days.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Loan Originator Details</h2>
+<ul>
+<li>Originator type codes are MERCHAT, BROKER, AFFILIATE, PLATFORM.</li>
+<li>Channel type codes are ONLINE, IN_STORE, API, AGGREGATOR.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Loan Originator Details"/><ac:plain-text-link-body><![CDATA[Loan Originator Details]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Backdated Loans</h2>
+<ul>
+<li>Backdated actions now support EMI and interest fix.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Rate Changes</h2>
+<ul>
+<li>Interest modification now supports both cumulative and progressive schedule types and both declining and flat interest calculation types; previously it supported only the cumulative strategy and flat interest calculation types.</li>
+<li>Interest modification now allows interest to be changed in the middle of the loan at the installment level without configuring a floating or fixed interest rate at loan creation time.</li>
+</ul>
+<p>See also: <ac:link ac:anchor="overview"><ri:page ri:content-title="Rate Changes"/><ac:plain-text-link-body><![CDATA[Rate Changes: Overview]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest Timing</h2>
+<ul>
+<li>Interest calculation now starts from the disbursement date itself.</li>
+</ul>
+<p>See also: <ac:link ac:anchor="first-day-interest"><ri:page ri:content-title="Interest Timing"/><ac:plain-text-link-body><![CDATA[Interest Timing: First-Day Interest]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Accruals</h2>
+<ul>
+<li>Accrual processing now leaves out amortized charges.</li>
+</ul>
+<p>See also: <ac:link ac:anchor="progressive-loan-accruals"><ri:page ri:content-title="Accruals"/><ac:plain-text-link-body><![CDATA[Accruals: Progressive Loan Accruals]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="accrual-activity-on-installment-dates"><ri:page ri:content-title="Accruals"/><ac:plain-text-link-body><![CDATA[Accruals: Accrual Activity on Installment Dates]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Payment Allocation Strategies</h2>
+<ul>
+<li>Users can select the allocation rule or priority for each portion level, covering past due amount, due amount, and in-advance amount, in the order penalty, fees, principal, interest.</li>
+<li>Advanced payment allocation now supports excess amount handling in payment handling and write-off, and supports the progressive type of strategy.</li>
+<li>Advanced payment allocation now supports excess payment handling and interest handling.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Payment Allocation Strategies"/><ac:plain-text-link-body><![CDATA[Payment Allocation Strategies]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Chargeback Distribution</h2>
+<ul>
+<li>Chargeback processing now reprocesses all transactions, including the Chargeback, to recalculate interest for progressive loans with interest recalculation enabled when the principal due amount changes.</li>
+<li>Chargeback now applies to chargeback adjustment on an installment due date.</li>
+<li>Chargeback now applies to chargeback of a partial fee.</li>
+<li>Chargeback now applies after a chargeback reversal.</li>
+<li>Chargeback now applies to fees and penalties after maturity.</li>
+<li>Chargeback now applies after chargeoff.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Chargeback Distribution"/><ac:plain-text-link-body><![CDATA[Chargeback Distribution]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest on Chargebacks</h2>
+<ul>
+<li>Chargeback now supports interest calculations and interest chargeback.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Interest on Chargebacks"/><ac:plain-text-link-body><![CDATA[Interest on Chargebacks]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Re-aging</h2>
+<ul>
+<li>Re-aging and re-amortization now support interest-bearing loans as well as non-interest-bearing loans.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Re-aging"/><ac:plain-text-link-body><![CDATA[Re-aging]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Asset Externalization</h2>
+<ul>
+<li>Asset externalization now supports interest-bearing loans; previously it supported only non-interest-bearing loans.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Transaction Summary Report</h2>
+<ul>
+<li>The Transaction Summary Report now shows originator external ids.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Transaction Summary Report"/><ac:plain-text-link-body><![CDATA[Transaction Summary Report]]></ac:plain-text-link-body></ac:link>.</p>

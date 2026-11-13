@@ -1,118 +1,261 @@
-<h2>Investor Module</h2>
-<p>The investor module shows loan accounts associated with investors and handles the sale and buyback of interest-bearing loans to external investors. Sale and buyback amounts include all balances on the loan, including any interest due, and interest balances are accounted for using the interest receivables GL mapping.</p>
-<p>The investor screen provides the following views and actions:</p>
+<h2>Roles involved</h2>
+<p>An investor is a legal entity referred to as an external owner. A business manager is an employee of the organisation who offers the loan to its customer and either makes a decision on asset sale or whose work uses data related to it. Asset ownership transfer moves an asset portfolio from one owner to another.</p>
+<h2>Interest handling on sale and buyback</h2>
+<p>When you sell an interest-bearing loan to an external investor or buy it back, the sale or buyback amount includes all balances on the loan, including any interest due. Interest balances are handled correctly for both actions, and interest uses the Interest receivables GL mapping.</p>
+<h2>Sale fields and values</h2>
+<p>To transfer ownership of a loan through a sale, you enter an Asset Owner ID, an optional Sales Transaction ID, a Purchase Price Ratio, and a Settlement Date.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required for sale</th>
+<th>Rules</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Asset Owner ID</td>
+<td>String</td>
+<td>Yes</td>
+<td>Any string, no specific format, maximum 100 characters</td>
+</tr>
+<tr>
+<td>Sales Transaction ID</td>
+<td>String</td>
+<td>No</td>
+<td>Any string, no specific format, maximum 100 characters</td>
+</tr>
+<tr>
+<td>Purchase Price Ratio</td>
+<td>Number</td>
+<td>Yes</td>
+<td></td>
+</tr>
+<tr>
+<td>Settlement Date</td>
+<td>Date</td>
+<td>Yes</td>
+<td>Cannot be in the past</td>
+</tr>
+</tbody></table>
+<h2>Eligibility and timing</h2>
+<p>The system accepts ownership transfer requests only for loans with status ACTIVE. Any other loan status results in rejection.</p>
+<p>A rejected ownership transfer response returns:</p>
 <ul>
-<li>A global filter view shows loan account details associated with investors.</li>
-<li>The top of the screen summarises the total loan amount associated at each investor level.</li>
-<li>Investors and the total balance appear as a pie chart.</li>
-<li>You can drill down to each loan account by clicking on any loan from the view screen.</li>
+<li>HTTP 403 with a reason.</li>
 </ul>
-<p>A loan officer sells an interest-bearing loan to an external investor. The loan has a principal of 1,000.00 and 10.00 in accrued interest and fees, so the total balance to sell is 1,010.00. The figures in this example are illustrative. This example shows that the total balance to sell includes both principal and accrued interest and fees.</p>
+<h2>Transfer response</h2>
+<p>The ownership transfer response identifies the transferred resource and its new owner, and confirms that the transfer is pending.</p>
 <table>
 <thead>
 <tr>
-<th>Entry</th>
-<th>Account</th>
-<th>Debit</th>
-<th>Credit</th>
-<th>Counterparty</th>
+<th>Field</th>
+<th>Value</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Record sale</td>
-<td>Receivable/clearing account</td>
-<td>1,010.00</td>
-<td></td>
-<td></td>
+<td>Resource id</td>
+<td>Internal id of the transferred resource</td>
 </tr>
 <tr>
-<td></td>
-<td>Loan Receivables</td>
-<td></td>
-<td>1,000.00</td>
-<td></td>
+<td>Owner id</td>
+<td>Id of the new owner</td>
 </tr>
 <tr>
-<td></td>
-<td>Interest and fees receivables</td>
-<td></td>
-<td>10.00</td>
-<td></td>
+<td>Status</td>
+<td>PENDING</td>
 </tr>
 <tr>
-<td>Transfer to investor</td>
-<td>Receivable/clearing account</td>
-<td></td>
-<td>1,010.00</td>
-<td></td>
+<td>Sales transaction id</td>
+<td>Generated if not provided</td>
 </tr>
 <tr>
-<td></td>
-<td>Loan Receivables</td>
-<td>1,000.00</td>
-<td></td>
-<td>Investor A</td>
+<td>Transfer timestamp</td>
+<td>Time of the transfer</td>
 </tr>
 <tr>
-<td></td>
-<td>Interest and fees receivables</td>
-<td>10.00</td>
-<td></td>
-<td>Investor A</td>
+<td>Effective date range</td>
+<td>From the submitted on date to 9999-12-31</td>
+</tr>
+<tr>
+<td>Transfer status</td>
+<td>PENDING</td>
 </tr>
 </tbody></table>
-<p>The same loan is bought back from the external investor. The buyback amount is the full balance of 1,010.00, consisting of 1,000.00 principal and 10.00 interest and fees. Compared with the sale, the debit and credit sides reverse because the loan returns to the asset owner.</p>
+<h2>Buyback</h2>
+<p>A business manager can buy back loans with pending or active ownership transfer from investors when the loan account becomes fraud or for any other reason. Buyback is another activity with its own external Buyback Transfer ID.</p>
+<p>When both PENDING and BUYBACK transfers are cancelled:</p>
+<ul>
+<li>No journal entries are made.</li>
+<li>No status change occurs.</li>
+</ul>
+<h2>Ownership history and reporting</h2>
+<p>An auditor can view the history of a loan&#39;s ownership changes. Ownership information identifies which GPL loans are PayPal-owned versus investor-owned. A GET API returns ownership details for a loan assigned to an external investor based on the sales transaction ID. Loan transactions are not directly linked to an external investor; they are matched using the posting date or reverted-on date of the transaction and the external owner effective date range. The SOR provides daily investor accounting reports as defined by PayPal.</p>
+<h2>Statuses</h2>
+<p>An investor transfer can have one of five statuses. PENDING means the transfer request has been made but was not made active yet by close of business (COB), the nightly job that posts interest and fees. ACTIVE means the transfer is active and all journal entries are made against the investor. BUYBACK means the loan&#39;s ownership was bought back. DECLINED means the request was made but COB has not run and the loan was paid back or overpaid, so there is nothing for the investor to buy. CANCELLED means the request was made but not yet executed, so the transfer can be cancelled.</p>
+<h2>Field meanings</h2>
 <table>
 <thead>
 <tr>
-<th>Entry</th>
-<th>Account</th>
-<th>Debit</th>
-<th>Credit</th>
-<th>Counterparty</th>
+<th>Field</th>
+<th>Meaning</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Record buyback</td>
-<td>Receivable/clearing account</td>
-<td></td>
-<td>1,010.00</td>
-<td></td>
+<td>Asset Owner ID</td>
+<td>Externally provided string identifying the owner (investor) of a loan (asset).</td>
 </tr>
 <tr>
-<td></td>
-<td>Loan Receivables</td>
-<td>1,000.00</td>
-<td></td>
-<td></td>
+<td>Sales Transaction ID</td>
+<td>External transaction ID that must be generated if not provided.</td>
 </tr>
 <tr>
-<td></td>
-<td>Interest and fees receivables</td>
-<td>10.00</td>
-<td></td>
-<td></td>
+<td>Purchase Price Ratio</td>
+<td>Percentage between 0% and 100% representing the fraction of investor ownership of a loan.</td>
 </tr>
 <tr>
-<td>Transfer from investor</td>
-<td>Receivable/clearing account</td>
-<td>1,010.00</td>
-<td></td>
-<td></td>
+<td>Settlement date</td>
+<td>Last date when the previous owner still holds the asset; new ownership starts the very next day.</td>
 </tr>
 <tr>
-<td></td>
-<td>Loan Receivables</td>
-<td></td>
-<td>1,000.00</td>
-<td>Investor A</td>
+<td>Buyback Transfer ID</td>
+<td>Transfer ID of the buyback, different from the one for sale.</td>
 </tr>
 <tr>
-<td></td>
-<td>Interest and fees receivables</td>
-<td></td>
-<td>10.00</td>
-<td>Investor A</td>
+<td>Effective date range</td>
+<td>Period, inclusively bounded by start and end dates, during which the ownership entry is valid.</td>
 </tr>
 </tbody></table>
-<p>See also: <ac:link ac:anchor="asset-externalization"><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization: Asset Externalization]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="pay-in-3-and-pay-in-4"><ri:page ri:content-title="BNPL Products"/><ac:plain-text-link-body><![CDATA[BNPL Products: Pay in 3 and Pay in 4]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>End of day processing</h2>
+<p>At close of business (COB), the nightly job that posts interest and fees, the system completes any asset ownership transfer whose settlement date has arrived. If the loan balance is greater than 0, the transfer becomes active; if the balance is 0 or less, it becomes declined. When ownership changes from pending to active, or from active to buyback, the system creates journal entries during COB. A buyback path can pass through pending to active and then active to buyback, with journal entries made at each step during COB.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "PENDING" as n1
+  state "ACTIVE" as n2
+  state "BUYBACK" as n3
+  state "DECLINED" as n4
+  n1 --> n2 : settlement date arrives and loan balance > 0
+  n1 --> n4 : settlement date arrives and loan balance <= 0
+  n2 --> n3]]></ac:plain-text-body></ac:structured-macro>
+<h2>Worked examples</h2>
+<p>A loan officer sells an active loan to an external investor. The figures are illustrative. The loan has a principal of 1,200 and outstanding fees of 24, so the total balance to transfer is 1,224. The officer selects the investor as the asset owner, enters a purchase price ratio, and chooses a settlement date that is not in the past. The example shows how the full balance, including fees, moves to the investor.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Receivable/clearing account</td>
+<td>1,224.00</td>
+<td></td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loan Receivables</td>
+<td></td>
+<td>1,200.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest fees receivables</td>
+<td></td>
+<td>24.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,224.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Loan Receivables</td>
+<td>1,200.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Interest fees receivables</td>
+<td>24.00</td>
+<td></td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>2,448.00</td>
+<td>2,448.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A business manager buys back the same loan from the investor because the account has become fraud or for another reason. The loan still shows a principal of 1,200 and outstanding fees of 24, for a total balance of 1,224. The example shows how the buyback returns the full balance, including fees, to the organization&#39;s books.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Receivable/clearing account</td>
+<td></td>
+<td>1,224.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loan Receivables</td>
+<td>1,200.00</td>
+<td></td>
+<td>—</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest fees receivables</td>
+<td>24.00</td>
+<td></td>
+<td>—</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Receivable/clearing account</td>
+<td>1,224.00</td>
+<td></td>
+<td>—</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Loan Receivables</td>
+<td></td>
+<td>1,200.00</td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Interest fees receivables</td>
+<td></td>
+<td>24.00</td>
+<td>Investor A</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>2,448.00</td>
+<td>2,448.00</td>
+<td></td>
+</tr>
+</tbody></table>

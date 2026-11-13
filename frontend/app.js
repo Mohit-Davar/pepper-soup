@@ -49,6 +49,8 @@ const state = {
   active: null,
   sourcesFor: null,
   inline: null,
+  changes: new Map(),
+  showChanges: false,
   dash: { q: '', kind: 'all', status: 'open', space: 'all' },
 };
 
@@ -259,6 +261,7 @@ function updateHeader() {
   document.querySelectorAll('#space-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.space === state.space && state.view !== 'dashboard'));
   document.querySelectorAll('#mode-switch button').forEach((b) => b.classList.toggle('active', b.dataset.mode === (isReview() ? 'review' : 'reader')));
   $('review-link').classList.toggle('active', state.view === 'dashboard');
+  updateChangesButton();
   updateCounts();
 }
 
@@ -312,7 +315,8 @@ function renderNav() {
         <div class="nav-pages">${inner}</div></div>`;
     }
     state.pages.push({ ...node, section: parent?.title || '' });
-    return `<a class="nav-link" href="${linkTo(state.source, state.space, node.path)}" data-path="${esc(node.path)}"><span>${esc(node.title)}</span>${badge(node.path)}</a>`;
+    const edited = state.showChanges && state.changes.has(`${s.base}/${node.path}`);
+    return `<a class="nav-link" href="${linkTo(state.source, state.space, node.path)}" data-path="${esc(node.path)}"><span>${esc(node.title)}</span>${edited ? '<i class="nav-chg" title="Edited"></i>' : ''}${badge(node.path)}</a>`;
   }).join('');
 
   $('nav').innerHTML = `
@@ -384,6 +388,85 @@ function pageTitleOf(rel) {
   return find(tree) || path.split('/').pop().replace(/\.md$/, '').replace(/-/g, ' ');
 }
 
+// ---------------------------------------------------------------- changes (inline diff)
+
+/** Changed files ("docs/gitbook/user/x.md" → { status, added, removed }) since the pipeline run. */
+async function loadChanges() {
+  try {
+    const { files } = await api('/api/changes');
+    state.changes = new Map(files.map((f) => [f.path, f]));
+  } catch {
+    state.changes = new Map();
+  }
+}
+
+function setShowChanges(on) {
+  state.showChanges = on;
+  store.set('localStorage', 'changes', on ? '1' : null);
+  updateChangesButton();
+  renderNav();
+  markActive();
+  if (state.view === 'doc' && !state.editing) loadPage();
+}
+
+function updateChangesButton() {
+  const n = [...state.changes.keys()].filter((p) => p.startsWith(`docs/${state.source}/`) && p.endsWith('.md')).length;
+  $('changes-btn').classList.toggle('active', state.showChanges);
+  $('changes-btn').setAttribute('aria-pressed', String(state.showChanges));
+  $('changes-count').textContent = n;
+}
+
+const DIFF_WORDS = new Set(['paragraph', 'heading', 'list', 'blockquote']);
+
+/** Wraps changed words in <ins>/<del>, line by line so lists and line breaks keep their markdown. */
+function mergeWords(before, after) {
+  const wrap = (tag, text) => text.split('\n').map((line) => (line.trim() ? `<${tag}>${line}</${tag}>` : line)).join('\n');
+  return Diff.diffWordsWithSpace(before, after)
+    .map((part) => (part.added ? wrap('ins', part.value) : part.removed ? wrap('del', part.value) : part.value))
+    .join('');
+}
+
+/** Renders the current page with its edits marked against the pipeline's version. */
+function renderChanges(before, after, target) {
+  const lex = (md) => (md == null ? [] : marked.lexer(md.replace(/^﻿/, '')))
+    .filter((t) => t.type !== 'space' && !(t.type === 'html' && /^\s*<!--/.test(t.raw)));
+  const old = lex(before);
+  const now = lex(after);
+  const toHtml = (tokens) => { const list = [...tokens]; list.links = {}; return DOMPurify.sanitize(marked.parser(list), PURIFY); };
+  const blocks = [];
+  const push = (cls, html) => blocks.push(`<div class="tok ${cls}">${html}</div>`);
+
+  const parts = Diff.diffArrays(old.map((t) => t.raw.trim()), now.map((t) => t.raw.trim()));
+  let i = 0;
+  let j = 0;
+  for (let k = 0; k < parts.length; k++) {
+    const part = parts[k];
+    if (!part.added && !part.removed) {
+      now.slice(j, j + part.count).forEach((t) => push('', toHtml([t])));
+      i += part.count; j += part.count;
+      continue;
+    }
+    const removed = part.removed ? old.slice(i, i + part.count) : [];
+    const next = part.removed && parts[k + 1]?.added ? parts[++k] : part.added ? part : null;
+    const added = next ? now.slice(j, j + next.count) : [];
+    i += removed.length; j += added.length;
+    // a block that was reworded shows its word changes; anything else shows whole blocks
+    const pairs = Math.min(removed.length, added.length);
+    for (let n = 0; n < Math.max(removed.length, added.length); n++) {
+      const r = removed[n];
+      const a = added[n];
+      if (n < pairs && r.type === a.type && DIFF_WORDS.has(a.type)) {
+        push('chg-mod', DOMPurify.sanitize(marked.parse(mergeWords(r.raw.trim(), a.raw.trim())), PURIFY));
+      } else {
+        if (r) push('chg-del', toHtml([r]));
+        if (a) push('chg-add', toHtml([a]));
+      }
+    }
+  }
+  target.innerHTML = blocks.join('');
+  enhance(target);
+}
+
 async function loadPage() {
   const token = ++loadToken;
   showView('doc');
@@ -404,7 +487,18 @@ async function loadPage() {
       if (token !== loadToken) return;
       state.raw = file.content;
       state.hash = file.hash;
-      state.tokens = renderMarkdown(state.raw, $('content'), { blocks: true });
+      const change = state.showChanges && state.changes.get(filePath());
+      if (change) {
+        const { content: before } = await api(`/api/baseline?path=${enc(filePath())}`);
+        if (token !== loadToken) return;
+        renderChanges(before, state.raw, $('content'));
+        $('content').insertAdjacentHTML('afterbegin', `<div class="chg-banner">
+          <span>${before == null ? 'New page' : 'Edited since the pipeline generated it'}</span>
+          <span class="chg-counts"><b class="plus">+${change.added}</b> <b class="minus">−${change.removed}</b> lines</span>
+          <span class="muted">Green is added, red is removed.</span></div>`);
+      } else {
+        state.tokens = renderMarkdown(state.raw, $('content'), { blocks: true });
+      }
     } catch {
       if (token !== loadToken) return;
       $('content').innerHTML = `<div class="empty-state"><h1>This page is not published yet</h1>
@@ -422,7 +516,8 @@ async function loadPage() {
   await runMermaid($('content'));
   if (token !== loadToken) return;
   renderToc();
-  if (isReview()) await annotate(token);
+  // review pins attach to the plain page, not the marked-up diff
+  if (isReview() && !(state.showChanges && state.changes.get(filePath()))) await annotate(token);
   if (token !== loadToken) return;
 
   if (state.params.t) focusThread(state.params.t);
@@ -1134,6 +1229,8 @@ async function saveContent(content) {
   state.raw = content;
   state.hash = res.hashes[filePath()];
   state.data = await api('/api/manifest');
+  await loadChanges();
+  updateChangesButton();
   toast(res.warning || (res.commit ? 'Saved and committed' : 'Saved'));
 }
 
@@ -1494,6 +1591,10 @@ function bind() {
     $('content').innerHTML = '<div class="empty-state"><h1>The documentation server is not running</h1><p class="muted">Start it with <code>npm start</code>.</p></div>';
     return;
   }
+  state.showChanges = store.get('localStorage', 'changes') === '1';
+  await loadChanges();
+  updateChangesButton();
+  $('changes-btn').onclick = () => setShowChanges(!state.showChanges);
   if (store.get('localStorage', 'mode') === 'review' && getPassword()) {
     try { await loadReview(); state.mode = 'review'; } catch { state.mode = 'reader'; }
   }

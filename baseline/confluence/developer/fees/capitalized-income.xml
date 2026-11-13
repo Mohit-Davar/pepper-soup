@@ -1,0 +1,418 @@
+<h2>Capitalized income overview</h2>
+<p>Capitalized income lets a financial institution recognize deferred income systematically over the loan term by adding income to the principal balance instead of collecting it immediately. The added income becomes part of the total outstanding balance used for future calculations. Capitalized income applies only to progressive loan schedules and is configured at the loan product level. Amortization has two types: capitalized income, which is added to the principal balance and considered for interest calculation, and buy-down fee, which is added to the principal balance but not considered for interest calculation.</p>
+<h2>Configuration</h2>
+<p>Capitalized income configuration is copied from the loan product when a loan is created. It controls whether income capitalization is enabled, how income is calculated, how it is amortized, what income type is used, and which general ledger accounts hold deferred income and income from capitalization.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Enable capitalized income</td>
+<td>Enabled or disabled</td>
+<td>Disabled</td>
+</tr>
+<tr>
+<td>Calculation mode</td>
+<td>FLAT</td>
+<td>FLAT</td>
+</tr>
+<tr>
+<td>Amortization strategy</td>
+<td>EQUAL_AMORTIZATION</td>
+<td>EQUAL_AMORTIZATION</td>
+</tr>
+<tr>
+<td>Income type</td>
+<td>FEE or INTEREST</td>
+<td>FEE</td>
+</tr>
+<tr>
+<td>GL mapping</td>
+<td>Deferred Income (Liability) and Income from Capitalization (Income)</td>
+<td>Not set by default</td>
+</tr>
+</tbody></table>
+<p>With EQUAL_AMORTIZATION, daily capitalized income recognition is done by equal portions over the life of the loan.</p>
+<h2>Eligibility and timing</h2>
+<p>Capitalized income applies only to progressive loans with income capitalization enabled on the loan product and inherited by the loan. You must configure the Deferred income liability account and Income from Capitalization GL mappings before capitalized income can be used.</p>
+<p>GL mapping rules:</p>
+<ul>
+<li>The Deferred income liability account is available only for progressive loans when income capitalization is enabled.</li>
+<li>Configuring Deferred income liability and Income Capitalization income GL mappings on a loan product requires a progressive loan with income capitalization enabled.</li>
+<li>The GL mapping field is mandatory when income capitalization is enabled.</li>
+</ul>
+<h2>Adding capitalized income</h2>
+<p>You can add capitalized income to a loan after disbursement through the API using the capitalizedIncome command, once the loan is active. The transaction date can be any date on or after the first disbursement date. Adding capitalized income recalculates the repayment schedule and updates the interest and amortization schedules. Disbursement plus capitalized income must be less than or equal to the approved loan amount.</p>
+<p>The request supports these fields:</p>
+<ul>
+<li>transactionDate (mandatory): the date of the capitalized income transaction.</li>
+<li>dateFormat (mandatory): the format of the transaction date.</li>
+<li>locale (mandatory): the locale for the request.</li>
+<li>transactionAmount (mandatory): the amount capitalized as income.</li>
+<li>paymentTypeId (optional): the payment type for the transaction.</li>
+<li>note (optional): a note on the transaction.</li>
+<li>externalId (optional): an external identifier for the transaction.</li>
+</ul>
+<p>The response returns:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>resourceId</td>
+<td>The identifier of the created capitalized income transaction.</td>
+</tr>
+<tr>
+<td>resourceExternalId</td>
+<td>The external identifier of the created capitalized income transaction.</td>
+</tr>
+</tbody></table>
+<p>You can retrieve capitalized income limits and details using these endpoints:</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET /loans/{loanId}/transactions/template?command=capitalizedIncome</td>
+<td>paymentTypeOptions, currency, date, and amount (maximum amount that can be capitalized: approved amount - disbursed amount - capitalized income)</td>
+</tr>
+<tr>
+<td>GET /v1/loans/{loanId}/deferredincome</td>
+<td>Capitalized income amount, amortized amount, not yet amortized amount, and adjusted amount</td>
+</tr>
+</tbody></table>
+<h2>Schedule and interest impact</h2>
+<p>The maximum capitalized income amount is:</p>
+<ul>
+<li>Approved amount of the loan minus total disbursed amount minus total capitalized income.</li>
+</ul>
+<p>When capitalized income is added, these validations change:</p>
+<ul>
+<li>Disbursement amount plus capitalized income must be less than or equal to applied amount.</li>
+</ul>
+<h2>Amortization</h2>
+<p>Capitalized Income Amortization moves a portion of capitalized income from Deferred Income Liability to recognized income each day until maturity or full amortization. A background job posts the amortization automatically during close of business (COB), the nightly job that posts interest and fees. The system creates a new Capitalized Income Amortization transaction for each daily recognition and triggers a business event when the transaction is created.</p>
+<p>The amortization amount follows these rules:</p>
+<ul>
+<li>Divide the not yet amortized capitalized income by the number of days between the current date and the loan maturity date.</li>
+<li>Apply rounding to the calculated amortization amount based on the rounding mode configuration.</li>
+<li>Handle complex scenarios such as backdated transactions and reverse-replay situations.</li>
+</ul>
+<p>Amortization stops or completes as follows:</p>
+<ul>
+<li>The final amortization posts on the preclosure date.</li>
+<li>On charge-off, amortization halts and the remaining deferred income is charged off.</li>
+<li>Reversing the original Capitalized Income transaction reverses all associated amortization transactions.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Daily COB job"]
+  n2["Calculate amortization (Equal Amortization)"]
+  n3["Create Capitalized Income Amortization transaction"]
+  n4["Create journal entries"]
+  n5["Trigger business event"]
+  n6["Move Deferred Income to Income"]
+  n7["Repeat daily until maturity/preclosure/charge-off"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n3 --> n5
+  n4 --> n6
+  n6 --> n7]]></ac:plain-text-body></ac:structured-macro>
+<h2>Charge-off and preclose</h2>
+<p>Undoing charge-off reverses this behavior and adjusts the related accounting entries.</p>
+<p>Preclose recognizes the remaining unrecognized capitalized income immediately:</p>
+<ul>
+<li>Final amortization is done for the balance amount if the loan is preclosed on the same day.</li>
+</ul>
+<p>Once a loan is paid off, there is no reversal or undo of realized income.</p>
+<h2>Reversal</h2>
+<p>You can reverse a Capitalized Income transaction manually through dedicated transactions; the system does not reverse it automatically.</p>
+<p>A Capitalized Income transaction can be reversed only when:</p>
+<ul>
+<li>It has not already been reversed.</li>
+<li>No Capitalized Income Adjustment belonging to it remains unreversed.</li>
+</ul>
+<p>When reversed, all already amortized amounts are corrected in a Capitalized Income Amortization Adjustment transaction with mirror journal entries of Capitalized Income Amortization.</p>
+<blockquote>
+<p><strong>Note:</strong> Reversal of capitalized income or adjustment transactions triggers external business events.</p>
+</blockquote>
+<h2>Balances and tracking</h2>
+<p>Capitalized income balances are tracked on a loan and capitalized income transaction basis, with one entry per transaction per loan. The system stores balances in the database and maintains them over capitalized income events such as adding capitalized income and daily amortization. Loan balances include capitalized_income_derived and capitalized_income_adjustment_derived.</p>
+<p>Each capitalized income transaction has its own balance row in m_loan_capitalized_income_balance.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>Balance row identifier</td>
+</tr>
+<tr>
+<td>version</td>
+<td>Row version</td>
+</tr>
+<tr>
+<td>loan_id</td>
+<td>Link to the loan</td>
+</tr>
+<tr>
+<td>loan_transaction_id</td>
+<td>Link to the capitalized income transaction</td>
+</tr>
+<tr>
+<td>amount</td>
+<td>Capitalized income transaction amount</td>
+</tr>
+<tr>
+<td>date</td>
+<td>Capitalized income transaction date</td>
+</tr>
+<tr>
+<td>unrecognized_amount</td>
+<td>Amortization - not yet recognized amount</td>
+</tr>
+<tr>
+<td>charged_off_amount</td>
+<td>Charged-off balance</td>
+</tr>
+<tr>
+<td>amount_adjustment</td>
+<td>Total adjustment amount</td>
+</tr>
+<tr>
+<td>created_by</td>
+<td>User who created the row</td>
+</tr>
+<tr>
+<td>created_on_utc</td>
+<td>Creation timestamp in UTC</td>
+</tr>
+<tr>
+<td>last_modified_by</td>
+<td>User who last modified the row</td>
+</tr>
+<tr>
+<td>last_modified_on_utc</td>
+<td>Last modification timestamp in UTC</td>
+</tr>
+</tbody></table>
+<h2>Accounting entries</h2>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized Income</td>
+<td>Loan Portfolio (Asset)</td>
+<td>Deferred Income (Liability)</td>
+</tr>
+<tr>
+<td>Capitalized Income Amortization</td>
+<td>Deferred Income (Liability)</td>
+<td>Income from Capitalization (Income)</td>
+</tr>
+<tr>
+<td>Capitalized Income Amortization Adjustment</td>
+<td>Income from Capitalization (Income)</td>
+<td>Deferred Income (Liability)</td>
+</tr>
+</tbody></table>
+<h2>Business events</h2>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Business events</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Creating capitalized income</td>
+<td>LoanCapitalizedIncomeTransactionCreatedBusinessEvent, LoanBalanceChangedBusinessEvent</td>
+</tr>
+<tr>
+<td>Daily amortization</td>
+<td>LoanCapitalizedIncomeAmortizationTransactionCreatedBusinessEvent, LoanCapitalizedIncomeAmortizationAdjustmentTransactionCreatedBusinessEvent</td>
+</tr>
+<tr>
+<td>Reversing capitalized income</td>
+<td>LoanAdjustTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Adjusting existing capitalized income</td>
+<td>External business events</td>
+</tr>
+<tr>
+<td>Capitalized income amortization</td>
+<td>External business events</td>
+</tr>
+<tr>
+<td>Creating a capitalized income adjustment when the loan closes or is overpaid</td>
+<td>Capitalized Income Amortization Adjustment is calculated and created in realtime</td>
+</tr>
+</tbody></table>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[sequenceDiagram
+  participant n1 as Capitalized Income
+  participant n2 as Daily Amortization
+  participant n3 as Reversal
+  participant n4 as Business Events
+  n1->>n4: LoanCapitalizedIncomeTransactionCreatedBusinessEvent, LoanBalanceChangedBusinessEvent
+  n2->>n4: LoanCapitalizedIncomeAmortizationTransactionCreatedBusinessEvent, LoanCapitalizedIncomeAmortizationAdjustmentTransactionCreatedBusinessEvent
+  n3->>n4: LoanAdjustTransactionBusinessEvent]]></ac:plain-text-body></ac:structured-macro>
+<h2>API endpoints and commands</h2>
+<p>You configure capitalized income on a loan product through the loan product API, and you retrieve capitalized income amortization information for a loan through the loan API.</p>
+<p>Configure capitalized income on a loan product with POST /loanproducts using these mandatory fields:</p>
+<ul>
+<li>enableIncomeCapitalization</li>
+<li>capitalizedIncomeCalculationType</li>
+<li>capitalizedIncomeStrategy</li>
+<li>capitalizedIncomeType</li>
+</ul>
+<p>Retrieve capitalized income amortization information for a loan with:</p>
+<ul>
+<li>GET /loans/{loanId}/capitalizedincome</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A progressive loan is disbursed for 1,000 on 1 January. On that same day a capitalized income amount of 100 is added through the API, so the loan principal becomes 1,100 and the amount is booked as deferred income. The loan matures in five days and equal amortization is the default strategy, so 20 of deferred income is recognized each day from 2 January through 6 January. The figures are illustrative.</p>
+<p>The table shows the posting of the capitalized income and the daily equal amortization until the deferred income balance reaches zero.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Deferred income balance</th>
+<th>Daily amortization</th>
+<th>Income from capitalization</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>100.00</td>
+<td>—</td>
+<td>—</td>
+<td>1,100.00</td>
+</tr>
+<tr>
+<td>2 January</td>
+<td>80.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,100.00</td>
+</tr>
+<tr>
+<td>3 January</td>
+<td>60.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,100.00</td>
+</tr>
+<tr>
+<td>4 January</td>
+<td>40.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,100.00</td>
+</tr>
+<tr>
+<td>5 January</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,100.00</td>
+</tr>
+<tr>
+<td>6 January</td>
+<td>0.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,100.00</td>
+</tr>
+</tbody></table>
+<p>A capitalized income transaction of 300 was posted on 1 January. By 10 January, 120 has been amortized, leaving 180 not yet recognized. An adjustment posted on or after the original transaction date reduces that unrecognized balance. If the adjustment is 150, it stays within the balance. If the adjustment is 200, it exceeds the balance by 20 and the excess is debited to Income from Capitalization. Only the excess case changes the accounting split.</p>
+<p>The adjustment reduces the unrecognized balance; any amount above that balance is debited to Income from Capitalization instead of Deferred Income.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Adjustment amount</th>
+<th>Unrecognized before</th>
+<th>Debit Deferred Income</th>
+<th>Debit Income from Capitalization</th>
+<th>Credit Loan Portfolio</th>
+<th>Unrecognized after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Within limit</td>
+<td>150.00</td>
+<td>180.00</td>
+<td>150.00</td>
+<td>—</td>
+<td>150.00</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td>Exceeds limit</td>
+<td>200.00</td>
+<td>180.00</td>
+<td>180.00</td>
+<td>20.00</td>
+<td>200.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>When a capitalized income transaction is reversed, the system generates a capitalized income amortization adjustment that moves already recognized income back to Deferred Income. Suppose 60 of a 100 capitalized income amount has been recognized before the reversal.</p>
+<p>The amortization adjustment is the mirror of daily amortization: it debits Income from Capitalization and credits Deferred Income, restoring the deferred balance and reversing the recognized income.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Amount</th>
+<th>Deferred income balance</th>
+<th>Income from capitalization balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized income posted</td>
+<td>Loan Portfolio</td>
+<td>Deferred Income</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Amortization recognized to date</td>
+<td>Deferred Income</td>
+<td>Income from Capitalization</td>
+<td>60.00</td>
+<td>40.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>Amortization adjustment on reversal</td>
+<td>Income from Capitalization</td>
+<td>Deferred Income</td>
+<td>60.00</td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Fee Classification"/><ac:plain-text-link-body><![CDATA[Fee Classification]]></ac:plain-text-link-body></ac:link>.</p>

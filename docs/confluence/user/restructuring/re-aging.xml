@@ -1,374 +1,188 @@
-<h2>Re-aging</h2>
-<h3>Re-aging overview</h3>
-<p>Re-aging, also known as Settlement Plan, assists customers in duress around repaying their loans by creating a new set of installments for the same loan account from the principal outstanding pending on the loan account.</p>
-<h3>Eligibility and timing</h3>
-<p>Re-aging applies to progressive loan accounts. You can re-age from any date of the loan cycle after the first disbursement date, including before maturity, but not on a charged-off loan. For interest-bearing loans, the re-aging date must not be before the last repayment date.</p>
-<p>Interest handling during re-aging works as follows:</p>
+<h2>About re-aging</h2>
+<p>Re-aging, also known as Settlement Plan, creates a new set of installments for the same loan account from the principal outstanding pending on the loan account. It adjusts future amortization values after a change in loan parameters or payment activity and helps customers who are in duress around repaying their loans.</p>
+<h2>Set up a loan re-aging schedule</h2>
+<p>Use the loan re-aging screen to create a new set of installments for the same loan account from the principal outstanding pending on the loan account.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Select <strong>Re-Age</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Number of Installments</td>
+<td>Yes</td>
+<td>Enter the number of installments for the new repayment schedule.</td>
+</tr>
+<tr>
+<td>Frequency Number</td>
+<td>Yes</td>
+<td>Enter the frequency number for the new repayment schedule.</td>
+</tr>
+<tr>
+<td>Frequency Type</td>
+<td>Yes</td>
+<td>Select the frequency type for the new repayment schedule.</td>
+</tr>
+<tr>
+<td>Start Date</td>
+<td>Yes</td>
+<td>Enter the start date for the re-aging schedule.</td>
+</tr>
+<tr>
+<td>Interest Handling</td>
+<td>No</td>
+<td>Choose how interest is handled during re-aging from the available options: Default Behavior, Waive Interest, Equal Amortization, Outstanding payable Interest, or Outstanding FULL Interest.</td>
+</tr>
+<tr>
+<td>Reason</td>
+<td>No</td>
+<td>Enter the reason for re-aging the loan.</td>
+</tr>
+<tr>
+<td>External Id</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td>Transaction Amount</td>
+<td>No</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The system generates a final schedule after re-aging based on the selected parameters.</p>
+<h2>Eligibility and timing</h2>
+<p>You can re-age a loan from any date in the loan cycle after the first disbursement date, including after the maturity date for an overdue loan. Re-aging takes effect as of the current system date only.</p>
+<p>Eligibility depends on the loan type:</p>
 <ul>
-<li>Interest handling configuration is available on the Re-age screen and is not required on the loan product.</li>
-<li>You can configure interest handling types while re-aging interest-bearing loans from both the UI and the API.</li>
-<li>The options are Default Behavior, Waive Interest, Equal Amortization, Outstanding payable Interest, and Outstanding FULL Interest.</li>
-<li>Interest handling during re-aging for interest-bearing loans uses default behavior.</li>
+<li>Re-aging applies to non-interest bearing progressive loans.</li>
+<li>Re-aging applies to interest-bearing progressive loans with interest handling set to default behavior.</li>
 </ul>
-<h3>Default behavior interest handling</h3>
-<p>Under Default Behavior interest handling, overdue interest and charge-back interest move to the first new re-age installment, while charge-back principal is re-aged.</p>
-<p>Overdue fees and charge-back fees stay on the existing installment, and fees or penalties with a due date after re-age stay as is and are adjusted to the relevant installment.</p>
+<p>Timing rules for the re-aging date:</p>
 <ul>
-<li>Overdue fees remain as is on the existing installment.</li>
-<li>Charge-back fees remain as is on the existing installment.</li>
-<li>Fees or penalties with a due date after re-age remain as is and are adjusted to the relevant installment.</li>
+<li>For non-interest bearing loans, the re-aging date can be before the last repayment date.</li>
+<li>For interest-bearing loans, the re-aging date must not be before the last repayment date.</li>
 </ul>
-<h3>Waive interest option</h3>
-<p>When interest handling is set to Waive Interest, overdue interest and outstanding payable interest are waived off.</p>
-<p>The following rules apply under Waive Interest:</p>
+<h2>Interest handling options</h2>
+<p>On the Re-age screen, you choose how interest, charges, fees and penalties are handled when the loan is re-aged. The options are Default Behavior, Waive Interest, Equal Amortization, Outstanding payable Interest and Outstanding FULL Interest. Interest rate and interest recalculation remain the same during re-aging. If interest recalculation is true, the model is updated and used; if false, only repayment installments are used.</p>
+<p>What happens to each item under each interest handling option:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Default Behavior</th>
+<th>Waive Interest</th>
+<th>Equal Amortization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Overdue interest</td>
+<td>Moves to the 1st new re-age installment</td>
+<td>Waived off</td>
+<td>Equally split among new installments</td>
+</tr>
+<tr>
+<td>Overdue fees</td>
+<td>Remain as is on the existing installment</td>
+<td>Remain as is on the existing installments</td>
+<td>Equally split among new installments</td>
+</tr>
+<tr>
+<td>Charge-back principal</td>
+<td>Re-aged</td>
+<td>Re-aged</td>
+<td>Split equally among new installments</td>
+</tr>
+<tr>
+<td>Charge-back interest</td>
+<td>Moves to the 1st new re-age installment</td>
+<td>Waived</td>
+<td>Split equally among new installments</td>
+</tr>
+<tr>
+<td>Charge-back fees</td>
+<td>Remain as is on the existing installment</td>
+<td>Remain as is on the existing installment</td>
+<td>Split equally among new installments</td>
+</tr>
+<tr>
+<td>Fees/penalties with due date after re-age</td>
+<td>Remain as is and are adjusted to the relevant installment</td>
+<td>Remain as is and are adjusted to the relevant installment</td>
+<td>Equally split among new installments</td>
+</tr>
+</tbody></table>
+<p>Equal Amortization also applies these rules:</p>
 <ul>
-<li>Overdue charges remain as is on the existing installments.</li>
-<li>Charge-back principal is re-aged.</li>
-<li>Charge-back interest is waived.</li>
-<li>Charge-back fees remain as is on the existing installment.</li>
-<li>Fees and penalties with a due date after re-age remain as is and are adjusted to the relevant installment.</li>
-<li>Fees and penalties added before re-age remain as is and are adjusted to the relevant installment.</li>
+<li>Outstanding interest is equally split among new installments based on the user-selected option of outstanding payable interest or outstanding full interest.</li>
+<li>Outstanding charges/penalty are equally split among new installments.</li>
+<li>No new interest calculation occurs after re-aging.</li>
+<li>Interest recalculation is turned off and declining balance interest calculation is turned off.</li>
+<li>Existing charge-back interest and principal amount also go through equal split.</li>
 </ul>
-<h3>Equal amortization interest handling</h3>
-<p>Equal amortization interest handling splits outstanding interest equally among new installments, with the user choosing either outstanding payable interest or outstanding full interest as the basis. No new interest calculation occurs after re-aging, and declining balance interest calculation is turned off.</p>
-<p>Equal amortization re-aging applies the following equal splits across new installments:</p>
+<p>Waive Interest also applies these rules:</p>
 <ul>
-<li>Outstanding interest is split equally based on the selected outstanding payable interest or outstanding full interest option.</li>
-<li>Outstanding charges and penalties are split equally.</li>
-<li>Charge-back principal and interest amounts are split equally.</li>
-<li>Charge-back amount portions are split equally.</li>
-<li>Charges are split evenly across each installment.</li>
-<li>Charge to repayment installment mapping must be updated.</li>
-<li>Down-payment amounts are not affected by re-aging.</li>
+<li>Outstanding payable interest will be waived off.</li>
+<li>Fees/penalties added before re-age remain as is and are adjusted to the relevant installment.</li>
 </ul>
-<p>Charges or penalties with a due date after the re-age date are equally split among new installments.</p>
-<h3>Interest recalculation and rate</h3>
-<p>During re-aging, interest recalculation is turned off and declining balance interest calculation is turned off. Interest rate and interest recalculation remain the same for interest-bearing loans.</p>
-<p>The model is updated and used when interest recalculation is true; otherwise only repayment installments are used.</p>
+<blockquote>
+<p><strong>Note:</strong> Down-payment amounts have no impact from re-aging.</p>
+</blockquote>
+<h2>How to re-age</h2>
+<p>You can generate and preview a re-age schedule based on selected parameters at both UI and API level. A user with Re-age permission can preview the schedule with no specific permission required.</p>
+<p>The system displays:</p>
 <ul>
-<li>When interest recalculation is true, the model is updated and used.</li>
-<li>When interest recalculation is false, only repayment installments are used.</li>
+<li>The preview schedule with an option to go back to the re-age parameter screen.</li>
 </ul>
-<h3>Principal, charges, and fees handling</h3>
-<p>Re-aging applies to charges and fees based on their due date relative to the re-age date, and it applies the same way for interest-bearing and non-interest bearing products. Down-payment amounts and charge-back amounts are not affected by re-aging. Partial payments made before re-aging stay as they are, and only the unpaid amount is re-aged.</p>
-<p>Charges and fees are handled as follows during re-aging:</p>
+<blockquote>
+<p><strong>Note:</strong> The final schedule after re-aging is produced for non-interest-bearing loans.</p>
+</blockquote>
+<h2>Schedule and installments</h2>
+<p>Re-aging changes due dates and frequencies and updates the maturity date to match the new schedule. The system splits the current outstanding principal, interest, and fees or penalties equally among the new installments.</p>
+<p>When re-aging shortens the schedule:</p>
 <ul>
-<li>Charges and fees with a due date before the re-age date are split equally among the new installments.</li>
-<li>Charges and fees with a due date after the re-age date remain as is on that installment.</li>
-<li>The charge to repayment installment mapping is updated during re-aging.</li>
+<li>The system deletes all normal installments after the new maturity date.</li>
+<li>N+1 installments remain unless they overlap with re-aged installments.</li>
+<li>If an N+1 installment already exists, the system updates it to become one of the re-aged installments.</li>
+<li>The system reapplies N+1 installments to the new installments.</li>
 </ul>
-<h3>N+1 installments</h3>
-<p>N+1 installments remain unless they overlap with re-aged installments. When re-aged installments are added and an N+1 installment already exists, the N+1 installment is updated to become one of the re-aged installments.</p>
-<p>N+1 installments are handled during re-aging as follows:</p>
+<p>When re-aging occurs before the maturity date:</p>
 <ul>
-<li>N+1 installments are reapplied accordingly to the new installments.</li>
-<li>N+1 installments are reapplied accordingly to the new installments during re-aging for interest-bearing loans.</li>
-<li>The N+1 installment amount is adjusted as part of reverse replay.</li>
-<li>A reversed re-age transaction should not be found during validations when initiating a new re-age.</li>
+<li>The first four installment periods remain as-is.</li>
+<li>The fifth and sixth periods become re-aged installments with the re-age flag applied and recalculated due dates.</li>
+<li>The system creates four more installments based on the re-age payment plan.</li>
 </ul>
-<h3>Reversing re-aging</h3>
-<p>You can reverse re-aging until it is the latest transaction on the loan. Reversing a backdated repayment or its reversal also reverses re-aging and replays the schedule accordingly. Iteration is disabled during this process.</p>
-<p>When re-aging is reversed, the following occurs:</p>
-<ul>
-<li>The re-aging transaction itself can be reversed until it is the latest transaction on the loan.</li>
-<li>Scheduled is replayed and re-applied accordingly.</li>
-<li>The schedule is replayed and re-applied accordingly.</li>
-</ul>
-<h3>Schedule changes and installment overrides</h3>
-<p>Re-aging replaces part of the existing repayment schedule with a reaged payment plan. The first four installment periods stay as-is, the fifth and sixth periods become reaged installments with recalculated due dates, and four more installments are created from the reage payment plan. If the reaged schedule is shorter, all normal installments after the new maturity date are deleted. Outstanding balances can be evenly amortized into equal installments.</p>
-<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
-  n1["Re-age loan"]
-  n2["Evenly amortize balances"]
-  n3["Before maturity date?"]
-  n4["First 4 periods stay as-is"]
-  n5["5th period reaged"]
-  n6["6th period reaged"]
-  n7["Create 4 reaged installments"]
-  n8["Schedule shorter?"]
-  n9["Delete installments after maturity"]
-  n10["New repayment schedule"]
-  n1 --> n2
-  n2 --> n3
-  n3 -->|"Yes"| n4
-  n4 --> n5
-  n5 --> n6
-  n6 --> n7
-  n7 --> n8
-  n8 -->|"Yes"| n9
-  n9 --> n10
-  n8 -->|"No"| n10
-  n3 -->|"No"| n10]]></ac:plain-text-body></ac:structured-macro>
-<h3>Charge-off scenarios</h3>
-<p>Charge-off accelerate maturity date logic works the same as contract termination. The charge-off setting makes future installment interest zero. You cannot perform re-aging on a charged-off loan account; the system shows a validation message when you try. Edge cases are handled for interest bearing loan accounts with Default Behavior and interest recalculation enabled when a charge-off occurs during re-aging, when a chargeback before re-age occurs during re-aging, and when a backdated re-age occurs during re-aging.</p>
+<h2>Charges, fees, and penalties</h2>
+<p>Charges or fees with a due date after the re-age date are waived off.</p>
+<h2>Payments and outstanding balances</h2>
+<p>Re-aging moves only the unpaid part of an installment to the new schedule.</p>
 <p>Excess payments are handled as follows:</p>
 <ul>
-<li>Any excess payment allocated to installments after the re-age date is allocated to a special installment created as of the re-age start date.</li>
-<li>This excess payment handling applies to both non-interest bearing and interest bearing loan accounts.</li>
+<li>Any excess payment is allocated to a special installment created as of the re-age start date.</li>
 </ul>
-<h3>Frequency and due date support</h3>
-<p>Re-aging supports changes to due dates and repayment frequency when interest recalculation is enabled. The re-aging date must not fall before the last repayment date.</p>
-<p>Re-aging applies the following rules:</p>
+<p>The re-age transaction records the following amounts:</p>
 <ul>
-<li>Principal Only is re-amortized and unpaid interest is waived off.</li>
-<li>Charge-back interest and principal amounts from the previous schedule are split accordingly.</li>
+<li>The re-age transaction amount equals total principal outstanding plus total payable interest.</li>
 </ul>
-<h3>Preview and user interface</h3>
-<p>You open the loan account, choose &quot;Re-Age&quot; from the actions, and enter the Frequency Type and Start Date on the loan reaging screen. You can optionally set Interest Handling, Reason, External Id, Note and Transaction Amount before choosing Submit.</p>
-<p>The screen provides three actions:</p>
+<h2>Reversing and replaying re-aging</h2>
+<p>You can reverse a re-aging transaction until it is the latest transaction on the loan.</p>
+<p>Other actions that reverse and replay re-aging based on the new outstanding amount:</p>
 <ul>
-<li>Cancel returns without saving changes.</li>
-<li>Submit applies the re-aging parameters.</li>
-<li>Preview generates and shows a re-age schedule based on the selected parameters.</li>
+<li>Undo of old repayments</li>
 </ul>
-<p>The preview dialog behaves as follows:</p>
-<ul>
-<li>It displays the heading Repayment Schedule Preview.</li>
-<li>A Back button returns you to the re-age parameter screen.</li>
-<li>You need the Re-age permission to preview a schedule; no other specific permission is required.</li>
-</ul>
-<p>After re-aging completes, the system displays the final schedule.</p>
-<p>Contract termination occurs on 1st March.</p>
-<p>A Reage transaction with amount of 0 is not allowed when there are no outstanding balances to be reaged. If a 0 amount reage situation occurs during reverse-replay, the Reage transaction is reverted.</p>
-<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
-  n1["Open loan account and choose Re-Age"]
-  n2["Loan reaging screen"]
-  n3["Enter Frequency Type and Start Date"]
-  n4["Optionally set other fields"]
-  n5["Preview schedule"]
-  n6["Back to parameter screen"]
-  n7["Submit"]
-  n8["Final schedule displayed"]
-  n1 --> n2
-  n2 --> n3
-  n3 --> n4
-  n4 -->|"Preview"| n5
-  n5 -->|"Back"| n6
-  n5 -->|"Submit"| n7
-  n7 --> n8]]></ac:plain-text-body></ac:structured-macro>
-<h3>Example values</h3>
-<p>The example uses an EMI of 17.01, an interest rate of 7% per annum with a daily rate of 0.000194444, and iteration disabled with an iterate value of 0.00.</p>
-<h3>Worked examples</h3>
-<p>A customer holds a 900.00 progressive loan with interest at 12 percent per year and monthly installments. After the first installment of 309.00 is paid on 2/1/24, the principal balance is 600.00. The customer misses the 3/1/24 installment, leaving 300.00 principal and 6.00 interest overdue. On 3/15/24, fifteen days of interest accrue, adding 3.00. The officer opens the loan on 3/15/24, chooses Re-aging, sets the re-age date to 4/1/24, selects three new installments, and keeps the default interest handling. The system moves the 9.00 overdue interest to the first new installment and spreads the 600.00 principal evenly. The figures in this example are illustrative.</p>
-<p>Default handling consolidates overdue interest into the first re-aged installment while principal is amortized evenly.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Transaction</th>
-<th>Principal</th>
-<th>Interest</th>
-<th>Total</th>
-<th>Balance after</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>2/1/24</td>
-<td>Installment 1 paid</td>
-<td>300.00</td>
-<td>9.00</td>
-<td>309.00</td>
-<td>600.00</td>
-</tr>
-<tr>
-<td>3/1/24</td>
-<td>Installment 2 missed</td>
-<td>300.00</td>
-<td>6.00</td>
-<td>306.00</td>
-<td>600.00</td>
-</tr>
-<tr>
-<td>3/15/24</td>
-<td>Interest accrual</td>
-<td>0.00</td>
-<td>3.00</td>
-<td>3.00</td>
-<td>609.00</td>
-</tr>
-<tr>
-<td>4/1/24</td>
-<td>Re-age installment 1</td>
-<td>200.00</td>
-<td>9.00</td>
-<td>209.00</td>
-<td>400.00</td>
-</tr>
-<tr>
-<td>5/1/24</td>
-<td>Re-age installment 2</td>
-<td>200.00</td>
-<td>0.00</td>
-<td>200.00</td>
-<td>200.00</td>
-</tr>
-<tr>
-<td>6/1/24</td>
-<td>Re-age installment 3</td>
-<td>200.00</td>
-<td>0.00</td>
-<td>200.00</td>
-<td>0.00</td>
-</tr>
-</tbody></table>
-<p>Using the same 900.00 loan and missed 3/1/24 installment, the outstanding amount on 3/15/24 is 600.00 principal and 9.00 interest. The officer selects Re-aging from 4/1/24 with three installments. With Equal Amortization, the system splits both principal and interest equally across the three installments and stops new interest calculation. With Waive Interest instead, the 9.00 interest is removed and only the 600.00 principal is split. Changing the setting from Equal Amortization to Waive Interest lowers each installment from 203.00 to 200.00 and removes the interest charge.</p>
-<p>Equal amortization divides principal and interest evenly and turns off new interest calculation.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Transaction</th>
-<th>Principal</th>
-<th>Interest</th>
-<th>Total</th>
-<th>Balance after</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>2/1/24</td>
-<td>Installment 1 paid</td>
-<td>300.00</td>
-<td>9.00</td>
-<td>309.00</td>
-<td>600.00</td>
-</tr>
-<tr>
-<td>3/1/24</td>
-<td>Installment 2 missed</td>
-<td>300.00</td>
-<td>6.00</td>
-<td>306.00</td>
-<td>600.00</td>
-</tr>
-<tr>
-<td>3/15/24</td>
-<td>Interest accrual</td>
-<td>0.00</td>
-<td>3.00</td>
-<td>3.00</td>
-<td>609.00</td>
-</tr>
-<tr>
-<td>4/1/24</td>
-<td>Re-age installment 1</td>
-<td>200.00</td>
-<td>3.00</td>
-<td>203.00</td>
-<td>406.00</td>
-</tr>
-<tr>
-<td>5/1/24</td>
-<td>Re-age installment 2</td>
-<td>200.00</td>
-<td>3.00</td>
-<td>203.00</td>
-<td>203.00</td>
-</tr>
-<tr>
-<td>6/1/24</td>
-<td>Re-age installment 3</td>
-<td>200.00</td>
-<td>3.00</td>
-<td>203.00</td>
-<td>0.00</td>
-</tr>
-</tbody></table>
-<p>A 900.00 loan has its first installment paid on 2/1/24, leaving 600.00 principal. The loan is charged off on 3/1/24 for 606.00, comprising 600.00 principal and 6.00 interest. Because re-aging is permitted on charge-off accounts, the officer re-ages the 606.00 from 4/1/24 into three equal installments of 202.00. The charge-off does not block re-aging; it simply defines the outstanding amount that is redistributed.</p>
-<p>Re-aging can restart repayment on a charge-off loan by splitting the charged-off principal and interest into new installments.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Transaction</th>
-<th>Principal</th>
-<th>Interest</th>
-<th>Total</th>
-<th>Balance after</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>2/1/24</td>
-<td>Installment 1 paid</td>
-<td>300.00</td>
-<td>9.00</td>
-<td>309.00</td>
-<td>600.00</td>
-</tr>
-<tr>
-<td>3/1/24</td>
-<td>Charge-off</td>
-<td>600.00</td>
-<td>6.00</td>
-<td>606.00</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>4/1/24</td>
-<td>Re-age installment 1</td>
-<td>200.00</td>
-<td>2.00</td>
-<td>202.00</td>
-<td>404.00</td>
-</tr>
-<tr>
-<td>5/1/24</td>
-<td>Re-age installment 2</td>
-<td>200.00</td>
-<td>2.00</td>
-<td>202.00</td>
-<td>202.00</td>
-</tr>
-<tr>
-<td>6/1/24</td>
-<td>Re-age installment 3</td>
-<td>200.00</td>
-<td>2.00</td>
-<td>202.00</td>
-<td>0.00</td>
-</tr>
-</tbody></table>
-<p>After re-aging the 900.00 loan on 4/1/24 into three installments, the officer decides to undo the change before any re-aged installment is paid. Because the re-aging transaction is still the latest entry on the loan, it can be reversed. Reversal removes the new schedule and restores the original repayment plan, so the missed 3/1/24 installment and the 4/1/24 installment become due again under their original terms.</p>
-<p>Reversal is possible only while no later transaction exists, and it returns the loan to its pre-re-age schedule.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Transaction</th>
-<th>Principal</th>
-<th>Interest</th>
-<th>Total</th>
-<th>Balance after</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>4/1/24</td>
-<td>Re-aging posted</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>609.00</td>
-</tr>
-<tr>
-<td>4/1/24</td>
-<td>Re-aging reversed</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>0.00</td>
-<td>609.00</td>
-</tr>
-<tr>
-<td>5/1/24</td>
-<td>Original installment 2 due</td>
-<td>300.00</td>
-<td>6.00</td>
-<td>306.00</td>
-<td>303.00</td>
-</tr>
-<tr>
-<td>6/1/24</td>
-<td>Original installment 3 due</td>
-<td>300.00</td>
-<td>3.00</td>
-<td>303.00</td>
-<td>0.00</td>
-</tr>
-</tbody></table>
+<h2>Delinquency and maturity</h2>
+<p>Re-age resets both Delinquency and Breach evaluations as of the re-age date. The system allows multiple re-age actions on an account over time.</p>
+<h2>Zero-amount re-age</h2>
+<p>A zero-amount re-age transaction is allowed only when there are outstanding balances to re-age.</p>

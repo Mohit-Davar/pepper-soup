@@ -1,0 +1,1014 @@
+<h2>Journal Entry Aggregation overview</h2>
+<p>Journal Entry Aggregation runs a batch job that prepares a summary table, and the Trial Balance Report uses that pre-baked data instead of aggregating every day. Journal entries trigger and use the same legacy events when created.</p>
+<h2>Aggregation job filters</h2>
+<p>The aggregation job filters journal entries by office, entry type, manual flag, and submission date relative to the latest aggregated date.</p>
+<p>The post_snapshot_delta_data where clause filters acc_gl_journal_entry where:</p>
+<ul>
+<li>entity_type_enum equals 1</li>
+<li>manual_entry equals false</li>
+<li>the latest aggregated date is null or submitted_on_date is greater than the latest aggregated date</li>
+<li>submitted_on_date is less than endDate</li>
+<li>office_id matches the office parameter</li>
+</ul>
+<p>The summary_snapshot_baseline_data where clause filters ags where:</p>
+<ul>
+<li>entity_type_enum equals 1</li>
+<li>manual_entry equals false</li>
+<li>aggregated_on_date is less than or equal to the latest aggregated date</li>
+<li>office_id matches the office parameter</li>
+</ul>
+<p>summary_snapshot_baseline_data groups results by productname, glcode, glname, and assetowner.</p>
+<h2>Payment Waiver journal entries</h2>
+<p>A Payment Waiver posts credits to Loan portfolio, Interest Receivable, Fees Receivable, Penalties Receivable, and Overpayment for their allocated portions on non charge-off loan accounts. On charge-off loan accounts, it debits Income from Interest and credits Income from charge-off Interest and Overpayment. Reversals post the opposite entries.</p>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non charge-off</td>
+<td>Payment Waiver</td>
+<td>—</td>
+<td>Loan portfolio (GL 112601) for total principal; Interest Receivable (GL 112603) for total interest; Fees Receivable (GL 112603) for total fees; Penalties Receivable (GL 112603) for total penalties; Overpayment for total overpayment</td>
+</tr>
+<tr>
+<td>Non charge-off</td>
+<td>Payment Waiver reversal</td>
+<td>Income from Interest (GL 404000) for total amount entered</td>
+<td>Loan portfolio (GL 112601), Interest Receivable (GL 112603), Fees Receivable (GL 112603), Penalties Receivable (GL 112603), and Overpayment for their respective allocated portions</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Payment Waiver</td>
+<td>Income from Interest (GL 404000) for total amount entered</td>
+<td>Income from charge-off Interest (GL 404001) for total principal, interest, fees, and penalties; Overpayment for total overpayment</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Payment Waiver reversal</td>
+<td>Income from charge-off Interest (GL 404001) for total principal, interest, fees, and penalties; Overpayment for total overpayment</td>
+<td>Income from Interest (GL 404000) for total amount entered</td>
+</tr>
+</tbody></table>
+<h2>Charge-off account mappings</h2>
+<p>Charge-off account mappings decide which ledger accounts receive the interest, fees and penalty portions of a charge-off, charge adjustment or repayment entry.</p>
+<p>Each entry type maps its portions to accounts as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Interest portion</th>
+<th>Fees portion</th>
+<th>Penalty portion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge off Fraud</td>
+<td>Interest income charge off</td>
+<td>charge-off fees Income</td>
+<td>charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Interest income charge off</td>
+<td>charge-off fees Income</td>
+<td>charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>income from fees</td>
+<td>income from fees and charge-off fees Income</td>
+<td>income from penalties and charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>OCA Repayment / Repayment</td>
+<td>recoveries and fund source /advance accounting</td>
+<td>recoveries and fund source /advance accounting</td>
+<td>recoveries and fund source /advance accounting</td>
+</tr>
+</tbody></table>
+<h2>Transaction Refund and Provisional Credit entries</h2>
+<p>Transaction Refund and Provisional Credit entries post cash in and cash out movements for loan disbursement principal, interest repayment, late fee, NSF fee, snooze fee, principal payment, and unallocated credit transactions. Each entry debits or credits fund source account 145023 and the matching receivable, liability, income, or expense account. The credit account depends on whether the entry carries the Y flag and whether it carries two Y flags.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Flags</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan Disbursement Principal Cash Out</td>
+<td>none</td>
+<td>112601</td>
+<td>Loan portfolio</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Interest - Repayment Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>112603</td>
+<td>Interest Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Principal Payment Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>112601</td>
+<td>Loan portfolio</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash in</td>
+<td>no Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Interest - Repayment Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>404001</td>
+<td>Income from ChargeOff Interest</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Principal Payment Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>744007/740037</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash in</td>
+<td>Y flag</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Interest - Repayment Cash Out</td>
+<td>Y flag</td>
+<td>112603</td>
+<td>Interest Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash Out</td>
+<td>Y flag</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash Out</td>
+<td>Y flag</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash Out</td>
+<td>Y flag</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Principal Payment Cash Out</td>
+<td>Y flag</td>
+<td>112601</td>
+<td>Loan portfolio</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash Out</td>
+<td>Y flag</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Interest - Repayment Cash Out</td>
+<td>Y and Y flags</td>
+<td>404001</td>
+<td>Income from ChargeOff Interest</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Late Fee Payment Cash Out</td>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>NSF Fee Payment Cash Out</td>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment Cash Out</td>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Principal Payment Cash Out</td>
+<td>Y and Y flags</td>
+<td>744007/740037</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) Cash Out</td>
+<td>Y and Y flags</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>in development</td>
+</tr>
+</tbody></table>
+<h2>Good Will entries</h2>
+<p>Good Will entries post accounting entries for goodwill credit transactions that involve no cash movement. The debit and credit accounts depend on the transaction type and whether the Y flag is set.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Y flag</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Debit label</th>
+<th>Credit label</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will Interest - Repayment No Cash</td>
+<td>No</td>
+<td>404001</td>
+<td>112603</td>
+<td>Income from Goodwill Credit Interest</td>
+<td>Interest Receivable</td>
+<td>TBD</td>
+</tr>
+<tr>
+<td>Good Will Interest - Repayment No Cash</td>
+<td>Yes</td>
+<td>404001</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Interest</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Good Will Late Fee Payment No Cash</td>
+<td>No</td>
+<td>404008</td>
+<td>112603</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penalties Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Good Will Late Fee Payment No Cash</td>
+<td>Yes</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash</td>
+<td>No</td>
+<td>404008</td>
+<td>112603</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Fees Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash</td>
+<td>Yes</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash</td>
+<td>No</td>
+<td>404008</td>
+<td>112603</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Fees Receivable</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash</td>
+<td>Yes</td>
+<td>404008</td>
+<td>744008</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash</td>
+<td>No</td>
+<td>744003</td>
+<td>112601</td>
+<td>Expense from Goodwill Credit</td>
+<td>Loan portfolio</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash</td>
+<td>Yes</td>
+<td>744003</td>
+<td>744008</td>
+<td>Expense from Goodwill Credit</td>
+<td>Income from Recovery Repayment</td>
+<td>in development</td>
+</tr>
+<tr>
+<td>Good Will Unallocated Credit (UNC) No Cash</td>
+<td>No</td>
+<td>744003</td>
+<td>245000</td>
+<td>Expense from Goodwill Credit</td>
+<td>Over payment liability</td>
+<td>pass</td>
+</tr>
+</tbody></table>
+<h2>Late Fee Waiver entries</h2>
+<p>Late Fee Waiver entries post when a late fee is waived without a cash payment. The debit and credit accounts depend on the flag settings. All entries are in development.</p>
+<table>
+<thead>
+<tr>
+<th>Flag settings</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>No Y flag</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+</tr>
+<tr>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+</tr>
+</tbody></table>
+<h2>NSF Fee Waiver entries</h2>
+<p>NSF Fee Waiver entries post fee waivers when no cash payment is made. The debit and credit accounts depend on the flag setting.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Without Y flag</td>
+<td>404007</td>
+<td>Income from Fees</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>With Y flag</td>
+<td>404007</td>
+<td>Income from Fees</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>With Y flag</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>404007</td>
+<td>Income from Fees</td>
+</tr>
+<tr>
+<td>With Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>404007</td>
+<td>Income from Fees</td>
+</tr>
+</tbody></table>
+<h2>Auto Payment entries</h2>
+<p>Auto Payment entries post journal entries for Auto Payment Interest - Repayment transactions. The debit and credit accounts depend on the transaction direction, whether the Y flag is set, and the payment type. Entries marked in development are not yet complete.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Y flag</th>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Not set</td>
+<td>Late Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Penalties Receivable 112603</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Not set</td>
+<td>NSF Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Not set</td>
+<td>Snooze Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Not set</td>
+<td>Principal Payment</td>
+<td>Fund source 145023</td>
+<td>Loan portfolio 112601</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Not set</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Set</td>
+<td>Late Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Set</td>
+<td>NSF Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Set</td>
+<td>Snooze Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Set</td>
+<td>Principal Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash in</td>
+<td>Set</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Set</td>
+<td>Late Fee Payment</td>
+<td>Penalties Receivable 112603</td>
+<td>Fund source 145023</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Set</td>
+<td>NSF Fee Payment</td>
+<td>Fees Receivable 112603</td>
+<td>Fund source 145023</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Set</td>
+<td>Snooze Fee Payment</td>
+<td>112603</td>
+<td>Fund source 145023</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Set</td>
+<td>Principal Payment</td>
+<td>Loan portfolio 112601</td>
+<td>Fund source 145023</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Set</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Over payment liability 245000</td>
+<td>Fund source 145023</td>
+<td></td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Both Y flags</td>
+<td>Late Fee Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Both Y flags</td>
+<td>NSF Fee Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Both Y flags</td>
+<td>Snooze Fee Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Both Y flags</td>
+<td>Principal Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
+<td>In development</td>
+</tr>
+<tr>
+<td>Auto Payment Interest - Repayment Cash Out</td>
+<td>Both Y flags</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Over payment liability 245000</td>
+<td>Fund source 145023</td>
+<td>In development</td>
+</tr>
+</tbody></table>
+<h2>Scheduled Payment entries</h2>
+<p>Scheduled Payment entries record the accounting for cash received against a scheduled payment. The debit account and credit account depend on the payment type and whether the transaction carries the Y flag.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Y flag</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Late Fee Payment</td>
+<td>Absent</td>
+<td>Fund source 145023</td>
+<td>Penalties Receivable 112603</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>Absent</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Absent</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>Absent</td>
+<td>Fund source 145023</td>
+<td>Loan portfolio 112601</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Absent</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+</tr>
+<tr>
+<td>Late Fee Payment</td>
+<td>Present</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>Present</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Present</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>Present</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Present</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+</tr>
+</tbody></table>
+<h2>Apply Fee Return entries</h2>
+<p>Apply Fee Return entries post journal rows for late fee payments that have no cash applied. The row used depends on whether the payment carries the Y flag.</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Journal row</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Late fee payment with no cash and N/A flags</td>
+<td>R290</td>
+</tr>
+<tr>
+<td>Late fee payment with no cash and Y flags</td>
+<td>R291</td>
+</tr>
+</tbody></table>
+<h2>Legacy accounting driver rows</h2>
+<p>Legacy accounting driver rows map transaction types to source systems, lifecycle events, helper and batch type labels, rule IDs, lifecycle names, SL accounts, and GL accounts.</p>
+<p>define fixed fee and charge-off mappings.</p>
+<table>
+<thead>
+<tr>
+<th>Row</th>
+<th>Transaction</th>
+<th>Count US</th>
+<th>Source System</th>
+<th>Lifecycle</th>
+<th>Sublifecycle</th>
+<th>Helper 1</th>
+<th>SL Account</th>
+<th>GL Account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>R3</td>
+<td>Cash Advance</td>
+<td>6</td>
+<td>FDR_PPWC</td>
+<td>Fixed Fee</td>
+<td>Fixed Fee</td>
+<td>Cash Advance-AU-Initialized-1</td>
+<td>10010101 Receivables/Payables (Not Due)</td>
+<td>ZAC1100000 TOTAL ASSETS</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>Charge-Off (Fraud)</td>
+<td>1</td>
+<td>B_FDR_PPWC</td>
+<td>Fixed Fee</td>
+<td>Premium WB (5%) - FixFee</td>
+<td>Cash Advance-AU-Initialized-4</td>
+<td>10020101 Accruals: Interest Income (Debit)</td>
+<td>ZAC1100030 Cash &amp; Cash Equivalents</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>Charge-Off (Non-Fraud)</td>
+<td>1</td>
+<td>FDR_PPWC</td>
+<td>Fixed Fee Adjustment (Increase)</td>
+<td>Fixed Fee Adj Inc</td>
+<td>Cash Advance-AU-Initialized-5</td>
+<td>10020102 Accruals: Income from Fees (Debit)</td>
+<td>ZAC1100031 Cash &amp; Cash Equivalents Main</td>
+</tr>
+<tr>
+<td>R10</td>
+<td>Fixed Fee Adjustment (Decrease)</td>
+<td>4</td>
+<td>B_FDR_PPWC</td>
+<td>Fixed Fee Adjustment (Increase)</td>
+<td>Premium WB (5%) Adj INC - FixFee</td>
+<td>Cash Advance-AU-New-1</td>
+<td>10030101 Deferrals: Interest Income (Debit)</td>
+<td>103002 Payroll - outgoing</td>
+</tr>
+<tr>
+<td>R11</td>
+<td>Fixed Fee Adjustment (Increase)</td>
+<td>4</td>
+<td>FDR_PPWC</td>
+<td>Fixed Fee Adjustment (Decrease)</td>
+<td>Fixed Fee Adj Dec</td>
+<td>Cash Advance-AU-New-2</td>
+<td>10030102 Deferrals: Interest Income (Credit)</td>
+<td>111194 GCE-UK Disbursements Clearing</td>
+</tr>
+</tbody></table>
+<p>define currency position and equivalent value mappings with additional driver details.</p>
+<table>
+<thead>
+<tr>
+<th>Row</th>
+<th>Transaction</th>
+<th>Source System</th>
+<th>Helper 1</th>
+<th>Batch Type</th>
+<th>Source System</th>
+<th>FT</th>
+<th>Rule ID</th>
+<th>Lifecycle</th>
+<th>SL Account</th>
+<th>GL Account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>R123</td>
+<td>Payment Reversal</td>
+<td>FDR</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-2</td>
+<td>B_FDR_PPWC</td>
+<td>WebBank-Funding</td>
+<td>38</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70010201 Currency Position Balance Sheet</td>
+<td>193011 Trademark &amp; tradenames (RN)</td>
+</tr>
+<tr>
+<td>R124</td>
+<td>Collector Receivable</td>
+<td>BETL</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-3</td>
+<td>B_FDR_PPWC</td>
+<td>WebBank-Funding</td>
+<td>39</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70020101 Currency Position Income Statement</td>
+<td>ZAC1100450 Customer list</td>
+</tr>
+<tr>
+<td>R125</td>
+<td>Collection Agency Fee</td>
+<td>BETL</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-4</td>
+<td>B_FDR_PPWC</td>
+<td>Customer</td>
+<td>41</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70020201 Currency Position Income Statement</td>
+<td>192511 Customer list(RN)</td>
+</tr>
+<tr>
+<td>R126</td>
+<td>Unposted Transaction</td>
+<td>BETL</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-5</td>
+<td>B_FDR_PPWC</td>
+<td>WebBank-Funding</td>
+<td>40</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70030101 Currency Position Reserve</td>
+<td>ZAC1100460 Covenant not to compete</td>
+</tr>
+<tr>
+<td>R127</td>
+<td>PPWC Error</td>
+<td>FDR</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-6</td>
+<td>B_FDR_PPWC</td>
+<td>WebBank-Investor</td>
+<td>42</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70030201 Currency Position Reserve</td>
+<td>192011 Covenant not to compete (RN)</td>
+</tr>
+<tr>
+<td>R128</td>
+<td>Payment</td>
+<td>FDR</td>
+<td>Cash Advance Adjustment (Increase)</td>
+<td>Cash Advance Adjustment (Increase)-US-New-7</td>
+<td>B_FDR_PPWC</td>
+<td>WebBank-Funding</td>
+<td>473</td>
+<td>NS LifeCycle Cash Advance Adjustment</td>
+<td>70090101 Equivalent Value</td>
+<td>ZAC1100470 Developed Technology</td>
+</tr>
+<tr>
+<td>R129</td>
+<td>Payment Reversal</td>
+<td>FDR</td>
+<td>Charge-Off (Fraud)</td>
+<td>Charge-Off (Fraud)-AU-Initialized-1</td>
+<td>FDR_PPWC</td>
+<td></td>
+<td>103</td>
+<td>NS LifeCycle Charge Off Principal (Fraud)</td>
+<td>70090201 Equivalent Value</td>
+<td>191011 Developed technology(RN)</td>
+</tr>
+<tr>
+<td>R130</td>
+<td>Collector Receivable</td>
+<td>BETL</td>
+<td>Charge-Off (Fraud)</td>
+<td>Charge-Off (Fraud)-AU-Initialized-2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>80010101 Preliminary Currency Pos. Balance Sheet</td>
+<td>ZAC1100480 Goodwill</td>
+</tr>
+<tr>
+<td>R131</td>
+<td>LUX NET Collection</td>
+<td>BETL</td>
+<td>Charge-Off (Fraud)</td>
+<td>Charge-Off (Fraud)-AU-Initialized-3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>80010201 Preliminary Currency Pos. Balance Sheet</td>
+<td>ZAC1100510 Goodwill</td>
+</tr>
+<tr>
+<td>R132</td>
+<td>LUX NET Collection Replication</td>
+<td>BETL</td>
+<td>Charge-Off (Fraud)</td>
+<td>Charge-Off (Fraud)-AU-Initialized-4</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>80090101 Preliminary Equivalent Value</td>
+<td>194010 Goodwill</td>
+</tr>
+</tbody></table>

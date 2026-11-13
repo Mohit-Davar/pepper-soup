@@ -1,0 +1,28 @@
+<p>Real-time charge accruals recognize charges as income immediately when a charge transaction is posted, instead of waiting for the end-of-day job. This applies to Working Capital Loans and Progressive Loans.</p>
+<p>Two configurations control when charge accrual entries are created.</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>wcl-charge-accrual-time (Working Capital Loans)</td>
+<td>Real-Time: creates the charge accrual entry when the applicable charge transaction is posted. EOD: creates the charge accrual entry through the end-of-day process based on the configured charge-accrual-date.</td>
+<td>EOD</td>
+</tr>
+<tr>
+<td>pl-charge-accrual-time (Progressive Loans)</td>
+<td>Real-Time: creates the charge accrual entry when the applicable charge transaction is posted. EOD: creates the charge accrual entry through the end-of-day process based on the configured charge-accrual-date.</td>
+<td>EOD</td>
+</tr>
+</tbody></table>
+<p>When Real-Time is selected:</p>
+<ul>
+<li>An accrual transaction with the charge amount is created immediately when a new charge (fee or penalty) is added.</li>
+<li>Multiple charges create multiple accrual transactions.</li>
+<li>Working Capital Loans natively support multiple accrual transactions per day.</li>
+<li>The selected configuration is consistently applied to all applicable charge accrual transactions.</li>
+</ul>

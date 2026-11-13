@@ -1,0 +1,631 @@
+<h2>Accounting rules and options</h2>
+<p>Product accounting values are NONE, ACC_DEF_REV_AM (accrual / deferred-revenue amortization), and ADVANCED (with rules). Override values are allowAttributeOverrides all true and all false; a loan must reject when all false.</p>
+<h2>Working Capital product accounting setup</h2>
+<p>A Working Capital product requires the accountingRule parameter when you create it. The value must be NONE or CASH_BASED. With NONE, the product can be created without setting accounting parameters. With CASH_BASED, creation or editing fails if receivableFeeAccountId is not set. A product can be created when all mandatory fields are set. Breach grace days may be left empty; the system treats it as not set or 0.</p>
+<h2>None accounting</h2>
+<p>None accounting means no accounting configuration is needed and no journal entries are created during the loan lifecycle. The loan product is created or updated without accounting mapping.</p>
+<p>Created journal entries are created in the regular table acc_gl_journal_entry.</p>
+<h2>Cash based accounting</h2>
+<p>Cash based accounting recognizes interest only when a monetary event such as a repayment occurs, and calculates the income based on the transaction amount. GL account mapping can be configured for Working Capital loan products when Cash based accounting is selected, with GL mappings available to configure similarly to regular term loans.</p>
+<h2>Advance accounting rules</h2>
+<p>Advance accounting rules apply to Working Capital loans and take priority over the regular Fund Source mapping when both Advance accounting rules and Configure Fund Sources for Payment Channels are mapped.</p>
+<p>Mapping rules for Working Capital:</p>
+<ul>
+<li>Advance accounting rules mapping is possible for Working Capital loans.</li>
+<li>Mapping from the UI follows the same approach as term loan products, except capitalized income and buydown fees mapping.</li>
+</ul>
+<h2>GL mapping configuration</h2>
+<p>You can update or delete GL accounting mappings on a loan product. Before you submit, every parameter must be mapped to a GL account.</p>
+<h2>Repayment accounting</h2>
+<p>Repayment accounting posts a debit to the suspense/clearing account and credits to principal and fee receivable accounts. On a closed loan account, the credit goes to the overpayment liability account instead of principal. A repayment reversal reverses these entries. Disbursement debits Loans Receivable Principal and credits the suspense/clearing account; disbursement reversal does the opposite.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment</td>
+<td>GLCode 145023 Suspense/clearing account (Fund source, Liability, Allocation Type Prin, Fees, Penalty and excess)</td>
+<td>GLCode 112601 Loans Receivable Principal (Loan Portfolio, Asset, Prin); GLCode 245000 Other Credit liability (Overpayment Liability, Liability, excess); GLCode 112603 Fee Receivable (Penalty Receivable, Asset, Penalty); GLCode 112603 Fee Receivable (Fees Receivable, Asset, fees)</td>
+</tr>
+<tr>
+<td>Repayment on closed loan account</td>
+<td>GLCode 145023 Suspense/clearing account (Fund source, Liability, Allocation Type Prin, Fees, Penalty and excess)</td>
+<td>GLCode 245000 Other Credit liability (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>Repayment Reversal</td>
+<td>GLCode 112601 Loans Receivable Principal (Loan Portfolio, Asset, Prin); GLCode 245000 Other Credit liability (Overpayment Liability, Liability, excess); GLCode 112603 Fee Receivable (Fees Receivable, Asset, fees); GLCode 112603 Fee Receivable (Penalty Receivable, Asset, Penalty)</td>
+<td>GLCode 145023 Suspense/clearing account (Fund source, Asset/Liability, Prin, Fees, Penalty and excess)</td>
+</tr>
+<tr>
+<td>Disbursement</td>
+<td>GLCode 112601 Loans Receivable Principal (Loan Portfolio, Asset, Prin)</td>
+<td>GLCode 145023 Suspense/clearing account (Fund source, Asset/Liability, Prin)</td>
+</tr>
+<tr>
+<td>Disbursement Reversal</td>
+<td>GLCode 145023 Suspense/clearing account (Fund source, Asset/Liability, Prin)</td>
+<td>GLCode 112601 Loans Receivable Principal (Loan Portfolio, Asset, Prin)</td>
+</tr>
+</tbody></table>
+<h2>CBR accounting</h2>
+<p>CBR accounting posts a debit to Other Credit liability GL 245000 (Overpayment Liability, Liability, excess) and a credit to Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess).</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CBR</td>
+<td>245000 Other Credit liability (Overpayment Liability, Liability, excess)</td>
+<td>145023 Suspence/clearing account (Fund source, Asset/Liability, excess)</td>
+</tr>
+<tr>
+<td>CBR after charge-off</td>
+<td>245000 Other Credit liability (Overpayment Liability, Liability, excess)</td>
+<td>145023 Suspence/clearing account (Fund source, Asset/Liability, excess)</td>
+</tr>
+<tr>
+<td>Repayment after charge-off</td>
+<td>145023 Suspence/clearing account (Fund source, Asset/Liability, Prin, Fees, and Penalty and excess)</td>
+<td>744008 recoveries (Income from Recovery Repayment, Income, Prin); 245000 Other Credit liability (Overpayment Liability, Liability, excess); 744008 recoveries (Income from Recovery Repayment, Income, Penalty); 744008 recoveries (Income from Recovery Repayment, Income, fees)</td>
+</tr>
+</tbody></table>
+<h2>CBR reversal accounting</h2>
+<p>CBR reversal accounting posts a debit to Suspence/clearing account GL 145023 and a credit to Other Credit liability GL 245000.</p>
+<p>After charge-off, CBR reversal posts the same debit and credit.</p>
+<p>CBR reversal accounting entries</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CBR Reversal</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>CBR Reversal after charge-off</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+</tbody></table>
+<h2>Goodwill credit accounting</h2>
+<p>Goodwill credit accounting posts debits to principal, fee and penalty adjustment accounts and credits to loan receivable, fee receivable and overpayment liability accounts. Use it when you apply a goodwill credit to a loan account.</p>
+<p>Goodwill credit accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>Account</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>744003</td>
+<td>Principal bal adjustment</td>
+<td>Expense</td>
+<td>Principal, excess</td>
+</tr>
+<tr>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income</td>
+<td>Penalty</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Credit GL</th>
+<th>Account</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112601</td>
+<td>Loans Receivable Principal</td>
+<td>Asset</td>
+<td>Principal</td>
+</tr>
+<tr>
+<td>112603</td>
+<td>Fee Receivable</td>
+<td>Asset</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>112603</td>
+<td>Fee Receivable</td>
+<td>Asset</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>245000</td>
+<td>Other Credit liability</td>
+<td>Liability</td>
+<td>Excess</td>
+</tr>
+</tbody></table>
+<p>After a charge-off, goodwill credit accounting debits principal bal adjustment GL 744003 and fee charge off GL 404008 for fees and penalty, and credits recoveries GL 744008 for principal, fees and penalty, plus other credit liability GL 245000.</p>
+<h2>Goodwill credit reversal accounting</h2>
+<p>Goodwill credit reversal accounting posts debits to Loans Receivable Principal GL 112601, Fee Receivable GL 112603 for fees, Fee Receivable GL 112603 for penalties, and Other Credit liability GL 245000, and credits to Fee Charge off GL 404008 for fees and penalties and Principal bal adjustment GL 744003.</p>
+<p>Debit entries for goodwill credit reversal:</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>Account type</th>
+<th>Category</th>
+<th>Subcategory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112601 Loans Receivable Principal</td>
+<td>Asset</td>
+<td>Loan Portfolio</td>
+<td>prin</td>
+</tr>
+<tr>
+<td>112603 Fee Receivable</td>
+<td>Asset</td>
+<td>Fees Receivable</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>112603 Fee Receivable</td>
+<td>Asset</td>
+<td>Penalty Receivable</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>245000 Other Credit liability</td>
+<td>Liability</td>
+<td>Overpayment Liability</td>
+<td>excess</td>
+</tr>
+</tbody></table>
+<p>Credit entries for goodwill credit reversal:</p>
+<table>
+<thead>
+<tr>
+<th>Credit GL</th>
+<th>Account type</th>
+<th>Category</th>
+<th>Subcategory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>404008 Fee Charge off</td>
+<td>Income</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>404008 Fee Charge off</td>
+<td>Income</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penatly</td>
+</tr>
+<tr>
+<td>744003 Principal bal adjustment</td>
+<td>Expense</td>
+<td>Expense from Goodwill Credit</td>
+<td>Prin,excess</td>
+</tr>
+</tbody></table>
+<p>When the loan account is closed, a GoodwillCredit transaction posts instead:</p>
+<table>
+<thead>
+<tr>
+<th>Direction</th>
+<th>GL</th>
+<th>Account type</th>
+<th>Category</th>
+<th>Subcategory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>744003 Principal bal adjustment</td>
+<td>Expense</td>
+<td>Expense from Goodwill Credit</td>
+<td>Prin,excess</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>245000 Other Credit liability</td>
+<td>Liability</td>
+<td>Overpayment Liability</td>
+<td>excess</td>
+</tr>
+</tbody></table>
+<p>Goodwill credit reversal after charge-off:</p>
+<table>
+<thead>
+<tr>
+<th>Direction</th>
+<th>GL</th>
+<th>Account type</th>
+<th>Category</th>
+<th>Subcategory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>744008 recoveries</td>
+<td>Income</td>
+<td>Income from Recovery Repayment</td>
+<td>prin</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>744008 recoveries</td>
+<td>Income</td>
+<td>Income from Recovery Repayment</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>744008 recoveries</td>
+<td>Income</td>
+<td>Income from Recovery Repayment</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>245000 Other Credit liability</td>
+<td>Liability</td>
+<td>Overpayment Liability</td>
+<td>excess</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>404008 Fee Charge off</td>
+<td>Income</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>404008 Fee Charge off</td>
+<td>Income</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penatly</td>
+</tr>
+</tbody></table>
+<h2>Charge adjustment accounting</h2>
+<p>Charge adjustment accounting posts a charge adjustment to the loan account by debiting fee income and crediting principal receivable, fee receivable, penalty receivable, or overpayment liability, depending on the charge type. The UNDO transaction is not implemented.</p>
+<p>Charge adjustment transaction entries:</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Charge type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>404007 Fee Income / Penalty Income (Income from charges, Income, prin,fees, and excess)</td>
+<td>112601 Loans Receivable Principal (Loan Portfolio, Asset, prin)</td>
+<td>Principal</td>
+</tr>
+<tr>
+<td>404007 Fee Income / Penalty Income (Income from charges, Income, prin,fees, and excess)</td>
+<td>112603 Fee Receivable (Fees Receivable, Asset, fees)</td>
+<td>Fee</td>
+</tr>
+<tr>
+<td>404007 Fee Income / Penalty Income (Income from charges, Income, prin,fees, and excess)</td>
+<td>112603 Fee Receivable (Penalty Receivable, Asset, Penalty)</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>404007 Fee Income / Penalty Income (Income from charges, Income, prin,fees, and excess)</td>
+<td>245000 Other Credit liability (Overpayment Liability, Liability, excess)</td>
+<td>Excess</td>
+</tr>
+</tbody></table>
+<h2>Charge-off accounting</h2>
+<p>Charge-off accounting posts the same accounting legs for charge-off loan accounts. A charge-off transaction debits GL 404008 Fee Charge off for both charge-off fees and charge-off penalties, and credits GL 112601 Loans Receivable Principal and GL 112603 Fee Receivable for fees and penalties. An undo charge-off transaction credits GL 744007 Credit loss-bad dept or GL 744037 Credit loss-bad dept-fraud based on the fraud flag. A charge adjustment transaction on a charge-off loan account credits GL 404008 Fee Charge off.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off</td>
+<td>404008 Fee Charge off (fees)</td>
+<td>112601 Loans Receivable Principal</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>404008 Fee Charge off (penalties)</td>
+<td>112603 Fee Receivable (fees)</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td></td>
+<td>112603 Fee Receivable (penalties)</td>
+</tr>
+<tr>
+<td>Undo charge-off</td>
+<td></td>
+<td>744007 Credit loss-bad dept or 744037 Credit loss-bad dept-fraud</td>
+</tr>
+<tr>
+<td>Charge adjustment on charge-off loan account</td>
+<td></td>
+<td>404008 Fee Charge off</td>
+</tr>
+</tbody></table>
+<h2>Charge addition accounting</h2>
+<p>Charge addition posts an accrual accounting entry that debits Fee Receivable GL 112603 and credits Fee Income GL 404007.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>GL</th>
+<th>Name</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>112603</td>
+<td>Fee Receivable</td>
+<td>Asset</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>404007</td>
+<td>Fee Income</td>
+<td>Income</td>
+<td>Fees</td>
+</tr>
+</tbody></table>
+<h2>Charge waive accounting</h2>
+<p>When you waive a charge, the system debits Fee Income GL 404007 (Income from Fees, Income, fees) and credits Fee Receivable GL 112603 (Fees Receivable, Asset, fees).</p>
+<h2>Discount fee accounting</h2>
+<p>Discount fee accounting posts entries when a discount fee is charged, adjusted, or amortized. Entries use allocation type Prin, Fees, and Penalty.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Allocation type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Discount fee charged</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset)</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability)</td>
+<td>Prin, Fees, and Penalty</td>
+</tr>
+<tr>
+<td>Discount fee adjustment</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset)</td>
+<td>Prin, Fees, and Penalty</td>
+</tr>
+<tr>
+<td>Amortization</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Int)</td>
+<td>Interest income GL 404000 (Income from Amortization, Income, Int)</td>
+<td>Prin, Fees, and Penalty</td>
+</tr>
+<tr>
+<td>Amortization after charge-off</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Int)</td>
+<td>Interest income GL 404000 (Income from Amortization, Income, Int)</td>
+<td>Prin, Fees, and Penalty</td>
+</tr>
+</tbody></table>
+<h2>Payout refund payment accounting</h2>
+<p>A payout refund payment posts to one set of general ledger accounts on an active loan account and another set on a charge-off loan account. Each payment type debits Fund source GL 145023 and credits the account shown below. Unallocated Credit credits Over payment liability GL 245000 on both account types.</p>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Payment type</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active loan account</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active loan account</td>
+<td>Fees</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active loan account</td>
+<td>Principal</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Active loan account</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Fees</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Principal</td>
+<td>145023</td>
+<td>744007/740037</td>
+</tr>
+<tr>
+<td>Charge-off loan account</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<h2>Payout refund reversal payment accounting</h2>
+<p>A payout refund reversal payment posts each component to a debit GL and credits Fund source GL 145023. The debit GL depends on whether the loan account is active or charge-off.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Active loan account debit GL</th>
+<th>Charge-off loan account debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Penalty</td>
+<td>Penalties Receivable GL 112603</td>
+<td>Income from ChargeOff Penalty GL 404008</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>Fees Receivable GL 112603</td>
+<td>Income from ChargeOff Fees GL 404008</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Principal</td>
+<td>Loan portfolio GL 112601</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense GL 744007/740037</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Over payment liability GL 245000</td>
+<td>Over payment liability GL 245000</td>
+<td>Fund source GL 145023</td>
+</tr>
+</tbody></table>
+<h2>Charge-off feature mappings</h2>
+<p>Charge-off feature mappings let you map charge-off specific accounting parameters to GL accounts in the loan product. Mapping these parameters is optional.</p>
+<h2>Discount fee fields and timing</h2>
+<p>The single Discount field is broken down into Proposed discount, Approved discount, and Disbursed discount. The three fields are stored at loan account level and shown at loan account view. Discount timing values are none, at approval, at disbursement, added after disbursement, and adjusted.</p>
+<p>Each discount field is set as follows:</p>
+<ul>
+<li>Proposed discount is entered or modified when you create the loan.</li>
+<li>Approved discount is entered when you approve the loan.</li>
+<li>Approved discount resets to zero when you undo approve.</li>
+</ul>
+<h2>Discount fee rules</h2>
+<p>You can add a discount fee to a loan account through the API or the UI. Whether you can add it after disbursement depends on when it was first added. If the discount fee was added at loan creation or approval, you cannot add it again after disbursement.</p>
+<p>Rules for adding a discount fee:</p>
+<ul>
+<li>You can add the discount fee only once at the time of disbursement.</li>
+</ul>
+<h2>Discount fee amortization</h2>
+<p>Discount fee amortization spreads a discount fee across the life of a loan. Each daily amortization is the increment of the running total, rounded once, so the schedule and the loan show the same numbers after every close of business (COB), the nightly job that posts interest and fees. The sum of amortized and not yet amortized amounts always equals the discount fee net of discount fee adjustments, and the deferred discount fee balance can never be negative.</p>
+<table>
+<thead>
+<tr>
+<th>Amortization type</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Flat</td>
+<td>The amortization schedule follows discount fee calculation based on flat ratio.</td>
+</tr>
+<tr>
+<td>Flat</td>
+<td>If the loan is fully paid, total aggregated discount fee amortization matches the initial discount fee.</td>
+</tr>
+<tr>
+<td>Flat</td>
+<td>A discount fee adjustment decreases total aggregated discount fee amortization.</td>
+</tr>
+</tbody></table>
+<p>Flat amortization uses a ratio of payable discount fee for the initial loan balance to calculate the discount fee amortization amount based on the repayment amount.</p>
+<h2>Model consistency and date testing</h2>
+<p>The system tests submitted and created dates with business date on or off. The persisted working capital loan amortization model stays consistent with the loan balance after every transaction.</p>
+<h2>Accounting consistency across types</h2>
+<p>Accounting entries remain the same for both cash based and accrual based accounting types.</p>
+<blockquote>
+<p><strong>Note:</strong> Validation at the loan account is required to do GL mapping of new parameters to use the charge-off feature.</p>
+</blockquote>
+<h2>Loan account view fields</h2>
+<p>The Account Details tab of the loan account view shows calculated values for Period Payment, Daily EIR, Annual EIR, Number of Repayments, Currency, Proposed Discount, Approved Discount, Disbursed Discount, and Amortization type (Flat or EIR).</p>
+<p>The amortization schedule shows:</p>
+<ul>
+<li>Serial number of the transaction.</li>
+<li>Amortization date based on the input frequency.</li>
+<li>Expected payment as the calculated period payment amount.</li>
+<li>Expected amortization amount as a calculated value.</li>
+<li>Paid date.</li>
+<li>Actual payment amount.</li>
+<li>Balance of the loan, which adds disbursement and discount amount and subtracts payment amount when payment is made.</li>
+<li>Actual amortization amount as a calculated amortized amount.</li>
+<li>Fees amount, if any.</li>
+<li>Penalty amount, if any.</li>
+<li>Income modification as total expected amortization minus actual amortization as of the payment date.</li>
+<li>Deferred balance as discount amount balance.</li>
+</ul>
+<p>Transaction details show:</p>
+<ul>
+<li>Serial number of the transaction.</li>
+<li>Id as DB Id.</li>
+<li>External Id.</li>
+<li>Transaction date.</li>
+<li>Transaction type.</li>
+<li>Amount paid.</li>
+<li>Principal paid portion.</li>
+<li>Amortized income portion as either interest or fee portion.</li>
+<li>Fees paid portion.</li>
+<li>Penalty paid portion.</li>
+<li>Principal balance as total principal balance.</li>
+</ul>
+<p>Balances show:</p>
+<ul>
+<li>Principal outstanding.</li>
+<li>Total paid principal.</li>
+<li>Total payment.</li>
+<li>Unrealized income (Discount fee).</li>
+<li>Realized income (Discount fee).</li>
+</ul>
+<h2>Submitted date accrual display</h2>
+<p>When submitted-date based accrual accounting is turned on, the submitted on date appears on the charges tab and is properly filled. When it is off, the charges tab remains as is.</p>

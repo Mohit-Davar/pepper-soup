@@ -1,0 +1,173 @@
+<h2>Interest rate change overview</h2>
+<p>You can change the interest rate of an active loan account during the loan life cycle. Progressive loans are supported. The change applies to future dates only, starting the day after the current date.</p>
+<h2>Eligibility and timing</h2>
+<p>You can choose any future date from day 1 through the last day of the loan period.</p>
+<p>For Progressive loans, the usual restriction on changing the interest rate for an installment that was already fully paid does not apply when interest recalculation is used.</p>
+<ul>
+<li>If the first installment period runs from 1 January to 1 February and was fully paid, you can still change the rate on any date between 1 January and 1 February, including 11 January or later.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Only one reschedule operation can run at a time. A due date change counts as another reschedule operation.</p>
+</blockquote>
+<h2>How to change the interest rate</h2>
+<p>You change the interest rate for the rest of the loan lifecycle through reschedule functionality. The rate change recalculates from the rescheduleFromDate. Use the API endpoint /rescheduleloans?command=reschedule for interest rate modification. Reschedule request fields include rescheduleFromDate, rescheduleReasonId, submittedOnDate, newInterestRate, dateFormat, locale, and loanId.</p>
+<h2>Schedule and EMI recalculation</h2>
+<p>An interest rate change recalculates the EMI for future unpaid installments only. Installments already paid keep the old interest rate and are excluded from recalculation. Installments from the changed date onward use the new interest rate. The number of installments stays the same; only the EMI changes.</p>
+<p>Based on the recalculation strategy and configuration, the system recalculates the future repayment schedule with the new interest rate and instantly recalculates outstanding balances. A user can select an installment and set the interest rate to change from that installment right away.</p>
+<p>When an interest rate change happens in the middle of a period, the system calculates the proper interest amount as it does for a disbursement, then changes the EMI based on the difference between the last installment and the calculated EMI.</p>
+<h2>Interest rate periods and history</h2>
+<p>Interest rate periods record each change to a loan&#39;s payment rate. You can set an effective date for a rate change, and the date cannot be later than the loan&#39;s current expected maturity date. Multiple rate changes are allowed, including more than one rate on the same day so a mistaken entry can be undone easily. Once created, a new interest rate cannot be modified. Each rate change inherits its interest frequency from the loan product, and the system saves the history of the effective interest rate and other calculated values for every percentage payment rate change.</p>
+<p>Payments, including backdated payments, use the rate in effect for their date based on interest rate segments. The system keeps the current reversed logic for previous entries only when they fall on the same date.</p>
+<p>Use this field to view interest rate periods and changes.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LoanAccountData.interestRatesPeriods</td>
+<td>View interest rate periods and changes</td>
+</tr>
+</tbody></table>
+<h2>Repayments and reversals after modification</h2>
+<p>You can make backdated repayments or reversals after an interest rate modification. These actions trigger reverse replays of previous installments that calculated interest under the previous interest rate.</p>
+<h2>Events and API response fields</h2>
+<p>When the interest rate changes, the loan details response and business events include fields that show the EMI and loan term variations. The new business event for &quot;Change interest rate from an installment&quot; contains the loan account details.</p>
+<p>The following fields appear in the loan details response:</p>
+<ul>
+<li>emiAmountVariations shows the EMI changes.</li>
+<li>loanTermVariations contains all loan term variations with no filtering by type.</li>
+</ul>
+<p>The following field appears in the Loan Account Data V1 business event:</p>
+<ul>
+<li>loanTermVariations is returned as part of the event.</li>
+</ul>
+<h2>Day-count and rate value rules</h2>
+<p>The system places no restriction on the interest rate value you provide.</p>
+<p>Day-count settings used for interest calculation:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Days in year</td>
+<td>360</td>
+</tr>
+<tr>
+<td>Days in month</td>
+<td>30</td>
+</tr>
+</tbody></table>
+<h2>Interest refund and accrual</h2>
+<p>When you change an interest rate, the system calculates the first installments on the old interest rate and the next installment on the new interest rate. The change takes effect from the applied date and does not affect interest or accrual for earlier dates.</p>
+<p>You cannot apply more than one interest rate change with the same start date.</p>
+<ul>
+<li>You cannot apply more than one interest rate change with the same start date.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Situation: an active progressive loan of 1,000.00 is disbursed at a 12% annual interest rate and repaid in 3 monthly installments using 30-day months and a 360-day year. The first installment is paid in full at the old rate. On the next business date plus one day, the interest rate is changed to 6% for the remaining installments. The figures are illustrative. The installment that was already paid keeps the 12% rate; only the unpaid installments are recalculated at 6%, and the number of installments stays the same.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Rate %</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1000.00</td>
+<td>12</td>
+<td>10.00</td>
+<td>340.02</td>
+<td>330.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>669.98</td>
+<td>6</td>
+<td>3.35</td>
+<td>337.50</td>
+<td>334.15</td>
+<td>335.83</td>
+</tr>
+<tr>
+<td>3</td>
+<td>335.83</td>
+<td>6</td>
+<td>1.68</td>
+<td>337.51</td>
+<td>335.83</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>15.03</td>
+<td>1015.03</td>
+<td>1000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Situation: an active loan of 1,000.00 at 12% annual interest is repaid monthly over 30-day months and a 360-day year. The interest rate is changed on day 15 of the first period, a future date relative to the business date, from 12% to 6%. Interest for days 1 to 15 is calculated at 12% and interest for days 16 to 30 at 6%, as when a disbursement occurs mid-period. The EMI is then recalculated from the change date for the remaining installments, and the installment count stays the same. If the first installment had already been fully paid before the change, it would keep the old rate entirely and be excluded from the recalculation.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Rate %</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1000.00</td>
+<td>12/6</td>
+<td>7.50</td>
+<td>340.02</td>
+<td>332.52</td>
+<td>667.48</td>
+</tr>
+<tr>
+<td>2</td>
+<td>667.48</td>
+<td>6</td>
+<td>3.34</td>
+<td>336.24</td>
+<td>332.90</td>
+<td>334.58</td>
+</tr>
+<tr>
+<td>3</td>
+<td>334.58</td>
+<td>6</td>
+<td>1.67</td>
+<td>336.25</td>
+<td>334.58</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>12.51</td>
+<td>1012.51</td>
+<td>1000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Schedule Recalculation for Overdue Loans"/><ac:plain-text-link-body><![CDATA[Schedule Recalculation for Overdue Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Early and Late Repayment Interest"/><ac:plain-text-link-body><![CDATA[Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>.</p>

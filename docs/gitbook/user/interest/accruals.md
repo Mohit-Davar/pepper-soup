@@ -1,410 +1,320 @@
 # Accruals
 
-## Enhanced Accrual Handling
+## Progressive Loan Accruals
 
-When an interest recalculation situation emerges, the system calculates an ADJUSTMENT transaction to avoid too many reverse-replaying efforts.
+### About progressive loan accruals
 
-## Accrual Rework
+Progressive loan accruals calculate interest daily from the last accrued date or disbursement date to the current accrual date. The system holds the accrued interest until the next billing cycle, when it becomes due and payable as part of the total balance due on the loan.
 
-### Accrual job and posting schedule
+### Accrual posting period and frequency
 
-The interest accrual job creates accrued interest daily but does not make it due and payable until the next billing cycle due date. Daily interest is accrued and held in a bucket until the next billing cycle, at which point the interest amount becomes due and part of the total balance due on the loan.
+The periodic accrual posting job posts accruals on loan accounts according to the set accrual posting period. Each entry posts interest, fees, and penalties calculated for that posting period.
 
-Accrual posting follows these rules:
+The accrual posting period determines how often accruals post:
 
-- The accrual entry posts Interest, fees, and penalties calculated for that posting period.
-- If the accrual posting period is monthly, the accrual entry posts every month.
-- If the accrual posting period is daily, the accrual entry posts every day.
-- Accruals calculate interest from the last accrued date or disbursement date till the current accrual date.
+- Monthly: accrual posts every month.
+- Daily: accrual posts every day.
 
-The accrual job applies these settings:
+### Eligibility and exclusions
 
-- The accrual job allows certain loan statuses and/or balances to be excluded based on setups defined.
-- The accrual job calculates interest based on defined balances and rates established during loan creation.
-- Accruals are posted on loan accounts through the periodic accrual posting JOB as per the set period.
+The accrual job excludes certain loan statuses and balances based on setups defined for your product. Interest accruals continue as usual for loan accounts marked as charge-off.
 
-### COB and periodic accrual processing
+### How accrual transactions are created
 
-The system calculates and creates accrual and accrual adjustment transactions during close of business (COB) rather than in real time. Income recognition happens at the end of the day.
+The accrual job calculates interest based on the balances and rates set when the loan was created. For each business day, the Add periodic accruals business step creates an Accrual or Accrual - Adjustment transaction, so no business day is missed. Income recognition happens at end of day.
 
-COB processing includes the following steps:
+The job compares the total accrued amount with the calculated amount as of the current date:
 
-- Closing the actual business day executes the Add periodic accrual business step.
-- The Add Periodic Accrual Transactions job calculates accrual and accrual adjustment transactions.
-- COB also runs loan interest recalculation.
+- If the adjustment amount is higher than the amount already posted, the job creates an Accrual transaction for the current date with the higher amount.
+- If the adjustment amount is lower than the amount already posted but not lower than the latest accrual amount, the job creates an Accrual transaction for the current date with the lower amount.
+- If the adjustment amount is lower than both the amount already posted and the latest accrual amount, the job posts the negative difference as an Accrual - Adjustment transaction.
 
-```mermaid
-flowchart TD
-  n1["End of business day"]
-  n2["Add periodic accrual entries"]
-  n3["Loan interest recalculation"]
-  n4["Income recognition"]
-  n1 -->|"Closing actual business day"| n2
-  n2 --> n3
-  n3 --> n4
-```
+Accrual adjustments:
+
+- Accrual - Adjustment is a new transaction type.
+- An Accrual - Adjustment transaction can correct the total amount when extra income was recognized.
+- An Accrual - Adjustment transaction decreases the accrued portions on the repayment schedule.
+- There is no accrual reverse-replay; the next accrual uses a higher or lower amount, or an Accrual - Adjustment transaction deducts the accrual amount.
+- All accrual adjustments happen at end of day as part of the periodic accrual job.
+
+When the job runs:
+
+- The Add Periodic Accrual Transactions job calculates and creates the accrual or accrual adjustment transaction.
+- With the close of business job, the Add periodic accrual business step runs as part of closing the actual business day.
 
 ### Accrual adjustments and corrections
 
-Accrual adjustments correct recognized interest when backdated activity changes the calculated amount. The system does not reverse and replay accruals; instead, the next accrual transaction carries the higher or lower amount, and any negative difference is posted as an Accrual - Adjustment transaction.
+Backdated repayments and reversals of backdated repayments before the last accrual transaction trigger recalculation of the accrual amount, and the difference is adjusted to the latest accrual transaction only. Recognized income might change when backdated activity causes interest recalculation, when a backdated disbursement happens, or when a previous repayment is reversed and interest is recalculated. Accruals are not recalculated or reverse-replayed as a side effect of any action.
 
-Backdated activity on a loan account triggers recalculation of the accrual amount.
+Adjustments apply in these situations:
 
-- Backdated repayments or reversal of backdated repayments before the last accrual transaction trigger recalculation of the accrual amount, and the differences are adjusted to the latest accrual transaction only.
-- A backdated disbursement can change recognized income when interest is recalculated.
-- Reversing a previous repayment transaction can change recognized income when interest is recalculated.
+- Backdated monetary activity may require reverse-replay or creation of additional accrual entries for transitions between Closed obligations met and Overpaid.
+- Backdated monetary activity transitions must be handled and recalculated properly.
 
-The Add periodic accruals business step applies the recalculated amount according to how it compares with amounts already posted.
+### Limitations and unsupported behavior
 
-- When the adjustment accrual amount is higher than the already posted amount, the job creates an Accrual transaction for the current date with the higher amount.
-- When the adjustment accrual amount is lower than the already posted amount but not lower than the latest accrual amount, the job creates an Accrual transaction for the current date with the lower amount.
-- When the adjustment accrual amount is lower than both the already posted amount and the latest accrual amount, the negative difference is posted as an Accrual - Adjustment transaction.
+Interest accruals are recalculated only during the close of business (COB) job or the “Add periodic Accrual transactions” job execution.
 
-Accrual adjustments follow these rules.
-
-- Accrual - Adjustment is a transaction type that decreases the accrued portions on the repayment schedule.
-- Creating an Accrual - Adjustment transaction can deduct the accrual amount effectively.
-- For every business day on which the Add periodic accruals business step runs, an Accrual or Accrual - Adjustment transaction is created; gaps are not wanted.
-- All accrual adjustments are done at end of day as part of the periodic accrual job.
-- The accrual adjustment logic compares total accrued amounts against calculated accrued amounts up to the current date; it does not base the calculation on the period due date.
-
-### Loan status and balance handling
-
-The system creates a final accrual when a loan becomes overpaid, if applicable. Interest accruals continue as usual for loan accounts marked as charge-off, and their accounting legs remain unchanged. Backdated monetary activity triggers proper handling and recalculation when obligations move between Closed obligations met and Overpaid states.
-
-### Closing and final accrual
-
-When a repayment closes a loan account, the system posts an accrual entry with that repayment if any amount has not been accrued since the last accrued date.
-
-The system reverses a final accrual transaction only when future payable interest or charges remain on the loan.
-
-- If no future payable interest or charges remain, the accrual transaction was correct and the system does not reverse it.
-
-### Transaction rules and limitations
-
-The system posts interest using a unique transaction type so interest transactions that affect the loan balance appear as monetary activity. A transaction with a negative amount is always treated as a bug.
-
-The following transaction behaviours are not supported:
-
-- Transaction reverse-replay.
-- Early or late repayment with interest recalculation.
-
-Accrual and repayment handling depends on when it occurs:
-
-- When a charge is created, no accrual is created and repayment is not reversed.
-- During COB, accrual is created and repayment is reversed and replayed.
-
-### Charge-off and backdated loan scenarios
-
-Charge-off and backdated loan scenarios control when accrual transactions are created and how interest accrues over the repayment period. Interest accrues daily by default.
-
-The following rules apply to accrual transactions:
-
-- When the charge-accrual-date global configuration is set to submitted-date, the system creates the accrual transaction on the charge submitted date for a backdated loan even if the current date is later than the installment due date.
-- The system does not create unusual accrual adjustment or accrual transactions when a repayment was made in advance.
-- Interest accrues from the first day of the repayment until the last repayment date, so there is no interest accrual on the disbursement date.
+### Schedule and income recognition
 
 ### Worked examples
 
-A 1,200 loan is disbursed on the first of the month with an annual interest rate of 12 percent and 30-day months. These figures are illustrative. Interest accrues daily at 0.40 and is held in a bucket until the billing date. On the billing date, a repayment of 132 is made, allocating 120 to principal and 12 to interest. This example shows daily accrual held in a bucket until the billing date, when the repayment covers both interest and principal.
+Figures in this example are illustrative. A loan of $1,000.00 is disbursed on the first day of the month at a 12% annual interest rate, with 30-day months and a daily accrual posting period. To keep the table short, this example uses a five-day billing cycle. Interest accrues on the outstanding balance each day and is held in an accrued-interest bucket until the next billing cycle, when it becomes due. No repayment is made during the period, so the principal balance stays at $1,000.00 and each day’s accrual is interest only.
 
-| Date | Event | Daily interest | Accrued bucket | Interest paid | Principal repaid | Balance |
-| --- | --- | --- | --- | --- | --- | --- |
-| 1/1 | Disbursement | - | - | - | - | 1,200.00 |
-| 1/10 | Daily accrual | 0.40 | 4.00 | - | - | 1,200.00 |
-| 1/20 | Daily accrual | 0.40 | 8.00 | - | - | 1,200.00 |
-| 1/30 | Daily accrual | 0.40 | 12.00 | - | - | 1,200.00 |
-| 1/30 | Repayment at billing | - | 0.00 | 12.00 | 120.00 | 1,080.00 |
+The example shows that daily accruals post each day but only become due at the end of the billing cycle, while the principal balance is unchanged.
 
-A 1,000 loan with monthly accrual posting has 10.00 interest posted at the end of January. A backdated repayment of 200 is applied with an effective date of January 15, lowering the balance to 800 for the second half of the month. When COB runs on February 21, the system recalculates January interest as 8.94. Because 8.94 is lower than the 10.00 already posted and lower than the latest accrual, the system posts an Accrual - Adjustment of -1.06 instead of reversing the original transaction. This example shows that backdated repayments trigger recalculation at COB and the difference is posted as an Accrual - Adjustment without reversing the original accrual.
-
-| Date | Event | Accrual posted | Adjustment | Net interest |
+| Day | Balance | Daily accrual | Accrued bucket | Due |
 | --- | --- | --- | --- | --- |
-| 1/15 | Backdated repayment effective | - | - | - |
-| 1/31 | Monthly accrual posted | 10.00 | - | 10.00 |
-| 2/21 | COB recalculates accrual | 8.94 | - | 8.94 |
-| 2/21 | Accrual - Adjustment posts | - | -1.06 | 8.94 |
+| 1 | $1,000.00 | $0.00 | $0.00 | $0.00 |
+| 2 | $1,000.00 | $0.33 | $0.33 | $0.00 |
+| 3 | $1,000.00 | $0.33 | $0.66 | $0.00 |
+| 4 | $1,000.00 | $0.33 | $0.99 | $0.00 |
+| 5 | $1,000.00 | $0.33 | $1.32 | $1.32 |
 
-A 1,000 loan has an installment due on February 1 with 200 principal and 10 interest. An early principal payment of 200 is made on January 15, reducing the balance to 800. The system does not reverse and replay prior accruals; instead, the next monthly accrual is calculated on the reduced balance, producing 8.00 interest for February. This example shows that early payments reduce the balance for future accrual without reverse-replaying previously posted accrual transactions.
+The same $1,000.00 loan and 12% annual rate can use a monthly accrual posting period instead of daily. With monthly posting, the system creates no daily accrual transactions; it calculates the same interest for the month and posts it once as a single accrual on the cycle’s last day. The total interest for the month is unchanged; only the number and timing of accrual transactions differ.
 
-| Date | Event | Accrual amount | Principal repaid | Balance |
-| --- | --- | --- | --- | --- |
-| 1/1 | Disbursement | - | - | 1,000.00 |
-| 1/15 | Early principal payment | - | 200.00 | 800.00 |
-| 1/31 | Monthly accrual | 8.00 | - | 800.00 |
-| 2/1 | Installment repayment | 8.00 | - | 800.00 |
+Changing the posting period from daily to monthly does not change the interest amount; it changes how often the accrual transaction is created.
 
-A 1,000 loan accrues interest daily at 0.33. The business date is moved to January 29 and COB runs, aggregating accrual from January 20 through January 29 before a repayment on January 30. The ten days of accrual total 3.30 and post as a single monthly entry. If the posting period were daily instead of monthly, the same interest would post every day rather than as one aggregate amount. This example shows COB aggregating accrual over a period and posting it once, with the result changing if the posting period is set to daily.
-
-| Date | Event | Daily interest | Accrued amount | Principal repaid | Balance |
+| Posting period | Day 2 | Day 15 | Day 30 | Total posted | Accrual transactions |
 | --- | --- | --- | --- | --- | --- |
-| 1/20 | Accrual period starts | - | - | - | 1,000.00 |
-| 1/29 | COB aggregates accrual | 0.33 | 3.30 | - | 1,000.00 |
-| 1/30 | Repayment | - | 3.30 | 100.00 | 900.00 |
+| Daily | $0.33 | $0.33 | $0.33 | $9.90 | 30 |
+| Monthly | $0.00 | $0.00 | $9.90 | $9.90 | 1 |
 
-## Accrual Activity on Instalment Dates
+A backdated repayment can reduce the interest that was already accrued. A loan of $1,000.00 at 12% annual interest uses a monthly posting period and a 30-day month, so the month-end accrual is $9.90. After that accrual posts, a $200.00 principal repayment is backdated to the first day of the month. The balance for the month becomes $800.00, and the recalculated interest is $8.10. Because $8.10 is lower than the $9.90 already posted and lower than the latest accrual, the system does not reverse or replay the old accrual. Instead, it posts an “Accrual - Adjustment” of -$1.80, which reduces the accrued portions on the repayment schedule to $8.10.
 
-Accrual activity on instalment dates posts a non-monetary accrual activity transaction for the income portions of an instalment, such as interest, fees and penalties income. It applies only to active loans on the instalment due date and only when accrual activity posting is enabled on the loan product. The transaction has no accounting entries and does not affect balances or the repayment schedule.
+The example shows that the system corrects over-accrued interest with an adjustment transaction rather than reversing past accruals.
 
-The following rules govern accrual activity posting:
+| Step | Balance | Amount | Accrued interest due | Notes |
+| --- | --- | --- | --- | --- |
+| Disbursement | $1,000.00 | $0.00 | $0.00 | Loan opened. |
+| Month-end accrual | $1,000.00 | $9.90 | $9.90 | Posted as due on billing date. |
+| Backdated repayment applied | $800.00 | — | $9.90 | $200.00 principal repaid effective from day 1. |
+| Recalculated interest | $800.00 | $8.10 | $8.10 | Lower than the posted amount. |
+| Accrual - Adjustment | $800.00 | -$1.80 | $8.10 | Negative difference posted; reduces accrued portions. |
 
-- A scheduled job posts an accrual activity transaction when the actual business date minus one day equals an instalment due date, for loans where accrual activity posting on the loan product is enabled.
-- If an instalment is found and no accrual activity transaction exists for it, the job calculates the total accruals of that instalment and creates a new transaction.
+## Accrual Activity on Installment Dates
+
+Accrual activity creates a transaction at each installment level within the total interest accrued for that installment period. It posts on the installment due date for active loans only, covering income portions such as interest, fees and penalties income. The transaction has no accounting entries and does not affect balances or the repayment schedule. A loan product administrator enables or disables accrual activity posting at loan product level, and the setting is available when accrual accounting is enabled. By default, accrual activity posting is not enabled.
+
+The accrual activity posting job runs after midnight, around 2 AM, after the Apply penalty to overdue loans job.
+
+- The job checks whether the actual business date minus one day equals the due date of any installment of a loan where accrual activity posting is enabled.
+- If the job finds such an installment and no accrual activity transaction exists for it, the job calculates the total accruals for that installment and creates a new transaction.
 - If a loan is pre-closed, one accrual activity entry is posted as of the last transaction date.
-- If a fully paid or overpaid loan is reopened, the previously created accrual activity transaction must be reverted.
-- If a pre-closed loan is reopened due to a new disbursement or chargeback, accrual activity is created for the next instalments up to the current date, with interest calculated from the previously posted accrual activity on the earlier preclose date.
-- The accrual activity transaction is reversed and replayed whenever the income portion amount changes during schedule recalculations, like any other transaction.
-- Creating a backdated transaction on a product with interest recalculation enabled results in an error.
-- During transaction and charge reprocessing if the accrual balances changed on the instalment, the original accrual activity transaction needs to be reverted and a new transaction created.
-- If a pre-closed loan is reopened again due to new disbursement or chargeback, the accrual activity created on the date when it got fully paid needs to be reverted.
+- If a pre-closed loan is re-opened due to a new disbursement or chargeback, accrual activity is created for the next installments up to the current date, with interest calculated from the previously posted accrual activity on the earlier pre-close date.
+- If a loan goes overpaid, the final accrual is created if applicable.
+- If a loan is fully paid or overpaid earlier than planned, a final accrual activity transaction is created that includes all income portions up to that date.
+- If a loan is closed, the final accrual activity transaction can be created when the loan status changes.
+- If a loan is reopened, any previously created accrual activity transaction is found and reverted.
 
-Configuration and user interface details:
+The accrual activity transaction is reversed and replayed in these situations:
 
-- Configuration at loan product level is required to enable or disable accrual activity transaction posting.
-- By default, the accrual activity posting job is not enabled.
-- The loan product accounting step screen includes the field Enable Accrual Activity Posting on Installment Due Date.
-- The loan product accounting step screen includes the field Advanced Accounting Rules.
-- The loan product accounting step screen includes the buttons Previous and Next.
-- The loan product accounting step screen shows the text Assets; Liabilities; Income; Expenses.
-- UI for accrual activity configuration is included in this story.
+- The income portion amount changes during schedule recalculations, such as reversal of an older repayment.
+- During transaction and charge reprocessing, if the accrual balances change on the installment.
 
-To reach the accrual activity configuration screen:
-
-1. Open the loan product creation page.
-2. Choose the accounting step to open the loan product accounting step screen.
-
-> **Note:** Transaction reverse-replaying must be supported for accrual activity transactions.
+> **Note:** The system stores and sends both previous and new income portion values during reverse and replay.
 
 ```mermaid
 flowchart TD
-  n1["Open loan product accounting step"]
-  n2["Enable Accrual Activity Posting"]
-  n3["Job checks due date match"]
-  n4["Create accrual activity transaction"]
-  n5["Reverse and replay on changes"]
-  n6["Final accrual activity on early payoff"]
-  n7["Revert accrual activity on reopen"]
+  n1["Accrual activity posting job runs after midnight"]
+  n2["Due date equals business date minus 1 day and product enabled"]
+  n3["Accrual Activity transaction already exists for installment"]
+  n4["Calculate total accruals and create Accrual Activity transaction"]
+  n5["Reverse and replay when income portion changes"]
+  n6["Create final Accrual Activity transaction on early payoff, overpayment, or closure"]
+  n7["Revert previous final Accrual Activity transaction when loan reopens"]
   n1 --> n2
   n2 --> n3
   n3 -->|"No existing transaction"| n4
-  n4 -->|"Income portion changed"| n5
-  n4 -->|"Fully paid early"| n6
+  n4 -->|"Income portion changes"| n5
+  n4 -->|"Loan paid early, overpaid, or closed"| n6
   n6 -->|"Loan reopened"| n7
 ```
 
-A customer takes a loan of 1,200 at a 12 percent annual interest rate on a declining balance, repaid in three monthly installments over 30-day months. While the loan is active, the system posts a non-monetary accrual activity transaction on each installment due date for the interest portion of that installment. The figures are illustrative. This shows that accrual activity tracks income portions on due dates without changing the loan balance.
+### Enable accrual activity posting on installment due date
 
-| Due date | Opening balance | Interest portion | Accrual activity | Principal repaid | Closing balance |
-| --- | --- | --- | --- | --- | --- |
-| Disbursement | 1,200.00 | – | – | – | 1,200.00 |
-| Due date 1 | 1,200.00 | 12.00 | 12.00 | 400.00 | 800.00 |
-| Due date 2 | 800.00 | 8.00 | 8.00 | 400.00 | 400.00 |
-| Due date 3 | 400.00 | 4.00 | 4.00 | 400.00 | 0.00 |
-| Total | – | 24.00 | 24.00 | 1,200.00 | – |
+Use this screen to turn on accrual activity posting at loan product level so the system can create accrual activity transactions on installment due dates.
 
-A 1,200 loan at 12 percent annual interest is scheduled over three monthly installments, but the customer repays the outstanding balance at the end of month two. On the early payoff date, the system posts one final accrual activity transaction of 20.00 as of the last transaction date, covering all income portions from disbursement through that date. If the loan is later reopened, this final entry is reverted.
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+3. Select **ACCOUNTING**.
+4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
 
-| Due date | Opening balance | Interest portion | Accrual activity | Principal repaid | Closing balance |
-| --- | --- | --- | --- | --- | --- |
-| Disbursement | 1,200.00 | – | – | – | 1,200.00 |
-| Due date 1 | 1,200.00 | 12.00 | 12.00 | 400.00 | 800.00 |
-| Due date 2 (early payoff) | 800.00 | 8.00 | 20.00 | 800.00 | 0.00 |
-
-The same 1,200 loan is preclosed at the end of month two, and a final accrual activity of 20.00 is posted. When the loan is reopened because of a new disbursement or chargeback, the system reverts that 20.00 entry, issues a new disbursement of 400, and posts a fresh accrual activity of 4.00 on the next installment due date for the interest portion.
-
-| Event | Opening balance | Accrual activity | Principal repaid | Closing balance |
-| --- | --- | --- | --- | --- |
-| Preclosed at month 2 | 800.00 | 20.00 | 800.00 | 0.00 |
-| Reopened: prior entry reverted | 0.00 | -20.00 | – | 0.00 |
-| New disbursement | 0.00 | – | – | 400.00 |
-| New due date (month 3) | 400.00 | 4.00 | 400.00 | 0.00 |
-
-A 1,200 loan at 12 percent annual interest has an installment with an interest portion of 12.00, so the system posts an accrual activity transaction of 12.00 on the due date. If a schedule recalculation changes the income portion to 15.00, the system reverses the original accrual activity transaction and replays a new one for 15.00. The transaction has no accounting entries and does not change balances. If a user creates a backdated transaction on a product with interest recalculation enabled, the system blocks it with an error.
-
-| Step | Accrual activity | Balance effect |
+| Field | Required | Description |
 | --- | --- | --- |
-| Original posting | 12.00 | None |
-| Reversal of original | -12.00 | None |
-| Replay after recalculation | 15.00 | None |
-| Net posted | 15.00 | None |
+| Enable Accrual Activity Posting on Installment Due Date | No | Select this to enable accrual activity transaction posting for the loan product. |
+| Advanced Accounting Rules | No | Open the advanced accounting rules for the loan product. |
 
-## Pausing and Resuming Accruals
-
-### Eligibility and prerequisites
-
-You can pause interest accruals only on an active progressive loan whose schedule type is not cumulative and whose recalculate interest setting is true.
-
-### Date rules and validation
-
-You pause interest between any dates in the loan lifecycle by providing a start date and an end date. The pause start date is inclusive and the end date is not inclusive for interest pause calculation.
-
-The following date rules apply:
-
-- The start date cannot be after the maturity date.
-- The end date cannot be earlier than the start date.
-- The end date cannot go beyond the maturity date.
-- When start date and end date are equal, interest is paused for only that day.
-- No resume option is required for interest pause.
-- An interest pause period cannot be less than 1 day.
-
-### Interest calculation behavior
-
-An interest pause stops interest calculation for every day of the pause period, including both the start date and the end date. Interest accrual resumes at the loan's defined interest rate with the next end-of-day processing.
-
-The pause works through the following rules:
-
-- The system sets the interest rate to zero from the start date inclusive and restores the original rate from the end date inclusive.
-- No interest is calculated during the pause period.
-- No interest is calculated as part of end-of-day processing while the pause is active.
-- Interest accrual resumes at the loan's defined interest rate with the next end-of-day processing.
-
-> **Note:** Interest accrued during a disabled pause period is ignored and treated as zero; interest accrued during an enabled pause period is not ignored.
-
-### Pause lifecycle management
-
-You can pause interest accrual multiple times during a loan lifecycle, but pauses cannot overlap. The same pause calculation applies to pay-off, charge-off, and reschedule calculations.
-
-You can manage an existing interest pause as follows:
-
-- You can update an interest pause using validation similar to create, and overlap is not allowed.
-- You can delete an interest pause as a logical deletion.
-
-### Backdated pauses and recalculation
-
-A backdated start date is allowed, and recalculation is triggered if repayments exist in between, which are reversed and replayed. An accrual adjustment is done if there is any difference in interest recognition due to a backdated interest pause. Pause start date and end date are both inclusive for interest pause calculation.
-
-### Repayment and schedule impact
-
-During an interest pause, the EMI amount stays the same. When the pause covers several repayment periods, the system processes each period in order. The last unpaid installment may be lower because of the pause.
-
-### Charges and penalties
-
-An interest pause changes how charges and penalties accrue. Charges based on interest are recalculated with zero interest during the pause, while charges based on percentage of amount, percentage of principal amount, or flat amounts are not affected by the pause. Charges that do not depend on interest remain unchanged.
-
-Penalties and charge updates behave as follows during an interest pause:
-
-- Penalties based on late payment of interest become zero during the pause.
-- Updating or deleting an interest pause resets interest-based charges.
-- Only charges or penalties based on interest are reversed and replayed based on new interest.
-- No accrual transaction for interest is posted between the pause start date and end date, inclusive.
-- Interest pauses are processed as events using the start date, and on that date the pause is the first event processed.
-- The batch API supports interest pause API usage.
-
-### User interface
-
-Interest pauses appear under the Term variations tab in a group named Interest pauses, where term variations are grouped by term type. Entries are listed in order by start date ascending, and each entry shows its start date and end date with the number of days calculated as end date minus start date plus one.
-
-1. Open the loan account and choose "Add Interest Pause" from the actions to open the add interest pause screen.
-2. Enter the required Start Date and End Date.
-3. Choose Submit to create the pause or Cancel to close the screen.
-
-Users can manage existing interest pause periods under the Term variations tab:
-
-- Users can modify an existing interest pause period.
-- Users can delete an existing interest pause period, and deletion asks for confirmation.
-- Changes to an existing interest pause require transactions to be reprocessed to reflect the changes.
-
-> **Note:** The Add Interest pause option is available in the action menu top right corner under the More submenu.
-
-```mermaid
-flowchart TD
-  n1["Open loan account"]
-  n2["Add Interest Pause"]
-  n3["Start Date"]
-  n4["End Date"]
-  n5["Submit"]
-  n6["Cancel"]
-  n7["Interest pauses list"]
-  n8["Modify or delete"]
-  n9["Confirm deletion"]
-  n10["Reprocess transactions"]
-  n1 -->|"Choose Add Interest Pause"| n2
-  n2 --> n3
-  n3 --> n4
-  n4 --> n5
-  n5 --> n7
-  n2 --> n6
-  n7 --> n8
-  n8 -->|"Delete"| n9
-  n9 --> n10
-  n8 -->|"Update"| n10
-```
+Accrual activity posting is enabled for the loan product, and the system creates accrual activity transactions for active loans on installment due dates.
 
 ### Worked examples
 
-A 1,000 loan is disbursed on January 1 with a 12% annual interest rate (1% per month), three monthly installments, and 30-day months. The figures are illustrative. Interest is paused from January 1 through January 31, so no interest accrues for that month. The installment amount stays 340.00 for the first two payments; only the final payment changes. This example shows that a pause lowers total interest while keeping the EMI unchanged until the last installment; a shorter pause would save proportionally less interest.
+A customer takes out a loan of 1,200 at a 12% annual interest rate, to be repaid in three equal monthly installments over 30-day months. Interest accrues daily at 0.40. The first installment is due on 1 February and consists of 400 principal and 12 interest. These figures are illustrative.
 
-| Date | Event | EMI | Interest | Principal | Balance |
-| --- | --- | --- | --- | --- | --- |
-| Feb 1 | No pause | 340.00 | 10.00 | 330.00 | 670.00 |
-| Feb 1 | Pause Jan 1-31 | 340.00 | 0.00 | 340.00 | 660.00 |
-| Mar 1 | Installment | 340.00 | 6.60 | 333.40 | 326.60 |
-| Apr 1 | Final installment | 329.87 | 3.27 | 326.60 | 0.00 |
-|  | Totals with pause | 1,009.87 | 9.87 | 1,000.00 | — |
-
-A 1,000 loan with the same terms has a 340.00 installment posted on February 1. An interest pause is then backdated to January 16 through January 31. Because the repayment falls in that window, the system reverses the February 1 entry, recomputes interest at zero for the paused days, and replays the installment. The EMI remains 340.00. Updating or deleting a pause is a logical deletion and similarly resets interest-based charges. This example shows how a backdated pause reverses and replays repayments while keeping the schedule consistent.
-
-| Date | Event | EMI | Interest | Principal | Balance |
-| --- | --- | --- | --- | --- | --- |
-| Feb 1 | Original posting | 340.00 | 10.00 | 330.00 | 670.00 |
-| Feb 1 | Reversal | -340.00 | -10.00 | -330.00 | 1,000.00 |
-| Feb 1 | Replayed after pause | 340.00 | 5.00 | 335.00 | 665.00 |
-| Mar 1 | Installment | 340.00 | 6.65 | 333.35 | 331.65 |
-| Apr 1 | Final installment | 334.97 | 3.32 | 331.65 | 0.00 |
-|  | Totals | 1,014.97 | 14.97 | 1,000.00 | — |
-
-On the same 1,000 loan, a late-payment penalty equals 5% of interest due, and a flat administration charge of 5.00 is applied each month. In a normal month with 10.00 interest, the penalty is 0.50. During a paused month, interest is 0.00, so the penalty becomes 0.00 while the flat charge remains 5.00. This example shows that only interest-based charges are recalculated at zero during a pause.
-
-| Month type | Interest | Penalty (5% of interest) | Flat charge | Total charges |
+| Date | Event | Accrual activity posted | Principal repaid | Outstanding balance |
 | --- | --- | --- | --- | --- |
-| Normal month | 10.00 | 0.50 | 5.00 | 5.50 |
-| Paused month | 0.00 | 0.00 | 5.00 | 5.00 |
-| Totals | 10.00 | 0.50 | 10.00 | 10.50 |
+| 1 January | Loan disbursed | – | – | 1,200.00 |
+| 2–31 January | Daily interest accrues (30 days × 0.40) | – | – | 1,200.00 |
+| 1 February | Accrual activity posts the installment’s interest income | 12.00 | – | 1,200.00 |
+| 1 February | Installment repayment received | – | 400.00 | 800.00 |
+
+This shows that accrual activity posts the income portion on the due date without changing the loan balance; the repayment then reduces the principal.
+
+A loan of 1,200 at 12% annual interest accrues 0.40 per day. When the loan is preclosed on 10 January, the system posts one accrual activity entry as of that last transaction date, covering nine days of interest (3.60). If the loan is reopened later through a new disbursement or chargeback, the system creates accrual activity for the following installments up to the current date, calculating interest from the previously posted preclose entry. With reopening, new entries continue after the preclose date; without it, accrual stops at preclose.
+
+| Date | Event | Accrual activity posted | Principal repaid | Outstanding balance |
+| --- | --- | --- | --- | --- |
+| 1 January | Loan disbursed | – | – | 1,200.00 |
+| 2–10 January | Daily interest accrues (9 days × 0.40) | – | – | 1,200.00 |
+| 10 January | Preclose: one accrual activity entry posts income to date | 3.60 | – | 1,200.00 |
+| 10 January | Preclose repayment settles the full balance | – | 1,200.00 | 0.00 |
+
+This shows that preclose generates a single accrual entry as of the last transaction date, while reopening restarts accrual for later installments.
+
+A 900 loan at 12% annual interest accrues 0.30 per day. The customer pays the loan off early on 15 January, before the first installment is due. Because the loan is fully paid earlier than planned, the system creates a final accrual activity transaction that includes all income portions from disbursement through the payoff date. If the loan is later reopened, that final entry is reverted.
+
+| Date | Event | Accrual activity posted | Principal repaid | Outstanding balance |
+| --- | --- | --- | --- | --- |
+| 1 January | Loan disbursed | – | – | 900.00 |
+| 2–15 January | Daily interest accrues (14 days × 0.30) | – | – | 900.00 |
+| 15 January | Early payoff: final accrual activity posts all income to date | 4.20 | – | 900.00 |
+| 15 January | Repayment settles principal and accrued interest | – | 900.00 | 0.00 |
+
+The final accrual activity captures every income portion up to the early payoff date, and reopening the loan would revert that final entry.
+
+## Pausing and Resuming Accruals
+
+### About interest pause
+
+Interest pause permanently defers borrower payments for the configured days, with no interest accrued or recovered later. It applies only to progressive loans with recalculate interest set to true. A moratorium or grace period defers payments temporarily while accrued interest is collected through future installments.
+
+### Add an interest pause
+
+Use this screen to pause interest for a chosen period so that no interest accrues during those days.
+
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Select **Add Interest Pause**.
+4. Enter the details described below, then select **Submit**.
+
+| Field | Required | Description |
+| --- | --- | --- |
+| Start Date | Yes | Enter the start date of the interest pause. It can be backdated, but it cannot be on or after the maturity date. |
+| End Date | Yes | Enter the end date of the interest pause. It cannot be earlier than the start date or later than the maturity date. |
+
+After you submit, no interest is calculated or accrued for the inclusive pause period, and the pause appears under Interest pauses on the Term variations tab.
+
+### Eligibility and timing
+
+You can pause interest for any period within the loan life cycle by providing a start date and an end date. Interest pause applies only to an active loan, and multiple pauses can occur during the loan life cycle as long as they do not overlap.
+
+The start and end dates must follow these rules:
+
+- The end date cannot be earlier than the start date.
+- The pause period must be at least one day.
+- The start date cannot be on or after the maturity date.
+- The end date cannot go beyond the maturity date.
+- The end date cannot be later than the actual maturity date.
+- A backdated start date is allowed.
+
+### How interest pause works
+
+Both the start date and end date are inclusive, so interest pauses on the start day and resumes after the end day. If the start and end date are the same, only that day is paused.
+
+During the pause:
+
+- No interest is calculated for the paused days.
+- No interest accrual transaction is posted between the start date and end date, inclusive.
+- Interest resumes at the original rate from the day after the end date.
+
+The pause works the same way for pay-off, charge-off and reschedule calculations.
+
+If repayments fall between the backdated start date and the pause date, those repayments are reversed and replayed, and any difference in interest recognition is adjusted.
+
+### Charges and penalties
+
+During an interest pause, charges based on interest are recalculated with 0 interest, and penalties based on late payment of interest become 0. Charges independent of interest remain as they are. Charges or penalties added later are not affected by the interest pause. Only charges or penalties created based on a percentage of interest are reversed and replayed based on the new interest.
+
+Updating or deleting an interest pause resets interest-based charges.
+
+- Updating or deleting an interest pause resets interest-based charges.
+
+### Payments and installments
+
+During an interest pause, your EMI amount stays the same. The last unpaid installment may be lower because the pause reduces the interest charged on it.
+
+### Backdated pauses and recalculation
+
+If repayments fall between the backdated date and the current date, the system reverses and replays them and recalculates accruals. If this changes interest recognition, the system makes an accrual adjustment at the next close of business (COB), the nightly job that posts interest and fees.
+
+### Viewing and managing interest pauses
+
+Interest pauses appear under the Term variations tab in a group named Interest pauses. Each entry shows the start date and end date, and the system calculates the number of days as end date minus start date plus one. Entries are listed in ascending order by start date.
+
+You can do the following from the Term variations tab:
+
+- Add an interest pause from the Add Interest pause option in the action menu top right corner under the More submenu.
+- Modify an existing interest pause period.
+- Delete an existing interest pause period; the system asks for confirmation before deleting.
+
+> **Note:** After you delete or update an interest pause, the system reprocesses transactions to reflect the change.
+
+```mermaid
+flowchart TD
+  n1["Open Term variations tab"]
+  n2["View Interest pauses group"]
+  n3["Add Interest pause"]
+  n4["Modify or delete pause"]
+  n5["Confirm deletion"]
+  n6["Transactions reprocessed"]
+  n1 --> n2
+  n2 -->|"Add Interest pause"| n3
+  n2 -->|"Modify or delete"| n4
+  n4 -->|"Delete"| n5
+  n5 --> n6
+  n4 -->|"Update"| n6
+```
+
+### Updating and deleting interest pauses
+
+Deleting an interest pause is a logical deletion, so the pause record remains in the system but no longer applies. Updating an interest pause uses the same validation as creating one.
+
+### Worked examples
+
+Situation: a single interest pause inside one installment period. The figures are illustrative. A user sets up an active progressive loan with recalculate interest set to true: principal 1,000, annual interest rate 12 percent, which is 1 percent a month on a 360-day year with 30-day months, and three monthly installments. Interest is charged on the opening balance of each installment. The officer pauses interest from 2/6/24 through 2/8/24, three inclusive days that fall inside the second interest period, so no interest accrues on those days. The EMI does not change.
+
+| Installment | Date | Opening balance | Interest | Principal paid | Payment | Closing balance |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2/1/24 | 1,000.00 | 10.00 | 330.03 | 340.03 | 669.97 |
+| 2 | 3/1/24 | 669.97 | 6.03 | 334.00 | 340.03 | 335.97 |
+| 3 | 4/1/24 | 335.97 | 3.36 | 335.97 | 339.33 | 0.00 |
+| Total |  |  | 19.39 | 1,000.00 | 1,019.39 |  |
+
+The example shows that the EMI stays the same, the paused days carry no interest, the balance falls faster, and the final installment is lower; a pause that falls between two periods works the same way, because only the installment whose period contains the pause dates is reduced, and several non-overlapping pauses apply the same reduction each time while overlapping pauses are not allowed.
+
+Situation: a backdated interest pause applied after a repayment has already been posted. A user has the same active progressive loan with recalculate interest set to true: principal 1,000, annual interest rate 12 percent, monthly installments, and 30-day months. The first installment of 340.03 on 2/1/24 has already been paid, leaving a balance of 669.97. The officer then backdates an interest pause to 1/25/24 through 1/27/24, three inclusive days inside the first interest period. Because the repayment on 2/1/24 was posted after the backdated start date, that repayment is reversed, interest for the paused days is removed, and the repayment is replayed with the lower interest; an accrual adjustment posts at the next end of day for any remaining interest-recognition difference.
+
+| Installment | Date | Opening balance | Interest | Principal paid | Payment | Closing balance |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2/1/24 | 1,000.00 | 9.00 | 331.03 | 340.03 | 668.97 |
+| 2 | 3/1/24 | 668.97 | 6.69 | 333.34 | 340.03 | 335.63 |
+| 3 | 4/1/24 | 335.63 | 3.36 | 335.63 | 338.99 | 0.00 |
+| Total |  |  | 19.05 | 1,000.00 | 1,019.05 |  |
+
+The example shows that the posted repayment is reversed and replayed at the lower interest, the balance after the pause is lower, total interest is 19.05 instead of 20.07 without the pause, and the final installment is lower, while the EMI stays the same.
 
 ## Real-Time Charge Accruals
 
-Real-time charge accruals let you recognize charges, fees, or penalties immediately when they are posted instead of waiting for the Close of Business job. This applies to working capital loans and progressive loans.
+Real-time charge accruals recognize a charge as income immediately when the charge transaction is posted, instead of waiting for end-of-day processing. This applies to working capital loans and progressive loans. The default setting for both loan types is end-of-day accrual.
 
-The charge accrual time setting controls when an accrual entry is created for each applicable charge transaction:
-
-- Real-Time creates an accrual entry immediately when the charge transaction is posted.
-- EOD creates an accrual entry through the Close of Business process based on the configured charge accrual date.
-- Working capital loans use wcl-charge-accrual-time.
-- Progressive loans use pl-charge-accrual-time.
-- The default value is EOD.
-- The selected value applies consistently to all applicable charge accrual transactions.
-
-When Real-Time is selected:
-
-- An accrual transaction is created immediately when a new charge is added.
-- Multiple charges create multiple accrual transactions.
-
-A loan officer opens a working capital loan of 1,000.00 with a 12% annual interest rate, three monthly installments, and 30-day months. The figures are illustrative. During the term, the officer adds a late fee of 30.00. With the global charge accrual time set to Real-Time, the system posts one accrual transaction for 30.00 immediately when the fee is saved.
-
-| Step | Charge amount | Accrual transaction | Accrued income total |
+| Loan type | Configuration | Options | Default |
 | --- | --- | --- | --- |
-| Loan opened | 0.00 | 0.00 | 0.00 |
-| Late fee added | 30.00 | 30.00 | 30.00 |
-| End of business day | 0.00 | 0.00 | 30.00 |
+| Working capital loan | wcl-charge-accrual-time | Real-Time, EOD | EOD |
+| Progressive loan | pl-charge-accrual-time | Real-Time, EOD | EOD |
 
-This example shows that a single charge generates a single immediate accrual transaction under real-time posting.
+When real-time accrual is selected:
 
-The same working capital loan of 1,000.00 with a 12% annual interest rate, three monthly installments, and 30-day months remains outstanding. A loan officer adds a late fee of 30.00 and, later the same day, a processing fee of 20.00. With real-time accrual enabled, the system creates two separate accrual transactions immediately, one for each charge.
-
-| Step | Charge amount | Accrual transaction | Accrued income total |
-| --- | --- | --- | --- |
-| Late fee added | 30.00 | 30.00 | 30.00 |
-| Processing fee added | 20.00 | 20.00 | 50.00 |
-| End of business day | 0.00 | 0.00 | 50.00 |
-
-This example shows that multiple charges on the same day produce multiple accrual transactions, one per charge, rather than a single combined entry.
-
-A loan officer adds a late fee of 30.00 and a processing fee of 20.00 to a working capital loan of 1,000.00 with a 12% annual interest rate, three monthly installments, and 30-day months. When the global charge accrual time is set to the deferred end-of-day option instead of Real-Time, no accrual transaction is created when the charges are saved.
-
-| Step | Charge amount | Accrual transaction | Accrued income total |
-| --- | --- | --- | --- |
-| Late fee added | 30.00 | 0.00 | 0.00 |
-| Processing fee added | 20.00 | 0.00 | 0.00 |
-| Close of business | 50.00 | 50.00 | 50.00 |
-
-With the deferred setting, the two charges are combined into one aggregate accrual of 50.00 at close of business, while Real-Time posting would create two separate transactions immediately.
+- The system creates an accrual transaction for the charge amount immediately when a new fee or penalty is added.
+- If multiple charges are added, the system creates one accrual transaction for each charge.
+- Working capital loans support multiple accrual transactions per day.
+- The selected setting applies consistently to all applicable charge accrual transactions.

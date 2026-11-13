@@ -1,0 +1,14 @@
+# 366-Day Year Interest
+
+The yearly interest calculation can account for leap years. You choose how many days the system uses in a year when calculating daily interest. This applies to loans whose interest period includes a leap year or whose rescheduled period now includes 29 February.
+
+Yearly interest calculation options:
+
+| Option | Days used |
+| --- | --- |
+| 366 days in a leap year, 365 days otherwise | 366 when the loan has a leap year; 365 for non-leap years |
+| 366 days only if the installment falls in February, otherwise 365 days | 366 when the installment falls between February; 365 otherwise |
+
+For a multi-year loan, daily interest uses 365 days in non-leap years and 366 days in leap years, for example year 1: 365, year 2: 366, year 3: 365.
+
+If an original loan interest period was before 29 February but rescheduling now includes that date, interest is recalculated from 1 January until today because it is now a 366-day year.

@@ -1,0 +1,175 @@
+<h2>Accrual activity transaction</h2>
+<p>The accrual activity transaction is a non-monetary transaction posted on each installment due date for active loans. It records the income portion amount, such as interest, fees and penalties income, without creating accounting entries or changing balances or the repayment schedule. The system throws an accrual activity event when the transaction is created, using LoanTransactionDataV1.</p>
+<p>The system handles accrual activity transactions as follows:</p>
+<ul>
+<li>If a loan is pre-closed, one accrual activity entry is posted as of the last transaction date.</li>
+<li>If a pre-closed loan is reopened due to a new disbursement or chargeback, accrual activity is created for the next installments up to the current date, with interest calculated from the previously posted accrual activity on the earlier preclose date.</li>
+<li>If a loan is fully paid or overpaid earlier than planned, a final accrual activity transaction is created that includes all income portions up to that date.</li>
+<li>If a closed loan is reopened, the previously created accrual activity transaction is found and reverted.</li>
+<li>If a loan is closed, the final accrual activity transaction can be created by listening to the loan status changed event.</li>
+</ul>
+<p>Reverse and replay behaviour:</p>
+<ul>
+<li>The accrual activity transaction is reversed and replayed whenever the income portion amount changes during schedule recalculations, such as reversal of an older repayment.</li>
+<li>The system stores and sends both the previous and new income portion values during reverse and replay.</li>
+<li>During transaction and charge reprocessing, if accrual balances change on the installment, the original accrual activity transaction is reverted and a new transaction is created.</li>
+</ul>
+<p>Scope:</p>
+<ul>
+<li>Accrual activity creates a new transaction type at each installment level within the total interest accrued for that installment period.</li>
+</ul>
+<h2>Enabling accrual activity</h2>
+<p>Accrual activity transaction posting is configured at loan product level. It is available only when accrual accounting is enabled, and the accrual activity posting job is disabled by default.</p>
+<table>
+<thead>
+<tr>
+<th>Loan product</th>
+<th>Interest recalculation</th>
+<th>Accrual activity posting</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PIN30_INTEREST_DECLINING_BALANCE_DAILY_RECALCULATION_COMPOUNDING_NONE_ACCRUAL_ACTIVITY</td>
+<td>Enabled</td>
+<td>Enabled</td>
+</tr>
+</tbody></table>
+<h2>Accrual activity posting job</h2>
+<p>The accrual activity posting job runs after midnight, around 2AM, after the Apply penalty to overdue loans job. It runs only for loans whose loan product has accrual activity posting enabled. For each such loan, the job checks whether actual business date minus 1 day equals the due date of any installment. If it finds such an installment and no Accrual Activity transaction exists for that installment, it calculates the total accruals of that installment and creates a new transaction.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Job runs after midnight"]
+  n2["actual business date - 1 = installment due date?"]
+  n3["accrual activity posting enabled on loan product?"]
+  n4["Accrual Activity transaction exists for installment?"]
+  n5["calculate total accruals"]
+  n6["create Accrual Activity transaction"]
+  n1 --> n2
+  n2 -->|"yes"| n3
+  n3 -->|"yes"| n4
+  n4 -->|"no"| n5
+  n5 --> n6]]></ac:plain-text-body></ac:structured-macro>
+<h2>Worked examples</h2>
+<p>An active loan of 1,000 carries an annual interest rate of 12% and is repaid in 3 equal monthly installments over 30-day months; the figures are illustrative. Each month’s interest income portion is 10.00. On every installment due date, the system posts one non-monetary accrual activity transaction for that income portion. The entry is created only because the loan is active on the due date. It does not create accounting entries, does not change the principal balance, and does not alter the repayment schedule. An accrual activity event is emitted using LoanTransactionDataV1 when the transaction is created. This example shows that accrual activity posts the income portion on each due date as a non-monetary transaction while leaving the balance and schedule unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Interest income portion</th>
+<th>Accrual activity posted</th>
+<th>Principal balance after entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>30</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>60</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>90</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>
+<p>A 1,000 loan at 12% annual interest with 3 monthly installments over 30-day months is pre-closed on the first installment due date. The system posts a single accrual activity entry as of that last transaction date, covering the income portion due up to then. If the loan is re-opened after a new disbursement or chargeback, that entry is reverted and accrual activity is recreated for the remaining installments up to the current date, with interest calculated from the accrual activity posted on the pre-close date. With a 360-day year, half a month of interest on 1,000 is 5.00. This example shows that pre-closure produces one final accrual entry, while re-opening reverts it and accrues interest from the pre-close basis.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Action</th>
+<th>Accrual activity amount</th>
+<th>Principal balance</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>-</td>
+<td>1,000.00</td>
+<td>Active</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Day 30</td>
+<td>Installment 1 due; accrual posted</td>
+<td>10.00</td>
+<td>1,000.00</td>
+<td>Active</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Day 30</td>
+<td>Pre-closure; final entry as of last transaction date</td>
+<td>10.00</td>
+<td>1,000.00</td>
+<td>Pre-closed</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Day 45</td>
+<td>Re-opened; prior entry reverted, new accrual posted</td>
+<td>5.00</td>
+<td>1,000.00</td>
+<td>Active</td>
+</tr>
+</tbody></table>
+<p>If the 1,000 loan is fully paid on day 45, before the last installment is due, the system creates a final accrual activity transaction that includes all income portions up to that date, totaling 15.00. If the loan is re-opened, that final entry is reverted. When a schedule recalculation changes an income portion, the original accrual activity transaction is reversed and replayed; the transaction carries both the previous and new income values, creates no accounting entries, and leaves balances unchanged. This example shows that early payoff triggers a final cumulative accrual entry, and that income portion changes are handled by reverse and replay with both values preserved.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Action</th>
+<th>Accrual activity amount</th>
+<th>Previous value</th>
+<th>New value</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Day 0</td>
+<td>Disbursement</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Day 30</td>
+<td>Installment 1 due; accrual posted</td>
+<td>10.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Day 45</td>
+<td>Early payoff; final accrual posted</td>
+<td>15.00</td>
+<td>-</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Day 45</td>
+<td>Income portion recalculated; original reversed and replayed</td>
+<td>12.00</td>
+<td>15.00</td>
+<td>12.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>

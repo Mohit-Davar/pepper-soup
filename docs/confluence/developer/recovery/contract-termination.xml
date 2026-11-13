@@ -1,0 +1,102 @@
+<h2>Contract termination overview</h2>
+<p>Contract termination ends an active loan. A user with permission can perform it through the API or UI as of the current date; backdated termination is not supported. The system captures a reason code and starts the termination workflow, which moves the loan from Active through a termination trigger and settlement calculation to its final loan state. Termination is reversible.</p>
+<p>Termination trigger event types:</p>
+<ul>
+<li>Reschedule / Default</li>
+<li>Admin Cancellation</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Loan Active"]
+  n2["Termination Trigger"]
+  n3["Settlement Calculation"]
+  n4["Loan State"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4]]></ac:plain-text-body></ac:structured-macro>
+<h2>Eligibility and permissions</h2>
+<p>Contract termination applies to loans that are active, progressive, not already contract terminated, and not charged-off. You must have contract termination permission to perform it. The system creates a non-monetary transaction as of the current date. The contract termination amount equals principal outstanding plus calculated interest outstanding plus outstanding charges as of the current date, calculated the same way as charge-off balances.</p>
+<h2>How to perform contract termination</h2>
+<p>You can perform contract termination on an active loan through the API using command=contract-termination. You do not need to provide a transaction date, payment type, payment details, or transaction amount. You can provide an external ID and a note. The template API returns outstanding balances till the current date.</p>
+<h2>Schedule and balance changes</h2>
+<p>Contract termination accelerates all installments so they become due on the contract termination date. The loan repayment schedule is recalculated, all future installments are removed, and outstanding balances move to the current installment. Interest through the contract termination date and the outstanding principal form the due amount.</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Maturity date</td>
+<td>Updated to the contract termination date.</td>
+</tr>
+<tr>
+<td>Future installments</td>
+<td>Removed from the repayment schedule.</td>
+</tr>
+<tr>
+<td>Outstanding balances</td>
+<td>Moved to the current installment.</td>
+</tr>
+<tr>
+<td>Charges due after the new maturity date</td>
+<td>Placed on an additional installment.</td>
+</tr>
+<tr>
+<td>Interest accrual</td>
+<td>Stops after the final installment; no further calculations occur.</td>
+</tr>
+</tbody></table>
+<p>Contract termination uses the same behavior as the charge-off accelerate maturity date strategy.</p>
+<h2>Interest and accrual</h2>
+<p>Accrual and accrual activity stop after termination, and no future accruals occur. Termination balances are calculated similarly to charge-off balances, and current date accrual is created similarly as it happens at charge-off.</p>
+<h2>Status and sub-status</h2>
+<p>After contract termination, the loan status remains ACTIVE and the sub-status becomes CONTRACT_TERMINATED.</p>
+<h2>Delinquency and charges</h2>
+<p>Delinquency bucketing continues per the accelerated schedule, and days past due are calculated from the new due dates. Charges after maturity apply on the additional installment, and N+1 charges are allowed after the termination date.</p>
+<h2>Charge-off interaction</h2>
+<p>You can charge off a terminated loan account, and you can charge back a terminated loan account. Charge-off does not change the repayment schedule after termination. You cannot perform contract termination again after termination, and you cannot charge off a loan before contract termination.</p>
+<h2>Reversal and undoing</h2>
+<p>You can reverse a contract termination. The system marks the transaction as reversed, recalculates the repayment schedule, and reapplies all transactions accordingly.</p>
+<p>During reversal, you can provide:</p>
+<ul>
+<li>Notes.</li>
+<li>External ID.</li>
+</ul>
+<p>After reversal:</p>
+<ul>
+<li>The loan sub-status is removed.</li>
+<li>You can terminate the loan again.</li>
+</ul>
+<p>Contract termination reversal follows the same reverse-replay behaviour as a charge-off transaction: new balances are calculated, the transaction is reverse-replayed, and the repayment schedule reflects the changes.</p>
+<h2>Backdated transactions and reverse-replay</h2>
+<p>Backdated payments and reversals are allowed after contract termination. When a backdated transaction occurs, the system reverse-replays the termination and reapplies all transactions in order, regenerating the schedule if the transaction occurred before termination. Reverse-replay handling is similar to charged-off loans with acceleration.</p>
+<p>Rules for backdated transactions and reverse-replay:</p>
+<ul>
+<li>Transaction reversals are allowed before or after termination.</li>
+<li>Backdated transactions trigger reverse-replay.</li>
+<li>During reverse-replay, all transactions are reapplied in order.</li>
+<li>If a transaction occurs before termination during reverse-replay, the schedule is regenerated.</li>
+</ul>
+<p>Termination before the contract termination date:</p>
+<ul>
+<li>If contract termination was done before the contract termination date, the schedule is regenerated and all transactions are applied.</li>
+<li>This behaves similarly to a loan charged off with the accelerate maturity date strategy.</li>
+</ul>
+<h2>Events and transaction details</h2>
+<p>Contract termination uses the transaction type CONTRACT_TERMINATION. It is a non-monetary transaction with no allocation rules, so no transaction amount is displayed. The system uses only the current date; backdating is not allowed. No accounting entry activity occurs for contract termination.</p>
+<p>Contract termination fires these events:</p>
+<ul>
+<li>An Account Changed event is triggered during Contract Termination activity.</li>
+<li>The system fires LoanContractTerminationPostBusinessEvent.</li>
+<li>The system fires LoanBalanceChangedBusinessEvent as a regular loan transaction event.</li>
+<li>The system fires LoanAdjustTransactionBusinessEvent as a regular loan transaction event.</li>
+</ul>
+<p>Reversal fires this event:</p>
+<ul>
+<li>The system fires LoanAdjustTransactionBusinessEvent for contract termination reversal.</li>
+</ul>
+<h2>Special case after maturity date</h2>
+<p>If you terminate a contract after the maturity date, existing installments and the maturity date remain unchanged, and interest is calculated only until the maturity date.</p>
+<h2>N+1 installment</h2>
+<p>Contract termination does not impact the N+1 installment.</p>

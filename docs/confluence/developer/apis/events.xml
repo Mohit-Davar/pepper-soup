@@ -1,0 +1,335 @@
+<h2>Event overview and purpose</h2>
+<p>Business events tell integrators when a loan contract changes state or when an accrual transaction is created or replayed. Use them to react to contract termination, balance changes, and accrual activity outside the user interface.</p>
+<p>The following business events fire for contract termination:</p>
+<ul>
+<li>LoanContractTerminationPostBusinessEvent is fired for contract termination.</li>
+</ul>
+<h2>Repayment due notifications</h2>
+<p>The system sends repayment due notifications for loans that have been disbursed and still have an outstanding balance.</p>
+<p>US Pay Monthly customers receive notifications on this schedule:</p>
+<ul>
+<li>A notification is sent 10 days before the payment due date.</li>
+<li>If the upcoming installment still has a balance pending 1 day before the due date, another payment reminder is sent.</li>
+</ul>
+<p>Repayment due notification configuration:</p>
+<ul>
+<li>You can configure notification dates at product level.</li>
+<li>Configuration defaults to the global default.</li>
+<li>The system sends LoanRepaymentDueBusinessEvent and LoanRepaymentOverdueBusinessEvent based on the configuration.</li>
+</ul>
+<h2>Loan account changed event fields</h2>
+<p>The LoanAccountDataV1 loan account changed event adds six camelCase fields that report unpaid interest, delinquent interest, interest refunds and interest waivers on the loan.</p>
+<p>The table lists each added field, its event name, type and meaning.</p>
+<table>
+<thead>
+<tr>
+<th>Event field</th>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>totalUnpaidAccruedDueInterest</td>
+<td>BigDecimal</td>
+<td>Total unpaid posted interest amount on the loan</td>
+</tr>
+<tr>
+<td>totalUnpaidAccruedNotDueInterest</td>
+<td>BigDecimal</td>
+<td>Total unpaid accrued interest calculated from the last non-monetary interest activity posting date and not yet posted on the billing period</td>
+</tr>
+<tr>
+<td>delinquentInterest</td>
+<td>BigDecimal</td>
+<td>Delinquent amount with interest portion</td>
+</tr>
+<tr>
+<td>totalInterestRefund</td>
+<td>BigDecimal</td>
+<td>Total refund amount when a merchant or agent initiates a disbursement refund that is not reversed</td>
+</tr>
+<tr>
+<td>totalInterestPaymentWaiver</td>
+<td>BigDecimal</td>
+<td>Total interest waiver amount when PayPal initiates an interest waiver transaction that is not reversed</td>
+</tr>
+</tbody></table>
+<h2>Transaction business events</h2>
+<p>Loan transaction business events include a reverted flag so downstream systems can identify reversed transactions. Reversing a Working Capital loan transaction publishes WorkingCapitalLoanAdjustTransactionBusinessEvent with transactionToAdjust set to the reversed transaction details and newTransactionDetail set to null. Reprocessing an existing Working Capital loan transaction with changed allocation publishes WorkingCapitalLoanAdjustTransactionBusinessEvent with transactionToAdjust set to the transaction details with the old allocation and newTransactionDetail set to the transaction details with the new allocation.</p>
+<h2>Working Capital loan lifecycle events</h2>
+<p>Working Capital loan lifecycle events publish when you modify, reject, approve, undo approval, disburse, undo charge-off, fully pay, or overpay a Working Capital loan. Other topics cover balance, delinquency, breach, and transaction events separately.</p>
+<p>Lifecycle actions publish the following events:</p>
+<ul>
+<li>Modifying a Working Capital loan publishes WorkingCapitalLoanApplicationModifiedBusinessEvent.</li>
+<li>Rejecting a Working Capital loan publishes WorkingCapitalLoanRejectedBusinessEvent and WorkingCapitalLoanStatusChangedBusinessEvent.</li>
+<li>Approving a Working Capital loan publishes WorkingCapitalLoanApprovedBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, and WorkingCapitalLoanBalanceChangedBusinessEvent.</li>
+<li>Undoing approval of a Working Capital loan publishes WorkingCapitalLoanUndoApprovalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, and WorkingCapitalLoanBalanceChangedBusinessEvent.</li>
+<li>Disbursing a Working Capital loan publishes WorkingCapitalLoanDisbursalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, and WorkingCapitalLoanBalanceChangedBusinessEvent.</li>
+<li>Undoing charge-off of a Working Capital loan publishes WorkingCapitalLoanUndoChargeOffBusinessEvent.</li>
+<li>A Working Capital loan becoming fully-paid publishes WorkingCapitalLoanStatusChangedBusinessEvent and WorkingCapitalLoanBalanceChangedBusinessEvent.</li>
+<li>A Working Capital loan becoming overpaid publishes WorkingCapitalLoanStatusChangedBusinessEvent and WorkingCapitalLoanBalanceChangedBusinessEvent.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Modified" as n1
+  state "Rejected" as n2
+  state "Approved" as n3
+  state "Undo Approval" as n4
+  state "Disbursed" as n5
+  state "Undo Charge-Off" as n6
+  state "Fully Paid" as n7
+  state "Overpaid" as n8
+  n1 --> n2 : WorkingCapitalLoanRejectedBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent
+  n2 --> n3 : WorkingCapitalLoanApprovedBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent
+  n3 --> n4 : WorkingCapitalLoanUndoApprovalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent
+  n4 --> n5 : WorkingCapitalLoanDisbursalBusinessEvent, WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent
+  n5 --> n6 : WorkingCapitalLoanUndoChargeOffBusinessEvent
+  n6 --> n7 : WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent
+  n7 --> n8 : WorkingCapitalLoanStatusChangedBusinessEvent, WorkingCapitalLoanBalanceChangedBusinessEvent]]></ac:plain-text-body></ac:structured-macro>
+<h2>Working Capital loan balance events</h2>
+<p>A Working Capital loan balance change from a monetary transaction triggers WorkingCapitalLoanBalanceChangedBusinessEvent. Changes to the delinquency amount or past due amount do not trigger any Working Capital loan business event. WorkingCapitalLoanCOBApiFilter must be registered and wired so it ensures up-to-date close of business (COB) state before monetary transactions on Working Capital loans.</p>
+<h2>Working Capital loan delinquency events</h2>
+<p>Working Capital loan delinquency events publish when delinquency changes state on a Working Capital loan.</p>
+<p>The system publishes the following events:</p>
+<ul>
+<li>A Working Capital loan delinquency range change triggers WorkingCapitalLoanDelinquencyRangeChangeBusinessEvent only once the range is changed or lifted.</li>
+<li>Pausing delinquency triggers WorkingCapitalLoanDelinquencyPauseBusinessEvent.</li>
+<li>Resuming delinquency triggers WorkingCapitalLoanDelinquencyResumeBusinessEvent.</li>
+<li>Rescheduling delinquency triggers WorkingCapitalLoanDelinquencyRescheduleBusinessEvent.</li>
+<li>Resetting delinquency triggers WorkingCapitalLoanDelinquencyResetBusinessEvent.</li>
+<li>Undoing a delinquency reset triggers WorkingCapitalLoanDelinquencyUndoResetBusinessEvent.</li>
+<li>Disabling delinquency triggers WorkingCapitalLoanDelinquencyDisableBusinessEvent.</li>
+<li>Enabling delinquency triggers WorkingCapitalLoanDelinquencyEnableBusinessEvent.</li>
+</ul>
+<h2>Working Capital loan breach events</h2>
+<p>The system publishes business events when a Working Capital loan breach changes state.</p>
+<table>
+<thead>
+<tr>
+<th>Change</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Breach or not breach change</td>
+<td>WorkingCapitalLoanBreachChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Breach past due change</td>
+<td>WorkingCapitalLoanBreachPastDueChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Near-breach change</td>
+<td>WorkingCapitalLoanNearBreachChangeBusinessEvent</td>
+</tr>
+<tr>
+<td>Pausing breach</td>
+<td>WorkingCapitalLoanBreachPauseBusinessEvent</td>
+</tr>
+<tr>
+<td>Resuming breach</td>
+<td>WorkingCapitalLoanBreachResumeBusinessEvent</td>
+</tr>
+<tr>
+<td>Rescheduling breach</td>
+<td>WorkingCapitalLoanBreachRescheduleBusinessEvent</td>
+</tr>
+<tr>
+<td>Resetting breach</td>
+<td>WorkingCapitalLoanBreachResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Undoing a breach reset</td>
+<td>WorkingCapitalLoanBreachUndoResetBusinessEvent</td>
+</tr>
+<tr>
+<td>Disabling breach</td>
+<td>WorkingCapitalLoanBreachDisableBusinessEvent</td>
+</tr>
+<tr>
+<td>Enabling breach</td>
+<td>WorkingCapitalLoanBreachEnableBusinessEvent</td>
+</tr>
+</tbody></table>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Breach" as n1
+  state "Past Due" as n2
+  state "Near Breach" as n3
+  state "Paused" as n4
+  state "Resumed" as n5
+  state "Rescheduled" as n6
+  state "Reset" as n7
+  state "Undo Reset" as n8
+  state "Disabled" as n9
+  state "Enabled" as n10
+  n1 --> n1 : WorkingCapitalLoanBreachChangeBusinessEvent
+  n2 --> n2 : WorkingCapitalLoanBreachPastDueChangeBusinessEvent
+  n3 --> n3 : WorkingCapitalLoanNearBreachChangeBusinessEvent
+  n4 --> n4 : WorkingCapitalLoanBreachPauseBusinessEvent
+  n5 --> n5 : WorkingCapitalLoanBreachResumeBusinessEvent
+  n6 --> n6 : WorkingCapitalLoanBreachRescheduleBusinessEvent
+  n7 --> n7 : WorkingCapitalLoanBreachResetBusinessEvent
+  n8 --> n8 : WorkingCapitalLoanBreachUndoResetBusinessEvent
+  n9 --> n9 : WorkingCapitalLoanBreachDisableBusinessEvent
+  n10 --> n10 : WorkingCapitalLoanBreachEnableBusinessEvent]]></ac:plain-text-body></ac:structured-macro>
+<h2>Working Capital loan transaction events</h2>
+<p>A Working Capital loan publishes a transaction business event for each repayment, goodwill credit, discount fee, discount fee adjustment, discount fee amortization, discount fee amortization adjustment, disbursal, accrual, accrual adjustment, and write-off.</p>
+<p>Transaction events for Working Capital loans:</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment</td>
+<td>WorkingCapitalLoanRepaymentTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Goodwill credit</td>
+<td>WorkingCapitalLoanGoodWillCreditTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Discount fee</td>
+<td>WorkingCapitalLoanDiscountFeeTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Discount fee adjustment</td>
+<td>WorkingCapitalLoanDiscountFeeAdjustmentTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Discount fee amortization</td>
+<td>WorkingCapitalLoanDiscountFeeAmortizationTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Discount fee amortization adjustment</td>
+<td>WorkingCapitalLoanDiscountFeeAmortizationAdjustmentTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Disbursal</td>
+<td>WorkingCapitalLoanDisbursalTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Accrual</td>
+<td>WorkingCapitalLoanAccrualTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Accrual adjustment</td>
+<td>WorkingCapitalLoanAccrualAdjustmentTransactionBusinessEvent</td>
+</tr>
+<tr>
+<td>Write-off</td>
+<td>WorkingCapitalLoanWriteOffTransactionBusinessEvent</td>
+</tr>
+</tbody></table>
+<h2>External event configuration and Avro schemas</h2>
+<p>External business events use Avro schemas. You enable or disable each event type separately on the external-event configuration page, and term-loan events are unaffected by the new Working Capital event types. The new business events are stored in m_external_event_configuration and are disabled by default. External business events add an optional originators field as an array of records.</p>
+<p>The new business events and their Avro schemas are:</p>
+<ul>
+<li>LoanDeferredChargeTransactionCreatedBusinessEvent</li>
+<li>LoanDeferredChargeAmortizationTransactionCreatedBusinessEvent</li>
+<li>LoanDeferredChargeAmortizationAdjustmentTransactionCreatedBusinessEvent</li>
+</ul>
+<h2>Delinquency calculation pause</h2>
+<p>Each LoanBusinessEvent includes delinquency calculation data so consumers can see whether delinquency calculation is paused and, if so, the pause period dates.</p>
+<p>The LoanBusinessEventSerializer populates the field value, and CollectionDataV1 is extended with delinquencyCalculationPaused without introducing CollectionDataV2.</p>
+<h2>Delinquency actions API</h2>
+<p>You can retrieve and submit delinquency actions for a loan using either its internal ID or its external ID.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>/loans/{loanid}/delinquency-actions</td>
+<td>GET</td>
+<td>Retrieve all delinquency actions for a loan</td>
+</tr>
+<tr>
+<td>/loans/external-id/{loanExternalId}/delinquency-actions</td>
+<td>GET</td>
+<td>Retrieve all delinquency actions for a loan by external ID</td>
+</tr>
+<tr>
+<td>/loans/{loanid}/delinquency-actions</td>
+<td>POST</td>
+<td>Submit a new delinquency action for a loan</td>
+</tr>
+<tr>
+<td>/loans/external-id/{loanExternalId}/delinquency-actions</td>
+<td>POST</td>
+<td>Submit a new delinquency action for a loan by external ID</td>
+</tr>
+</tbody></table>
+<h2>Event publication flow</h2>
+<p>When a loan lifecycle action occurs, such as disbursement or repayment, the event publisher constructs a base loan event payload. Mappings for the loan are fetched on any loan and loan transaction-centric event publication. The origination module enriches the payload with originator(s), and the event is emitted so consumers can compute merchant revenue sharing externally. The customer module adds a listener for the LoanStatusChangedBusinessEvent.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Loan lifecycle action occurs"]
+  n2["Fetch loan mappings"]
+  n3["Construct base loan event payload"]
+  n4["Origination module enriches payload"]
+  n5["Event emitted"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Merchant originator reporting</h2>
+<p>Merchant originator reporting joins originator mapping during report execution and outputs merchantOriginatorId in Trial Balance and Transaction Summary exports.</p>
+<h2>Delinquency range change event</h2>
+<p>When the delinquency range changes, the system publishes a LoanDelinquencyRangeChangeBusinessEvent.</p>
+<h2>Worked examples</h2>
+<p>This example tracks total_unpaid_posted_interest on a loan around cut-off. The figures are illustrative: principal is 1,000.00, the annual interest rate is 12 percent, installments are monthly, and months have 30 days. The monthly interest posting is 10.00. On the installment date the field is zero before cut-off because the interest has not yet been posted. After cut-off the posting makes the interest unpaid and the field becomes 10.00. On the next day, after the installment is paid, the field returns to zero.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Stage</th>
+<th>total_unpaid_posted_interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>05/01</td>
+<td>Before cut-off</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>05/01</td>
+<td>After cut-off (interest posted)</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>05/02</td>
+<td>After repayment</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>If the previous month&#39;s posted interest had remained unpaid, the before-cut-off value would start at 10.00 and the after-cut-off value would be 20.00, because the carried-over amount is added to the new posting.</p>
+<p>This example tracks total_unpaid_accrued_interest as it accrues daily. The figures are illustrative: principal is 2,000.00, the annual interest rate is 18 percent, and months have 30 days, so the daily accrual is 1.00. Each day the field increases by one day&#39;s accrued interest until a payment or posting clears it.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>total_unpaid_accrued_interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>06/02</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>06/03</td>
+<td>2.00</td>
+</tr>
+<tr>
+<td>06/04</td>
+<td>3.00</td>
+</tr>
+<tr>
+<td>06/05</td>
+<td>4.00</td>
+</tr>
+</tbody></table>
+<p>The table shows that accrued interest grows by a fixed daily amount.</p>

@@ -1,0 +1,323 @@
+<h2>Fee classification overview</h2>
+<p>You can configure classifications for capitalized Income and BuyDown fees transactions. Classification selection is optional when you create these transactions.</p>
+<p>A new fee type, origination fees, is introduced at the product level. You can map origination fees to a loan product at the loan product level. The origination fees amount is flat based and entered by you.</p>
+<h2>Classification field and validation</h2>
+<p>The loan transaction entity includes a classification field stored as a Long in the database and as a CodeValue in Java. If you do not set one, the field remains null. Fineract validates that any classification you provide exists based on the related codes.</p>
+<h2>Daily amortization schedules</h2>
+<p>The system calculates and stores Daily Amortization schedules at each Classification level. When an Adjustment transaction happens, the system recalculates the schedules. A Daily Amortization transaction can be aggregated to ONE entry at transaction level while allowing drill-down to classification level.</p>
+<h2>Adjustment inheritance</h2>
+<p>When you create an adjustment transaction for an existing Capitalized Income or Buydown Fee transaction, the adjustment inherits that transaction&#39;s classification. You cannot set a different classification. This rule does not apply to Amortization transactions because they contain only aggregated amounts. Business events contain the classification field.</p>
+<h2>Amortization allocation mapping table</h2>
+<p>The amortization allocation mapping table records Capitalized Income / Buydown fee amortization allocations separately for each base transaction, because amortization transactions store only aggregated amounts. The system creates mappings when it calculates and creates Capitalized income / buy down fee amortization or amortization adjustment transactions. Mappings are not linked to loan transactions and must not be fetched via loan transactions.</p>
+<p>Mapping table columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>type</td>
+<td>Enum: Capitalized Income / Buydown fee</td>
+<td>Classification of the base fee</td>
+</tr>
+<tr>
+<td>loan_id</td>
+<td>FK to Loan</td>
+<td>The loan the fee belongs to</td>
+</tr>
+<tr>
+<td>base_loan_transaction_id</td>
+<td>FK to original Capitalized Income / Buy down fee transaction</td>
+<td>The base fee transaction being amortized</td>
+</tr>
+<tr>
+<td>date</td>
+<td>DATE</td>
+<td>Date of the amortization allocation</td>
+</tr>
+<tr>
+<td>amortization_loan_transaction_id</td>
+<td>FK to loan transaction</td>
+<td>The amortization transaction this allocation belongs to</td>
+</tr>
+<tr>
+<td>type</td>
+<td>ENUM: AM amortization / AM_ADJ amortization adjustment</td>
+<td>Whether the allocation is an amortization or an amortization adjustment</td>
+</tr>
+<tr>
+<td>amount</td>
+<td>BigDecimal</td>
+<td>The actual amortization amount for this base transaction</td>
+</tr>
+<tr>
+<td>audit fields</td>
+<td>Audit fields</td>
+<td>Standard audit fields</td>
+</tr>
+</tbody></table>
+<h2>Default income accounts</h2>
+<p>When no fee classification is selected, capitalized income amortization debits Deferred Income and credits Interest/fees Income from amortization. Buy Down fee amortization debits Deferred Income and credits Interest/fees Income from Buy Down fees amortization.</p>
+<h2>Advanced accounting rule mappings</h2>
+<p>Advanced accounting rule mappings let you assign a different GL income account to each classification code value for capitalized income and buy down fees. Each classification code value can map to one GL account, and you can add, update, or delete these mappings.</p>
+<table>
+<thead>
+<tr>
+<th>Rule type</th>
+<th>Classification code value</th>
+<th>GL income account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized Income</td>
+<td>capitalized_income_transaction_classification</td>
+<td>One GL account per classification code value</td>
+</tr>
+<tr>
+<td>Buy down fee</td>
+<td>buydown_fee_transaction_classification</td>
+<td>One GL account per classification code value</td>
+</tr>
+</tbody></table>
+<h2>Fetching allocation amounts</h2>
+<p>The system determines how to fetch allocation amounts for Capitalized Income / Buydown fee transactions based on how many exist and whether they share a classification.</p>
+<p>Fetching rules:</p>
+<ul>
+<li>When only one Capitalized Income / Buydown fee transaction exists, the system considers the full amount.</li>
+<li>When multiple Capitalized Income / Buydown fee transactions exist with the same classification, the system considers the full amount.</li>
+<li>When multiple Capitalized Income / Buydown fee transactions exist with different classifications, the system fetches the allocation mapping from the amortization mapping table.</li>
+<li>If the amortization mapping table does not exist or has no entry, the system calculates today&#39;s amortization for each transaction on the fly, groups them by classification, and uses the appropriate income GL account.</li>
+</ul>
+<h2>Origination fees</h2>
+<p>Origination fees are added to the loan account at disbursement level and on the disbursement date only.</p>
+<p>Schedule calculation and interest calculation are both based on the disbursement amount plus origination fees, and monetary transactions do not change allocation.</p>
+<p>Validation requires that the disbursement amount plus origination fees be less than or equal to the approved amount.</p>
+<p>Amortization and charge-off rules:</p>
+<ul>
+<li>Amortization is done daily at close of business (COB), the nightly job that posts interest and fees.</li>
+<li>The system maintains the fees balance as origination fee minus fee credits minus fee income recognized.</li>
+<li>Charge-off charges off the origination fees, and no amortization is done after the charge-off date.</li>
+<li>Final amortization is done for the balance amount if the loan is preclosed on the same day.</li>
+</ul>
+<h2>Fees adjustment and allocation strategy</h2>
+<p>When a fees adjustment amount is greater than unrecognized income, the system credits or debits the difference from the income account. The Capitalized Income Adjustment allocates amounts in this order: past due Principal, past due Int, Past due fees, Past due Penalty, due Principal, due Int, due fees, due Penalty, advance Principal, advance Int, advance fees, advance Penalty.</p>
+<h2>APIs</h2>
+<p>Use the capitalized income APIs to list amortization allocation schedule details for capitalized income transactions, and the buydown fee APIs for buydown fee transactions. Each API identifies the loan by ID or external ID and the transaction by ID or external ID.</p>
+<p>Available endpoints:</p>
+<ul>
+<li>/v1/loans/{loanId}/capitalized-incomes/{loanTransactionId}</li>
+<li>/v1/loans/external-id/{loanExternalId}/capitalized-incomes/{loanTransactionId}</li>
+<li>/v1/loans/{loanId}/capitalized-incomes/external-id/{loanTransactionExternalId}</li>
+<li>/v1/loans/external-id/{loanExternalId}/capitalized-incomes/external-id/{loanTransactionExternalId}</li>
+<li>/v1/loans/{loanId}/buydown-fees/{loanTransactionId}</li>
+<li>/v1/loans/external-id/{loanExternalId}/buydown-fees/{loanTransactionId}</li>
+<li>/v1/loans/{loanId}/buydown-fees/external-id/{loanTransactionExternalId}</li>
+<li>/v1/loans/external-id/{loanExternalId}/buydown-fees/external-id/{loanTransactionExternalId}</li>
+</ul>
+<p>The response lists the loan ID, loan external ID, base loan transaction, base loan transaction date, base loan transaction amount, unrecognized amount, charged-off amount, adjustment amount, and mapping table columns: amortization loan transaction ID, amortization loan transaction external ID, date, type (Amortization or Amortization adjustment), and amount.</p>
+<p>The template API returns available classification values for Capitalized Income and Buydown Fee transaction types through classificationOptions as a list of code values, defaulting to none when none are set.</p>
+<h2>Worked examples</h2>
+<p>A loan is disbursed for 1,000. On the same day a capitalized income fee of 100 is created and optionally classified using the capitalized_income_transaction_classification code. The loan product has an advance accounting rule that maps the Usage Fees classification to the Usage Fees Income general ledger account. The figures are illustrative. The example shows that a selected classification routes the amortization credit to the mapped income account; if no classification is selected, the credit defaults to Interest/fees Income and all other entries are unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Debit account</th>
+<th>Debit amount</th>
+<th>Credit account</th>
+<th>Credit amount</th>
+<th>Classification</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Disbursement</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>1,000.00</td>
+<td>Fund Source Suspense/clearing</td>
+<td>1,000.00</td>
+<td>–</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Capitalized Income</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>100.00</td>
+<td>Deferred Income</td>
+<td>100.00</td>
+<td>Usage Fees</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Daily amortization</td>
+<td>Deferred Income</td>
+<td>1.00</td>
+<td>Usage Fees Income</td>
+<td>1.00</td>
+<td>Usage Fees</td>
+</tr>
+<tr>
+<td>1/2</td>
+<td>Daily amortization</td>
+<td>Deferred Income</td>
+<td>1.00</td>
+<td>Usage Fees Income</td>
+<td>1.00</td>
+<td>Usage Fees</td>
+</tr>
+<tr>
+<td></td>
+<td>Totals</td>
+<td></td>
+<td>1,102.00</td>
+<td></td>
+<td>1,102.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan product carries an origination fee of 100 mapped at product level. A loan is approved for 1,100 and disbursed for 1,000 on 1/1. The system validates that disbursement plus origination fees does not exceed the approved amount. The fee is treated as principal, so schedule and interest are calculated on 1,100, and the fee amortizes daily at close of business. The example shows origination fees increase the disbursement-day principal, are validated against the approved amount including the fee, and amortize daily until the fee balance reaches zero.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Debit account</th>
+<th>Debit amount</th>
+<th>Credit account</th>
+<th>Credit amount</th>
+<th>Origination fee balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Disbursement</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>1,000.00</td>
+<td>Fund Source Suspense/clearing</td>
+<td>1,000.00</td>
+<td>–</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Origination fees</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>100.00</td>
+<td>Deferred Income</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Daily amortization</td>
+<td>Deferred Income</td>
+<td>1.00</td>
+<td>Interest/fees Income</td>
+<td>1.00</td>
+<td>99.00</td>
+</tr>
+<tr>
+<td>1/2</td>
+<td>Daily amortization</td>
+<td>Deferred Income</td>
+<td>1.00</td>
+<td>Interest/fees Income</td>
+<td>1.00</td>
+<td>98.00</td>
+</tr>
+<tr>
+<td></td>
+<td>Totals</td>
+<td></td>
+<td>1,102.00</td>
+<td></td>
+<td>1,102.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan has two capitalized income transactions: 100 classified as Usage Fees and 50 with no classification. An adjustment of 30 is posted against the first transaction. The adjustment automatically inherits the target transaction&#39;s classification and the user cannot set a different classification. Because the base transactions carry different classifications, the system stores per-transaction amortization amounts in the amortization mapping table instead of relying on a single aggregated entry. The example shows an adjustment inherits the base transaction&#39;s classification and cannot be overridden, and that the mapping table stores each base transaction&#39;s amortization amount separately because the aggregated amortization entry hides the split.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Classification</th>
+<th>Debit account</th>
+<th>Debit amount</th>
+<th>Credit account</th>
+<th>Credit amount</th>
+<th>Mapping type</th>
+<th>Mapping amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1/1</td>
+<td>Capitalized Income #1</td>
+<td>Usage Fees</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>100.00</td>
+<td>Deferred Income</td>
+<td>100.00</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Capitalized Income #2</td>
+<td>null</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>50.00</td>
+<td>Deferred Income</td>
+<td>50.00</td>
+<td>–</td>
+<td>–</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Amortization #1</td>
+<td>Usage Fees</td>
+<td>Deferred Income</td>
+<td>1.00</td>
+<td>Usage Fees Income</td>
+<td>1.00</td>
+<td>AM</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>1/1</td>
+<td>Amortization #1</td>
+<td>null</td>
+<td>Deferred Income</td>
+<td>0.50</td>
+<td>Interest/fees Income</td>
+<td>0.50</td>
+<td>AM</td>
+<td>0.50</td>
+</tr>
+<tr>
+<td>1/10</td>
+<td>Adjustment #1</td>
+<td>Usage Fees (inherited)</td>
+<td>Deferred Income</td>
+<td>30.00</td>
+<td>Loan Portfolio Loan Receivable</td>
+<td>30.00</td>
+<td>AM_ADJ</td>
+<td>30.00</td>
+</tr>
+<tr>
+<td></td>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>181.50</td>
+<td></td>
+<td>181.50</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Buy-Down Fees"/><ac:plain-text-link-body><![CDATA[Buy-Down Fees]]></ac:plain-text-link-body></ac:link>.</p>

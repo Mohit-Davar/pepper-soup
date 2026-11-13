@@ -1,0 +1,7 @@
+<p>The SendAsynchronous Job processes COB events before start-of-day events, prioritizing events by business date. It marks events from TO_BE_SENT to SENT using parallel commits.</p>
+<p>Message size limits and replay behavior:</p>
+<ul>
+<li>ActiveMQ message size is 100KB.</li>
+<li>A BulkMessage that could exceed 100KB for a large Loan with many revert-replay transactions is split into multiple messages.</li>
+<li>Replay and reprocessing includes chronological reprocessing and re-applying transactions according to their submitted date during reverse-replay.</li>
+</ul>

@@ -1,0 +1,162 @@
+<h2>Charge-off behaviour</h2>
+<p>Charge-off behaviour controls how interest accrues after a loan is charged off. The options are Regular (default), Zero interest after charge-off, and Accelerate maturity to charge-off date. Charge-off behaviour applies only to Progressive loan products where interest is not zero; interest is calculated until the charge-off date. If the loan product is not progressive, does not have interest, or does not have interest recalculation enabled, only Regular charge-off behaviour is supported. If the charge-off behaviour variable is not set, the default is Regular.</p>
+<p>Charge-off behaviour is configured on the loan product:</p>
+<ul>
+<li>It is stored with the product definition as a new field on the loan product.</li>
+<li>The Charge-off behaviour selector appears on the loan product settings page after the down payment section.</li>
+<li>When a loan is opened, the Account details section shows the charge-off behaviour value.</li>
+<li>Charge-off behaviour cannot be updated on loan level.</li>
+<li>If charge-off behaviour changes on the product, existing loan accounts remain unaffected.</li>
+<li>If the charge-off behaviour variable is set, it is validated as a valid value using ENUM validation with the string name.</li>
+<li>Whether charge-off behaviour is supported for the loan product is validated.</li>
+</ul>
+<h2>Stopping interest after charge-off</h2>
+<p>Interest accruals stop once a loan charges off. Future interest on the schedule changes to $0, and interest on the current period decreases proportionally.</p>
+<h2>Interest calculation at charge-off</h2>
+<p>Interest up to that date is calculated for the partial period on the current installment, and future interest is set to zero. The principal due increases by the interest removed from future installments.</p>
+<p>Interest calculation rules at charge-off:</p>
+<ul>
+<li>Interest till the charge-off date equals <code>total interest of the period / number of days of the period * number of days till charge-off date</code>.</li>
+<li>The period start date is exclusive and the charge-off date is inclusive.</li>
+<li>The charge-off date decides which period the interest belongs to.</li>
+<li>Principal due on the period increases by the difference between the original interest of the period and the new interest after charge-off.</li>
+<li>On the last unpaid installment, principal due is set to the remaining loan balance.</li>
+</ul>
+<p>Loans with interest recalculation enabled:</p>
+<ul>
+<li>Only the way of calculating interest till the charge-off date changes; the rest is the same.</li>
+<li>No interest is added for charged-off loans with zero interest after charge-off.</li>
+<li>Interest is added when a loan has a reverted charged-off transaction.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Only loans with a charge-off transaction that has not been reverted are excluded from scheduled jobs.</p>
+</blockquote>
+<h2>Reversing a charge-off</h2>
+<p>Reversing a charge-off restores the original repayment schedule and interest, resumes accruals for past items, and initiates the accrual job to create the accruals.</p>
+<h2>Transactions after charge-off</h2>
+<p>Transactions after charge-off do not trigger interest recalculation. The system processes them using payment allocation instead of recalculating interest for the period.</p>
+<p>The system applies different processing depending on when the transaction occurs:</p>
+<ul>
+<li>Before the charge-off transaction, interest recalculates for early or late repayment.</li>
+<li>After the charge-off transaction, the system processes existing repayment periods without interest recalculation.</li>
+</ul>
+<p>If a backdated repayment or other monetary activity happens, transactions are reprocessed to calculate due interest for the current period.</p>
+<h2>Discount amortization after charge-off</h2>
+<p>When a loan is charged off, the system performs a one-time amortization of the total deferred income as of the charge-off date.</p>
+<h2>Charge-off accounting mappings</h2>
+<p>You can map charge-off reason codes to GL accounts using an Advanced Accounting Rule on the loan product. The rule applies to one or multiple charge-off reason codes, and each reason code can be configured only once. Only an Expense account can be selected. Backend validation runs when the mapping is saved. A reason code used in a configured Advanced Accounting Rule cannot be deleted.</p>
+<p>When an Advanced Accounting Rule is configured for the charge-off transaction, the mapped GL account takes priority over the standard charge-off expense configuration:</p>
+<ul>
+<li>If a rule exists for the charge-off reason code, the system uses the GL account mapped to that reason code.</li>
+<li>If no rule exists for the charge-off reason code, the system falls back to the originally configured Charge-off Expense or Charge-off Fraud Expense account.</li>
+</ul>
+<h2>Charge-off reason code configuration</h2>
+<p>A charge-off reason code maps to one expense GL account. You enter the reason code value ID and the expense GL account ID when you configure the mapping.</p>
+<p>Configuration rules:</p>
+<ul>
+<li>The charge-off reason code value ID must be a valid, existing ID of a charge-off reason code value.</li>
+<li>The expense GL account ID must be a valid, existing expense GL account ID.</li>
+<li>The same GL account can be configured for multiple charge-off reasons.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A progressive loan product with interest recalculation enabled has a principal of 1,000.00, an annual interest rate of 12 percent, and three monthly installments with 30-day months. The installments fall due on 1 February, 1 March and 1 April. The loan is charged off on 15 February, which lies inside the second period. These figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>EMI</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Feb</td>
+<td>340.00</td>
+<td>330.00</td>
+<td>10.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 Mar</td>
+<td>340.00</td>
+<td>336.87</td>
+<td>3.13</td>
+<td>333.13</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 Apr</td>
+<td>333.13</td>
+<td>333.13</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,013.13</td>
+<td>1,000.00</td>
+<td>13.13</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The example shows that future interest is set to zero, the current period keeps only the interest for the days up to the charge-off date, and the removed interest is added to the principal due; with the zero-interest-after-charge-off setting instead, the current-period interest would also be removed entirely and added to principal.</p>
+<p>When a loan is charged off, accounting entries are posted according to the charge-off reason rather than only the fraud flag. Suppose a charge-off involves a principal portion of 500.00, an interest portion of 50.00, a fee portion of 20.00 and a penalty portion of 10.00. If the reason is delinquent, the principal is debited to Credit Loss/Bad Debt; if the reason is fraud, it is debited to Credit Loss/Bad Debt Fraud. The interest, fee and penalty portions use the same debit and credit accounts in both cases. If an Advanced Accounting Rule maps the fraud reason to Charge-off-fraud, that account takes priority over the default fraud configuration. These figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Amount</th>
+<th>Debit: delinquent reason</th>
+<th>Debit: fraud reason</th>
+<th>Debit: advanced rule for fraud</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>500.00</td>
+<td>Credit Loss/Bad Debt</td>
+<td>Credit Loss/Bad Debt Fraud</td>
+<td>Charge-off-fraud</td>
+<td>Loans Receivable</td>
+</tr>
+<tr>
+<td>Interest</td>
+<td>50.00</td>
+<td>Interest income charge off</td>
+<td>Interest income charge off</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>20.00</td>
+<td>Fee Charge off</td>
+<td>Fee Charge off</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>10.00</td>
+<td>Fee Charge off</td>
+<td>Fee Charge off</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>580.00</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The example shows that the charge-off reason determines the principal debit account, while an Advanced Accounting Rule overrides the default fraud mapping when one is configured.</p>
+<p>See also: <ac:link><ri:page ri:content-title="Charge-Off Balances"/><ac:plain-text-link-body><![CDATA[Charge-Off Balances]]></ac:plain-text-link-body></ac:link>.</p>

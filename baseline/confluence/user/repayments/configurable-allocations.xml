@@ -1,0 +1,284 @@
+<h2>About configurable payment allocations</h2>
+<p>Configurable payment allocations let you set how payments are applied by transaction type for each loan product. You can configure allocations for Repayment, Goodwill credit, payout refund, Merchant refund, Charge Adjustments, and Downpayment. The same allocation applies to every sub-payment type within a transaction type. Each loan product can have its own advanced payment allocation configuration.</p>
+<h2>Configure advanced payment allocation</h2>
+<p>Use this screen to set the order in which payments are allocated across installments and balances for a loan product with Advanced payment allocation selected.</p>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Open the <strong>PAYMENT ALLOCATION</strong> step.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Credit Allocation Strategy</td>
+<td>No</td>
+<td>Set the credit allocation strategy for the selected transaction type.</td>
+</tr>
+<tr>
+<td>Future Installment Allocation Rule</td>
+<td>No</td>
+<td>Choose how future installments are allocated: Next installment (default), Last installment, or Re-amortization.</td>
+</tr>
+</tbody></table>
+<p>Payments are allocated across installments and outstanding balances in the order you set.</p>
+<h2>Advanced payment allocation strategy</h2>
+<p>Advanced payment allocation lets you control how payments are applied to installments and charges. Select “Advanced payment allocation” as the repayment strategy to open the “Payment allocation” tab and set the default payment allocation order.</p>
+<p>Required settings:</p>
+<ul>
+<li>Set the default payment allocation rule for the default transaction type with all 12 valid values.</li>
+<li>Set the future installment allocation rule to a valid value.</li>
+<li>Set a default payment allocation order.</li>
+</ul>
+<p>Future installment allocation rule options:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NEXT_INSTALLMENT</td>
+<td>Next installment (default)</td>
+</tr>
+<tr>
+<td>LAST_INSTALLMENT</td>
+<td>Last installment</td>
+</tr>
+<tr>
+<td>REAMORTIZATION</td>
+<td>Re-amortization</td>
+</tr>
+</tbody></table>
+<p>Installment processing strategy:</p>
+<ul>
+<li>The installment processing strategy has two values: HORIZONTAL (default) and VERTICAL.</li>
+</ul>
+<p>Strategy code:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>advanced-payment-allocation-strategy</td>
+<td>8</td>
+</tr>
+</tbody></table>
+<h2>Eligibility and disbursement handling</h2>
+<p>Advanced payment allocation is supported only for Progressive loan disbursement handling.</p>
+<h2>Payment allocation tab and UI</h2>
+<p>The Payment allocation tab lets you choose a transaction type and set its payment allocation order. The Default transaction type is selected by default.</p>
+<p>You can select one of these transaction types:</p>
+<ul>
+<li>Repayment</li>
+<li>Down payment</li>
+<li>Merchant issues refund</li>
+<li>Payout refund</li>
+<li>Goodwill credit</li>
+<li>Charge refund</li>
+<li>Charge adjustment</li>
+<li>Refund for active loans</li>
+<li>Interest waiver</li>
+</ul>
+<p>The tab also includes a dropdown for selecting the future installment allocation rule.</p>
+<h2>Default allocation rules</h2>
+<p>Default allocation rules decide how a repayment is spread across installments when no rule is set for a specific transaction type. The DEFAULT transaction type always exists and acts as the fallback.</p>
+<p>Rules for default allocation:</p>
+<ul>
+<li>When a default allocation rule is set, payment transactions are allocated in the order it was set across the installments.</li>
+<li>A default allocation can be overruled by configuring a payment allocation order for a specific transaction type.</li>
+</ul>
+<h2>Transaction types for allocation</h2>
+<p>For loans with Advanced payment allocation configured, Refund for active loan is also available as a transaction type with its own allocation order.</p>
+<h2>Main allocation categories and rules</h2>
+<p>The main allocation order decides how the system distributes a transaction amount across repayment schedules and outstanding balances. The categories are past due, due, and in advance installments, and the balances are principal, penalty, fee, and interest.</p>
+<p>Main allocation rules:</p>
+<ul>
+<li>Past due installments are always allocated from the oldest installment.</li>
+<li>Due installments are allocated only to the current due installment when the transaction date is the same as the due date.</li>
+<li>Future installments can be allocated from the next installment, from the last installment, or re-amortized to future installments; re-amortization applies only to the principal portion of installments.</li>
+</ul>
+<h2>Secondary allocation categories and rules</h2>
+<p>Secondary allocation categories are PENALTY, FEE, PRINCIPAL, and INTEREST. The secondary allocation rule options are T3.R1 Penalties, T3.R2 Fees, T3.R3 Principal, and T3.R4 Interest.</p>
+<h2>Future installment allocation options</h2>
+<p>For future installments, you choose how an in advance allocation is applied: to the next due installment first, to the last due installment first, or divided evenly across all future installments.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>How in advance allocation is applied</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Next installment</td>
+<td>To the next due installment first based on due date, then to subsequent due installments if the transaction amount remains.</td>
+</tr>
+<tr>
+<td>Last installment</td>
+<td>To the last installment by due date first, then to the last but one installment if the transaction amount remains.</td>
+</tr>
+<tr>
+<td>Reamortization</td>
+<td>Divided into equal amounts between the future installments.</td>
+</tr>
+</tbody></table>
+<h2>Horizontal and vertical processing</h2>
+<p>Horizontal processing applies allocation rules in installment scope, processing installments from oldest to latest one by one. Vertical processing applies allocation rules in repayment schedule scope, processing balances one by one based on whether they are past due, due or in advance.</p>
+<p>Rules and limits:</p>
+<ul>
+<li>When HORIZONTAL processing is configured, allocation rules must be grouped by due type.</li>
+<li>With VERTICAL processing, the grouping restriction does not apply.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> For a past due installment not fully paid under horizontal processing, allocation pays unpaid penalty first, then unpaid fee, then unpaid interest, then unpaid principal.</p>
+</blockquote>
+<h2>Transaction and charge ordering</h2>
+<p>The system orders loan transactions by transaction date, then submitted on date, then created date time. It orders loan charges by due date, then submitted on date, then creation date time. For loans with Advanced payment allocation configured, transactions and charges are ordered and processed in chronological order comparing charge due date versus transaction date, then submitted on date, then creation date time.</p>
+<h2>Reverse replay and reprocessing</h2>
+<p>Reverse replay and reprocessing apply to loans with Advanced payment allocation configured. Reprocessing happens only when a backdated transaction or backdated charge is added and something changes that requires this side-effect. Prior payment transactions are not affected by later added charges.</p>
+<p>Reprocessing is unnecessary in these cases:</p>
+<ul>
+<li>A repayment is on or after the prior last processed transaction.</li>
+<li>A charge is added with a due date after the last processed transaction.</li>
+<li>A backdated transaction or charge is last in chronological order.</li>
+<li>A charge is added with a due date after a backdated repayment.</li>
+<li>A chargeback is processed.</li>
+<li>A write-off is undone.</li>
+<li>A loan is closed.</li>
+<li>A refund is made for an active loan.</li>
+<li>A refund is the last transaction.</li>
+</ul>
+<p>Reprocessing is required when:</p>
+<ul>
+<li>A loan charge due date is earlier than the last transaction date.</li>
+<li>Transactions are reprocessed and the repayment schedule is rebuilt from the ground up.</li>
+<li>Disbursement transactions are reprocessed and added again to the installment.</li>
+<li>Interest handling might result in different interest.</li>
+</ul>
+<p>Behaviour during reverse replay:</p>
+<ul>
+<li>Only transactions with dates later than a newly added transaction can be reallocated.</li>
+<li>An installment paid in advance is not revert-replayed after disbursement.</li>
+<li>Adding a charge later than a repayment does not require reprocessing the repayment.</li>
+<li>Prior repayments are not reverse-replayed when a charge is added.</li>
+</ul>
+<p>Charge handling:</p>
+<ul>
+<li>Loan charges can be configured whether they participate in reverse-replaying or not.</li>
+<li>By default, loan charges are not reverse-replayed.</li>
+<li>Only newly added payment transactions consider repaying newly added charges based on the repayment strategy.</li>
+<li>A loan charge can be reverse-replayed when advanced repayment allocation strategy is set.</li>
+<li>Charge off transaction kicks in only when a change modifies the outstanding balance.</li>
+<li>Removing or updating a charge is not allowed after approve.</li>
+</ul>
+<h2>Write-off and charge-off</h2>
+<p>For loans with Advanced payment allocation configured, a write-off transaction sets the loan balance to 0, closes the loan, and writes off all outstanding amounts. You cannot reverse a payment made before the write-off. A charge-off transaction matches all outstanding balances and is processed the same as before, with minimal changes to existing charge-off logic.</p>
+<h2>Refunds and credit balance refunds</h2>
+<p>A refund is a transaction type for loans with Advanced payment allocation configured. It works opposite to a repayment and can have its own allocation order. A credit balance refund calculates the balance and covers only that balance.</p>
+<p>Allocation rules decide how a refund is applied:</p>
+<ul>
+<li>A refund applies to any past due installments first, and the remaining credit balance is reamortized across future due installments.</li>
+<li>A refund applies to the next installment.</li>
+<li>A refund applies to the past due amount for installment 2 and the next installment (installment 3).</li>
+<li>A refund applies to the past due installment 1, and then to next installments 2, 3, then 4.</li>
+<li>When nothing is past due or due, a refund applies to the final installments.</li>
+<li>A refund applies to the next installment (installments 2 and 3).</li>
+<li>A refund applies to the past due amount for installment 2 and next installment (installments 3).</li>
+<li>A refund applies to the past due (installment 1), and next installments (installments 2, 3 then 4).</li>
+<li>Refund applied to due/past due/delinquent amounts (oldest) first, and remainder of any refund applies to the final installment.</li>
+<li>Refund applied to any past due amount and then due amount.</li>
+</ul>
+<h2>Chargeback</h2>
+<p>For loans with Advanced payment allocation configured, when you add a chargeback after maturity, the system creates an additional installment. The chargeback is allocated proportionally according to what the original payment paid off.</p>
+<h2>Re-amortization</h2>
+<p>Re-amortization recalculates remaining installments after a payment. If an N+1 installment exists, it is included in the recalculation. When the re-amortization amount overpays the principal portion of all installments, the excess allocates to other portions according to the secondary allocation set, such as unpaid penalty or fees.</p>
+<h2>Loan product configuration and inheritance</h2>
+<p>When you select the Advanced payment allocation repayment strategy for a loan product, each new loan account created under that product copies the product&#39;s configured payment allocation rules. Changes to a loan product&#39;s allocation rules apply only to new loan accounts; existing loans keep the rules they inherited when they were created. You can customize allocation priority per loan product and at transaction type level.</p>
+<p>The default allocation order is:</p>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Category</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>First</td>
+<td>Fees</td>
+<td>263</td>
+</tr>
+<tr>
+<td>Second</td>
+<td>Penalty</td>
+<td>69</td>
+</tr>
+<tr>
+<td>Third</td>
+<td>Interest</td>
+<td>500</td>
+</tr>
+<tr>
+<td>Fourth</td>
+<td>Principal</td>
+<td>465</td>
+</tr>
+</tbody></table>
+<p>The UI provides these allocation rule codes:</p>
+<ul>
+<li>PAST_DUE_PENALTY</li>
+<li>PAST_DUE_FEE</li>
+<li>PAST_DUE_PRINCIPAL</li>
+<li>PAST_DUE_INTEREST</li>
+<li>DUE_PENALTY</li>
+<li>DUE_FEE</li>
+<li>DUE_PRINCIPAL</li>
+<li>DUE_INTEREST</li>
+<li>IN_ADVANCE_PENALTY</li>
+<li>IN_ADVANCE_FEE</li>
+<li>IN_ADVANCE_PRINCIPAL</li>
+<li>IN_ADVANCE_INTEREST</li>
+</ul>
+<h2>Allocation rule codes</h2>
+<p>Allocation rule codes tell the system which part of a payment to apply to each loan component. Each code names a component and a timing: due, past due, or in advance.</p>
+<table>
+<thead>
+<tr>
+<th>Timing</th>
+<th>Penalty</th>
+<th>Fee</th>
+<th>Principal</th>
+<th>Interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Due</td>
+<td>DUE_PENALTY</td>
+<td>DUE_FEE</td>
+<td>DUE_PRINCIPAL</td>
+<td>DUE_INTEREST</td>
+</tr>
+<tr>
+<td>Past due</td>
+<td>PAST_DUE_PENALTY</td>
+<td>PAST_DUE_FEE</td>
+<td>PAST_DUE_PRINCIPAL</td>
+<td>PAST_DUE_INTEREST</td>
+</tr>
+<tr>
+<td>In advance</td>
+<td>IN_ADVANCE_PENALTY</td>
+<td>IN_ADVANCE_FEE</td>
+<td>IN_ADVANCE_PRINCIPAL</td>
+<td>IN_ADVANCE_INTEREST</td>
+</tr>
+</tbody></table>

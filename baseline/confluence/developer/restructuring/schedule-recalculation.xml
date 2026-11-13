@@ -1,0 +1,253 @@
+<h2>Purpose and benefits</h2>
+<p>When interest recalculation is enabled for an overdue loan, the system recalculates interest for all installments based on the number of overdue days and regenerates the repayment schedule so repayment amounts stay correct and valid for business days. For interest-bearing progressive loans, the schedule holds and shows additional interest on overdue principal, and payoff calculations continue to work.</p>
+<h2>Eligibility and configuration</h2>
+<p>Schedule recalculation applies to interest-bearing loans with interest recalculation enabled and a daily interest calculation type. It recalculates the interest and principal portions of installments according to the configured strategy.</p>
+<h2>Timing and execution</h2>
+<p>Interest recalculation runs at start of business day using the actual business date, after all end of business day business steps complete.</p>
+<h2>Supported strategies</h2>
+<p>The system supports two strategies for recalculating overdue installments: daily and same as repayment period. Weekly, monthly and mixed strategies are not covered, and last installment overdues are not covered.</p>
+<h2>Schedule behavior</h2>
+<p>The COB job does not create new installments or calculate new interest after the maturity date. A new installment is created only when a repayment happens. If a repayment arrives after maturity, the system creates an installment as of the repayment date and calculates interest for the extra days from the last maturity date on the current reducing principal balance. A repayment after maturity collects only the interest in the repayment schedule for the installment it fulfills.</p>
+<h2>Rate factor formulas</h2>
+<p>The rate factor depends on the repayment frequency. Monthly: <code>1 + (rate of interest * (repaid every * days in month / days in year) * actual days in period / calculated days in period)</code>. Weekly: <code>1 + (rate of interest * (7 * repaid every / days in year) * actual days in period / calculated days in period)</code>. Daily: <code>1 + (rate of interest * (repaid every / days in year) * actual days in period / calculated days in period)</code>. Single-period: <code>1 + (rate of interest * days in period / days in year)</code>.</p>
+<h2>Repayment scenarios</h2>
+<p>When a repayment is late, the system recalculates the loan repayment schedule. The recalculation runs during close of business (COB), the nightly job that posts interest and fees, and applies to one overdue installment, two or more consecutive overdue installments, a late repayment on the next installment due date, a late repayment on a day between the start and due dates, a partial late repayment on the same day where partial repayments fully repay the overdue installment, and partial late repayments on different business days during the same installment period. Partial or full repayments can happen anytime for the ]03/01, 04/01] interval.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Principal due</th>
+<th>Interest due</th>
+<th>Period outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Projected interest moved to the next period</td>
+<td>16.75</td>
+<td>0.26 (already recognised interest only)</td>
+<td>1 cent of principal</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A customer borrows 1,000.00 at an annual interest rate of 12%, repayable in five equal monthly instalments. Months are 30 days long. The figures in this example are illustrative. This is the baseline schedule before any overdue occurs.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>EMI</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Jan</td>
+<td>1 Feb</td>
+<td>30</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>196.04</td>
+<td>206.04</td>
+<td>803.96</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 Feb</td>
+<td>1 Mar</td>
+<td>30</td>
+<td>803.96</td>
+<td>8.04</td>
+<td>198.00</td>
+<td>206.04</td>
+<td>605.96</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 Mar</td>
+<td>1 Apr</td>
+<td>30</td>
+<td>605.96</td>
+<td>6.06</td>
+<td>199.98</td>
+<td>206.04</td>
+<td>405.98</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 Apr</td>
+<td>1 May</td>
+<td>30</td>
+<td>405.98</td>
+<td>4.06</td>
+<td>201.98</td>
+<td>206.04</td>
+<td>204.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1 May</td>
+<td>1 Jun</td>
+<td>30</td>
+<td>204.00</td>
+<td>2.04</td>
+<td>204.00</td>
+<td>206.04</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>30.20</td>
+<td>1,000.00</td>
+<td>1,030.20</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Instalment 2, due on 1 March, is not paid. Interest recalculation is enabled and the system uses the daily strategy. The overdue principal of 198.00 remains on the schedule and additional interest is charged for each overdue day. A repayment on 11 March clears the overdue amount. With the same-as-repayment-period strategy instead, the overdue principal attracts interest for the whole period at once rather than day by day. The overdue principal is held until repayment, and the extra 0.66 is the daily overdue interest on that principal.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Opening balance</th>
+<th>Overdue principal</th>
+<th>Interest</th>
+<th>Overdue interest</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Jan</td>
+<td>1 Feb</td>
+<td>30</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>196.04</td>
+<td>803.96</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 Mar</td>
+<td>11 Mar</td>
+<td>10</td>
+<td>803.96</td>
+<td>198.00</td>
+<td>2.68</td>
+<td>0.66</td>
+<td>0.00</td>
+<td>803.96</td>
+</tr>
+<tr>
+<td>2</td>
+<td>11 Mar</td>
+<td>1 Apr</td>
+<td>20</td>
+<td>803.96</td>
+<td>0.00</td>
+<td>4.04</td>
+<td>0.00</td>
+<td>198.00</td>
+<td>605.96</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 Apr</td>
+<td>1 May</td>
+<td>30</td>
+<td>605.96</td>
+<td>0.00</td>
+<td>6.06</td>
+<td>0.00</td>
+<td>199.98</td>
+<td>405.98</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 May</td>
+<td>1 Jun</td>
+<td>30</td>
+<td>405.98</td>
+<td>0.00</td>
+<td>4.06</td>
+<td>0.00</td>
+<td>201.98</td>
+<td>204.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>1 Jun</td>
+<td>1 Jul</td>
+<td>30</td>
+<td>204.00</td>
+<td>0.00</td>
+<td>2.04</td>
+<td>0.00</td>
+<td>204.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>28.88</td>
+<td>0.66</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>After four instalments the outstanding balance is 204.00. Instalment 5 matures on 1 July but is not paid. A repayment arrives on 15 July, fifteen days after maturity. The system creates a new instalment as of the repayment date and charges interest for the extra days on the outstanding principal. A repayment after maturity creates a new instalment dated at repayment, and interest is charged for the extra days on the outstanding principal.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Total due</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>1 Jun</td>
+<td>1 Jul</td>
+<td>30</td>
+<td>204.00</td>
+<td>2.04</td>
+<td>0.00</td>
+<td>2.04</td>
+<td>204.00</td>
+</tr>
+<tr>
+<td>5 (late)</td>
+<td>1 Jul</td>
+<td>15 Jul</td>
+<td>15</td>
+<td>204.00</td>
+<td>1.02</td>
+<td>204.00</td>
+<td>205.02</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Early and Late Repayment Interest"/><ac:plain-text-link-body><![CDATA[Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Loan Payoff"/><ac:plain-text-link-body><![CDATA[Loan Payoff]]></ac:plain-text-link-body></ac:link>.</p>

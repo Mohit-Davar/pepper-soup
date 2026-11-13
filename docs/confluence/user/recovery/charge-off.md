@@ -1,404 +1,265 @@
 # Charge-Off
 
-## Charge-Off
+## About charge-off
 
-### Charge-off overview
+Charge-off lets you recognize a loan as uncollectible after prolonged delinquency or breach by writing off outstanding balances for accounting purposes while optionally continuing recovery efforts. The system writes off all outstanding dues including principal, fees, and penalties. Charge-off is supported only on active loan accounts and cannot be done on a future date. The loan remains active and due for collection at the portfolio level after the accounting write-off. You can trigger charge-off manually through the Charge-off button on the Loan details page or through the API.
 
-Charge-off is an accounting treatment that marks a loan account as charged off without closing it or changing its balance. The account remains active and continues to work normally, with no impact on the loan portfolio or on data returned by existing APIs.
+## Charge off a loan
 
-The following rules apply to charge-off marked loans:
+Use this screen to write off a delinquent loan's outstanding balances for accounting purposes while the loan remains active.
 
-- A new charge-off transaction is posted and the loan is marked as charge-off.
-- The charge-off transaction is a dummy transaction that links to charge-off accounting entries and has no impact on the loan balance.
-- All types of transactions are allowed on charge-off loans, and accounting entries differ for transactions on charge-off marked loan accounts.
-- All actions, calculations, and transactions work normally on a charge-off marked loan account as on a non charge-off marked loan account.
-- The loan stays ACTIVE unless its balance is cured.
-- CHARGED_OFF status is never removed, even if the loan is PAID_OFF.
-- The account can be altered even when the loan is marked for charge-off.
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Charge-Off**.
+5. Enter the details described below, then select **Submit**.
 
-### Charge-off status and reversal
-
-You can reverse a charge-off tag only when the charge-off was completed in error, as a remediation or exception process rather than normal business activity. Reversal is not supported if any transactions occurred after the charge-off transaction. A second charge-off on an already charged-off account returns a validation error, and the same restriction applies to undoing a charge-off. Once a loan is charged off, the charge-off status is never removed, even if the customer cures or settles their balance.
-
-### Interest accrual
-
-On interest-bearing loan accounts, interest accrual stops when the account is charged off. No interest calculation occurs beyond the charge-off date. Accrual resumes when the charge-off status is reversed, starting from the date accrual was previously stopped.
-
-### Transaction rules and restrictions
-
-A charge-off transaction can be backdated but not dated before the last transaction date. Once a loan is marked as charge-off, adding charges, rescheduling the loan, and restructuring installments are not allowed. Accounting entries remain the same for both cash based and accrual based accounting types.
-
-The following restrictions apply to charge-off marked loan accounts:
-
-- Reversal of transactions that happened before or on the date of the charge-off transaction is not allowed.
-- Reversing a transaction before the charge-off either increases or decreases the charge-off amount during replay.
-- A charge-off transaction can be reverse-replayed and the distribution must be maintained up to date.
-- There are no fees or penalties for any charged-off loan, and no validations are added for this on the Fineract side.
-- The amount marked as charge-off is the loan balance as of the current date.
-- Adding a new charge on any date is not allowed once the loan is marked as charge-off.
-
-The following transactions remain possible after charge-off:
-
-- Chargeback, refunds, and other special case transactions are allowed, and the SOR does not restrict any transactions against the loan.
-- CBR is allowed after charge-off, though very unlikely.
-
-### GL mapping setup
-
-A loan product includes new account mapping parameters for charge-off. Mapping these parameters to GL accounts is optional, but a loan account can use the charge-off feature only when the required GL mapping is in place.
-
-### Charge-off events
-
-When a charge-off happens for a loan account, the system raises a charge-off business event at the time the loan is marked to CHARGE-OFF. The event includes a transaction change event with the fees and charges array. The new charge-off transaction does not affect the loan balance and acts as a dummy transaction linking to charge-off accounting entries. The Loan API reports whether a loan is charged off using an is charged off true/false field.
-
-### Undo charge-off details
-
-You can undo a charge-off without providing any parameter. When you do, you may supply a reverse external ID, which the system stores on the transaction. You can later fetch that transaction by its external ID, which is not the reverse external ID.
-
-### Pre-charge-off transaction handling
-
-You can add or reverse transactions dated before the charge-off date, and those changes follow the standard accounting journal entry rules. Changes made after the charge-off date follow the charge-off accounting journal entry rules. Reversing the charge-off itself is not supported.
-
-### Reverse replay challenges
-
-Reverse replay creates journal entries in bulk at the end of the process, so the system cannot distinguish pre-charge-off entries from post-charge-off entries at the moment.
-
-Possible strategies for creating journal entries are:
-
-- Create GL entries one by one per transaction.
-- Create GL entries in bulk for pre-charge-off transactions.
-- Create GL entries in bulk for post-charge-off transactions.
-
-### Charge-off transaction reprocessing
-
-When you reverse or backdate a transaction dated before the charge-off date, the system reverses and replays the charge-off transaction to increase or decrease the charge-off amount, and balances change accordingly. The reversed charge-off transaction appears in the transaction response after you undo the charge-off.
-
-The following rules apply to transactions around the charge-off date:
-
-- You can reverse a transaction that happened before the charge-off date.
-- You can add a transaction before the charge-off date.
-- For reversal or backdated transactions dated before the charge-off date, the system follows standard accounting JE rules.
-- Transaction changes happening after the charge-off date follow charge-off accounting JE rules.
-- If a backdated transaction fully pays the loan, the charge-off transaction is reversed and the charge-off flag is lifted.
-
-Closed or overpaid loans can be marked as fraud.
-
-- Undo discount fee is not supported, but the option is available from the UI and currently shows an error.
-- The undo discount button can be hidden from the UI.
-
-### Charge-off accounting mappings
-
-Charge-off accounting mappings define which general ledger accounts receive the interest and fees portions of a charge-off, depending on whether the charge-off is fraud-related or non-fraud-related. Charge adjustments and OCA repayments also map to specific accounts.
-
-| Portion | Account mapping |
-| --- | --- |
-| Charge off Fraud Interest | Interest income charge off, Fee Receivable, charge-off interest income, Interest Receivable, charge-off interest income, Interest income charge off, Income |
-| Charge off Fraud Fees | Fee Charge off, Fee Receivable, charge-off fees Income, Fees Receivable, charge-off fees Income, Fee Charge off, Income |
-| Charge off Non Fraud Interest | Interest income charge off, Fee Receivable, charge-off interest income, Interest Receivable |
-| Charge off Non Fraud Fees | Fee Charge off, Fee Receivable, charge-off fees Income, Fees Receivable |
-| Charge adjustment Fees | Fee Income, Fee Charge off, income from fees, charge-off fees Income |
-| OCA Repayment Interest | Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment |
-| OCA Repayment Fees | Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment |
-
-### Transaction accounting entries
-
-Transaction refunds and provisional credits post debit and credit entries to general ledger accounts based on the transaction type, cash direction, reversal indicator, and charged-off flag. The debit account is always 145023 for cash-in entries and never 145023 for cash-out entries.
-
-| Transaction | Cash direction | Reversal indicator | Charged off flag | Debit account | Credit account |
-| --- | --- | --- | --- | --- | --- |
-| Loan Disbursement Principal Cash Out | Cash Out |  |  | 112601 | 145023 |
-| Transaction Refund/Provisional Credit Interest - Repayment Cash In | Cash In |  |  | 145023 | 112603 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash In | Cash In |  |  | 145023 | 112603 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash In | Cash In |  |  | 145023 | 112603 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash In | Cash In |  |  | 145023 | 112603 |
-| Transaction Refund/Provisional Credit Principal Payment Cash In | Cash In |  |  | 145023 | 112601 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash In | Cash In |  |  | 145023 | 245000 |
-| Transaction Refund/Provisional Credit Interest - Repayment Cash In | Cash In |  | Y | 145023 | 404001 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash In | Cash In |  | Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash In | Cash In |  | Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash In | Cash In |  | Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit Principal Payment Cash In | Cash In |  | Y | 145023 | 744007/740037 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash In | Cash In |  | Y | 145023 | 245000 |
-| Transaction Refund/Provisional Credit Interest - Repayment Cash Out | Cash Out | Y |  | 112603 | 145023 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash Out | Cash Out | Y |  | 112603 | 145023 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash Out | Cash Out | Y |  | 112603 | 145023 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash Out | Cash Out | Y |  | 112603 | 145023 |
-| Transaction Refund/Provisional Credit Principal Payment Cash Out | Cash Out | Y |  | 112601 | 145023 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash Out | Cash Out | Y |  | 245000 | 145023 |
-| Transaction Refund/Provisional Credit Interest - Repayment Cash Out | Cash Out | Y | Y | 404001 | 145023 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash Out | Cash Out | Y | Y | 404008 | 145023 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash Out | Cash Out | Y | Y | 404008 | 145023 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash Out | Cash Out | Y | Y | 404008 | 145023 |
-| Transaction Refund/Provisional Credit Principal Payment Cash Out | Cash Out | Y | Y | 744007/740037 | 145023 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash Out | Cash Out | Y | Y | 245000 | 145023 |
-
-### Good will accounting entries
-
-Good will accounting entries post when a repayment is made without cash, and the debit and credit accounts depend on whether the loan carries the charged off flag.
-
-| Transaction | Debit account | Credit account |
+| Field | Required | Description |
 | --- | --- | --- |
-| Good Will Interest - Repayment No Cash | 404001 | 112603 |
-| Good Will Late Fee Payment No Cash | 744003 | 112603 |
-| Good Will NSF Fee Payment No Cash | 744003 | 112603 |
-| Good Will Snooze Fee Payment No Cash | 744003 | 112603 |
-| Good Will Principal Payment No Cash | 744003 | 112601 |
-| Good Will Unallocated Credit (UNC) No Cash | 744003 | 245000 |
-| Good Will Interest - Repayment No Cash with Charged off Flag Y | 404001 | 744008 |
-| Good Will Late Fee Payment No Cash with Charged off Flag Y | 744003 | 744008 |
-| Good Will NSF Fee Payment No Cash with Charged off Flag Y | 744003 | 744008 |
-| Good Will Snooze Fee Payment No Cash with Charged off Flag Y | 744003 | 744008 |
+| Transaction Date | Yes | Enter the date of the charge-off transaction. It cannot be a future date. |
+| Reason for Charge-Off | Yes | Select the reason for charging off the loan. |
+| External Id | No |  |
+| Note | No |  |
 
-### Waiver accounting entries
+The system writes off all outstanding dues including principal, fees, and penalties, and posts a new dummy charge-off transaction that has no impact on the loan balance.
 
-Waiver accounting entries record how late fee and NSF fee waivers affect the general ledger when no cash changes hands. The debit and credit accounts depend on whether the entry reverses a waiver and whether the loan is charged off.
+## Charge off a loan
 
-| Transaction type | Conditions | Debit account | Credit account |
-| --- | --- | --- | --- |
-| Late Fee Waiver Late Fee Payment No Cash | None | 404007 | 112603 |
-| Late Fee Waiver Late Fee Payment No Cash | Charged off Flag Y | 404007 | 404008 |
-| Late Fee Waiver Late Fee Payment No Cash | Reversal Indicator Y | 112603 | 404007 |
-| Late Fee Waiver Late Fee Payment No Cash | Reversal Indicator Y and Charged off Flag Y | 404008 | 404007 |
-| NSF Fee Waiver NSF Fee Payment No Cash | None | 404007 | 112603 |
-| NSF Fee Waiver NSF Fee Payment No Cash | Charged off Flag Y | 404007 | 404008 |
-| NSF Fee Waiver NSF Fee Payment No Cash | Reversal Indicator Y | 112603 | 404007 |
-| NSF Fee Waiver NSF Fee Payment No Cash | Reversal Indicator Y and Charged off Flag Y | 404008 | 404007 |
+Use this screen to write off a delinquent loan's outstanding balances for accounting purposes while the loan remains active.
 
-### Auto payment accounting entries
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Charge-Off**.
+5. Enter the details described below, then select **Submit**.
 
-Auto payment accounting entries record how each payment type moves cash between GL accounts.
-
-| Payment type | Cash in debit | Cash in credit | Cash out debit | Cash out credit |
-| --- | --- | --- | --- | --- |
-| Late Fee Payment | 145023 | 744008 | 744008 | 145023 |
-| NSF Fee Payment | 145023 | 744008 | 744008 | 145023 |
-| Snooze Fee Payment | 145023 | 744008 | 744008 | 145023 |
-| Principal Payment | 145023 | 744008 | 744008 | 145023 |
-| Unallocated Credit (UNC) | 145023 | 245000 | 245000 | 145023 |
-
-### Scheduled payment accounting entries
-
-Scheduled payment accounting entries record cash movements for late fee, NSF fee, snooze fee, principal, and unallocated credit payments. Each entry posts a debit or credit to account 145023 with the matching offset account.
-
-| Payment type | Cash direction | Debit account | Credit account |
-| --- | --- | --- | --- |
-| Late Fee Payment | Cash in | 145023 | 112603 |
-| NSF Fee Payment | Cash in | 145023 | 112603 |
-| Snooze Fee Payment | Cash in | 145023 | 112603 |
-| Principal Payment | Cash in | 145023 | 112601 |
-| Unallocated Credit (UNC) | Cash in | 145023 | 245000 |
-| Late Fee Payment | Cash out | 112603 | 145023 |
-| NSF Fee Payment | Cash out | 112603 | 145023 |
-| Principal Payment | Cash out | 112601 | 145023 |
-| Unallocated Credit (UNC) | Cash out | 245000 | 145023 |
-
-| Payment type | Cash direction | Debit account | Credit account |
-| --- | --- | --- | --- |
-| Late Fee Payment | Cash in | 145023 | 744008 |
-| NSF Fee Payment | Cash in | 145023 | 744008 |
-| Snooze Fee Payment | Cash in | 145023 | 744008 |
-| Principal Payment | Cash in | 145023 | 744008 |
-
-The system also applies fee returns for late fee payments with no cash, referencing R289 or R290 depending on the configuration.
-
-### Charge-off portion mappings
-
-Charge-off portion mappings determine how each loan amount moves between accounts when a charge-off, charge adjustment, or OCA repayment is processed.
-
-| Portion | From account | To account | Income references |
-| --- | --- | --- | --- |
-| Charge-off Fraud Interest | Interest income charge off | Interest Receivable | Charge-off interest income on both sides |
-| Charge-off Fraud Fees | Fee Charge off | Fee Receivable | Charge-off fees income on both sides |
-| Charge-off Fraud Penalty | Fee Charge off | Fee Receivable | Charge-off penalty income |
-| Charge-off Non Fraud Interest | Interest income charge off | Interest Receivable | Charge-off interest income on both sides |
-| Charge-off Non Fraud Fees | Fee Charge off | Fee Receivable | Charge-off fees income on both sides |
-| Charge-off Non Fraud Penalty | Fee Charge off | Fee Receivable | Charge-off penalty income |
-| Charge adjustment Fees | Fee Income | Fee Charge off | Income from fees and charge-off fees income referencing R25 |
-| Charge adjustment Unallocated Credit (UNC) | Fee Income | Other Credit liability | Income from fees and overpayment liability |
-| Charge adjustment Penalty | Fee Income | Fee Charge off | Income from penalties and charge-off penalty income |
-| OCA Repayment Interest | Other receivables | Recoveries | Fund source / advance accounting and income from recovery payment |
-| OCA Repayment Fees | Other receivables | Recoveries | Fund source / advance accounting and income from recovery payment |
-| OCA Repayment Unallocated Credit (UNC) | Other receivables | Other Credit liability | Fund source / advance accounting and overpayment liability |
-| OCA Repayment Penalty | Other receivables | Recoveries | Fund source / advance accounting and income from recovery payment |
-
-### GL account definitions
-
-| GL account | Name | Type |
+| Field | Required | Description |
 | --- | --- | --- |
-| 112601 | Loans Receivable | Asset |
-| 145023 | Suspense/Clearing account | Suspense/clearing account |
-| 112603 | Fee Receivable | Asset |
-| 245000 | Other Credit liability | Liability |
-| 744003 | Principal bal adjustment | Expense |
-| 404001 | Interest income charge off | Income |
-| 404007 | Fee Income | Income |
-| 404011 | Fee Income | Income |
-| 404000 | Interest income | Income |
-| 145800 | Other receivables | Asset |
+| Charge-Off Date | Yes | Enter the charge-off date. It cannot be a future date. |
+| Reason for Charge-Off | No | Select the reason for the charge-off. |
+| External Id | No | Enter an external identifier if required. |
+| Note | No | Add a note about the charge-off if needed. |
 
-### Duplicate transaction entries
+The system posts a new dummy charge-off transaction for the charge-off amount, which has no impact on the loan balance.
 
-The system does not reverse and replay a charge off when a payment occurs after the charge off.
+## Charge-off amount and date
 
-| Transaction | Debit account | Credit account |
-| --- | --- | --- |
-| Loan Disbursement Principal Cash Out | 112601 | 145023 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash in | 145023 | 112603 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash in | 145023 | 112603 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash in | 145023 | 112603 |
-| Transaction Refund/Provisional Credit Principal Payment Cash in | 145023 | 112601 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash in | 145023 | 245000 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash in with Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash in with Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash in with Y | 145023 | 404008 |
-| Transaction Refund/Provisional Credit Principal Payment Cash in with Y | 145023 | 744007/740037 |
-| Transaction Refund/Provisional Credit Unallocated Credit (UNC) Cash in with Y | 145023 | 245000 |
-| Transaction Refund/Provisional Credit Late Fee Payment Cash Out with Y | 112603 | 145023 |
-| Transaction Refund/Provisional Credit NSF Fee Payment Cash Out with Y | 112603 | 145023 |
-| Transaction Refund/Provisional Credit Snooze Fee Payment Cash Out with Y | 112603 | 145023 |
+The charge-off amount is the loan balance as of the charge-off date and cannot be edited. The charge-off date is set when you mark the loan as charge-off. The charge-off template includes charge-off amount and charge-off date fields. Supported fields during charge-off are transaction date, note, locale, date format, charge-off reason ID, and external ID.
 
-### Simplified charge-off portion mappings
+## Eligibility and timing
 
-Charge-off portion mappings determine which general ledger accounts receive each charge-off portion, depending on whether the loan is classified as fraud or non-fraud and whether the entry is a charge-off portion, a charge adjustment, or an OCA repayment.
+All actions, calculations, and transactions work as they do for a loan that is not marked as charge-off. The loan is considered frozen, though transactions can still happen and the loan does not close.
 
-| Portion | Fraud mapping | Non-fraud mapping |
-| --- | --- | --- |
-| Interest | Interest income charge off, Interest Receivable | Interest income charge off, Interest Receivable |
-| Fees | Fee Charge off, Fee Receivable, charge-off fees Income, Fees Receivable | Fee Charge off, Fee Receivable, charge-off fees Income, Fees Receivable |
-| Penalty | Fee Charge off, Fee Receivable, charge-off Penalty Income, Penalty Receivable | Fee Charge off, Fee Receivable, charge-off Penalty Income, Penalty Receivable |
+Charge-off marked loans allow:
 
-| Portion | Charge adjustment mapping | OCA Repayment mapping |
-| --- | --- | --- |
-| Interest | Fee Income, Fee Charge off, income from fees, charge-off fees Income | Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment |
-| Unallocated Credit (UNC) | Fee Income, Other Credit liability, income from fees, Overpayment Liability | Other receivables, Other Credit liability, fund source /advance accounting, Overpayment Liability |
-| Penalty | Fee Income, Fee Charge off, income from penalties, charge-off Penalty Income | Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment |
+- All types of transactions.
+- Accounting entries that differ from those for loans not marked as charge-off.
 
-### Debit credit charge-off mappings
+## Marking a loan as charge-off
 
-Charge-off debit and credit mappings depend on whether the loan is classified as fraud or non-fraud and on whether the entry is a charge-off or a charge adjustment.
+When you mark a loan as charge-off, the system posts a new charge-off transaction. This transaction links to the accounting entries for the charge-off and does not change the loan balance.
 
-| Charge-off type | Portion | Debit | Credit |
+The charge-off transaction:
+
+- Is created for the charge-off amount.
+
+Undoing charge-off:
+
+- The Undo charge-off button appears on the Loan details page only when the loan is already charged-off.
+
+## Accounting entries
+
+Accounting entries stay the same whether you use cash based or accrual based accounting, and they differ before and after charge-off.
+
+Charge-off accounting mappings:
+
+| Transaction type | Portion | Debit account | Credit account |
 | --- | --- | --- | --- |
-| Fraud | Interest | Interest income charge off | Interest Receivable |
-| Fraud | Fees | Fee Charge off | Fee Receivable |
-| Fraud | Penalty | Fee Charge off | Penalty Receivable |
-| Non Fraud | Interest | Interest income charge off | Interest Receivable |
-| Non Fraud | Fees | Fee Charge off | Fee Receivable |
-| Non Fraud | Penalty | Fee Charge off | Penalty Receivable |
+| Charge off Fraud | Interest | Interest income charge off | Fee Receivable |
+| Charge off Fraud | Interest income | charge-off interest income | Interest Receivable |
+| Charge off Fraud | Fees | Fee Charge off | Fee Receivable |
+| Charge off Fraud | Fees income | charge-off fees Income | Fees Receivable |
+| Charge off Fraud | Penalty | Fee Charge off | Fee Receivable |
+| Charge off Fraud | Penalty income | charge-off Penalty Income | Penalty Receivable |
+| Charge off Non Fraud | Interest | Interest income charge off | Fee Receivable |
+| Charge off Non Fraud | Interest income | charge-off interest income | Interest Receivable |
+| Charge off Non Fraud | Fees | Fee Charge off | Fee Receivable |
+| Charge off Non Fraud | Fees income | charge-off fees Income | Fees Receivable |
+| Charge off Non Fraud | Penalty | Fee Charge off | Fee Receivable |
+| Charge off Non Fraud | Penalty income | charge-off Penalty Income | Penalty Receivable |
 | Charge adjustment | Fees | Fee Income | Fee Charge off |
+| Charge adjustment | Fees income | income from fees | charge-off fees Income |
+| Charge adjustment | Unallocated Credit (UNC) | Fee Income | Other Credit liability |
+| Charge adjustment | Fees income (UNC) | income from fees | Overpayment Liability |
 | Charge adjustment | Penalty | Fee Income | Fee Charge off |
+| Charge adjustment | Penalty income | income from penalties | charge-off Penalty Income |
+| OCA Repayment | Interest | Other receivables | recoveries |
+| OCA Repayment | Interest | fund source /advance accounting | Income from Recovery payment |
+| OCA Repayment | Fees | Other receivables | recoveries |
+| OCA Repayment | Fees | fund source /advance accounting | Income from Recovery payment |
+| OCA Repayment | Unallocated Credit (UNC) | Other receivables | Other Credit liability |
+| OCA Repayment | Unallocated Credit (UNC) | fund source /advance accounting | Overpayment Liability |
+| OCA Repayment | Penalty | Other receivables | recoveries |
+| OCA Repayment | Penalty | fund source /advance accounting | Income from Recovery payment |
 
-### Charge-off GL types
+Transaction accounting entries:
 
-Charge-off GL types assign each charge-off amount to a general ledger account and a GL type. Charge-off also charges off origination fees and stops amortization after the charge-off date.
+| Transaction type | Status | Portion | Debit account | Credit account |
+| --- | --- | --- | --- | --- |
+| Loan Disbursement Principal | Cash Out |  | 112601 | 145023 |
+| Transaction Refund/Provisional Credit Interest - Repayment | Cash in |  | 145023 | 112603 |
+| Transaction Refund/Provisional Credit Late Fee Payment | Cash in |  | 145023 | 112603 |
+| Transaction Refund/Provisional Credit NSF Fee Payment | Cash in |  | 145023 | 112603 |
+| Transaction Refund/Provisional Credit Snooze Fee Payment | Cash in |  | 145023 | 112603 |
+| Transaction Refund/Provisional Credit Principal Payment | Cash in |  | 145023 | 112601 |
+| Transaction Refund/Provisional Credit Unallocated Credit (UNC) | Cash in |  | 145023 | 245000 |
+| Transaction Refund/Provisional Credit Interest - Repayment | Cash in | Charged off Flag Y | 145023 | 404001 |
+| Transaction Refund/Provisional Credit Late Fee Payment | Cash in | Charged off Flag Y | 145023 | 404008 |
+| Transaction Refund/Provisional Credit NSF Fee Payment | Cash in | Charged off Flag Y | 145023 | 404008 |
+| Transaction Refund/Provisional Credit Snooze Fee Payment | Cash in | Charged off Flag Y | 145023 | 404008 |
+| Transaction Refund/Provisional Credit Principal Payment | Cash in | Charged off Flag Y | 145023 | 744007/740037 |
+| Transaction Refund/Provisional Credit Unallocated Credit (UNC) | Cash in | Charged off Flag Y | 145023 | 245000 |
+| Transaction Refund/Provisional Credit Interest - Repayment | Cash Out | Charged off Flag Y | 112603 | 145023 |
+| Transaction Refund/Provisional Credit Late Fee Payment | Cash Out | Charged off Flag Y | 112603 | 145023 |
+| Transaction Refund/Provisional Credit NSF Fee Payment | Cash Out | Charged off Flag Y | 112603 | 145023 |
+| Transaction Refund/Provisional Credit Snooze Fee Payment | Cash Out | Charged off Flag Y | 112603 | 145023 |
+| Transaction Refund/Provisional Credit Principal Payment | Cash Out | Charged off Flag Y | 112601 | 145023 |
+| Transaction Refund/Provisional Credit Unallocated Credit (UNC) | Cash Out | Charged off Flag Y | 245000 | 145023 |
+| Transaction Refund/Provisional Credit Interest - Repayment | Cash Out | Charged off Flag Y and Reversal Indicator Y | 404001 | 145023 |
+| Transaction Refund/Provisional Credit Late Fee Payment | Cash Out | Charged off Flag Y and Reversal Indicator Y | 404008 | 145023 |
+| Transaction Refund/Provisional Credit NSF Fee Payment | Cash Out | Charged off Flag Y and Reversal Indicator Y | 404008 | 145023 |
+| Transaction Refund/Provisional Credit Snooze Fee Payment | Cash Out | Charged off Flag Y and Reversal Indicator Y | 404008 | 145023 |
+| Transaction Refund/Provisional Credit Principal Payment | Cash Out | Charged off Flag Y and Reversal Indicator Y | 744007/740037 | 145023 |
+| Transaction Refund/Provisional Credit Unallocated Credit (UNC) | Cash Out | Charged off Flag Y and Reversal Indicator Y | 245000 | 145023 |
+| Good Will Interest - Repayment | No Cash |  | 404001 | 112603 |
+| Good Will Late Fee Payment | No Cash |  | 744003 | 112603 |
+| Good Will NSF Fee Payment | No Cash |  | 744003 | 112603 |
+| Good Will Snooze Fee Payment | No Cash |  | 744003 | 112603 |
+| Good Will Principal Payment | No Cash |  | 744003 | 112601 |
+| Good Will Unallocated Credit (UNC) | No Cash |  | 744003 | 245000 |
+| Good Will Interest - Repayment | No Cash | Charged off Flag Y | 404001 | 744008 |
+| Good Will Late Fee Payment | No Cash | Charged off Flag Y | 744003 | 744008 |
+| Good Will NSF Fee Payment | No Cash | Charged off Flag Y | 744003 | 744008 |
+| Good Will Snooze Fee Payment | No Cash | Charged off Flag Y | 744003 | 744008 |
+| Late Fee Waiver Late Fee Payment | No Cash |  | 404007 | 112603 |
+| Late Fee Waiver Late Fee Payment | No Cash | Charged off Flag Y | 404007 | 404008 |
+| Late Fee Waiver Late Fee Payment | No Cash | Charged off Flag Y and Reversal Indicator Y | 112603 | 404007 |
+| Late Fee Waiver Late Fee Payment | No Cash | Charged off Flag Y and Reversal Indicator Y | 404008 | 404007 |
+| NSF Fee Waiver NSF Fee Payment | No Cash |  | 404007 | 112603 |
+| NSF Fee Waiver NSF Fee Payment | No Cash | Charged off Flag Y | 404007 | 404008 |
+| NSF Fee Waiver NSF Fee Payment | No Cash | Charged off Flag Y and Reversal Indicator Y | 112603 | 404007 |
+| NSF Fee Waiver NSF Fee Payment | No Cash | Charged off Flag Y and Reversal Indicator Y | 404008 | 404007 |
 
-| Charge-off amount | Maps to | GL type |
+## GL mapping setup
+
+Charge-off accounting entries use new GL mapping fields in the loan product Accounting mapping. Mapping each field to a GL account is optional. When you map a field, the system posts charge-off entries to the GL account and GL type shown below. Leave a field blank if you do not want to post that charge-off entry type.
+
+| GL mapping field | GL account | GL type |
 | --- | --- | --- |
-| Charge-off expense | Credit Loss/Bad Debt | Expense |
 | Charge-off expense - fraud | Credit Loss/Bad Debt Fraud | Expense |
 | Charge-off interest income | Interest income charge off | Income |
 | Charge-off fees income | Fee Charge off | Income |
+| Charge-off expense | Credit Loss/Bad Debt | Expense |
 | Charge-off penalty income | Fee Charge off | Income |
 
-| Good will credit amount | Maps to | GL type |
-| --- | --- | --- |
-| Good will credit interest income | GL 404001 | Income |
-| Good will credit fees income | GL 404008 | Income |
-| Good will credit penalties income | GL 404008 | Income |
+## Interest and amortization
 
-### UI fields and buttons
+Interest stops accruing on a charge-off loan account, and no interest calculation happens after the charge-off date. Charge-off also charges off the capitalized income, and no daily amortization happens after that date. If you reverse the charge-off, interest accrual resumes from the date it was previously stopped, and the system undoes the final amortization transaction and its accounting entries.
 
-The charge-off screen lets you record a charge-off date and reason for a loan. The Charge-off button appears on the Loan details page, alongside the Undo charge-off button, which shows only when an active charge-off exists. New GL mapping fields for charge-off are introduced in loan product Accounting mapping, and the existing parameter name goodwill credit in expense category is renamed to Expenses from goodwill credit.
+## Transactions after charge-off
 
-The charge-off screen includes the following fields and buttons:
+After a loan is marked as a charge-off, you can still record chargebacks, refunds and other special case transactions, and post charge-off repayment is treated as a regular payment. Adding charges after charge-off is not allowed, and backdated transactions or reversals of transactions that happened before the charge-off date are not allowed once the loan is marked as a charge-off. Post charge-off transactions are allowed based on configuration, and all accounting follows charge-off-specific rules.
 
-- Transaction Date is required.
-- Charge-Off Date is required.
-- Reason for Charge-Off is required.
-- The screen supports transaction date, note, locale, date format, charge-off reason ID, and external ID.
-- Charge-Off Amount appears on the screen.
-- Cancel and Submit buttons are available.
+Transactions allowed after charge-off:
 
-The charge-off amount message behaves as follows:
+- Chargeback transactions are allowed after charge-off.
 
-- When submitted-date based accrual accounting is turned on, the submitted on date appears on the charges tab and is properly filled.
-- When submitted-date based accrual accounting is off, the charges page tab remains as is.
+## Transactions before charge-off
 
-### Journal entry timing
+You can reverse or add transactions dated before the charge-off date. A backdated transaction cannot be dated before the last transaction date, and a backdated transaction that dates before the charge-off is not allowed. The system follows standard accounting JE rules for these transactions and reverses and replays the charge-off transaction to increase or decrease the charge-off amount based on the reversal or new posting. Reversing a repayment increases the charge-off amount during the replay. If a backdated transaction fully pays the loan, the system reverses the charge-off transaction and lifts the charge-off flag.
 
-Journal entries for charge-off transactions are created in bulk at the end of the workflow rather than immediately when a transaction is created or reverse-replayed.
+Transaction changes after the charge-off date follow charge-off accounting JE rules.
+
+- The system reprocesses the charge-off transaction with balances changing.
+
+## Reversing charge-off
+
+You can reverse a charge-off only when the charge-off was applied in error. Reversal removes the charge-off tag; it is an exception process, not routine business, and the charge-off status should not be removed after the customer cures or settles the balance.
+
+Reversal is not allowed when:
+
+- Any transaction exists after the charge-off transaction.
+- The account is already charged off and a second charge-off or undo charge-off is attempted.
+
+What happens on reversal:
+
+- Undo charge-off requires no parameter.
+- The system stores the External Id when undoing a charge-off.
+- You can fetch the transaction by external id; this is not the reverse external id.
+- The reversed charge-off transaction appears in the transaction response.
+
+## Reverse-replay
+
+You can reverse-replay a charge-off transaction, and the system keeps its distribution up to date.
+
+> **Note:** The system creates journal entries in bulk at the end of reverse-replay and cannot distinguish pre-charge-off entries from post-charge-off entries.
+
+## Restrictions on charge-off loans
+
+You cannot reschedule or restructure installments on a loan marked as charge-off. No fees or penalties apply to a charged-off loan, and the system adds no validations for this.
+
+## Events and API behavior
+
+Charge-off is an accounting treatment and does not change data returned by the existing APIs. The system raises a charge-off business event whenever a charge-off happens for a loan account. At the time a loan is marked to CHARGE-OFF, a transaction change event with the fees and charges array is emitted. Charge-off accelerates the maturity date as of 4/15/2025.
 
 ```mermaid
 stateDiagram-v2
-  state "Charge-off flag active" as n1
-  state "Charge-off flag lifted" as n2
-  state "Charge-off flag reapplied" as n3
-  state "Journal entry created immediately" as n4
-  n1 --> n2 : Charge-off transaction reprocessed
-  n2 --> n3 : Charge-off transaction reprocessed
-  n3 --> n4 : Reverse-replay or new loan transaction created
+  state "ACTIVE" as n1
+  state "CHARGE-OFF" as n2
+  state "CHARGED_OFF" as n3
+  state "PAID_OFF" as n4
+  n1 --> n2 : charge-off action
+  n2 --> n3 : loan marked
+  n3 --> n4 : loan paid off
+  n1 --> n1 : balance cured
 ```
 
-### Charge-off procedure
+## Worked examples
 
-You charge off a loan account from its actions menu. The charge-off screen records the charge-off date and reason, with optional external ID and note fields. The loan API also marks an account as charged off and reports whether it is charged off.
+A loan officer reviews an active loan that is long overdue. The loan has a principal of 1,000.00, an overdue fee of 50.00, and an overdue penalty of 25.00, for a total outstanding balance of 1,075.00. The officer opens the loan account and selects the charge-off action. The system calculates the charge-off amount automatically from the current balance; the user cannot edit it. The figures in this example are illustrative.
 
-1. Open the loan account and choose "Charge-Off" from the actions.
-2. Enter the Charge-Off Date.
-3. Optionally enter Reason for Charge-Off, External Id and Note.
-4. Choose Submit.
+| Step | Item | Amount (USD) |
+| --- | --- | --- |
+| 1 | Outstanding principal | 1,000.00 |
+| 2 | Outstanding fees | 50.00 |
+| 3 | Outstanding penalties | 25.00 |
+| 4 | Charge-off amount (auto-calculated) | 1,075.00 |
+| 5 | Loan balance after charge-off | 1,075.00 |
+| 6 | Dummy charge-off transaction posted | 1,075.00 |
+| 7 | Balance impact of dummy transaction | 0.00 |
 
-```mermaid
-flowchart TD
-  n1["Open loan account"]
-  n2["Choose Charge-Off"]
-  n3["Charge-Off screen"]
-  n4["Enter Transaction Date and Reason"]
-  n5["Enter Charge-Off Date"]
-  n6["Optionally enter External Id and Note"]
-  n7["Choose Submit"]
-  n8["Loan marked as charge-off"]
-  n1 --> n2
-  n2 --> n3
-  n3 --> n4
-  n3 --> n5
-  n4 --> n6
-  n5 --> n6
-  n6 --> n7
-  n7 --> n8
-```
+The example shows that charge-off writes off the full outstanding amount at the accounting level while the loan stays active and its portfolio balance does not change.
 
-### Worked examples
+A loan officer discovers that a charge-off was posted in error. No payments or other transactions have been made on the loan since the charge-off. The officer selects the undo charge-off action. The system lifts the charge-off flag and restores the loan to its normal active state. A second charge-off on an already charged-off account, or an undo when later transactions exist, is not allowed.
 
-A loan officer disburses a loan of 1,000.00 with no interest for simplicity. When the outstanding balance is 1,000.00, the officer marks the loan as charge-off. The figures in this example are illustrative. The system posts a dummy charge-off transaction for 1,000.00, which equals the loan balance as of that date. The loan balance does not change, the loan remains active, and the charge-off flag is turned on. There is no impact on the loan portfolio. The charge-off amount stays fixed even if the customer pays afterward.
-
-| Step | Transaction | Amount | Loan balance | Charge-off amount | Loan status |
-| --- | --- | --- | --- | --- | --- |
-| 1 | Disburse loan | 1,000.00 | 1,000.00 | 0.00 | Active |
-| 2 | Mark charge-off | 1,000.00 | 1,000.00 | 1,000.00 | Active (charge-off on) |
-| 3 | Receive payment | 200.00 | 800.00 | 1,000.00 | Active (charge-off on) |
-
-A loan with a balance of 1,000.00 is marked charge-off. The customer then repays 400.00 through one of the available payment channels—scheduled, real-time, or auto-pay. All transaction types remain allowed on charge-off loans, so the repayment is accepted. The loan balance falls to 600.00, while the charge-off amount stays fixed at 1,000.00. The accounting entries use the charge-off mapping rather than the standard mapping. The only difference between channels is the transaction source label; the balance and charge-off amount are identical.
-
-| Payment channel | Repayment | Loan balance after repayment | Charge-off amount |
+| Stage | Charge-off flag | Loan balance | Note |
 | --- | --- | --- | --- |
-| Scheduled | 400.00 | 600.00 | 1,000.00 |
-| Real-time | 400.00 | 600.00 | 1,000.00 |
-| Auto-pay | 400.00 | 600.00 | 1,000.00 |
+| Before undo | Y | 1,075.00 | Loan marked charge-off; dummy transaction posted |
+| Undo action | N | 1,075.00 | Charge-off tag lifted; reversed charge-off transaction appears in history |
+| After undo | N | 1,075.00 | Loan remains active; no portfolio balance change |
 
-A loan of 1,000.00 is outstanding. The customer repays 300.00 before the charge-off date, reducing the balance to 700.00. On the charge-off date, the officer marks the loan charge-off and the charge-off amount is set to 700.00. Later, the officer reverses the 300.00 repayment because it was posted in error. Since the reversal dates before the charge-off, the balance before charge-off rises back to 1,000.00 and the charge-off amount is replayed to 1,000.00.
+This shows that undoing a charge-off removes only the tag and is possible only when no later transactions exist.
 
-| Step | Date | Event | Balance before charge-off | Charge-off amount |
-| --- | --- | --- | --- | --- |
-| 1 | 1-Jan | Disburse loan | 1,000.00 | 0.00 |
-| 2 | 1-Mar | Repay 300.00 | 700.00 | 0.00 |
-| 3 | 1-Jun | Mark charge-off | 700.00 | 700.00 |
-| 4 | 10-Jun | Reverse the 1-Mar repayment | 1,000.00 | 1,000.00 |
+A loan has a balance of 1,000.00 and is marked charge-off on 1 June for the full amount. On 5 June, an officer posts a backdated payment of 200.00 dated 15 May, before the charge-off date. Because the payment predates the charge-off, the system reverses the original charge-off transaction, applies the payment, and replays the charge-off against the reduced balance. The figures are illustrative.
 
-A loan is marked charge-off in error while its balance is 1,000.00 and interest accrual has stopped. An administrator undoes the charge-off as a remediation, not as normal business. The charge-off tag is reversed to non-charge-off, interest accrual resumes from the date it was stopped, and the reversed charge-off transaction remains visible in the transaction history. If the user supplies an external id, it is stored on the reversal transaction.
+| Event | Date | Amount | Balance after event |
+| --- | --- | --- | --- |
+| Original charge-off | 1 June | 1,000.00 | 1,000.00 |
+| Backdated payment posted | 15 May (effective) | -200.00 | 800.00 |
+| Charge-off reversed | 1 June | -1,000.00 | 800.00 |
+| Charge-off replayed | 1 June | 800.00 | 800.00 |
+| Net change to charge-off amount |  | -200.00 |  |
 
-| Step | Action | Charge-off flag | Interest accrual | Reversed charge-off visible |
-| --- | --- | --- | --- | --- |
-| 1 | Mark loan charge-off | On | Stopped | – |
-| 2 | Undo charge-off | Off | Resumes from stop date | Yes |
+This shows that pre-charge-off transactions follow standard journal-entry rules and cause the charge-off amount to be reverse-replayed.
 
-See also: [Payment Allocation Strategies: Payment Allocation Strategies](confluence-link:Payment%20Allocation%20Strategies#payment-allocation-strategies).
+See also: [Payment Allocation Strategies](confluence-link:Payment%20Allocation%20Strategies).

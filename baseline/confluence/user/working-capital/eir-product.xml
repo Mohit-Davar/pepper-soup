@@ -1,0 +1,727 @@
+<h2>About the Working Capital loan product</h2>
+<p>The Working Capital loan product is a zero-interest, single-disbursement product that uses Effective Interest Rate (EIR)-based calculation aligned with PayPal’s Working Capital financing offerings. It is not a Traditional Term loan with a Traditional full tenure Repayment Schedule.</p>
+<h2>Configure effective interest rate product terms</h2>
+<p>Use this screen to set the principal, payment rate, annual EIR, payment amount, number of repayments, interest rates, floating rate, and repayment timing for an Effective Interest Rate loan product.</p>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>TERMS</strong>.</li>
+<li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Minimum</td>
+<td>No</td>
+<td>Enter the minimum principal allowed for the loan product.</td>
+</tr>
+<tr>
+<td>Default</td>
+<td>Yes</td>
+<td>Enter the default principal allowed for the loan product.</td>
+</tr>
+<tr>
+<td>Maximum</td>
+<td>No</td>
+<td>Enter the maximum principal allowed for the loan product.</td>
+</tr>
+<tr>
+<td>Allow approval / disbursal above loan applied amount</td>
+<td>No</td>
+<td>Select whether approval or disbursal is allowed above the loan applied amount.</td>
+</tr>
+<tr>
+<td>Over Amount Calculation Type</td>
+<td>Yes</td>
+<td>Select the calculation type used for amounts over the applied loan amount.</td>
+</tr>
+<tr>
+<td>Over Amount</td>
+<td>Yes</td>
+<td>Enter the over amount used in the over amount calculation.</td>
+</tr>
+<tr>
+<td>Payment Amount Calculation Strategy</td>
+<td>Yes</td>
+<td>Select the strategy used to calculate the payment amount.</td>
+</tr>
+<tr>
+<td>Discount</td>
+<td>Yes</td>
+<td>Enter the discount applied to the loan product.</td>
+</tr>
+<tr>
+<td>Installment day calculation from</td>
+<td>Yes</td>
+<td>Select the basis from which the installment day is calculated.</td>
+</tr>
+<tr>
+<td>Is interest recognition on disbursement date?</td>
+<td>No</td>
+<td>Indicate whether interest recognition occurs on the disbursement date.</td>
+</tr>
+<tr>
+<td>Is Zero Interest Rate?</td>
+<td>No</td>
+<td>Indicate whether the loan product charges zero interest.</td>
+</tr>
+<tr>
+<td>Is Linked to floating interest rates?</td>
+<td>No</td>
+<td>Indicate whether the loan product is linked to floating interest rates.</td>
+</tr>
+<tr>
+<td>Frequency</td>
+<td>Yes</td>
+<td>Enter the repayment frequency for the loan product.</td>
+</tr>
+<tr>
+<td>Floating Rate</td>
+<td>Yes</td>
+<td>Enter the floating interest rate for the loan product.</td>
+</tr>
+<tr>
+<td>Differential Rate</td>
+<td>Yes</td>
+<td>Enter the differential rate applied to the floating interest rate.</td>
+</tr>
+<tr>
+<td>Is Floating calculation allowed?</td>
+<td>No</td>
+<td>Indicate whether floating rate calculation is allowed.</td>
+</tr>
+<tr>
+<td>Terms vary based on loan cycle</td>
+<td>No</td>
+<td>Indicate whether terms vary based on the loan cycle.</td>
+</tr>
+<tr>
+<td>Frequency Type</td>
+<td>Yes</td>
+<td>Select the frequency type for repayments.</td>
+</tr>
+<tr>
+<td>First repayment day of month</td>
+<td>Yes</td>
+<td>Enter the first repayment day of the month.</td>
+</tr>
+<tr>
+<td>Second repayment day of month</td>
+<td>Yes</td>
+<td>Enter the second repayment day of the month.</td>
+</tr>
+<tr>
+<td>Fixed Length</td>
+<td>No</td>
+<td>Enter the fixed maximum length of the loan, which defines the length of the last installment.</td>
+</tr>
+<tr>
+<td>Minimum days between disbursal and first repayment date</td>
+<td>No</td>
+<td>Enter the minimum number of days between disbursal and the first repayment date.</td>
+</tr>
+</tbody></table>
+<p>The loan product terms are saved and used to calculate repayment schedules and determine when payments are due.</p>
+<h2>Creating and configuring a Working Capital loan product</h2>
+<p>You can create, modify, and delete Working Capital loan products through the UI or API. It uses input parameters specific to Working Capital product types, while existing fields and configurations behave as they do on term loan products. Mandatory field validation and correct value validation apply to the configuration.</p>
+<p>Configuration parameters for a Working Capital loan product include:</p>
+<ul>
+<li>Decimal place is mandatory.</li>
+<li>Charge Name, Currency, Charge Type (Flat amount or Percentage-based), Application Timing (At disbursement or On a specified due date), Calculation Basis (Principal, Outstanding balance, or Flat fixed amount), Penalty Configuration, and Tax Applicability.</li>
+<li>Accounting entry posting for charges, real-time or EOD.</li>
+<li>Bucket configuration, which works similar to Term loans.</li>
+<li>Sample buckets: D00 (01-30), D30 (31-60), D60 (61-90), D90 (91-120), D120 (121-150), D150 (151-180), D180 (181-210), D210 (210-240), D270 (&gt;270).</li>
+<li>COB business steps, controlled by configuration including enablement and execution order.</li>
+</ul>
+<p>You can also:</p>
+<ul>
+<li>Set Configurable Terms and Settings on Working Capital loan products.</li>
+<li>Override selected fields during loan creation.</li>
+<li>Delete a Working Capital loan product if it was not yet used anywhere.</li>
+</ul>
+<h2>Creating a loan account from a Working Capital product</h2>
+<p>You can create a loan application from a Working Capital loan product that already exists in the system. All default values from the product are inherited to the loan application screen, and mandatory field checks and correct value checks apply. A selector lets you choose Regular (the default) or Working Capital as the loan product. A Working Capital loan account can be created with Grace Days and Grace Days Start date left blank when the product does not allow overriding terms and settings at the loan account level. Once created, you can modify, approve, or reject the loan account.</p>
+<h2>Approving, disbursing, and undoing a loan account</h2>
+<p>You can approve a loan account that is in created state, disburse an approved loan account, and undo either action. Undoing approval returns the loan account to created state. Undoing disbursement returns it to approval state.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Created" as n1
+  state "Approved" as n2
+  state "Disbursed" as n3
+  n1 --> n2 : Approve
+  n2 --> n1 : Undo approval
+  n2 --> n3 : Disburse
+  n3 --> n2 : Undo disbursement]]></ac:plain-text-body></ac:structured-macro>
+<h2>Discount fields and values</h2>
+<p>The single Discount field is broken down into three fields: Proposed discount, Approved discount, and Disbursed discount.</p>
+<p>Each discount field is entered at a different step:</p>
+<ul>
+<li>Proposed discount is entered or modified at the create loan step.</li>
+<li>Approved discount is entered during the approve loan step.</li>
+<li>Approved discount is reset to zero when undo approve is done.</li>
+</ul>
+<p>When attributes override is disallowed, the discount value depends on whether the WC loan product defines a discount value:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Product has a discount value</td>
+<td>Proposed discount on loan account creation is the inherited product-level value of 50.</td>
+</tr>
+<tr>
+<td>Discount field is left empty on approve/disburse screens</td>
+<td>Discount is assumed to be the default inherited value from the WC loan product level.</td>
+</tr>
+</tbody></table>
+<p>When attributes override is allowed, the discount value depends on whether the WC loan product defines a discount value:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Product has a discount value, and you remove it when creating the loan</td>
+<td>No value remains on the loan account.</td>
+</tr>
+<tr>
+<td>Discount value is left empty</td>
+<td>Discount is set to null or empty as currently implemented.</td>
+</tr>
+</tbody></table>
+<h2>Adding and adjusting discount fees</h2>
+<p>A discount fee is a monetary transaction applied to a Working Capital loan account. It is charged up front at origination, added to principal to create the total amount to repay, and is effective as of the disbursement date.</p>
+<p>You can add a discount fee:</p>
+<ul>
+<li>At the time of loan creation.</li>
+<li>After disbursement, effective as of the disbursement date.</li>
+</ul>
+<p>You cannot add a discount fee:</p>
+<ul>
+<li>More than once.</li>
+<li>After disbursement if a discount fee was already added at loan creation or approval.</li>
+</ul>
+<p>You can add a discount fee through:</p>
+<ul>
+<li>The user interface.</li>
+</ul>
+<p>Discount fee adjustment is allowed only when all of the following are true:</p>
+<ul>
+<li>The loan product type is Working Capital Loan.</li>
+<li>The loan status is Active.</li>
+<li>A non-reversed Discount Fee transaction exists on the loan.</li>
+<li>The adjustment amount is greater than zero.</li>
+<li>The adjustment amount does not exceed the remaining adjustable discount.</li>
+</ul>
+<p>The adjustment amount must also meet these validation rules:</p>
+<ul>
+<li>The transaction date must be greater than or equal to the parent Discount Fee date.</li>
+<li>The parent transaction must be an active Discount Fee.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The system drives amortization only; you cannot create direct or manual amortization entries.</p>
+</blockquote>
+<h2>Discount fee amortization</h2>
+<p>Discount fee amortization calculates how much of a discount fee to recognize as income based on payments made. It runs when a payment is processed and when a loan is fully paid or overpaid. It does not change the loan outstanding balance or any accounting balance. It is a system-generated, non-monetary transaction that gives visibility of deferred income movement, links payments to income recognition, and supports EIR-based tracking without impacting accounting or balances.</p>
+<p>The system compares the total actual amortization balance to date against the total discount fee amortization transactions minus total discount fee amortization adjustment transactions:</p>
+<ul>
+<li>If the difference is positive, the system creates a Discount fee amortization transaction for the difference.</li>
+<li>If the difference is negative, the system creates a Discount fee amortization adjustment transaction for the difference.</li>
+<li>If the difference is zero, the system creates no transaction.</li>
+</ul>
+<p>Each run also:</p>
+<ul>
+<li>Updates realized discount fee income balance and unrealized discount fee income balance.</li>
+<li>Creates an amortization record for reporting and audit.</li>
+<li>Reduces tracked deferred income in the logical view.</li>
+</ul>
+<p>Discount fee amortization transactions are system-generated only:</p>
+<ul>
+<li>You cannot manually create, edit, or delete a Discount fee amortization transaction.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Realized and unrealized discount fee balances are controlled only by the discount fee amortization business step.</p>
+</blockquote>
+<h2>Period Payment Rate modification</h2>
+<p>You can modify the Period Payment Rate on an Active loan as of a date you choose. Changing the rate recalculates Daily Payment Amount, Total Days, and EIR, and future amortization calculations use the newly calculated values. Previously computed and posted amortizations are not affected. Delinquency and Breach are not impacted because they use their own parameter configurations.</p>
+<p>The modification is not allowed on:</p>
+<ul>
+<li>Closed loans</li>
+<li>Overpaid loans</li>
+<li>Charge-off accounts</li>
+<li>Written-off accounts</li>
+</ul>
+<p>Period Payment Rate modification does not support:</p>
+<ul>
+<li>Backdated repayments</li>
+<li>Repayment reversal prior to the Period Payment Rate change operation</li>
+</ul>
+<p>Undoing and multiple values:</p>
+<ul>
+<li>You can undo a Period Payment Rate modification by reversing the operation.</li>
+<li>Multiple Period Payment Rate modifications are allowed.</li>
+<li>Setting multiple rates on the same day is allowed so it can be easily undone in case of a mistake.</li>
+<li>The system saves the history of EIR and other calculated values during each rate change.</li>
+<li>The current reversed logic for previous entries is kept only for those in the same date.</li>
+</ul>
+<p>Payments, even if backdated, consider the rate that is in effect for them based on segments.</p>
+<h2>Repayment behavior and status changes</h2>
+<p>A repayment reduces the outstanding balance. Any repayment amount above the outstanding obligation is stored as overpayment. If repayment creates an overpayment, the loan status changes from ACTIVE to OVERPAID. Payments first pay off the outstanding amount of the oldest past due, delinquent period, then pay off the current period.</p>
+<p>A Credit Balance Refund (CBR) is a monetary transaction executed on a loan account in OVERPAID status. CBR is allowed only when the loan status is OVERPAID and the overpayment amount is greater than zero. The transaction amount must be greater than zero and no more than the overpayment amount. The transaction date must follow standard transaction date rules: it cannot be a future date or before the disbursement date.</p>
+<p>CBR only reduces the overpayment amount by the refund amount. It results in persistence of transaction and allocation records, and the system evaluates the loan status transition based on the resulting balance fields.</p>
+<p>After CBR, if the overpayment amount remains greater than zero, the loan status stays OVERPAID. If the overpayment amount is zero and the obligation is fully met (principal outstanding is zero), the status changes from OVERPAID to CLOSED_OBLIGATIONS_MET.</p>
+<p>If a refund amount exceeds the outstanding principal balance, the excess amount results in the loan entering Overpaid status, and the excess amount is recorded as overpayment. A loan status also changes to Overpaid when excess funds exist from a Payout Refund transaction.</p>
+<h2>Credit Balance Refund</h2>
+<p>Conditions and rules:</p>
+<ul>
+<li>You can perform Credit Balance Refund only if the loan account has an available credit balance.</li>
+<li>The refund amount must be the full credit balance.</li>
+<li>The transaction date must comply with business date rules and backdating rules.</li>
+<li>Backdated Credit Balance Refund is supported subject to validations.</li>
+</ul>
+<p>Effects:</p>
+<ul>
+<li>Credit Balance Refund triggers accounting entries.</li>
+<li>Credit Balance Refund reversal is allowed subject to no dependency conflicts and valid loan/account status.</li>
+<li>Credit Balance Refund reversal creates a linked reversal transaction.</li>
+<li>Credit Balance Refund reversal reverses the credit balance adjustment and accounting entries.</li>
+</ul>
+<h2>Adding charges to loans</h2>
+<p>You can add a charge to a loan that is closed, overpaid, or past its maturity date. The charge sets a new maturity date equal to the charge due date. If any outstanding balance remains after the charge is added, the system creates delinquency and breach periods for the loan.</p>
+<p>Adding a charge to an overpaid loan changes its status as follows:</p>
+<ul>
+<li>If the overpaid amount is greater than the charge amount, the loan remains overpaid.</li>
+<li>If the overpaid amount matches the charge amount, the loan closes.</li>
+<li>If the overpaid amount is lower than the charge amount, the loan becomes active again.</li>
+</ul>
+<h2>Charge-off and write-off</h2>
+<p>Charge-off marks outstanding principal, interest, fees, and penalties as written-off and removes them from the books through accounting entries. It is an accounting classification, not a loan closure. Charge-off reversal is supported subject to configuration and controls.</p>
+<p>Charge-off accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Debit GL code</th>
+<th>Debit mapping</th>
+<th>Credit GL code</th>
+<th>Credit mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>744007/744037</td>
+<td>Credit loss-bad debt / credit loss-bad debt-fraud</td>
+<td>112601</td>
+<td>Loans Receivable Principal</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Penalties</td>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>112603</td>
+<td>Penalty Receivable</td>
+</tr>
+</tbody></table>
+<p>Charge-off reversal accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Debit GL code</th>
+<th>Debit mapping</th>
+<th>Credit GL code</th>
+<th>Credit mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fees</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Penalties</td>
+<td>112603</td>
+<td>Penalty Receivable</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalties</td>
+</tr>
+</tbody></table>
+<p>Charge-off rules:</p>
+<ul>
+<li>Backdated charge-off is allowed but must not precede the last monetary transaction date.</li>
+<li>Backdated repayments and reversals before the charge-off date are allowed.</li>
+<li>Any transaction or reversal after the charge-off date must strictly follow charge-off accounting rules.</li>
+<li>Charge-off has no automatic impact on delinquency or breach status.</li>
+</ul>
+<h2>Amortization schedules and calculations</h2>
+<p>Amortization schedules project how deferred income is recognized over the life of a loan. The system supports two amortization calculation types: Declining Amortization (EIR-Based) and Flat amortization. Declining Amortization (EIR-Based) is the primary and preferred approach. It amortises income using the Effective Interest Rate (EIR) methodology, based on time value of money, and aligns income recognition with actual cash flows. Its amortization amount varies over time and depends on repayment amounts and payment timing. Flat amortization follows discount fee calculation based on a flat ratio.</p>
+<p>Amortization support includes:</p>
+<ul>
+<li>Generation of amortization schedules.</li>
+<li>Dynamic recalculation based on actual cash flows.</li>
+<li>Support for different calculation approaches.</li>
+</ul>
+<p>Amortization is triggered by:</p>
+<ul>
+<li>Repayment transactions.</li>
+<li>Goodwill credit transactions.</li>
+<li>Discount and discount adjustments.</li>
+</ul>
+<p>Amortization logic depends on:</p>
+<ul>
+<li>Total deferred income.</li>
+<li>Loan principal or outstanding balance.</li>
+<li>Repayment amounts and frequency.</li>
+<li>Loan tenure or expected duration.</li>
+<li>EIR for the declining method.</li>
+</ul>
+<p>The amortization schedule is:</p>
+<ul>
+<li>Generated at loan creation.</li>
+<li>Recalculated at approval and disbursement stages.</li>
+<li>Continuously updated to reflect actual repayment behavior.</li>
+</ul>
+<p>On each payment, the system:</p>
+<ul>
+<li>Calculates the amortised portion.</li>
+<li>Updates the schedule.</li>
+<li>Generates a Discount fees Amortization transaction (non-monetary).</li>
+</ul>
+<p>Discount fees Amortization is automatically created along with:</p>
+<ul>
+<li>Repayment transactions.</li>
+<li>Goodwill Credit transactions.</li>
+<li>Discount fees Adjustment transactions.</li>
+</ul>
+<p>The projected amortization schedule includes:</p>
+<ul>
+<li>Projected Amortization amounts.</li>
+<li>Deferred income balance.</li>
+<li>Expected timeline of recognition.</li>
+</ul>
+<p>Each record in the projected amortization schedule contains:</p>
+<ul>
+<li>Amortization Installment Number.</li>
+<li>Amortization Installment Date.</li>
+<li>Expected Payment Amount.</li>
+<li>Discount Factor.</li>
+<li>NPV Value.</li>
+<li>Balance.</li>
+<li>Net Amortization Amount.</li>
+<li>Actual Payment Amount.</li>
+<li>Actual Amortization Amount.</li>
+<li>Income Modification.</li>
+<li>Deferred Balance.</li>
+</ul>
+<p>Key terms:</p>
+<ul>
+<li>Deferred Balance is the portion of fees, discount, or deferred income that has not yet been amortized or recognized.</li>
+<li>Deferred Balance reduces over time as the loan is amortized.</li>
+<li>Income Modification is the adjustment required when actual amortization differs from expected amortization due to payment behavior such as overpayment, underpayment, or missed payment.</li>
+</ul>
+<p>Schedule types:</p>
+<ul>
+<li>Current state schedule always reflects real-time loan conditions based on actual transactions.</li>
+<li>Projected is calculated using expected payment behavior.</li>
+<li>Actual is calculated using real borrower payment activity.</li>
+</ul>
+<p>Actual repayments:</p>
+<ul>
+<li>Calculate and post the Actual Amortization (Income) on the payment date.</li>
+</ul>
+<p>Calculated and stored values at the loan account level include:</p>
+<ul>
+<li>Period Payment amount.</li>
+<li>Total Days.</li>
+<li>Daily EIR.</li>
+<li>Calc. Annual EIR.</li>
+</ul>
+<p>Calculated and stored values based on repayments include:</p>
+<ul>
+<li>Payment amount.</li>
+<li>Actual Amortization (Income).</li>
+<li>Income Modification.</li>
+<li>Deferred balance.</li>
+</ul>
+<p>Calculation formulas:</p>
+<table>
+<thead>
+<tr>
+<th>Formula</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Expected Payment Amount = (Total Payment Value * Period Payment Rate) / NPV Day Count</td>
+<td>Money</td>
+</tr>
+<tr>
+<td>EIR = rate(Loan Term, -Expected Payment Amount, Disbursement Amount)</td>
+<td>BigDecimal</td>
+</tr>
+<tr>
+<td>Days = Disbursement Date - Amortization Installment Date</td>
+<td>Whole number</td>
+</tr>
+<tr>
+<td>Discount Factor = 1 / (1 + EIR) ^ Days</td>
+<td>BigDecimal</td>
+</tr>
+<tr>
+<td>Balance is calculated using the npv formula</td>
+<td>Money</td>
+</tr>
+<tr>
+<td>Actual Amortization Amount is calculated amortization amount based on payment</td>
+<td>Money</td>
+</tr>
+<tr>
+<td>Deferred Balance = Discount Fee / Deferred Balance - Actual Amortized Amount</td>
+<td>Money</td>
+</tr>
+</tbody></table>
+<p>Flat amortization calculation:</p>
+<ul>
+<li>Flat amortization uses a ratio of Payable Discount fee for initial Loan balance to calculate the discount fee amortization amount based on the repayment amount.</li>
+</ul>
+<p>Declining Amortization schedule generation is based on:</p>
+<ul>
+<li>Minimum expected payment amount.</li>
+<li>Calculated loan term.</li>
+<li>Total deferred income.</li>
+</ul>
+<p>Amortization is calculated based on:</p>
+<ul>
+<li>EIR (Effective Interest Rate) methodology or configured logic.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Amortization calculation itself does not directly create accounting entries.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Loan Creation"]
+  n2["Approval & Disbursement"]
+  n3["Repayment / Goodwill Credit / Discount Adjustment"]
+  n4["Actual Amortization Posted"]
+  n5["Schedule Updated"]
+  n6["Future Schedule Recalculated"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6]]></ac:plain-text-body></ac:structured-macro>
+<h2>EIR and rate calculations</h2>
+<p>The Effective Interest Rate (EIR) is the rate used to discount future cash flows to present value so that the total discounted cash flows equal the initial disbursement amount. It represents the true economic cost or yield of the loan. Daily Payment Amount, Total Days, and EIR are calculated based on Principal Amount, Total Payment Value, Discount Amount, NPV Day count, and Period Payment Rate. Discount Amount is the fee or financial adjustment deducted from or associated with the loan that is amortized over the loan lifecycle.</p>
+<p>The IRR based calculation replaces the current RATE based effective interest rate calculation:</p>
+<ul>
+<li>The IRR based calculation can handle a non uniform schedule.</li>
+<li>The RATE based calculation only works for loans which have equal daily payment amounts throughout their lifecycle.</li>
+</ul>
+<p>When an actual payment differs from the expected payment:</p>
+<ul>
+<li>Future expected payment periods are recalculated using actual payments as a baseline.</li>
+<li>Past rows are never recalculated; only payment periods after the date the payment landed are recalculated.</li>
+<li>The amortization schedule is calculated accordingly.</li>
+</ul>
+<h2>Close of Business processing</h2>
+<p>Close of Business (COB) processing runs daily scheduled end-of-day processing for Working Capital loans. It starts from the last COB run date stored on the loan account, or from the current COB business date if no previous run date exists.</p>
+<p>During COB, the system applies all enabled business steps to each selected loan:</p>
+<ul>
+<li>Select loans for processing.</li>
+<li>Partition selected loans into batches based on a configured size.</li>
+<li>Mark partitions for batch execution.</li>
+<li>Process loans sequentially within each partition.</li>
+<li>Apply a lock on loans within a single partition.</li>
+<li>Read each loan.</li>
+<li>Resolve and determine applicable business steps.</li>
+<li>Apply business steps based on configuration, where steps can be enabled or disabled and executed in a configurable order.</li>
+<li>Persist the processed loan.</li>
+<li>Update the last COB run date on the loan.</li>
+</ul>
+<p>If no payments land on a Working Capital loan when COB runs, the system:</p>
+<ul>
+<li>Zero-fills elapsed days on the loan.</li>
+<li>Fills the actual column as if a zero-amount repayment landed on the day.</li>
+</ul>
+<h2>Undoing operations</h2>
+<p>You can undo a disbursement transaction. The system reverses it, but it remains visible on the UI and does not disappear.</p>
+<p>Undoing a discount fee is not supported.</p>
+<ul>
+<li>The undo discount button is hidden from the UI.</li>
+</ul>
+<h2>Data model and relationships</h2>
+<p>A product groups the rules that apply to every loan created from it. Many products may belong to one fund, and many loans may use one product. Many loans may reference one fund, and many loans belong to one client.</p>
+<p>One product may have one configurable attributes record. That record defines which product attributes may be overridden at loan account level and indicates whether selected product defaults can be changed during loan creation or update.</p>
+<p>One loan has one balance. One loan may have many disbursement details, many notes, many payment allocation rules, and at most one account lock.</p>
+<p>The amortization model stores projected balances for the future, current balances for the present, and paid balances for the past. Balance invariants require principal_outstanding &gt;= 0, total_paid_principal &gt;= 0, total_payment &gt;= 0, realized_income &gt;= 0, and unrealized_income &gt;= 0.</p>
+<p>Loan behavior remains stable even if product rules change later.</p>
+<p>The product payment allocation rule defines default payment allocation logic at product level by transaction type.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Scope</th>
+<th>Supports</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Product payment allocation rule</td>
+<td>Product level</td>
+<td>Per-transaction-type allocation ordering</td>
+</tr>
+</tbody></table>
+<h2>Validation rules</h2>
+<p>Validation rules apply to monetary transactions, disbursements, products, loans, and the approve command. Each rule checks a condition before the system accepts the entry or action.</p>
+<p>Monetary transaction rules:</p>
+<ul>
+<li>Monetary transaction amount must be greater than zero.</li>
+</ul>
+<p>Disbursement rules:</p>
+<ul>
+<li>Disbursement date must not precede loan approval date.</li>
+<li>Disbursement date must comply with backdating rules.</li>
+<li>Disbursement amount must be greater than zero.</li>
+<li>Disbursement amount must not exceed the approved loan amount for single disbursement.</li>
+<li>Disbursement expected amount and actual amount must be non-negative.</li>
+</ul>
+<p>Product rules:</p>
+<ul>
+<li>Product name must be unique.</li>
+<li>Product short_name must be unique.</li>
+<li>Product external_id must be unique when provided.</li>
+<li>Product principal_amount must be within min/max when min/max are present.</li>
+<li>Product period_payment_rate must be within min/max when min/max are present.</li>
+<li>Product start_date must be less than or equal to close_date when both are present.</li>
+<li>Product required currency fields must be populated.</li>
+<li>Product required repayment configuration must be populated.</li>
+</ul>
+<p>Loan rules:</p>
+<ul>
+<li>Loan account_no must be unique.</li>
+<li>Loan external_id must be unique when provided.</li>
+<li>Loan product_id must exist.</li>
+<li>Loan client_id should exist when required by business flow.</li>
+<li>Loan proposed and approved principal must be non-negative.</li>
+<li>Loan approved principal should respect product min/max if configured.</li>
+<li>Loan approval requires submitted state.</li>
+<li>Loan rejection requires submitted or pending state.</li>
+<li>Loan disbursement requires approved state.</li>
+<li>Loan closure requires business closure criteria.</li>
+</ul>
+<p>Approve command rules:</p>
+<ul>
+<li>The approve command transitions from Submitted and pending approval to Approved.</li>
+<li>It requires an approval date and an expected disbursement date.</li>
+<li>It validates that the approval date is not future and not before the submitted date.</li>
+<li>It validates that the approved loan amount is less than or equal to the proposed principal.</li>
+<li>It validates that the discount amount is less than or equal to the created discount.</li>
+</ul>
+<h2>Glossary and definitions</h2>
+<p>EIR stands for Effective Interest Rate. COB stands for Close of Business, the end-of-day processing that posts interest and fees. Amortization is the process of gradually reducing a loan balance over time through payments that include principal recovery and income recognition. An amortization installment is a defined time period within the loan lifecycle for which payment expectations, amortization, and balances are calculated.</p>
+<p>Payment amounts for an installment period:</p>
+<ul>
+<li>The Expected Payment Amount is calculated using configured repayment parameters and financial formulas.</li>
+<li>The Actual Payment Amount is the real payment amount received from the borrower within a given installment period.</li>
+<li>The Actual Amortization Amount is calculated based on the actual payment received, reflecting the true reduction of deferred value or balance.</li>
+</ul>
+<h2>Scheduling and payment periods</h2>
+<p>Each payment period lasts exactly one day. Period N falls on the expected disbursement date plus N days. Periods follow sequentially at the defined interval, and schedule generation continues until repayment allocation completes or the loan closure condition is met. Start date and end date are mandatory. At least one disbursement must have an actual disbursement date. Before reschedule, the current period has its original expected amount; after reschedule it has the updated expected amount and the outstanding balance is recalculated.</p>
+<p>Minimum payment rules:</p>
+<ul>
+<li>Minimum payment must be a positive percentage of approved principal.</li>
+<li>Minimum payment is recalculated when a period is generated and the current date has crossed the last period&#39;s due date.</li>
+<li>Minimum payment is recalculated when a reschedule changes the minimum payment amount or frequency.</li>
+<li>Minimum payment is recalculated after a backdated or reversed monetary transaction, but only for the period where the outstanding loan balance is lower than the originally calculated minimum payment.</li>
+</ul>
+<p>Input parameters for payment period calculations:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Origination fee amount</td>
+<td>Money</td>
+<td>Upfront discount or fee amortized over the loan lifecycle.</td>
+</tr>
+<tr>
+<td>Net disbursement amount</td>
+<td>Money</td>
+<td>Principal disbursed; must be positive.</td>
+</tr>
+<tr>
+<td>Total payment value</td>
+<td>Money</td>
+<td>Merchant&#39;s total payment value.</td>
+</tr>
+<tr>
+<td>Period payment rate</td>
+<td>BigDecimal</td>
+<td>Rate applied to total payment value; for example, 0.18 means 18%.</td>
+</tr>
+<tr>
+<td>NPV day count</td>
+<td>Integer</td>
+<td>Day-count convention; for example, 360; must be positive.</td>
+</tr>
+<tr>
+<td>Expected disbursement date</td>
+<td>Date</td>
+<td>Loan start date.</td>
+</tr>
+</tbody></table>
+<h2>Accounting entries and GL mappings</h2>
+<p>Credit Balance Refund (CBR) posts excess amounts between Overpayment Liability and the Fund source. Charge addition and waive post between Fee Receivable and Fee Income.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CBR</td>
+<td>245000 Other Credit liability (Overpayment Liability)</td>
+<td>145023 Suspence/clearing account (Fund source)</td>
+</tr>
+<tr>
+<td>CBR Reversal</td>
+<td>145023 Suspence/clearing account (Fund source)</td>
+<td>245000 Other Credit liability (Overpayment Liability)</td>
+</tr>
+<tr>
+<td>Charge addition</td>
+<td>112603 Fee Receivable (Fees Receivable, Asset)</td>
+<td>404007 Fee Income (Income from Fees, Income)</td>
+</tr>
+<tr>
+<td>Charge waive</td>
+<td>404007 Fee Income (Income from Fees, Income)</td>
+<td>112603 Fee Receivable (Fees Receivable, Asset)</td>
+</tr>
+</tbody></table>
+<h2>Reversals</h2>
+<p>A reversal fully reverses the financial impact of a transaction, including its accounting entries. The system creates a linked reversal transaction and reverses the allocated components, such as penalty, fee and principal, along with the outstanding balance impact. A Goodwill Credit reduces the outstanding balance.</p>
+<p>See also: <ac:link><ri:page ri:content-title="Transaction Types"/><ac:plain-text-link-body><![CDATA[Transaction Types]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

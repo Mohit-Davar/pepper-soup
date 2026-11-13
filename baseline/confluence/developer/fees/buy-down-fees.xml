@@ -1,0 +1,389 @@
+<h2>Buy-Down Fees overview</h2>
+<p>Buy-down fees let merchants collect fees at disbursement and amortize them into interest income over the loan lifecycle. They are a unique transaction type posted to the loan account and are treated as an income portion, either interest or fees income. Buy-down fees apply only to progressive loans and do not affect the loan schedule calculation, recalculation, or interest calculation. They are not visible in customer-facing schedules or statements.</p>
+<p>You can add buy-down fees at disbursement through:</p>
+<ul>
+<li>The API.</li>
+<li>The UI.</li>
+</ul>
+<p>Buy-down fees on a loan:</p>
+<ul>
+<li>Inherit from the loan product.</li>
+<li>Require buy-down fees to be enabled on the loan product.</li>
+</ul>
+<h2>Adding Buy-Down Fees</h2>
+<p>You can add buy-down fees to a loan after disbursement, once the loan is active. The transaction date can be any date on or after the first disbursement date.</p>
+<p>The following fields are supported:</p>
+<ul>
+<li>Payment type, note, and external id are supported.</li>
+<li>The calculation mode comes from configuration, with FLAT as the default and only option.</li>
+<li>The amount you provide is the transaction amount of the buy-down fees.</li>
+</ul>
+<p>When you add buy-down fees, the system creates a new transaction of type Buy Down fees for the buy-down fees amount.</p>
+<h2>Amortization and income recognition</h2>
+<p>Buy-down fees amortize daily like capitalized income to recognize deferred income over the life of the loan. The system keeps a current deferred fee balance at the loan level and tracks how much of it has been amortized and how much remains.</p>
+<p>Amortization rules:</p>
+<ul>
+<li>Buy-down fees support equal amortization and formula-based amortization, based on the configured amortization strategy.</li>
+<li>Equal amortization divides the fee by the number of days between the buy-down fee date and the loan maturity date.</li>
+<li>Formula-based amortization divides the not yet amortized capitalized income by the number of days between the current date and the loan maturity date.</li>
+<li>The system rounds the calculated amount using the configured rounding mode.</li>
+<li>Daily recognition creates a Buy Down fee Amortization transaction for each daily interest recognition and triggers a new business event.</li>
+<li>The GL mapping used depends on whether the fee is configured as Fee or Interest.</li>
+</ul>
+<p>Early payoff and corrections:</p>
+<ul>
+<li>If the loan is preclosed, the system recognizes all remaining not yet amortized income as income in one shot.</li>
+<li>If more deferred income is recognized at end of day than should be, a Buy Down fee amortization Adjustment transaction can correct the amount.</li>
+<li>Once a loan is paid off, no reversal undoes the realized income.</li>
+</ul>
+<h2>Buy-Down Fees Adjustment</h2>
+<p>A buy-down fee adjustment adjusts or credits the deferred income of an existing buy-down fee transaction. It works as a credit transaction that reduces the buy-down fees balance from amortization and has no impact on the loan balance.</p>
+<p>Rules for creating a buy-down fee adjustment:</p>
+<ul>
+<li>You can add a buy-down fee adjustment to the loan account through API or UI.</li>
+<li>You can invoke an adjustment only on an existing buy-down fee transaction.</li>
+<li>The adjustment transaction date cannot be earlier than the original transaction date.</li>
+<li>The total adjustment amount cannot exceed the original transaction amount.</li>
+<li>Multiple adjustments are allowed on the same original buy-down fee transaction.</li>
+<li>The created adjustment transaction lists relations with relation type ADJUSTMENT between the original buy-down fee transaction and the adjustment transaction.</li>
+<li>Creating an adjustment updates the related buy-down fee balance by adding the amount to amountAdjustment.</li>
+<li>Buy-down fee adjustment can be done backdated.</li>
+<li>There is no allocation strategy for buy-down fees adjustment.</li>
+</ul>
+<p>Rules for reversing a buy-down fee adjustment:</p>
+<ul>
+<li>A not yet reversed buy-down fee adjustment transaction can be reversed.</li>
+<li>Mirror journal entries are passed for the reversal entry of a reversed buy-down fee adjustment transaction.</li>
+<li>Reversing an adjustment updates the related buy-down fee balance by subtracting the amount from amountAdjustment.</li>
+</ul>
+<p>Accounting behaviour:</p>
+<table>
+<thead>
+<tr>
+<th>Behaviour</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Accounting entries</td>
+<td>Work like a mirror of buy-down fees entries.</td>
+</tr>
+<tr>
+<td>Loan balance impact</td>
+<td>None.</td>
+</tr>
+</tbody></table>
+<h2>Reversing Buy-Down Fees</h2>
+<p>You can reverse a Buy Down fees transaction only if no unreversed Buy Down fees Adjustment belongs to it. Reversing it deletes the related buy down fee balance and corrects all already amortized amounts through a Buy Down fees amortization adjustment transaction that uses mirror journal entries of Buy Down fees amortization.</p>
+<h2>Charge-off and payoff</h2>
+<p>When a loan balance is charged off, any balance in deferred income is charged off as well. Charge-off also charges off the Buy Down fees, and no daily amortization occurs after the charge-off date. The system calculates the amount that should already have been amortized and corrects any differences with normal amortization journal entries.</p>
+<p>Charge-off processing:</p>
+<ul>
+<li>Move any not yet recognized balance to Charge-off and create final amortization with journal entries.</li>
+<li>Create a relation (RELATED) between the charge-off final amortization transaction and the charge-off transaction.</li>
+</ul>
+<p>Undoing a charge-off does not undo the amortization transaction because it is a catch-up. Instead, undo charge-off undoes the charge-off final amortization transaction and adjusts accounting entries.</p>
+<h2>Accounting entries</h2>
+<p>Buy-Down fees accounting entries depend on whether the loan is merchant or non-merchant lending. For non-merchant loans, the system uses the Fund Source parameter mapped GL for accounting because the EXPENSE parameter is hidden.</p>
+<p>Accounting entries for non-merchant Buy-Down fees:</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Initial fee posting</td>
+<td>Parameter Buy Down fees Expense (Type: EXPENSE, GL: buydown expense)</td>
+<td>Parameter Deferred Income mapping (Type: Liability, GL: Deferred Income)</td>
+</tr>
+<tr>
+<td>Buy Down fees</td>
+<td>Parameter Fund Source Type ASSET GL cash at hand</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+</tr>
+<tr>
+<td>Buy Down fees amortization</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+<td>Parameter Buy Down fees Amortization Type Income GL Interest/fees Income</td>
+</tr>
+<tr>
+<td>Buy Down fees amortization in charge-off</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+<td>Charge-off expense/charge-off expense-bad dept GL credit loss-bad dept/credit loss-bad dept-fraud</td>
+</tr>
+<tr>
+<td>Buy Down fees Adjustment</td>
+<td>Parameter Deferred Income mapping Type Liability GL Deferred Income</td>
+<td>Parameter Fund Source Type ASSET GL cash at hand</td>
+</tr>
+</tbody></table>
+<p>Accounting entries for preclose pay-off and write-off:</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Preclose pay-off</td>
+<td>Parameter Deferred Income mapping (Type: Liability, GL: Deferred Income)</td>
+<td>Parameter Buy Down fees Amortization (Type: Income, GL: Interest/fees Income)</td>
+</tr>
+<tr>
+<td>Preclose write-off</td>
+<td>Parameter Deferred Income mapping (Type: Liability, GL: Deferred Income)</td>
+<td>Parameter Losses written off (Type: Expense, GL: Written off)</td>
+</tr>
+</tbody></table>
+<h2>Loan product configuration</h2>
+<p>Buy Down fees configuration at the loan product level includes status Enable, calculation mode FLAT, strategy EQUAL_AMORTIZATION (default), and income type FEE (default) or INTEREST. When Buy Down fees is enabled on a loan product, new GL account mappings are added for periodical accounting: an Expense account named Buy Down Expense and an Income account named Buy Down fees Amortization. Both accounts are available only for progressive loans if Buy Down fees is enabled.</p>
+<p>Buy Down fees GL account mappings on a loan product.</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>Type</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Buy Down Expense</td>
+<td>Expense</td>
+<td>Periodical accounting</td>
+</tr>
+<tr>
+<td>Buy Down fees Amortization</td>
+<td>Income</td>
+<td>Periodical accounting</td>
+</tr>
+</tbody></table>
+<p>Configuration behaviour:</p>
+<ul>
+<li>Mandatory fields apply when Buy Down fees is enabled.</li>
+<li>New mappings are returned as part of loan product details.</li>
+<li>Mappings can be updated during loan product update.</li>
+</ul>
+<h2>Balance tracking and events</h2>
+<p>The system tracks Buy Down fees balances on a loan and on each Buy Down fees transaction. The database stores the loan link, the Buy Down fees transaction link, the Buy Down fees amount, the date of Buy Down fees, not yet recognized income, charged-off Buy Down fees amount, and adjustment Buy Down fees amount.</p>
+<p>Fineract triggers external business events for these Buy Down fees events:</p>
+<ul>
+<li>Adding Buy Down fees to the loan triggers a NEW Buy Down fees transaction event.</li>
+<li>Adjusting existing Buy Down fees triggers a NEW Buy Down fees Adjustment transaction event.</li>
+<li>Buy Down fees amortization triggers a NEW Buy Down fees Amortization transaction event.</li>
+<li>Reversal of Buy Down fees or adjustment transaction triggers the EXISTING LoanTransactionAdjustment event.</li>
+<li>End-of-day Buy Down fees amortization adjustment triggers a NEW transaction event.</li>
+</ul>
+<p>An API fetches Buy Down fees information including:</p>
+<ul>
+<li>Buy down fee amount</li>
+<li>Transaction</li>
+<li>Amortized amount</li>
+<li>Not yet amortized amount</li>
+<li>Adjusted amount</li>
+</ul>
+<p>The Template API for Buy Down Fee transaction retrieves:</p>
+<ul>
+<li>The maximum amount allowed.</li>
+<li>The maximum amount allowed to be adjusted on the loan.</li>
+</ul>
+<h2>Discount fee</h2>
+<p>A Discount fee is a Buy-Down fee charged at disbursement. The command to add Buy-Down fees is buyDownFee.</p>
+<p>Rules for a Discount fee transaction:</p>
+<ul>
+<li>A Discount fee transaction requires a transaction amount, default value, classification, and payment type.</li>
+<li>A Discount fee must occur on the same day as the disbursement.</li>
+<li>Only one Discount transaction is allowed per disbursement, and the system relates it to that disbursement.</li>
+<li>A disbursement without a Discount fee amount creates one disbursement transaction.</li>
+<li>A disbursement with a Discount fee creates one disbursement transaction and one Discount fee transaction together, and no additional Discount fee can be added.</li>
+</ul>
+<p>Rules for a Discount fee adjustment:</p>
+<ul>
+<li>The adjustment amount cannot be more than the Discount fee.</li>
+<li>A Discount fee adjustment requires classification and payment type.</li>
+<li>A Discount fee adjustment behaves like capitalized income adjustment.</li>
+</ul>
+<p>What the system stores and updates:</p>
+<ul>
+<li>The Discount transaction is stored in the transaction table, allocations in the allocation table, accounting entries are created from the allocation, balances are stored in the balances table and updated after the transaction, and external business events are triggered.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Disbursement"]
+  n2["Disbursement transaction only"]
+  n3["Disbursement + Discount fee transaction"]
+  n4["Discount fee adjustment"]
+  n5["Discount fee amortization (EOD)"]
+  n1 -->|"no Discount fee amount"| n2
+  n1 -->|"Discount fee amount"| n3
+  n3 -->|"adjustment <= Discount fee"| n4
+  n3 -->|"EOD business step"| n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Validation and implementation notes</h2>
+<p>When you reverse a Buy Down fees transaction, COB handles the Buy Down fees amortization adjustment transaction.</p>
+<h2>Worked examples</h2>
+<p>A progressive loan of 1,000 is disbursed on 1 January at a 12% annual interest rate with 30-day months and three monthly installments. A buy-down fee of 180 is posted at disbursement as deferred income; the figures are illustrative. The fee does not alter the repayment schedule or interest calculation. It creates a deferred income balance of 180 that is amortized in equal daily portions of 2.00 over the 90 days from disbursement to maturity, so each 30-day month recognizes 60.00 of fee income. The repayment schedule is identical to a loan without a buy-down fee; only the deferred income balance changes.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Loan balance</th>
+<th>Deferred income</th>
+<th>Fee income</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement of 1,000.00</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 January</td>
+<td>Buy-down fee of 180.00 posted</td>
+<td>1,000.00</td>
+<td>180.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment 339.99; 30 days of fee amortization</td>
+<td>670.01</td>
+<td>120.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Repayment 339.99; 30 days of fee amortization</td>
+<td>336.72</td>
+<td>60.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>Final repayment 340.09; 30 days of fee amortization</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td>180.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 with a 180 buy-down fee is repaid early on 1 March, two months before maturity. The repayment schedule runs normally through 1 February. On the payoff date, the remaining deferred income of 60.00 is recognized in full as income; no further daily amortization occurs and no reversal is made after payoff.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Loan balance</th>
+<th>Deferred income</th>
+<th>Fee income</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement of 1,000.00 and fee of 180.00</td>
+<td>1,000.00</td>
+<td>180.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment 339.99; 30 days of fee amortization</td>
+<td>670.01</td>
+<td>120.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Payoff of 676.71; 30 days of fee amortization plus remaining 60.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td>180.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 with a 180 buy-down fee is charged off on 1 March after the February repayment. Daily amortization stops on the charge-off date. The remaining deferred income of 60.00 is moved to charge-off expense in a single entry; if the charge-off is later reversed, only the charge-off final amortization is undone, while earlier catch-up amortization entries remain.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Loan balance</th>
+<th>Deferred income</th>
+<th>Fee income</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement of 1,000.00 and fee of 180.00</td>
+<td>1,000.00</td>
+<td>180.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment 339.99; 30 days of fee amortization</td>
+<td>670.01</td>
+<td>120.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Charge-off of 670.01; 30 days of fee amortization plus remaining 60.00 charged off</td>
+<td>670.01</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td>180.00</td>
+</tr>
+</tbody></table>
+<p>A buy-down fee of 180 is posted on 1 January. On 1 March, a credit adjustment of 40.00 is applied to that same fee transaction. The adjustment reduces the deferred income balance by 40.00 and leaves the loan balance unchanged. Multiple adjustments are permitted, but their total cannot exceed the original fee amount, and an adjustment cannot be dated before the original fee.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Original fee</th>
+<th>Adjustment</th>
+<th>Deferred income</th>
+<th>Loan balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Buy-down fee posted</td>
+<td>180.00</td>
+<td>0.00</td>
+<td>180.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Credit adjustment of 40.00</td>
+<td>180.00</td>
+<td>40.00</td>
+<td>140.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>

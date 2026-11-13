@@ -1,178 +1,133 @@
 # Repayment Schedule
 
-## Repayment Due Date Strategy
+## Repayment due date strategy
 
-### Repayment due date strategy overview
+The monthly repayment due date strategy decides what happens when a loan's repayment anchor day does not exist in a target month, such as the 31st in February. It applies only to monthly repayment frequencies; daily, weekly, and yearly frequencies keep their existing behavior.
 
-When a monthly repayment due date does not exist in a target month, Apache Fineract adjusts the date according to the repayment due date strategy configured for the loan product. Financial institutions can choose how these dates are handled, and the setting applies at both the loan product and loan account level.
+Two strategies are available:
 
-| Strategy | Effect when the repayment day does not exist |
-| --- | --- |
-| LAST_DAY_OF_MONTH | The repayment date rolls back to the last day of the month. |
-| FIRST_DAY_OF_NEXT_MONTH | The repayment date rolls forward to the first day of the following month. |
+- LAST_DAY_OF_MONTH moves the due date to the last day of the target month.
+- FIRST_DAY_OF_NEXT_MONTH moves the due date to the first day of the month after the target month.
 
-### Strategy values and defaults
-
-When the repayment due date strategy is not provided, the system uses LAST_DAY_OF_MONTH as the default. A null value is interpreted as LAST_DAY_OF_MONTH, and existing records with null values continue to use LAST_DAY_OF_MONTH.
-
-### Applicability and conditions
-
-The month-end repayment due date strategy applies to both cumulative and progressive loan schedules and covers every repayment due date, including the final installment. It applies only to monthly repayment frequency when the original repayment anchor is the 29th, 30th, or 31st and the target month does not contain that day. The attribute must not be restricted to progressive schedules.
-
-The strategy applies under these conditions:
+The strategy applies when:
 
 - Repayment frequency is monthly.
 - The original repayment anchor is the 29th, 30th, or 31st.
-- The target month does not contain the original repayment day.
-- The strategy is FIRST_DAY_OF_NEXT_MONTH when the target month is shorter than the original anchor day.
+- The target month does not contain the original anchor day.
 
-Daily, weekly, and yearly repayment frequencies continue using their existing behavior.
+Processing order:
 
-### Date adjustment rules
-
-The system preserves the original repayment anchor day for subsequent installments and never changes it when rolling a repayment due date. Each subsequent repayment date is calculated from the original anchor rather than from the previously adjusted due date. When the anchor day is less than or equal to the number of days in the target month, the adjusted due date is the target date with its day of month set to the anchor day. When the anchor day exceeds the number of days in the target month, the adjusted due date is the first day of the month following the target month under the FIRST_DAY_OF_NEXT_MONTH strategy, or the last day of the target month under any other strategy.
-
-### Processing order and integration
-
-The repayment due date strategy determines the calendar due date before any holiday, working-day, or other schedule adjustments are applied. Interest calculation remains the responsibility of the existing loan schedule and interest calculation components, and the strategy does not change the loan product's day-count configuration or replace the interest calculation formula. The generated repayment periods are processed according to the loan product's configured day-count convention.
-
-Processing follows this order:
-
-- Read the strategy configured on the loan product at loan submission, apply the default if the product value is absent, and store the strategy on the loan account.
 - Calculate the monthly repayment date using the original anchor.
-- Apply the due date strategy whenever a monthly repayment due date is calculated; if the anchor day does not exist, use either the last day of the month or the first day of the next month.
-- Apply existing working-day and holiday adjustment rules.
-- Calculate interest under 360/30 or Actual/Actual and produce the repayment schedule.
+- Apply the month-end due date strategy.
+- Apply the existing working-day and holiday adjustment rules.
 
-Schedule regeneration uses the same stored strategy:
+Rules that apply to both strategies:
 
-- Read the stored strategy from the loan account.
-- Regenerate the repayment dates using that strategy.
-- Apply existing working-day and holiday rules.
-- Recalculate interest according to the configured day-count convention.
-- Preserve normal schedule and transaction processing behavior.
+- The original repayment anchor day is preserved for subsequent installments.
+- Subsequent repayment dates are always calculated using the original anchor, not the previously adjusted due date.
+- The strategy applies to every repayment due date, including the final installment.
 
-| Component | Role |
+When the anchor day exceeds the number of days in the target month:
+
+| Strategy | Adjusted due date |
 | --- | --- |
-| Due Date Strategy | Produces Scheduled From/Due Dates |
-| Configured Day-Count Convention | Branches to 360/30 Monthly 30/360 Treatment or Actual/Actual Actual Days/Actual Year |
-| Interest Calculation and Principal/Interest Allocation | Receives dates from the day-count convention |
+| FIRST_DAY_OF_NEXT_MONTH | First day of the month following the target month |
+| LAST_DAY_OF_MONTH | Last day of the target month |
 
-> **Note:** The strategy controls the repayment date only; it does not directly add or subtract interest days. Existing interest calculation components evaluate the adjusted schedule according to the configured day-count convention.
+When the anchor day is less than or equal to the number of days in the target month:
+
+| Condition | Adjusted due date |
+| --- | --- |
+| Anchor day exists in the target month | Target date with its day set to the anchor day |
+
+Financial institutions can choose how monthly repayment due dates are handled when the original repayment day does not exist. The strategy is configured at loan product level. If no value is provided, LAST_DAY_OF_MONTH is the default. A loan account inherits the configured strategy from the loan product at submission, and existing loan accounts retain the strategy captured at submission. Changes to the loan product configuration affect only newly submitted loans.
+
+The stored strategy is reused for schedule regeneration, including rescheduling and interest recalculation, and remains available after application restart.
+
+Interest calculation follows the loan product's configured day-count convention. Under 360/30, rolling a due date forward must not change the interest calculated for each regular monthly period. Under Actual/Actual, interest is calculated using the actual number of calendar days between repayment dates, so rolling a date forward can change the number of days in the affected periods and may change the interest charged.
+
+> **Note:** Under Actual/Actual, total interest may change because the interest increase and decrease are calculated on different principal balances.
+
+The strategy works for both cumulative and progressive loan schedules. Both use the same date calculation, including the fixed-length maturity-date calculation.
 
 ```mermaid
 flowchart TD
-  n1["Loan product config sets repayment due date strategy"]
-  n2["Strategy captured on loan account at submission"]
+  n1["Loan product configures month-end due date strategy"]
+  n2["Loan submission: inherit strategy, default to last day of month"]
   n3["Calculate monthly repayment date using original anchor"]
-  n4["Anchor day missing?"]
-  n5["Use last day of month or first day of next month"]
-  n6["Apply working-day and holiday rules"]
-  n7["Interest calculated under 360/30 or Actual/Actual"]
-  n8["Repayment schedule produced"]
+  n4["Anchor day exists in target month?"]
+  n5["Use anchor day in target month"]
+  n6["Apply strategy: last day of month or first day of next month"]
+  n7["Apply working-day and holiday adjustments"]
+  n8["Interest calculation using configured day-count convention"]
+  n9["Repayment schedule generated"]
   n1 --> n2
   n2 --> n3
   n3 --> n4
-  n4 -->|"yes"| n5
-  n4 -->|"no"| n6
-  n5 --> n6
+  n4 -->|"Yes"| n5
+  n4 -->|"No"| n6
+  n5 --> n7
   n6 --> n7
   n7 --> n8
+  n8 --> n9
 ```
 
-### Interest calculation conventions
+Under 360/30, both strategies give the same monthly interest fractions, so rolling a due date forward does not add interest. Under Actual/Actual, when a due date rolls forward, Period 1 accrues one extra day of interest on the higher outstanding balance and Period 2 accrues one fewer day on the reduced balance. For periods that cross a calendar year, the usual Actual/Actual year-length handling applies.
 
-Interest calculations follow the day-count convention configured for the loan product, and changing a repayment due date can affect interest depending on that configuration. Interest always reflects the outstanding principal applicable to each period. For periods crossing calendar-year boundaries, the existing Actual/Actual year-length handling remains applicable.
+The strategy sets only the calendar due date. It does not change the loan product's day-count convention, the interest formula, rounding or precision, and the interest for each period still follows that period's outstanding principal.
 
-| Convention | Interest formula |
-| --- | --- |
-| 360/30 | Interest = Outstanding Principal × Annual Interest Rate × 30 / 360 |
-| Actual/Actual | Interest = Outstanding Principal × Annual Interest Rate × Actual Number of Days / Actual Days in Year |
+The same strategy is applied everywhere a monthly due date is calculated: initial schedule generation, schedule regeneration, progressive EMI calculation, cumulative schedules, fixed-length maturity calculation and holiday adjustment. With fixed length configured, the maturity date matches the final due date in the schedule.
 
-The effect of rolling a repayment date depends on the convention:
+Loan products and accounts with no stored strategy use LAST_DAY_OF_MONTH, so their schedules and interest are unchanged.
 
-- Under 360/30 monthly interest, rolling a repayment date from 28 February to 1 March does not change the interest calculated for each regular monthly period.
-- Under Actual/Actual, interest is calculated using the actual number of calendar days between repayment dates, so rolling a repayment date forward changes the number of days in the affected periods and may change the amount of interest charged.
-- Under 360/30 with monthly frequency and FIRST_DAY_OF_NEXT_MONTH, interest per regular monthly period remains unchanged when a due date is rolled forward.
-- Under Actual/Actual with monthly frequency and FIRST_DAY_OF_NEXT_MONTH, interest is calculated using the actual number of calendar days between consecutive repayment dates.
-- Both strategies produce the same monthly interest fractions under 360/30, and changing the due date strategy must not introduce additional interest under that convention.
+## Set the monthly repayment due date strategy
 
-Rolling a repayment date can shift interest between periods:
+Use this screen to choose how monthly repayment due dates are handled when the original repayment day does not exist in a target month, so the loan product applies a consistent month-end rule to new loans.
 
-- Period 1 accrues one additional day of interest on the higher outstanding balance.
-- Period 2 accrues one fewer day of interest on the reduced outstanding balance.
-- Total interest may change because the interest increase and decrease are calculated on different principal balances.
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+3. Select **TERMS**.
+4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
 
-Under Actual/Actual, interest can also be calculated using Outstanding Principal × Annual Interest Rate × Actual Days / 365.
-
-### Schedule generation and consistency
-
-Schedule generation applies the configured month-end due date strategy consistently across cumulative and progressive loans, covering initial generation, regeneration, progressive EMI calculation, fixed-length maturity calculation, and holiday adjustment processing. The strategy produces equivalent repayment dates, interest amounts, EMI values, and principal allocations for equivalent repayment terms.
-
-The following consistency rules apply:
-
-- Holiday processing does not reverse an already rolled repayment date to the last day of the previous month.
-- For cumulative loans linked to a repayment meeting calendar, the meeting calendar takes precedence and the month-end due date strategy does not override dates generated through the meeting calendar recurrence.
-- For progressive loans configured with fixed length, the schedule generator and loan maturity-date calculation use consistent date calculation behavior, and the final repayment due date is not reverted to the last day of the month by a separate fixed-length calculation path.
-- The same month-end strategy applies to both the maturity date calculation path and the scheduled date generator path.
-
-### Product and account configuration
-
-A loan account inherits the repayment due date strategy from its loan product at submission. The account keeps that stored strategy, so later changes to the product configuration affect only newly submitted loans. Schedule regeneration, including rescheduling and interest recalculation, reuses the strategy stored on the account.
-
-The strategy is persisted for both the loan product and the loan account and remains available after application restart and during future schedule regeneration.
-
-### Backward compatibility and scope
-
-Backward compatibility with existing loan products and loan accounts is maintained. Existing loan products without the new attribute generate identical repayment schedules and interest calculations to the current implementation. The implementation preserves existing interest calculation conventions, rounding behavior, and financial precision, and the due date strategy does not implicitly replace or change the day-count convention.
-
-The feature covers these areas.
-
-- Product-level configuration, loan-level inheritance and persistence.
-- Monthly repayment date generation.
-- Cumulative and progressive loan schedules.
-- Interest calculation integration and verification.
-- Fixed-length maturity consistency.
-- Loan product and loan account APIs.
-- Regression and integration testing.
-
-The feature does not cover these areas.
-
-- Non-monthly repayment frequencies.
-- Changes to existing interest day-count conventions.
-- Retroactive regeneration of existing loans solely because of a product configuration change.
-- Changes to meeting calendar recurrence rules.
-- Changes to existing holiday and working-day adjustment policies.
-
-### Worked examples
-
-An operations officer configures a loan product for monthly repayments due on the 31st and disburses a loan on 31 January with three installments. The figures are illustrative. Because February has only 28 days, the system adjusts the first due date according to the chosen month-end strategy. With the last-day-of-month setting, the first repayment falls on 28 February and the second on 31 March. With the first-day-of-next-month setting, the first repayment falls on 1 March and the second remains on 31 March. The original anchor of the 31st is preserved for later months, so the third repayment is due on 30 April under the last-day setting and on 1 May under the roll-forward setting. This shows that rolling a date never changes the original repayment anchor used for later installments.
-
-| Installment | Last day of month | First day of next month |
+| Field | Required | Description |
 | --- | --- | --- |
-| 1 | 28 Feb | 1 Mar |
-| 2 | 31 Mar | 31 Mar |
-| 3 | 30 Apr | 1 May |
+| First repayment day of month | Yes | Enter the day of the month that serves as the anchor for calculating monthly repayment due dates. |
+| Second repayment day of month | Yes | Enter the second repayment day of the month used when calculating the repayment schedule. |
+| Fixed Length | No | Set the fixed maximum length of the loan when regulatory rules require it; the fixed length defines the length of the last installment, which may be shorter than earlier installments. |
+| Minimum days between disbursal and first repayment date | No | Enter the minimum number of days between disbursal and the first repayment date. |
 
-A loan officer reviews a loan with an initial principal of 1,200, an annual interest rate of 12 percent, and monthly installments. After the first installment, 200 of principal is repaid, leaving 1,000 outstanding for the second period. Under the 360/30 convention, every monthly period counts as 30 days whether the due date falls on the last day of February or on 1 March. Period 1 interest is 12.00 and period 2 interest is 10.00, for a total of 22.00 under both strategies. This shows that the roll-forward setting adds no extra interest under the 360/30 convention.
+The chosen strategy is saved on the loan product, inherited by new loan accounts at submission, and used to calculate monthly repayment due dates before working-day and holiday adjustments are applied.
 
-| Period | Outstanding principal | Days in period | Interest fraction | Interest amount |
+## Worked examples
+
+A loan is disbursed on 31 January and repays in three monthly installments on the thirty-first of each month. The figures are illustrative. When February has no thirty-first, the due date moves under the chosen month-end strategy; the original anchor day of thirty-one is restored for March and tested again for April.
+
+| Installment | Target month | Anchor day | Due date: Last day of month | Due date: First day of next month |
 | --- | --- | --- | --- | --- |
-| 1 | 1,200.00 | 30 | 30/360 | 12.00 |
-| 2 | 1,000.00 | 30 | 30/360 | 10.00 |
-| Total |  |  |  | 22.00 |
+| 1 | February | 31 | 28 February | 1 March |
+| 2 | March | 31 | 31 March | 31 March |
+| 3 | April | 31 | 30 April | 1 May |
 
-A loan officer reviews the same loan, disbursed on 30 January with monthly repayments due on the 30th, now under the Actual/Actual convention. Interest uses the real number of calendar days between due dates. With the last-day setting, period 1 runs from 30 January to 28 February, or 29 days, and period 2 runs from 28 February to 30 March, or 30 days. With roll-forward, period 1 runs from 30 January to 1 March, or 30 days, and period 2 runs from 1 March to 30 March, or 29 days. Because the extra or missing day falls on different outstanding balances, the period interest amounts shift and the total changes slightly. This shows that under Actual/Actual, rolling a due date can change total interest because the day shift applies to different principal balances.
+The example shows that the rolled date becomes the last day of the target month under the last-day strategy, but the first day of the next month under the roll-forward strategy, while the anchor day stays thirty-one for every installment.
 
-| Period | Last day of month days | First day of next month days | Last day interest | First day interest |
+A loan has an initial principal of 1,200, an annual interest rate of 12 percent, and two monthly installments. After the first installment, 200 of principal is repaid, leaving 1,000 outstanding for the second period. The figures are illustrative. The repayment anchor is 30 January, so both strategies use a thirty-day interest fraction under the 360/30 convention.
+
+| Period | Outstanding principal | Interest fraction | Interest: Last day of month | Interest: First day of next month |
 | --- | --- | --- | --- | --- |
-| 1 | 29 | 30 | 11.44 | 11.84 |
-| 2 | 30 | 29 | 9.86 | 9.53 |
-| Total |  |  | 21.30 | 21.37 |
+| 1 | 1,200.00 | 30/360 | 12.00 | 12.00 |
+| 2 | 1,000.00 | 30/360 | 10.00 | 10.00 |
+| Total | — | — | 22.00 | 22.00 |
 
-A product administrator sets up a loan product for monthly repayments due on the 30th and disburses a loan on 30 January. February has no 30th, so the first due date rolls to 28 February under the last-day setting or to 1 March under roll-forward. For the next installment, the system returns to the original anchor of the 30th, so the repayment falls on 30 March under both settings. A loan anchored on the 28th never needs rolling because February contains the 28th, so the due date stays on 28 February under both settings. This shows that adjusted dates do not become the new anchor for later installments.
+The example shows that total interest is identical under both strategies because the 360/30 convention always uses thirty days per period; under Actual/Actual the same roll would change the day count and therefore the interest.
 
-| Anchor day | February due date (last day) | February due date (roll forward) | March due date (both settings) |
-| --- | --- | --- | --- |
-| 30 | 28 Feb | 1 Mar | 30 Mar |
-| 28 | 28 Feb | 28 Feb | 28 Mar |
+The same loan of 1,200 at 12 percent annual interest repays 200 of principal after the first period, leaving 1,000 outstanding for the second. The repayment anchor is 30 January in a non-leap year, so Actual/Actual uses the real calendar days between each pair of due dates.
+
+| Period | Outstanding principal | Due dates | Actual days | Interest fraction | Interest: Last day of month | Interest: First day of next month |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 1,200.00 | 30 January → 28 February | 29 | 29/365 | 11.44 | — |
+| 1 | 1,200.00 | 30 January → 1 March | 30 | 30/365 | — | 11.84 |
+| 2 | 1,000.00 | 28 February → 30 March | 30 | 30/365 | 9.86 | — |
+| 2 | 1,000.00 | 1 March → 30 March | 29 | 29/365 | — | 9.53 |
+| Total | — | — | — | — | 21.30 | 21.37 |
+
+The example shows that rolling the date forward adds one interest day to the first period on the higher balance and removes one day from the second period on the lower balance, so total interest changes slightly.

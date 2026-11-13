@@ -1,0 +1,60 @@
+<p>Charge-off interest due moves any interest balance at the time of charge off to interest income charge off so accounting entries follow the defined accounting policy. Collections on charged-off interest balances post to the recoveries GL. Charge off applies to interest-bearing loans that use the progressive allocation strategy. From the time of charge off, no more disbursement is allowed. The charge-off transaction appears in the list of transactions.</p>
+<p>OCA Repayment accounting mappings</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Maps to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Other receivables, Other Credit liability, fund source /advance accounting, Overpayment Liability</td>
+</tr>
+</tbody></table>
+<p>A loan has a principal of 1,000.00, an annual interest rate of 12%, and 3 monthly installments with 30-day months. The figures are illustrative. At charge-off, 30.00 of interest is due and unpaid. The system charges off this interest balance as part of the automated charge-off so the accounting entries match policy, and the charge-off transaction appears in the list of transactions. From the time of charge-off, no more disbursement is allowed on the loan.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Posting effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Interest income charge off (404003)</td>
+<td>30.00</td>
+<td></td>
+<td>Charge-off recognized</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Loans Receivable (112601)</td>
+<td></td>
+<td>30.00</td>
+<td>Loan asset reduced</td>
+</tr>
+<tr>
+<td></td>
+<td>Totals</td>
+<td>30.00</td>
+<td>30.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This entry moves the due interest from the loan asset to the interest income charge-off account.</p>

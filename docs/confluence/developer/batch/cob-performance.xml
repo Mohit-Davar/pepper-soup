@@ -1,0 +1,249 @@
+<h2>COB job overview and purpose</h2>
+<p>COB batch jobs process existing loans and run automated calculations and post-processing that fix rounding issues, EMI or interest issues.</p>
+<p>COB steps include:</p>
+<ul>
+<li>ADD_PERIODIC_ACCRUAL_ENTRIES</li>
+<li>LOAN_DELINQUENCY_CLASSIFICATION</li>
+<li>ADD_CANCELLED_TAG</li>
+<li>ADD_MATURED_TAG</li>
+<li>CHECK_LOAN_REPAYMENT_DUE</li>
+<li>CHECK_LOAN_REPAYMENT_OVERDUE</li>
+<li>REPAYMENT_DUE_EVENT</li>
+<li>CHECK_LOAN_ACCOUNT_NEGATIVE_BALANCE</li>
+<li>LOAN_CHARGEOFF</li>
+<li>POST_REPAYMENTS</li>
+<li>APPLY_CHARGE_TO_OVERDUE_LOANS</li>
+<li>UPDATE_LOAN_AREARS_AGING</li>
+</ul>
+<h2>Threading and concurrency</h2>
+<p>The Loan COB job’s worker step runs on multiple threads by attaching a TaskExecutor to it. You set the thread count using a property or environment variable, and the worker step’s throttleLimit is set to the same value.</p>
+<h2>Partitioning and loan ID ranges</h2>
+<p>COB partitions loans by ID range. Each partition covers a min-to-max range of loan IDs, not a fixed count of loans. Partitions are created even when they contain no loans to process, such as partitions #2 through #9 with a 100 partition size.</p>
+<p>The min and max loan IDs used for tasklet and partitioned processing can include loan IDs that do not qualify for COB because of gaps in the range.</p>
+<ul>
+<li>The min and max loan IDs used for tasklet and partitioned processing can include loan IDs that do not qualify for COB because of gaps in the range.</li>
+</ul>
+<p>Chunk-based processing is recommended in the manager. Chunk size equals partition size, and each partition contains only the loans that qualify for COB.</p>
+<ul>
+<li>Chunk-based processing is recommended in the manager. Chunk size equals partition size, and each partition contains only the loans that qualify for COB.</li>
+</ul>
+<h2>Delinquency handling</h2>
+<p>Delinquency tagging applies only to overdue loans. If a loan is not overdue but already has an active delinquency range, the lifting logic removes it; otherwise no lifting logic runs.</p>
+<p>Delinquency range lifting and validation run only when:</p>
+<ul>
+<li>The loan is not overdue.</li>
+<li>The loan has an active delinquency range.</li>
+</ul>
+<h2>Inline COB for locked loans</h2>
+<p>Inline COB runs before a monetary activity against a locked loan when any error is attached to the lock.</p>
+<h2>Caching and invalidation</h2>
+<p>Fineract uses Spring Cache so existing cache logic keeps working when the underlying cache manager changes.</p>
+<p>Cache behaviour:</p>
+<ul>
+<li>The cache can become out-of-sync until its time-to-live (TTL) is reached.</li>
+<li>When something changes, cache invalidation messages are published through JMS publish-subscribe using a topic strategy and name the cache to drop.</li>
+<li>Every node must invalidate its cache when something changes.</li>
+</ul>
+<h2>Database indexes</h2>
+<p>Liquibase creates database indexes at deploy to support lookups used during close of business processing.</p>
+<table>
+<thead>
+<tr>
+<th>Index</th>
+<th>Table</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>idx_batch_step_execution_step_name_job_execution_id</td>
+<td>batch_step_execution</td>
+<td>job_execution_id, step_name, start_time</td>
+</tr>
+<tr>
+<td>idx_batch_job_execution_job_execution_id</td>
+<td>batch_job_execution</td>
+<td>job_execution_id</td>
+</tr>
+<tr>
+<td>idx_batch_job_execution_job_instance_id</td>
+<td>batch_job_execution</td>
+<td>job_instance_id</td>
+</tr>
+<tr>
+<td>Index on m_loan_transaction_relation</td>
+<td>m_loan_transaction_relation</td>
+<td>from_loan_transaction_id</td>
+</tr>
+</tbody></table>
+<h2>Notifications</h2>
+<p>Notifications are enabled by default through a feature toggle in application properties. When disabled, the backend does not check unread notifications, does not write notification records, and does not send notifications to the UI. An AMQ multi-producer setup sends events while preserving event ordering.</p>
+<h2>Infrastructure sizing</h2>
+<p>Production and performance test environments use the same infrastructure sizing for COB processing.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Production</th>
+<th>Performance test</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RDS DB instance</td>
+<td>db.r6g.4xlarge, 1 write and 1 read scalable up to 2</td>
+<td>db.r6g.4xlarge, 1 write and 1 read scalable up to 2</td>
+</tr>
+<tr>
+<td>EKS node instance</td>
+<td>m6i.2xlarge</td>
+<td>m6i.2xlarge</td>
+</tr>
+<tr>
+<td>EKS node group size</td>
+<td>Min 6, max 10</td>
+<td>Min 6, max 10</td>
+</tr>
+<tr>
+<td>crpfineractserv pods</td>
+<td>Worker 5, Reader 5, Batch-manager 1, Batch-worker 5</td>
+<td>Worker 5/10, Reader 5/10, Batch-manager 1, Batch-worker 5/10</td>
+</tr>
+<tr>
+<td>CPU per instance</td>
+<td>0.1 - 1</td>
+<td>0.1 - 1</td>
+</tr>
+<tr>
+<td>Memory per instance</td>
+<td>4096Mi</td>
+<td>4096Mi</td>
+</tr>
+<tr>
+<td>AMQ instance</td>
+<td>mq.m5.4xlarge</td>
+<td>mq.m5.4xlarge</td>
+</tr>
+</tbody></table>
+<p>Memory allocated to pods:</p>
+<ul>
+<li>Memory allocated to pods was increased to 85% of 8GB.</li>
+<li>Pods use the G1GC garbage collection strategy.</li>
+</ul>
+<h2>Known issues and risks</h2>
+<p>COB can fail under load or when jobs run at the same time.</p>
+<p>Known risks:</p>
+<ul>
+<li>With about 536,000 accounts to process, the batch-manager can crash with an out-of-memory error while COB partitions are still being processed by batch-workers in the background.</li>
+<li>Job execution can fail because concurrent updates prevent serialized access.</li>
+</ul>
+<h2>Performance testing</h2>
+<p>The performance test creates a client, loan, approves and disburses the loan to generate meaningful data for CoB.</p>
+<p>The test measures each API call while keeping TPS:</p>
+<ul>
+<li>Mean response time</li>
+<li>95% response time</li>
+<li>99% response time</li>
+<li>99.9% response time</li>
+</ul>
+<h2>CoB validation report</h2>
+<p>You can run the CoB validation report from the UI to get the daily CoB execution numbers. Automated CoB validation runs daily.</p>
+<h2>Worked examples</h2>
+<p>The Loan COB job runs its worker step through a task executor, and the default thread count is 1, so the worker processes loans one after another. The figures below are illustrative. Suppose six loans with IDs 101 through 106 each carry a principal of 1,000.00, and COB posts a 5.00 interest charge to every loan.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Loan ID</th>
+<th>Thread</th>
+<th>Principal</th>
+<th>Charge</th>
+<th>Balance after COB</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>101</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>102</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>103</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>104</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>105</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>106</td>
+<td>1</td>
+<td>1,000.00</td>
+<td>5.00</td>
+<td>1,005.00</td>
+</tr>
+</tbody></table>
+<p>With one thread, loans are processed serially; increasing the thread count lets the worker handle several loans at the same time.</p>
+<p>COB batch jobs process existing loans, and performance tests scale the number of loans and the share of delinquent or overdue loans. The figures below are illustrative. A COB run processes 200 loans, each with one repayment of 1,000.00; no loan is delinquent and no loan is overdue.</p>
+<table>
+<thead>
+<tr>
+<th>Volume</th>
+<th>Loans</th>
+<th>Repayments per loan</th>
+<th>Total repayments</th>
+<th>Delinquent loans</th>
+<th>Overdue loans</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Small</td>
+<td>200</td>
+<td>1</td>
+<td>200</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Medium</td>
+<td>2,000</td>
+<td>1</td>
+<td>2,000</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Large</td>
+<td>20,000</td>
+<td>1</td>
+<td>20,000</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>Raising the loan volume multiplies the repayments the job must process, while a non-zero delinquency share adds delinquency tagging work for the affected loans only.</p>

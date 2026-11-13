@@ -1,0 +1,106 @@
+<h2>Loan lifecycle dates and statuses</h2>
+<p>A loan moves through the statuses Created, Approved, Disbursed, Active, Closed (fully paid), and Overpaid. Status changes when the loan balance changes because of a backdated repayment or reversal. Delinquency and Breach Evaluation are recalculated when a backdated repayment or reversal happens. Backdated repayment or reversals are not allowed on a written-off loan account.</p>
+<p>Backdated repayment or reversal results:</p>
+<ul>
+<li>If the loan balance becomes zero, the loan moves to Closed status.</li>
+<li>If the loan balance becomes negative, the loan moves to Overpaid status.</li>
+<li>If a reversal of repayment is done on a closed loan account, the loan becomes Active again.</li>
+</ul>
+<p>Transaction allocation rules:</p>
+<ul>
+<li>If all charges are fully paid before the backdated transaction, the backdated transaction pays no charges and no transaction allocation changes.</li>
+<li>If an undo transaction reverts a transaction that paid portions of any charges, existing transactions after the reverted transaction might need reevaluation and allocation changes.</li>
+<li>Otherwise allocation is always principal and no allocation of an existing transaction changes.</li>
+</ul>
+<p>Overpaid loan resolution:</p>
+<ul>
+<li>If the overpayment amount and CBR match, the loan goes from Overpaid state into Closed (fully paid).</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> No transaction can be executed on a future date.</p>
+</blockquote>
+<h2>Custom loan lifecycle change history</h2>
+<p>The custom loan lifecycle change history module records extra details when a loan lifecycle status changes, including the business date of the change. You configure which status changes the module tracks.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>Primary key</td>
+</tr>
+<tr>
+<td>loan_id</td>
+<td>The loan whose status changed</td>
+</tr>
+<tr>
+<td>status_code</td>
+<td>The new loan status</td>
+</tr>
+<tr>
+<td>status_change_business_date</td>
+<td>The business date when the status changed</td>
+</tr>
+<tr>
+<td>created by</td>
+<td>User who created the record</td>
+</tr>
+<tr>
+<td>created date time</td>
+<td>When the record was created</td>
+</tr>
+<tr>
+<td>updated by</td>
+<td>User who last updated the record</td>
+</tr>
+<tr>
+<td>updated date time</td>
+<td>When the record was last updated</td>
+</tr>
+</tbody></table>
+<p>Configure the status changes to track using custom.module.loan.lifecycle.allowed.status.codes:</p>
+<ul>
+<li>ALL tracks every status change and is the default option.</li>
+<li>OVERPAID, CLOSED_OBLIGATIONS_MET tracks when the loan is closed and fully paid or when the loan is overpaid.</li>
+</ul>
+<p>When the LoanStatusChangedBusinessEvent is triggered, the system fetches the actual business date and stores it in the database.</p>
+<h2>Worked examples</h2>
+<p>The custom module persists every loan lifecycle change in the custom_loan_lifecycle_change_history table. The figures below are illustrative. A loan of 1,000 with three monthly installments moves from Created to Approved on business day 5, to Disbursed on day 10, and to Closed on day 40. Each change adds one history record identified by id, linked to the loan through loan_id, and stamped with status_change_business_date and status_code.</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>loan_id</th>
+<th>status_change_business_date</th>
+<th>status_code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>42</td>
+<td>2024-01-01</td>
+<td>Created</td>
+</tr>
+<tr>
+<td>2</td>
+<td>42</td>
+<td>2024-01-05</td>
+<td>Approved</td>
+</tr>
+<tr>
+<td>3</td>
+<td>42</td>
+<td>2024-01-10</td>
+<td>Disbursed</td>
+</tr>
+<tr>
+<td>4</td>
+<td>42</td>
+<td>2024-02-09</td>
+<td>Closed</td>
+</tr>
+</tbody></table>
+<p>The primary key on id, the foreign key on loan_id, and the regular indexes on status_change_business_date and status_code let the module read a loan&#39;s full history or filter changes by date and status without a full table scan.</p>

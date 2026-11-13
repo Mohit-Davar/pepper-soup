@@ -1,60 +1,57 @@
-# Next and Last Instalment Allocation
+# Next and Last Installment Allocation
 
-## Next and Last Instalment Allocation
+The Next/Last Installment allocation rule decides how an advance payment is split between the next installment and the last installment of a loan. You select it in the Future Installment Allocation Rule dropdown as part of the Advanced payment allocation strategy. The rule applies when a repayment is made before or on an installment due date.
 
-The Next / Last installment option controls how an advance payment is allocated under the Future Installment allocation rule of the Advanced payment allocation strategy. You select this option in the Advance amount allocation configuration. The rule always identifies a next installment; the last installment behaviour is unchanged.
-
-The system allocates an advance amount as follows:
+How the advance amount is allocated:
 
 - Any advance amount first allocates to the next installment, and any remaining amount allocates to the last installment.
-- If the repayment date falls on the next installment date itself, the amount allocates to that current installment first, and the remaining amount allocates to the last installment.
+- If the repayment date is on the next installment due date, the amount allocates to that current installment first, and any remaining amount allocates to the last installment.
+- If the current installment is fully paid, any advance portion allocates to the last installment.
+- If the repayment date is on the current installment due date, any advance portion allocates to the last installment.
+- Once an amount is allocated to the next installment, allocation jumps to the last installment and allocates from behind: last, then last but one, then last but two, and so on.
+- There is always a next installment under this rule. There are no changes regarding the last installment.
+
+Which installment counts as the next installment:
+
 - If the repayment date is before the current installment due date, the current installment behaves as the next installment.
-- If the repayment date is on the current installment due date, the upcoming next installment is the next installment.
-- Once allocated to the next installment, allocation jumps to the last installment and allocates from behind: last, last but one, last but two, and so on.
+- If the repayment date is on the current installment due date, the upcoming next installment is the next installment, and the Next rule is skipped.
 
-When the current installment is fully paid, the system applies the Last installment strategy as follows:
+Allocation order for any payment:
 
-- Any advance portions allocate to the last installment.
-- If the repayment date is on the current installment due date, the Next rule is skipped and any advance portions allocate as the Last installment strategy.
+| Position | Allocation target |
+| --- | --- |
+| 1 | Overdue interest |
+| 2 | Overdue principal |
+| 3 | Overdue fees |
+| 4 | Due interest |
+| 5 | Due principal |
+| 6 | Due fees |
+| 7 | Advance principal |
+| 8 | Advance interest |
+| 9 | Advance fees |
 
-| Allocation order |
-| --- |
-| Overdue interest, overdue principal, overdue fees, due interest, due principal, due fees, advance principal, advance interest, advance fees |
+## Set advance payment allocation to next and last installments
 
-Figures in this example are illustrative. A loan of 1,200.00 is repaid in four monthly installments of 300.00 each, with 30-day months. An advance payment of 500.00 arrives ten days before the first installment is due. With the Next / Last option selected, the first installment is treated as the next installment, so the advance covers it in full and the remaining 200.00 is applied to the last installment.
+Use this screen to choose how an advance payment is split between the next installment and the last installment.
 
-| Installment | Due | Advance applied | Still due |
-| --- | --- | --- | --- |
-| 1 | 300.00 | 300.00 | 0.00 |
-| 2 | 300.00 | 0.00 | 300.00 |
-| 3 | 300.00 | 0.00 | 300.00 |
-| 4 | 300.00 | 200.00 | 100.00 |
-| Total | 1,200.00 | 500.00 | 700.00 |
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+3. Open the **PAYMENT ALLOCATION** step.
 
-The advance clears the next installment first and reduces the last installment by the remainder.
+| Field | Required | Description |
+| --- | --- | --- |
+| Credit Allocation Strategy | No | Choose the credit allocation strategy for the advance payment. |
+| Future Installment Allocation Rule | No | Select the future installment allocation rule, such as Next / Last installment, to control how the advance amount is applied. |
 
-A loan of 1,200.00 is repaid in four monthly installments of 300.00 each. An advance payment of 700.00 arrives before the first installment is due. The next installment is covered first, and the remaining 400.00 fills the last installment and then moves one step backward to the third installment.
+The advance amount allocates first to the next installment and any remaining amount allocates to the last installment.
 
-| Installment | Due | Advance applied | Still due |
-| --- | --- | --- | --- |
-| 1 | 300.00 | 300.00 | 0.00 |
-| 2 | 300.00 | 0.00 | 300.00 |
-| 3 | 300.00 | 100.00 | 200.00 |
-| 4 | 300.00 | 300.00 | 0.00 |
-| Total | 1,200.00 | 700.00 | 500.00 |
+## Worked examples
 
-If the same 700.00 is paid on the due date, the next rule is skipped and the full amount clears the last two installments and reduces the second installment by 100.00.
+This example shows how an advance payment is split under the Next/Last installment option. The figures are illustrative: a loan of 1,000 at 12% annual interest is repaid in 3 monthly installments over 30-day months, due on 1 January, 1 February and 1 March. The scheduled amounts are 340.02, 340.02 and 340.03. The customer pays 700.00 in advance on 1 January, the first due date. If the payment arrived before 1 January, the current installment would still be covered first as the next installment, but any remainder would go straight to the last installment instead of also funding the February installment.
 
-A loan of 1,000.00 is repaid in four monthly installments of 250.00 each. An advance payment of 600.00 is made on the first installment due date. Because the payment date is a due date, the next rule is skipped and the last rule applies, so the amount is allocated to the last installments starting from the end.
-
-| Installment | Due | Advance applied | Still due |
-| --- | --- | --- | --- |
-| 1 | 250.00 | 0.00 | 250.00 |
-| 2 | 250.00 | 100.00 | 150.00 |
-| 3 | 250.00 | 250.00 | 0.00 |
-| 4 | 250.00 | 250.00 | 0.00 |
-| Total | 1,000.00 | 600.00 | 400.00 |
-
-The payment skips the next installment, clears the last two installments, and applies 100.00 to the second installment.
-
-See also: [Payment Allocation Strategies: Payment Allocation Strategies](allocation-strategies.md#payment-allocation-strategies).
+| Installment | Due date | Amount due | Advance allocated | Still due after advance |
+| --- | --- | --- | --- | --- |
+| 1 | 1 Jan | 340.02 | 340.02 | 0.00 |
+| 2 | 1 Feb | 340.02 | 340.02 | 0.00 |
+| 3 | 1 Mar | 340.03 | 19.96 | 320.07 |
+| Total |  | 1,020.07 | 700.00 | 320.07 |

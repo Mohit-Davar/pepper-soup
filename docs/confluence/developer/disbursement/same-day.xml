@@ -1,0 +1,220 @@
+<h2>Same-day disbursement and installment order</h2>
+<p>When disbursement happens on the due date of an installment, that installment is not affected. The disbursement amount is split between all remaining future installments, where a future installment has a due date after the disbursement date.</p>
+<p>When the disbursal date and an installment due date overlap, the repayment schedule order is: normal installment, disbursement, down payment installment (if applicable).</p>
+<p>You can add payments on the same day as disbursement.</p>
+<h2>Disbursement on overpaid loans</h2>
+<p>You can disburse on an overpaid loan account. The transaction date can be defined for the disbursement. Disbursement is allowed on ACTIVE, CLOSED (OBLIGATIONS MET), and OVERPAID loans. In multi tranche loan accounts, disbursement on overpaid loans is supported for both Progressive and Cumulative loan schedules. During same day operations, a disbursement can occur before the CBR transaction, so disbursement may happen on an overpaid loan account while CBR happens on an active loan account.</p>
+<p>The system handles the overpayment as follows:</p>
+<ul>
+<li>The initial overpaid amount is adjusted or marked paid as advance payments to future installments as per account configuration, and loan balances are updated accordingly.</li>
+<li>The outstanding principal of the actual installment increases by the full amount of the disbursement transaction, and the overpayment amount is allocated as repayment for principal ultimately.</li>
+</ul>
+<h2>Chargeback on overpaid loans</h2>
+<p>You can perform a chargeback on an overpaid loan. The system updates loan balances and the repayment schedule accordingly. Charge addition and chargeback on overpaid loans are allowed, with amount allocation remaining the same as disbursements.</p>
+<p>You can also add specific due date charges on overpaid loans, and the system updates loan balances and the repayment schedule accordingly.</p>
+<ul>
+<li>Chargeback credit allocation can be configured when Repayment strategy is &quot;Advanced payment allocation&quot;.</li>
+</ul>
+<h2>Chargeback amount and limits</h2>
+<p>A Chargeback transaction initiates a chargeback on a previous repayment or refund and effectively undoes it without reverting it.</p>
+<p>Chargeback amount rules:</p>
+<ul>
+<li>The Chargeback amount must be equal to or lower than the target transaction amount.</li>
+<li>The cumulative amount of Chargeback transactions for the same transaction cannot be higher than the target transaction amount.</li>
+</ul>
+<h2>Chargeback timing and date</h2>
+<p>A Chargeback transaction date is always the actual business date and cannot be defined. Backdated transactions are allowed after a Chargeback.</p>
+<h2>Chargeback effect on repayment schedule</h2>
+<p>A Chargeback transaction affects the repayment schedule differently depending on whether the loan was overpaid and whether the maturity date has passed.</p>
+<p>Chargeback effect on the repayment schedule:</p>
+<ul>
+<li>If the loan was overpaid and the overpayment amount is higher than the Chargeback amount, the Chargeback transaction has no effect on the repayment schedule; only the overpayment amount on the loan is decreased and the proper accounting entries are created.</li>
+<li>If the loan was overpaid but the Chargeback amount is higher than the overpayment amount, the outstanding principal of the actual installment is increased by the full Chargeback amount and the overpayment amount is allocated as repayment for principal.</li>
+<li>Before maturity, the actual installment is increased by the full Chargeback amount and delinquency calculation is immediately triggered from that date until it is fully paid.</li>
+<li>After maturity, a new installment (N+1) is created if it did not exist before, with the full Chargeback amount.</li>
+</ul>
+<h2>Chargeback allocation between principal, fee, and penalty</h2>
+<p>A chargeback transaction can charge principal, fee, or penalty. Based on the target transaction that was charged back, the chargeback amount is allocated between principal, fee, and penalty buckets using a priority order. That priority order matters only when the chargeback is partial. When the target transaction repaid fee and/or penalty alongside principal, the same type of fee and/or penalty is created during chargeback.</p>
+<h2>Worked examples</h2>
+<p>A loan becomes overpaid when a repayment exceeds the outstanding principal, and the excess sits in an overpayment liability account. A later disbursement on that overpaid loan is split across the remaining future installments—those whose due date is after the disbursement date—and the overpayment is applied as repayment of principal. With the allocation rule based on the next installment (past due, due, and future), the figures below show what happens when the disbursement is smaller than, equal to, or larger than the overpayment. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Disbursement</th>
+<th>Overpaid before</th>
+<th>Overpaid after</th>
+<th>Outstanding principal</th>
+<th>Loan status</th>
+<th>Overpayment GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement below overpayment</td>
+<td>200.00</td>
+<td>500.00</td>
+<td>300.00</td>
+<td>0.00</td>
+<td>OVERPAID</td>
+<td>Debit 200.00</td>
+</tr>
+<tr>
+<td>Disbursement equals overpayment</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>CLOSED (OBLIGATIONS MET)</td>
+<td>Debit 500.00</td>
+</tr>
+<tr>
+<td>Disbursement above overpayment</td>
+<td>750.00</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>ACTIVE</td>
+<td>Debit 500.00</td>
+</tr>
+</tbody></table>
+<p>A Chargeback undoes a prior repayment or refund up to the amount of that transaction and always uses the actual business date. On an overpaid loan, the Chargeback first reduces the overpayment. A partial Chargeback leaves the loan overpaid and does not change the repayment schedule. A full Chargeback clears the overpayment and closes the loan. When the Chargeback exceeds the overpayment, the full Chargeback appears as Credit Principal on the actual installment, the overpayment is applied as repayment of principal, and the excess becomes outstanding principal.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Chargeback</th>
+<th>Overpaid before</th>
+<th>Overpaid after</th>
+<th>Outstanding principal</th>
+<th>Loan status</th>
+<th>Schedule change</th>
+<th>Overpayment GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Partial</td>
+<td>200.00</td>
+<td>500.00</td>
+<td>300.00</td>
+<td>0.00</td>
+<td>OVERPAID</td>
+<td>None</td>
+<td>Debit 200.00</td>
+</tr>
+<tr>
+<td>Full</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>CLOSED (OBLIGATIONS MET)</td>
+<td>None</td>
+<td>Debit 500.00</td>
+</tr>
+<tr>
+<td>Larger than overpayment</td>
+<td>750.00</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>ACTIVE</td>
+<td>Credit Principal 750.00</td>
+<td>Debit 500.00</td>
+</tr>
+</tbody></table>
+<p>If the transaction being charged back repaid principal together with fee or penalty, the Chargeback recreates the same charge types. The amount is distributed between principal, fee, and penalty in the configured priority order. That order is meaningful only for a partial Chargeback; a full Chargeback restores every bucket.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Principal</th>
+<th>Penalty</th>
+<th>Fee</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original repayment of 800.00</td>
+<td>500.00</td>
+<td>200.00</td>
+<td>100.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Full Chargeback of 800.00</td>
+<td>500.00</td>
+<td>200.00</td>
+<td>100.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Partial Chargeback of 400.00, priority FEE, PENALTY, PRINCIPAL</td>
+<td>100.00</td>
+<td>200.00</td>
+<td>100.00</td>
+<td>400.00</td>
+</tr>
+</tbody></table>
+<p>A charge such as a fee can be added to an overpaid loan and is settled from the overpayment. When the overpayment is greater than the charge, the charge is marked fully paid and the overpayment is reduced. When the overpayment equals the charge, both reach zero and the loan closes. When the charge is greater than the overpayment, the overpayment covers part of the charge and the remainder stays as a receivable.</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Overpaid before</th>
+<th>Charge</th>
+<th>Overpaid after</th>
+<th>Charge status</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Overpayment greater than charge</td>
+<td>500.00</td>
+<td>100.00</td>
+<td>400.00</td>
+<td>Fully paid</td>
+<td>OVERPAID</td>
+</tr>
+<tr>
+<td>Overpayment equals charge</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>Fully paid</td>
+<td>CLOSED (OBLIGATIONS MET)</td>
+</tr>
+<tr>
+<td>Overpayment less than charge</td>
+<td>500.00</td>
+<td>750.00</td>
+<td>0.00</td>
+<td>Partially paid</td>
+<td>OVERPAID</td>
+</tr>
+</tbody></table>
+<p>A disbursement and a credit balance refund can happen on the same day. If the disbursement posts first, it is applied to an active loan; the refund that follows creates the overpayment. A disbursement does not affect an installment whose due date equals the disbursement date; it is spread across installments due later.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Loan balance</th>
+<th>Overpayment</th>
+<th>Remaining installments</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Disburse 500.00 on a 1,000.00 loan; down payment 125.00</td>
+<td>375.00</td>
+<td>0.00</td>
+<td>3 x 125.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Refund 500.00</td>
+<td>-125.00</td>
+<td>125.00</td>
+<td>3 x 125.00</td>
+</tr>
+</tbody></table>

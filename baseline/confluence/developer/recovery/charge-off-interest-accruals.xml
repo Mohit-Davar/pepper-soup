@@ -1,0 +1,229 @@
+<h2>Charge-off interest accrual behaviour</h2>
+<p>Interest accrual stops when a loan moves to charge-off state. Future interest on the schedule changes to $0, and interest projections on future periods are removed. Interest on the current period decreases proportionally.</p>
+<p>Interest-bearing products can suspend interest accrual once a loan charges off.</p>
+<ul>
+<li>A setting for interest-bearing products suspends interest accrual once a loan charges off.</li>
+</ul>
+<h2>Charge-off behaviour options</h2>
+<p>Charge-off behaviour options are Regular (default), Zero interest after charge-off, and Accelerate maturity to charge-off date. The option is stored with the product definition as a field on the loan product, and loan product configuration is stored on the loan level.</p>
+<h2>Interest calculation at charge off</h2>
+<p>Interest accrues until the charge-off date. The period from date is exclusive and the charge-off date is inclusive. Interest till the charge-off date is calculated as <code>total interest of the period / number of days of the period * number of days till charge-off date</code>.</p>
+<p>With zero interest after charge off, interest becomes zero after charge off and new interest is calculated for the partial period on the current installment until the charge-off date. Principal due on the period increases by the difference between the original interest of the period and the new interest after charge-off. On the last unpaid installment, principal due is set to the remaining loan balance.</p>
+<p>Charge-off behaviour applies only to progressive loan products where interest is not zero; interest is calculated until the charge-off date. If the loan product is not progressive, does not have interest, or interest recalculation is not enabled, only regular charge-off behaviour is supported.</p>
+<p>For interest recalculation loans, only the way of calculating interest until the charge-off date changes; the rest is the same.</p>
+<p>For a progressive interest-bearing loan with interest recalculation enabled and zero interest after charge-off strategy, the charge-off transaction must contain the proper interest portion calculated until the charge-off date.</p>
+<p>When an early repayment closes and marks a period fully paid, interest for the remaining days in that period is still recognized and reflected on the next period, and the system calculates charged interest until the charge-off date and reflects it on the charge-off transaction.</p>
+<h2>Reversing a charge off</h2>
+<p>Reversing a charge off restores the original schedule and interest, resumes accruals, and re-adds accruals for past items. Any repayment reversal before charge off reverses or replays the charge off and increases the charged off principal and interest amounts.</p>
+<h2>Scheduled jobs and charged-off loans</h2>
+<p>Scheduled jobs skip loans that have a charge-off transaction which has not been reverted. Interest accrues again once the charge-off is reversed. These jobs include Accrual Activity Posting, Add Accrual Transactions, Add Accrual Transactions For Loans With Income Posted As Transactions, Add Periodic Accrual Transactions, and Recalculate Interest for Loans.</p>
+<p>Interest accrual rules for charged-off loans:</p>
+<ul>
+<li>No interest is added for a charged-off loan with 0 interest.</li>
+<li>Interest is added when a loan has a reverted charged-off transaction.</li>
+</ul>
+<h2>Transaction processing around charge off</h2>
+<p>When a repayment or other monetary activity happens after charge off, transactions are processed without interest recalculation. Before charge off, interest is recalculated for early or late repayment.</p>
+<p>Transaction processing differs depending on timing relative to charge off:</p>
+<ul>
+<li>Before charge off, EmiCalculator recalculates interest for early or late repayment via AdvancedPaymentScheduleTransactionProcessor#handlingPaymentAllocationForInterestBearingProgressiveLoan.</li>
+<li>After charge off, AdvancedPaymentScheduleTransactionProcessor#processPaymentAllocation is used instead of the interest recalculation method.</li>
+</ul>
+<p>If a backdated repayment or other monetary activity happens, transactions are reprocessed using AdvancedPaymentScheduleTransactionProcessor.reprocessProgressiveLoanTransactions, which returns ProgressiveLoanInterestScheduleModel to call EMICalculator and calculate due interest for the current period.</p>
+<p>Reprocessing behaviour:</p>
+<ul>
+<li>Anything that happened before the charge-off transaction can and should recalculate interest.</li>
+</ul>
+<h2>Charge-off accounting mappings</h2>
+<p>You can map charge-off reason codes to expense GL accounts using an Advanced Accounting Rule. Each charge-off reason code can map to only one GL account, while the same GL account can serve multiple charge-off reasons. Backend validation applies, and only Expense accounts can be configured. A charge-off reason code value used as an Advanced Accounting Rule on any loan product cannot be deleted.</p>
+<p>Required fields for the Advanced Accounting Rule mapping:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>chargeOffReasonCodeValueId</td>
+<td>Must be a valid, existing id of a charge-off reason code value</td>
+</tr>
+<tr>
+<td>expenseGLAccountId</td>
+<td>Must be a valid, existing Expense GL account id</td>
+</tr>
+</tbody></table>
+<h2>Charge-off reason configuration APIs</h2>
+<p>These mappings are part of the loan product create and update request and are returned when you fetch loan product details. Use the loan product template API to see all available charge-off reason code values.</p>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET /v1/loanproducts/template</td>
+<td>All configuration options needed to create a new loan product, including charge-off reason options</td>
+</tr>
+<tr>
+<td>GET /v1/loanproducts/{loanProductId}?template=false</td>
+<td>Loan product details without template details</td>
+</tr>
+<tr>
+<td>GET /v1/loanproducts/{loanProductId}?template=true</td>
+<td>Loan product details and all configuration options needed to update the loan product</td>
+</tr>
+</tbody></table>
+<p>Each charge-off reason mapping contains:</p>
+<ul>
+<li>chargeOffReasonCodeValueId — the code value ID of the charge-off reason</li>
+<li>expenseGLAccountId — the GL account ID of the expense account</li>
+</ul>
+<p>You can also retrieve charge-off reason code values using CodeValueReadPlatformService.retrieveCodeValuesByCode(&quot;ChargeOffReasons&quot;).</p>
+<h2>Charge-off behaviour on loan products</h2>
+<p>Charge-off behaviour is set on a loan product and applies to every loan account created from that product. Changing the behaviour on the product does not affect existing loan accounts. If you set it, the system validates the value against the allowed ENUM names.</p>
+<h2>Worked examples</h2>
+<p>A progressive loan with interest recalculation is charged off mid-period. The figures are illustrative: a principal of 1,000.00, an annual interest rate of 12% (1% per month), 3 monthly installments, and 30-day months. Interest accrues until the charge-off date; the charge-off date is inclusive and the period start is exclusive. Interest for the current period is prorated as (period interest / period days) × days until charge-off, and the difference between the original and prorated interest is added to the principal due. All future installments have interest set to 0, and the removed interest is added to their principal due. If interest recalculation is not enabled, the full period interest is removed instead of the prorated amount. The table shows the adjusted schedule after charge-off.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Due date</th>
+<th>EMI</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>30</td>
+<td>340.02</td>
+<td>330.02</td>
+<td>10.00</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>60</td>
+<td>340.02</td>
+<td>336.67</td>
+<td>3.35</td>
+<td>333.31</td>
+</tr>
+<tr>
+<td>3</td>
+<td>90</td>
+<td>333.31</td>
+<td>333.31</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1013.35</td>
+<td>1000.00</td>
+<td>13.35</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Charge-off accounting entries are posted by charge-off reason. A charge-off transaction with principal of 100.00, interest of 10.00, fees of 5.00, and penalty of 2.00 debits the principal to the expense GL account mapped to the reason code; interest, fees, and penalty debit their respective charge-off income or fee accounts. The credit side goes to Loans Receivable for principal and to Fee Receivable or Penalty Receivable for the other portions. Without an advanced accounting rule, reason code fraud maps to Credit Loss/Bad Debt Fraud and reason code delinquent maps to Credit Loss/Bad Debt. When an advanced accounting rule is configured, the configured GL account takes priority over the default mapping.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Amount</th>
+<th>Reason code</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>100.00</td>
+<td>Fraud</td>
+<td>Credit Loss/Bad Debt Fraud</td>
+<td>Loans Receivable</td>
+</tr>
+<tr>
+<td>Interest</td>
+<td>10.00</td>
+<td>Fraud</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>5.00</td>
+<td>Fraud</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>2.00</td>
+<td>Fraud</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+</tr>
+<tr>
+<td>Principal</td>
+<td>100.00</td>
+<td>Delinquent</td>
+<td>Credit Loss/Bad Debt</td>
+<td>Loans Receivable</td>
+</tr>
+<tr>
+<td>Interest</td>
+<td>10.00</td>
+<td>Delinquent</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>5.00</td>
+<td>Delinquent</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>2.00</td>
+<td>Delinquent</td>
+<td>Fee Charge off</td>
+<td>Penalty Receivable</td>
+</tr>
+</tbody></table>
+<p>An early repayment can close a period before its end, yet interest for the remaining days of that period is still recognized and must appear on the charge-off transaction. The figures are illustrative: a principal of 1,000.00, an annual interest rate of 12%, daily interest calculation, and 30-day months. A repayment on day 15 fully repays period 1, and the loan is charged off on day 30. Interest for days 16 through 30 of period 1 is calculated and carried on the charge-off transaction even though the period was already marked fully paid.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Days covered</th>
+<th>Interest recognized</th>
+<th>Reflected on</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-15</td>
+<td>4.93</td>
+<td>Early repayment</td>
+</tr>
+<tr>
+<td>1</td>
+<td>16-30</td>
+<td>4.93</td>
+<td>Charge-off transaction</td>
+</tr>
+<tr>
+<td>Total charge-off interest portion</td>
+<td></td>
+<td>4.93</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Charge-Off Balances"/><ac:plain-text-link-body><![CDATA[Charge-Off Balances]]></ac:plain-text-link-body></ac:link>.</p>

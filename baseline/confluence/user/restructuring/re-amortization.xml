@@ -1,0 +1,325 @@
+<h2>About re-amortization</h2>
+<p>Re-amortization helps customers who have missed payments by moving the overdue amount into future installments so the loan no longer has a past due balance. It is available for non-interest bearing loans, and the schedule end date typically stays the same.</p>
+<p>What re-amortization does:</p>
+<ul>
+<li>It redistributes only the overdue amount to the remaining future installments.</li>
+</ul>
+<h2>Re-amortize a loan</h2>
+<p>Re-amortization spreads the past due balance of the loan over the remaining installments so there is no past due balance.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Select <strong>Re-Amortize</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest Handling</td>
+<td>No</td>
+<td>Choose how interest is handled during re-amortization: Default Behavior, Waive Interest, or Equal Overdue Interest Split.</td>
+</tr>
+<tr>
+<td>Reason</td>
+<td>No</td>
+<td>Enter the reason for applying re-amortization. This is optional.</td>
+</tr>
+<tr>
+<td>External Id</td>
+<td>No</td>
+<td></td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The repayment schedule reflects the re-amortized repayment schedule details, and you can view the re-amortized transaction details in the transaction tab.</p>
+<h2>Eligibility and supported loans</h2>
+<p>Re-amortization applies only to active loan accounts that use a progressive repayment schedule handling or advance repayment strategy. It cannot be applied after the maturity date or after the new maturity date.</p>
+<p>Charge-off loan accounts:</p>
+<ul>
+<li>Re-amortization cannot be applied on charge-off loan accounts.</li>
+<li>Re-amortization is allowed on charge-off loan accounts.</li>
+</ul>
+<p>Interest bearing loan accounts:</p>
+<ul>
+<li>Re-amortization is enabled for interest bearing progressive loan repayment strategy.</li>
+</ul>
+<h2>Interest handling options</h2>
+<p>When you apply re-amortization, choose an interest handling subtype from the drop-down: Default Behavior, Waive Interest, or Equal Overdue Interest Split. Each option decides how overdue interest, charges, and fees are treated after re-amortization.</p>
+<table>
+<thead>
+<tr>
+<th>Interest handling option</th>
+<th>Interest and EMI</th>
+<th>Overdue interest including chargeback interest</th>
+<th>Overdue charge including chargeback charge</th>
+<th>Fees or penalties due after re-amortization</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Default Behavior</td>
+<td>Re-calculated based on the new principal balance</td>
+<td>Moved to the first installment after the re-amortization date</td>
+<td>Remains as is on the existing installment</td>
+<td>Remains as is</td>
+</tr>
+<tr>
+<td>Waive Interest</td>
+<td>Re-calculated based on the new principal balance</td>
+<td>Waived off</td>
+<td>Remains as is on the existing installments</td>
+<td>Remains as is</td>
+</tr>
+<tr>
+<td>Equal Overdue Interest Split</td>
+<td>Not stated</td>
+<td>Outstanding payable interest including chargeback interest is equally split among future installments</td>
+<td>Outstanding charges or penalty is equally split among new installments</td>
+<td>Remains as is on the existing installment</td>
+</tr>
+</tbody></table>
+<h2>Applying re-amortization</h2>
+<p>You apply re-amortization from an active loan account. The system uses the current business date as the transaction date and re-amortization date, and applies the sum of the full past due amount and the current day due amount. No date or amount fields are required.</p>
+<p>When you submit re-amortization:</p>
+<ul>
+<li>You can enter an optional reason in a text field.</li>
+<li>You can generate and preview the re-amortized schedule based on the selected parameters.</li>
+<li>You can go back to the re-amortization parameter screen from the preview.</li>
+<li>Once applied, you can view the re-amortized transaction details in the transaction tab.</li>
+<li>The repayment schedule reflects the re-amortized repayment schedule details.</li>
+</ul>
+<h2>What gets re-amortized</h2>
+<p>It does not change the repayment schedule structure, maturity date, due dates, or the number of installments. It applies only to installments after the re-amortization date; installments on or before that date are not re-amortized.</p>
+<p>The following amounts stay as they are:</p>
+<ul>
+<li>Down-payment amounts are not affected by re-amortization.</li>
+<li>Partial or excess paid amounts on installments before re-amortization remain on those installments; only the unpaid amount is re-amortized.</li>
+<li>Charges and interest remain as is for their respective installments.</li>
+<li>Payable interest does not change.</li>
+<li>Chargeback amounts remain as they are.</li>
+<li>Past due period EMI is set to the total of paid balances plus charges and is not re-amortized.</li>
+</ul>
+<p>The N+1 installment is not affected:</p>
+<ul>
+<li>The N+1 installment remains as is during re-amortization.</li>
+</ul>
+<p>Future down-payment installments:</p>
+<ul>
+<li>Future down-payment installments, if they exist, are considered for re-amortization.</li>
+</ul>
+<p>What gets re-amortized:</p>
+<ul>
+<li>Only principal can be re-amortized; outstanding fees or penalties remain outstanding for their particular installments and must be paid or waived.</li>
+<li>The re-amortized amount is the complete past due principal amount plus the current date due amount if an installment falls on the same day as re-amortization.</li>
+</ul>
+<p>Unpaid principal on the schedule after re-amortization:</p>
+<table>
+<thead>
+<tr>
+<th>Installment timing</th>
+<th>Unpaid principal shown</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Unpaid installments on or before the re-amortized date</td>
+<td>Zero</td>
+</tr>
+<tr>
+<td>Future installments after the re-amortized date</td>
+<td>Recalculated principal share</td>
+</tr>
+</tbody></table>
+<h2>Schedule behavior after re-amortization</h2>
+<p>After re-amortization, the system recalculates the loan schedule using the re-amortization interest handling setting. Interest-bearing loans with interest recalculation enabled follow the default schedule behaviour. Interest waiver and equal overdue interest split behaviour apply to both interest-bearing and non-interest-bearing loans.</p>
+<p>Transactions continue to work normally on the re-amortization schedule:</p>
+<ul>
+<li>All transaction types work normally on the re-amortization schedule.</li>
+<li>Credit transactions such as disbursements and capitalised income work normally on the re-amortization schedule.</li>
+</ul>
+<h2>Accruals and delinquency</h2>
+<p>Accruals are recalculated and adjusted as of the re-amortization business date at end of day (COB, the nightly job that posts interest and fees). Periodic accrual is then calculated and posted based on the new installment interest, and accrual activity posts regularly on future installment dates at EOD.</p>
+<p>Accrual activity for overdue installments being re-amortized is handled as follows:</p>
+<ul>
+<li>Accrual activity of overdue installments is reversed or reverse-replayed on the re-amortization business date in real time.</li>
+<li>A backdated repayment or reversal before the re-amortization date recalculates and posts the difference accrual or accrual adjustment as of current business date EOD.</li>
+<li>A backdated repayment that results in installment recalculation before re-amortization creates a new accrual activity as of the installment date in real time.</li>
+<li>A backdated repayment reversal that results in installment recalculation and re-amortization reverses the respective accrual activity transaction in real time.</li>
+</ul>
+<p>Delinquency is handled as follows:</p>
+<ul>
+<li>Delinquency calculation is triggered when re-amortization is triggered on the loan account.</li>
+<li>Delinquency calculation is triggered when re-aging is triggered on the loan account.</li>
+<li>When the repayment schedule and delinquency buckets are modified by re-amortization, the DelinquencyRangeChange event and AccountStatusChange event are triggered.</li>
+</ul>
+<p>Principal and interest are handled as follows:</p>
+<ul>
+<li>Principal Only is re-amortized.</li>
+<li>Unpaid interest is waived off.</li>
+</ul>
+<h2>Multiple re-amortizations</h2>
+<p>You can re-amortize a loan account more than once, but not on the same date. Each re-amortization after the first must use the same interest options as the first re-amortization.</p>
+<h2>Undoing re-amortization</h2>
+<p>You can undo the last re-amortization applied to a loan account. When you do, the system recalculates and reapplies the repayment schedule at that time.</p>
+<p>Undo re-amortization only when:</p>
+<ul>
+<li>There are no future payments made after re-amortization (non-reversed payments only).</li>
+<li>You can reverse the re-amortization transaction from the UI.</li>
+</ul>
+<h2>Backdated transactions and reversals</h2>
+<p>You can post backdated transactions on a loan account that has been re-amortized. A backdated repayment or reversal triggers reverse replay, which reverses and replays the re-amortization and recalculates and reapplies the schedule. The repayment schedule replays the re-amortization and installment amounts based on the new past due principal amount plus the current date due amount when an installment falls on the same day as the re-amortization.</p>
+<p>The following actions change the past due amount:</p>
+<ul>
+<li>Undoing old repayments</li>
+<li>Backdated repayments</li>
+<li>Backdated disbursements</li>
+<li>Backdated charge additions</li>
+<li>Undoing re-amortization</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Backdated transaction"]
+  n2["Reverse replay triggered"]
+  n3["Reverse re-amortization"]
+  n4["Replay re-amortization and installment amounts"]
+  n5["Schedule recalculated and reapplied"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Parameters and events</h2>
+<p>Re-amortization requires one manual parameter and two System parameters. No explicit events or new parameters are required.</p>
+<h2>Transaction and schedule details</h2>
+<p>When re-amortization is applied, the system adds a non-monetary re-amortized transaction to the loan account as of the current business date. This transaction creates no journal entry, and the loan account is not explicitly marked as re-amortized.</p>
+<h2>Worked examples</h2>
+<p>An active loan of 1,000 is repayable in five equal monthly installments of 200, with 30-day months and no interest. The customer pays the first two installments on time but misses the third installment of 200. On the current business date, after the missed due date and before the next due date, the officer applies re-amortization. The overdue principal of 200 is spread equally across the two remaining future installments, adding 100 to each. The maturity date does not change, and the missed installment keeps its original amount. These figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Original installment</th>
+<th>Re-amortized installment</th>
+<th>Re-amortized amount added</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 1</td>
+<td>200.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>200.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>200.00</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Month 4</td>
+<td>200.00</td>
+<td>300.00</td>
+<td>100.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Month 5</td>
+<td>200.00</td>
+<td>300.00</td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This shows that only the overdue principal moves to future installments; past installments and the maturity date stay the same.</p>
+<p>An active interest-bearing loan of 1,000 is repayable in five monthly installments of 200 principal each, with interest of 1% per month on the opening balance and 30-day months. The original schedule charges 10, 8, 6, 4, and 2 in interest. The customer pays the first two installments but misses the third, leaving 200 of principal and 6 of interest overdue. On the current business date, after the missed due date and before the fourth installment, the officer applies re-amortization with Default interest handling. The overdue interest of 6 is moved to the first future installment. The overdue principal of 200 is added equally to the fourth and fifth installments, giving each 100 extra principal. Interest is recalculated on the new opening balances, so the fourth installment becomes 312 and the fifth becomes 303. The maturity date stays the same. These figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>Original installment</th>
+<th>Re-amortized installment</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 1</td>
+<td>1,000.00</td>
+<td>210.00</td>
+<td>210.00</td>
+<td>200.00</td>
+<td>10.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Month 2</td>
+<td>800.00</td>
+<td>208.00</td>
+<td>208.00</td>
+<td>200.00</td>
+<td>8.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>600.00</td>
+<td>206.00</td>
+<td>206.00</td>
+<td>0.00</td>
+<td>6.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Month 4</td>
+<td>600.00</td>
+<td>204.00</td>
+<td>312.00</td>
+<td>300.00</td>
+<td>12.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Month 5</td>
+<td>300.00</td>
+<td>202.00</td>
+<td>303.00</td>
+<td>300.00</td>
+<td>3.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,030.00</td>
+<td>1,239.00</td>
+<td>1,000.00</td>
+<td>39.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>With Waive interest handling, the 6 of overdue interest is removed instead of moved, lowering the fourth installment to 306 and total interest to 33; with Equal Overdue Interest Split, the 6 is divided evenly across the fourth and fifth installments, making them 309 and 306 while total interest stays at 39.</p>

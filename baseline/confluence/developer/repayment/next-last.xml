@@ -1,0 +1,81 @@
+<p>The Next/Last Installment allocation rule decides how an advance payment is split between the next installment and the last installment of a loan. You use it when a repayment arrives before its due date and you want the excess to reduce future installments rather than the current one. The configuration is available to select the Next/Last Installment option for advance amount allocation.</p>
+<p>Allocation order:</p>
+<ul>
+<li>Overdue interest, overdue principal, overdue fees, due interest, due principal, due fees, advance principal, advance interest, advance fees.</li>
+</ul>
+<p>How the next installment is chosen:</p>
+<ul>
+<li>If the repayment date is before the current installment due date, the current installment is the next installment.</li>
+<li>If the repayment date is on the current installment due date, the upcoming next installment is the next installment.</li>
+</ul>
+<p>How an advance amount allocates:</p>
+<ul>
+<li>Any advance amount first allocates to the next installment and the remaining amount allocates to the last installment.</li>
+<li>If the advance amount arrives on the next installment date itself, it allocates to that current installment first and the remaining amount allocates to the last installment.</li>
+<li>Once allocated to the next installment, allocation jumps to the last installment and allocates from behind (last, then last but one, then last but two, and so on).</li>
+</ul>
+<p>What happens when the current installment is fully paid:</p>
+<ul>
+<li>The Last rule allocates any in-advance portions to the last installment as the last installment strategy.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> There is always a next installment under the Next-Last allocation rule, and there are no changes regarding the last installment.</p>
+</blockquote>
+<p>An early payment arrives before the first installment is due. The loan has a principal of 1,000.00, an annual interest rate of 12 percent, and four monthly installments with 30-day months. The installments are due on the first day of each of the next four months. The customer pays 600.00 on the fifteenth day of the month before the first due date, so the first installment is the next installment and the fourth installment is the last installment. The figures are illustrative. The example shows that an early payment clears the next installment first and then fills installments backward from the last.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due</th>
+<th>Allocated</th>
+<th>Remaining payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Installment 1 (next)</td>
+<td>260.00</td>
+<td>260.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Installment 4 (last)</td>
+<td>252.50</td>
+<td>252.50</td>
+<td>87.50</td>
+</tr>
+<tr>
+<td>Installment 3 (last but one)</td>
+<td>255.00</td>
+<td>87.50</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A payment arrives exactly on the first installment&#39;s due date. The loan has a principal of 1,000.00, an annual interest rate of 12 percent, and four monthly installments with 30-day months. The installments are due on the first day of each of the next four months. The customer pays 600.00 on the first day of Month 1, which is the due date of Installment 1; Installment 2 is the upcoming next installment and Installment 4 is the last installment. Under the earlier configuration the excess after Installment 1 went directly to the last installment; the current configuration fills the next installment before reaching the last.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due</th>
+<th>Allocated</th>
+<th>Remaining payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Installment 1 (current)</td>
+<td>260.00</td>
+<td>260.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Installment 2 (next)</td>
+<td>257.50</td>
+<td>257.50</td>
+<td>82.50</td>
+</tr>
+<tr>
+<td>Installment 4 (last)</td>
+<td>252.50</td>
+<td>82.50</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

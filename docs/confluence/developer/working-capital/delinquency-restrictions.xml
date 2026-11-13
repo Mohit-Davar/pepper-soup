@@ -1,0 +1,868 @@
+<h2>Range schedule</h2>
+<p>The Range Schedule calculates overdue, delinquency, and payment holidays for a working capital loan account. The system creates it from the parameters set during delinquency configuration.</p>
+<p>Each range schedule installment contains:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>From Date</td>
+<td>Created from input parameters and starts from the disbursement date; start date and grace days affect it.</td>
+</tr>
+<tr>
+<td>To Date</td>
+<td>Period end date of that installment.</td>
+</tr>
+<tr>
+<td>Expected Amount</td>
+<td>Calculated based on input parameters.</td>
+</tr>
+<tr>
+<td>Paid Amount</td>
+<td>Sum of paid amount in that installment period.</td>
+</tr>
+<tr>
+<td>Outstanding Amount</td>
+<td>Difference of expected amount and paid amount.</td>
+</tr>
+<tr>
+<td>Delinquent days</td>
+<td>Number of days since delinquent this period.</td>
+</tr>
+<tr>
+<td>Delinquent Amount</td>
+<td>Amount still outstanding when the period is overdue.</td>
+</tr>
+</tbody></table>
+<p>The installment start date is calculated from the disbursement date and the repayment frequency.</p>
+<p>For working capital loans, delinquency configuration requires:</p>
+<ul>
+<li>Minimum payment period and rule.</li>
+<li>Frequency.</li>
+<li>Numeric value representing the range interval.</li>
+<li>Frequency type (time unit of the range interval, such as days, weeks, or months).</li>
+<li>Minimum payment amount type (Percentage of loan amount or Flat amount).</li>
+<li>Minimum payment amount.</li>
+</ul>
+<p>Grace days settings:</p>
+<ul>
+<li>Grace days can be 0 or a positive number.</li>
+<li>Grace days define how many extra days are added to the very first start date.</li>
+</ul>
+<p>Delinquency ranges must be provided to bucket, with the same behaviour as the existing one.</p>
+<p>The start date for delinquency management of working capital loans can be either loan creation date or disbursement date.</p>
+<p>Configuration example for product US_PPWC:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Delinquency grace days</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Delinquency start type</td>
+<td>DISBURSEMENT</td>
+</tr>
+<tr>
+<td>Bucket ID</td>
+<td>1</td>
+</tr>
+<tr>
+<td>Frequency</td>
+<td>90 DAYS</td>
+</tr>
+<tr>
+<td>Minimum payment</td>
+<td>10.000000 PERCENTAGE</td>
+</tr>
+</tbody></table>
+<p>Delinquency ranges:</p>
+<table>
+<thead>
+<tr>
+<th>Range</th>
+<th>Min age days</th>
+<th>Max age days</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D00</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>D02</td>
+<td>2</td>
+<td>30</td>
+</tr>
+<tr>
+<td>D30</td>
+<td>31</td>
+<td>60</td>
+</tr>
+<tr>
+<td>D60</td>
+<td>61</td>
+<td>90</td>
+</tr>
+<tr>
+<td>D90</td>
+<td>91</td>
+<td>120</td>
+</tr>
+<tr>
+<td>D120</td>
+<td>121</td>
+<td>150</td>
+</tr>
+<tr>
+<td>D150</td>
+<td>151</td>
+<td>180</td>
+</tr>
+<tr>
+<td>D180</td>
+<td>181</td>
+<td>210</td>
+</tr>
+<tr>
+<td>D210</td>
+<td>211</td>
+<td>240</td>
+</tr>
+<tr>
+<td>D240</td>
+<td>241</td>
+<td>270</td>
+</tr>
+<tr>
+<td>D270</td>
+<td>271</td>
+<td>300</td>
+</tr>
+<tr>
+<td>D300</td>
+<td>301</td>
+<td>330</td>
+</tr>
+<tr>
+<td>D330</td>
+<td>331</td>
+<td>360</td>
+</tr>
+<tr>
+<td>D360</td>
+<td>361</td>
+<td>null</td>
+</tr>
+</tbody></table>
+<p>Delinquency configuration values:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Delinquency start type</td>
+<td>LOAN_CREATION, DISBURSEMENT</td>
+</tr>
+<tr>
+<td>Grace days</td>
+<td>null, 0, or n</td>
+</tr>
+<tr>
+<td>Minimum payment base</td>
+<td>FLAT, PERCENTAGE</td>
+</tr>
+<tr>
+<td>Payment period</td>
+<td>daily</td>
+</tr>
+<tr>
+<td>Delinquency period frequency</td>
+<td>30</td>
+</tr>
+<tr>
+<td>Delinquency period frequency term</td>
+<td>DAY</td>
+</tr>
+<tr>
+<td>Grace days</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>Delinquency buckets:</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Age range</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>D30</td>
+<td>31-60</td>
+</tr>
+<tr>
+<td>D60</td>
+<td>61-90</td>
+</tr>
+<tr>
+<td>D90</td>
+<td>91-120</td>
+</tr>
+<tr>
+<td>D120</td>
+<td>121-150</td>
+</tr>
+<tr>
+<td>D150</td>
+<td>151-180</td>
+</tr>
+<tr>
+<td>D180</td>
+<td>181-210</td>
+</tr>
+<tr>
+<td>D210</td>
+<td>210-240</td>
+</tr>
+<tr>
+<td>D270</td>
+<td>&gt;270</td>
+</tr>
+</tbody></table>
+<p>Add template API to fetch the options.</p>
+<h2>Delinquency evaluation</h2>
+<p>Delinquency evaluation checks whether a Working Capital loan period has become delinquent or has cured, and updates delinquency tags and balances accordingly. It runs periodically based on minimum payment rules and daily at end of day, and can run in real time when monetary events occur, depending on configuration.</p>
+<p>Evaluation is triggered when:</p>
+<ul>
+<li>A period is generated because the current date crossed the last period due date.</li>
+<li>A reschedule occurs and the minimum payment amount or frequency changed.</li>
+<li>A backdated or reversed monetary transaction occurred, affecting only the period where the outstanding loan balance is lower than originally calculated.</li>
+<li>A monetary event occurs in real time, when real-time re-evaluation is enabled.</li>
+</ul>
+<p>Rules for evaluation:</p>
+<ul>
+<li>Past due is calculated independently for each period and does not carry forward from previous periods.</li>
+<li>Period Past Due Amount equals Total Amount Due for the Period minus Total Amount Paid for the Period.</li>
+<li>Incoming payments are allocated to the oldest unpaid minimum due period, applied to past due periods first, then the current period, with no allocation to future periods.</li>
+<li>After payment or end of day, tags and delinquent amounts are re-evaluated.</li>
+</ul>
+<p>Delinquency tag history:</p>
+<ul>
+<li>Delinquency tag history is maintained for audit and tracking purposes.</li>
+<li>Backdated payments or reversals do not affect periods prior to the reset; delinquency calculations continue from the reset period without re-evaluating earlier periods.</li>
+</ul>
+<h2>Delinquency pause</h2>
+<p>Delinquency Pause temporarily suspends delinquency tracking for a Working Capital loan. A PAUSE action is created with a startDate and endDate, and the pause is applied as of the current business date at initiation.</p>
+<p>During the pause period:</p>
+<ul>
+<li>The delinquency range schedule is extended — the active and all future periods are shifted forward by the number of pause days.</li>
+<li>Future periods&#39; fromDate values are shifted accordingly to maintain continuity.</li>
+<li>The pause applies only to the Delinquency schedule and evaluation and has no impact on breach management.</li>
+</ul>
+<p>Resuming a pause:</p>
+<ul>
+<li>The pause end date is updated to the resume date.</li>
+<li>The system retriggers and recomputes the Delinquency schedule and evaluation based on the new backdated pause.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> A user can do a backdated pause for Delinquency Evaluation.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Active" as n1
+  state "Paused" as n2
+  state "Resumed" as n3
+  n1 --> n2 : Pause action applied
+  n2 --> n3 : Resume action executed
+  n3 --> n1 : Pause terminated]]></ac:plain-text-body></ac:structured-macro>
+<h2>Delinquency reschedule</h2>
+<p>Delinquency Reschedule changes the minimum payment amount and/or the frequency of the delinquency range schedule for a Working Capital loan. You can override the product-level configuration for a specific loan without changing the product setup. A delinquency range schedule must already exist for the loan. You can reschedule an active loan account multiple times, even on the same date.</p>
+<p>The reschedule action supports two minimum payment options:</p>
+<ul>
+<li>Percentage Amount: calculated based on principal plus discount.</li>
+<li>Flat Amount: you provide the new minimum payment amount.</li>
+</ul>
+<p>The following values must meet these rules:</p>
+<ul>
+<li>minimumPayment must be a positive number percentage of approved principal.</li>
+<li>frequency must be a positive integer.</li>
+<li>frequencyType must be one of DAYS, WEEKS, MONTHS, YEARS.</li>
+</ul>
+<p>What changes after reschedule:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Before reschedule</th>
+<th>After reschedule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Expected Amount</td>
+<td>Based on product-level minimum payment config</td>
+<td>Percentage of approved principal or flat amount from the reschedule action</td>
+</tr>
+<tr>
+<td>Frequency</td>
+<td>Based on product-level delinquency bucket config</td>
+<td>New frequency and frequency type from the reschedule action</td>
+</tr>
+</tbody></table>
+<p>The system identifies the current period that contains the business date and updates its expectedAmount based on the new minimum payment percentage or flat amount. Future periods are deleted and regenerated with the new parameters. Evaluated periods remain unchanged and historical data is preserved.</p>
+<p>If multiple reschedule actions exist, the latest one by ID takes precedence for generating new periods during close of business (COB), the nightly job that posts interest and fees. Delinquency Schedule and Evaluation are recalculated according to the latest reschedule, and evaluation of paid amounts can vary and is reevaluated. Any backdated repayments or reversals trigger reprocessing of the Delinquency schedule and evaluation.</p>
+<h2>Delinquency reset</h2>
+<p>Delinquency Reset restarts delinquency monitoring cycles and marks a delinquent WCP account as regularized once compliance is restored. It stops further penal actions if applicable. You can perform multiple resets on the delinquency schedule, but only one reset per period is allowed. A validation message appears if you try to reset a second time on the same delinquency period.</p>
+<p>Delinquency Reset offers an optional option to Restart Period from Reset Date:</p>
+<ul>
+<li>If you do not select Restart Period from Reset Date, the reset behaves as before with no changes to existing delinquency period calculations.</li>
+<li>If you select Restart Period from Reset Date, the system considers the delinquency reset date as the new starting point for delinquency period calculations.</li>
+<li>When selected, all existing delinquency periods are reset and a new delinquency period is created starting from the delinquency reset date.</li>
+<li>Subsequent delinquency periods are calculated using this new start date following the existing delinquency-period generation logic.</li>
+<li>Previous delinquency periods remain available for audit and history purposes but do not influence newly generated delinquency periods after the reset.</li>
+</ul>
+<p>After a reset, delinquency evaluation restarts from the current evaluation period.</p>
+<h2>Delinquency disable</h2>
+<p>Delinquency Disable stops delinquency evaluation for a loan account from the current date onward. You can use it for business scenarios such as charge-off or write-off. Backdated disable is not permitted.</p>
+<p>While Delinquency Disable is active:</p>
+<ul>
+<li>Delinquency Reschedule is not allowed.</li>
+<li>Delinquency Reset is not allowed.</li>
+<li>Delinquency Pause is not allowed.</li>
+</ul>
+<p>Permissions and reversal:</p>
+<ul>
+<li>Only a user with the permission &quot;disable Delinquency&quot; or with &quot;all functions&quot; can perform Delinquency Disable.</li>
+<li>Delinquency Disable is allowed only once until the current disable is reversed.</li>
+<li>Delinquency Disable can be reversed or undone.</li>
+<li>When reversed, delinquency evaluation is re-triggered and recomputed as of the undo date.</li>
+<li>After reversal, Delinquency Disable can be applied again as of the current date.</li>
+</ul>
+<h2>Delinquency tags and buckets</h2>
+<p>Delinquency tags identify how far an account is past due, and delinquency buckets group those tags into ranges. Tags run from D00 through D270, and the system keeps a history of tag assignments. Breach evaluations do not keep history.</p>
+<h2>Delinquency API</h2>
+<p>The Delinquency API lets you fetch delinquency information for a loan, retrieve delinquency configuration options, create delinquency actions, and list existing delinquency actions for a loan.</p>
+<p>Create delinquency actions with POST /v1/working-capital-loans/{loanId}/delinquency-actions and list them with GET /v1/working-capital-loans/{loanId}/delinquency-actions.</p>
+<ul>
+<li>The action parameter is required and must be pause or reschedule.</li>
+<li>startDate and endDate apply only to pause.</li>
+<li>minimumPayment, frequency, and frequencyType apply only to reschedule.</li>
+<li>frequencyType must be DAYS, WEEKS, MONTHS, or YEARS.</li>
+<li>dateFormat and locale are optional.</li>
+</ul>
+<h2>Delinquency database schema</h2>
+<p>The m_wc_loan_delinquency_action table stores PAUSE and RESCHEDULE actions applied to a Working Capital loan. These actions drive schedule modifications where pause extends periods and reschedule changes expected amounts and frequency, and they provide override parameters for close of business (COB) period generation.</p>
+<p>Table columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Nullability</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>bigserial</td>
+<td>NOT NULL</td>
+<td>Primary key</td>
+</tr>
+<tr>
+<td>wc_loan_id</td>
+<td>bigint</td>
+<td>NOT NULL</td>
+<td>Foreign key to m_wc_loan; ON UPDATE RESTRICT ON DELETE RESTRICT</td>
+</tr>
+<tr>
+<td>action</td>
+<td>varchar(50)</td>
+<td>NOT NULL</td>
+<td>PAUSE or RESCHEDULE</td>
+</tr>
+<tr>
+<td>start_date</td>
+<td>date</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>end_date</td>
+<td>date</td>
+<td>nullable</td>
+<td>User-provided for PAUSE; null for RESCHEDULE</td>
+</tr>
+<tr>
+<td>minimum_payment</td>
+<td>decimal(19,6)</td>
+<td>nullable</td>
+<td>Used only for RESCHEDULE as the new minimum payment percentage</td>
+</tr>
+<tr>
+<td>frequency</td>
+<td>int</td>
+<td>nullable</td>
+<td></td>
+</tr>
+<tr>
+<td>frequency_type</td>
+<td>varchar(50)</td>
+<td>nullable</td>
+<td></td>
+</tr>
+<tr>
+<td>created_by</td>
+<td>bigint</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>created_on_utc</td>
+<td>timestamp with time zone</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>last_modified_by</td>
+<td>bigint</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>last_modified_on_utc</td>
+<td>timestamp with time zone</td>
+<td>NOT NULL</td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>Delinquency pause and resume</h2>
+<p>You can pause Delinquency processing for a defined period and resume it before the pause ends.</p>
+<p>Pause and resume rules:</p>
+<ul>
+<li>The Delinquency breach action is permitted only during an active Delinquency pause period, between the configured pause start date and end date.</li>
+<li>Only a user with specific permission or all functions permissions can perform the resume action.</li>
+<li>Only users with permissions or super user should be able to perform this action.</li>
+</ul>
+<h2>Reschedule parameter inheritance</h2>
+<p>When a reschedule action omits a parameter group, the omitted group inherits its value from the latest previous reschedule action that set it. The product or breach configuration is used only when no earlier reschedule ever set that group. This inheritance rule applies identically to the Delinquency reschedule action and the Breach reschedule action.</p>
+<p>Delinquency and Breach schedule and evaluation are recalculated according to the resolved inherited parameters. The reschedule action history remains append-only, and each action stores only the fields it was created with.</p>
+<h2>Minimum payment based on remaining balance</h2>
+<p>When a loan&#39;s remaining principal balance is lower than the computed minimum payment, the delinquency period&#39;s expected amount equals the remaining balance. This rule applies to both product-configuration-based amounts and reschedule-based amounts. The delinquency period is evaluated as minimum payment criteria met once the remaining balance is fully paid.</p>
+<h2>Delinquency grace days</h2>
+<p>Delinquency grace days set a cosmetic delinquency start date at read time: delinquencyStartDate equals the period&#39;s fromDate plus delinquencyGraceDays. The system does not apply delinquencyGraceDays when it evaluates delinquency, so a loan is tagged delinquent as soon as the business date passes the period&#39;s toDate by even one day.</p>
+<h2>Payment allocation</h2>
+<p>For Working Capital loans, delinquency payments are allocated to the oldest past-due period first, one period at a time, and any excess is never applied to future periods. Allocation always applies charges before principal, in the order penalty, fees and principal. For Breach loans, incoming payments are allocated only to the current period and are not applied to past or future periods.</p>
+<h2>Schedule characteristics</h2>
+<p>The delinquency start date and breach start date are calculated from the loan product&#39;s configured delinquency start date plus the configured number of delinquency grace days.</p>
+<h2>Repayments and reversals</h2>
+<p>You can make repayments and reversals on a loan account. A repayment reduces the outstanding balance, updates and adjusts the amortization schedule, allocates the payment across components, and posts accounting entries. Repayments can be regular, partial, or excess (advance) payments. A repayment reversal creates a linked reversal transaction, reverses the allocated components (penalty, fee, principal), reverses the outstanding balance impact, reverses accounting entries, reprocesses the amortization schedule, and replays subsequent transactions if applicable.</p>
+<p>Repayment conditions:</p>
+<ul>
+<li>The repayment date must not precede the loan disbursement date.</li>
+<li>The repayment amount must be greater than zero.</li>
+<li>Repayment is allowed if the loan is active, closed, or charged-off.</li>
+<li>Repayment amount follows the allocation strategy set for the Repayment transaction type, or the default strategy if none is set.</li>
+<li>Repayment debits GL code 145023 (Suspence/clearing account) mapped to Fund source for principal, fees, penalty, and excess.</li>
+<li>Repayment credits GL code 744008 (recoveries) mapped to Income from Recovery Repayment for principal, penalty, and fees.</li>
+<li>Repayment credits GL code 245000 (Other Credit liability) mapped to Overpayment Liability for excess.</li>
+</ul>
+<p>Repayment reversal conditions:</p>
+<ul>
+<li>Reversal of a repayment transaction is allowed.</li>
+<li>Repayment reversal debits GL code 744008 (recoveries) mapped to Income from Recovery Repayment for principal, penalty, and fees.</li>
+<li>Repayment reversal debits GL code 245000 (Other Credit liability) mapped to Overpayment Liability for excess.</li>
+<li>Repayment reversal credits GL code 145023 (Suspence/clearing account) mapped to Fund source for principal, fees, penalty, and excess.</li>
+</ul>
+<p>Special cases:</p>
+<ul>
+<li>Post charge-off repayment is treated as a regular payment and accounting follows charge-off rules.</li>
+<li>Post write-off repayment is treated as recovery income.</li>
+<li>Only recovery payments are allowed on a written-off account.</li>
+<li>If repayment creates overpayment (overpaymentAmount &gt; 0), status transitions from ACTIVE to OVERPAID.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Additional restrictions may apply based on loan status and charge configuration.</p>
+</blockquote>
+<h2>Charge-off and write-off</h2>
+<p>Charge-off lets a lender recognize a loan as uncollectible after prolonged delinquency or breach by writing off outstanding balances for accounting purposes, while optionally continuing recovery efforts. Charge-off is supported only on active loan accounts.</p>
+<p>At the time of charge-off, you may:</p>
+<ul>
+<li>Disable delinquency manually.</li>
+<li>Disable breach tracking.</li>
+</ul>
+<h2>Near Breach</h2>
+<p>Near Breach flags an account when repayment performance approaches but has not reached a breach threshold. It gives an early warning before an actual violation occurs. Near Breach is typically 70–90% of the breach limit; Breach is 100% or beyond. Near Breach is a preventive step; Breach is a correction step.</p>
+<p>The system evaluates the following against configurable near breach thresholds:</p>
+<ul>
+<li>Merchant sales.</li>
+<li>Repayment trends.</li>
+<li>The percentage of paid amount in the period.</li>
+</ul>
+<p>Configuration parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Enable Near Breach checkbox</td>
+<td>Disabled by default.</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>Available when Enable Near Breach is enabled.</td>
+</tr>
+<tr>
+<td>Near Breach Threshold</td>
+<td>Available when Enable Near Breach is enabled.</td>
+</tr>
+<tr>
+<td>Near Breach Evaluation Frequency</td>
+<td>Available when Enable Near Breach is enabled. Consists of a Frequency numeric value and a Frequency Type time unit such as days, weeks, or months.</td>
+</tr>
+<tr>
+<td>Near Breach period requirement</td>
+<td>33.33%.</td>
+</tr>
+<tr>
+<td>Near Breach period evaluation</td>
+<td>30.</td>
+</tr>
+</tbody></table>
+<h2>Payment Holiday</h2>
+<p>A Payment Holiday applies to Working Capital products, where fixed installment schedules do not apply. It directly affects Delinquency and Breach schedules and evaluation. When you apply it, the system recalculates Delinquency and Breach evaluations for the affected period.</p>
+<h2>Overpayment</h2>
+<p>Overpayment is tracked explicitly in WorkingCapitalLoanBalance.overpaymentAmount. For Working Capital Loan, principalOutstanding never goes below zero.</p>
+<p>The overpayment increment is calculated as follows:</p>
+<ul>
+<li>overpaymentIncrement = transactionAmount - amountAppliedToOutstanding</li>
+</ul>
+<h2>Hardship Termout</h2>
+<p>Hardship Termout applies Delinquency Reschedule, Breach Reschedule, Delinquency Reset, and Breach Reset together. Once applied, Near Breach Evaluation stops, and the breach past due amount continues based on the new breach schedule.</p>
+<h2>Data model</h2>
+<p>A product can have one configurable attributes record and many product payment allocation rules, and many loans can use the same product. A loan has one balance and can have many disbursement details, many notes, many payment allocation rules, and at most one account lock. Many loans can reference one delinquency bucket. Relationship fields include client_id, fund_id, product_id, and delinquency_bucket_classification_id.</p>
+<h2>Payment schedule basics</h2>
+<p>A payment schedule lists each payment row for a loan. Row 0 is the disbursement row, and every later row is numbered starting at 1. The payment date for a row equals the expected disbursement date plus the row number in days. An on-time payment is a payment made as expected according to the projected schedule. A missed payment is no payment received during the expected installment period. An overpayment is a payment amount that exceeds the expected payment for the period. The period payment rate is the configured rate used to determine the expected payment per period relative to the total payment value. Re-age adjusts future amortization values after a change in loan parameters or payment activity. Trailing activity such as repayment reversal or charge back can occur.</p>
+<h2>Breach configuration example</h2>
+<p>The breach period frequency is 90 days.</p>
+<h2>UI behavior</h2>
+<p>The user interface does not show Delinquency options when you create a WC loan account. You cannot select or override a Delinquency bucket, and no Delinquency data appears on the Account Details page.</p>
+<h2>Minimum payment expected amount</h2>
+<p>The minimum payment expected amount defines the amount you must pay during each delinquency period. If you pay less than this amount, the period goes into delinquency and the past due amount equals the minimum payment amount minus the amount you paid. Outstanding amount is the expected amount minus the amount you paid.</p>
+<h2>Breach reschedule</h2>
+<p>Breach Reschedule lets you change the minimum payment amount and/or the frequency of the Breach range schedule for a Working Capital loan. The system creates a RESCHEDULE action with the new minimum payment, frequency, and frequency type parameters. After a successful reschedule, the Range Schedule table and Actions list refresh automatically and show recalculated expected amounts without a page reload.</p>
+<p>You can set the minimum payment using one of two options:</p>
+<ul>
+<li>Percentage Amount — calculated based on principal plus discount.</li>
+<li>Flat Amount — you enter the new minimum payment amount directly.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Calculation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Percentage Amount</td>
+<td>expectedAmount = approvedPrincipal * (minimumPayment / 100)</td>
+</tr>
+<tr>
+<td>Flat Amount</td>
+<td>expectedAmount = user entered flat amount</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> Delinquency must be configured at the loan account level before you can reschedule a breach. Required parameters are Name, Frequency, Frequency Type, Minimum payment amount type, and Minimum payment amount.</p>
+</blockquote>
+<h2>Breach reset</h2>
+<p>A breach reset applies only from the current system date; backdated resets are not permitted. A reset tag is added to the period where the reset is applied so evaluation happens from that period only.</p>
+<p>Undoing or deleting a breach reset has these effects:</p>
+<ul>
+<li>The breach status reverts to its previous state before the reset.</li>
+<li>Breach evaluation is recomputed accordingly.</li>
+<li>All undo or deletion actions are captured in the audit trail.</li>
+</ul>
+<h2>Breach reset restart period</h2>
+<p>Breach Reset includes an option called Restart Period from Reset Date. When you select it, the system uses the Breach Reset Date as the new starting point for breach period calculations.</p>
+<p>If you do not select Restart Period from Reset Date, Breach Reset behaves as it does today and does not change existing breach period calculations.</p>
+<ul>
+<li>If you select Restart Period from Reset Date, the system resets all existing breach periods as part of the breach reset process.</li>
+<li>The system creates a new breach period starting from the Breach Reset Date.</li>
+<li>Any subsequent breach periods are calculated from this new start date using the existing breach period generation logic.</li>
+<li>Previous breach periods remain available for audit and history purposes but do not influence the newly generated breach periods after the reset.</li>
+</ul>
+<h2>Breach disable</h2>
+<p>Breach Disable lets authorized users stop breach evaluation for a loan account during business scenarios such as charge-off or write-off. The disable takes effect only as of the current system date; backdated disable is not permitted.</p>
+<p>While Breach Disable is active, the following evaluations and actions are stopped:</p>
+<ul>
+<li>Near Breach evaluation stops.</li>
+<li>Breach Past Due amount evaluation stops.</li>
+<li>Breach Reschedule is not permitted.</li>
+<li>Breach Reset is not permitted.</li>
+<li>Breach Pause is not permitted.</li>
+</ul>
+<p>Reversing Breach Disable re-triggers breach evaluation and recomputes it as of the undo date.</p>
+<h2>Breach past due amount</h2>
+<p>Breach Past Due Amount is the amount by which an account remains in breach in the current period. Current Period Past Due Amount means past due calculated for the current period. Breach Past Due Amount is calculated at the end of each Breach Period as defined in the breach schedule and can never be negative.</p>
+<p>The following events affect Breach Past Due Amount:</p>
+<ul>
+<li>Backdated repayments or adjustments trigger recalculation for the affected periods.</li>
+<li>A Breach Reschedule recomputes Breach Past Due Amount based on the revised breach schedule.</li>
+<li>Breach Pause has no impact on the calculation.</li>
+<li>Breach Disable stops calculation from the disable date onward.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Backdated payments or reversals update the affected period&#39;s Actual Payment Amount, Past Due Amount, and Breach Status, but they do not recalculate subsequent periods or alter the current breach evaluation.</p>
+</blockquote>
+<h2>Breach reset meaning</h2>
+<p>A breach reset sets the breach past due amount to zero.</p>
+<h2>Worked examples</h2>
+<p>A Working Capital loan is disbursed for 1,000 on 01-Jan-2026. The delinquency configuration sets a minimum payment of 10% of the principal every 30 days, so each period expects 100.00. Grace days are 0, so the first period starts on the disbursement date. The table walks through three 30-day periods through 31-Mar-2026, with payments of 100.00, 50.00, and 0.00 received in each period. The figures are illustrative. The example shows that outstanding and past due grow when a period pays less than expected, and that totals equal the sum of their rows.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From Date</th>
+<th>To Date</th>
+<th>Expected Amount</th>
+<th>Paid Amount</th>
+<th>Outstanding Amount</th>
+<th>Past Due Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>01-Jan-2026</td>
+<td>30-Jan-2026</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>31-Jan-2026</td>
+<td>01-Mar-2026</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>02-Mar-2026</td>
+<td>31-Mar-2026</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>300.00</td>
+<td>150.00</td>
+<td>150.00</td>
+<td>150.00</td>
+</tr>
+</tbody></table>
+<p>The same loan of 1,000 with a 10% minimum payment every 30 days is disbursed on 01-Jan-2026, but the configuration defines 3 grace days. Grace days are added only to the very first start date, so the first period starts on 04-Jan-2026 instead of 01-Jan-2026. Subsequent periods continue in 30-day steps from that shifted start. With grace days set to 0, the first period would start on the disbursement date and every later date would move three days earlier. The example shows that grace days shift only the opening period, while the interval length and expected amounts stay unchanged.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From Date</th>
+<th>To Date</th>
+<th>Expected Amount</th>
+<th>Paid Amount</th>
+<th>Outstanding Amount</th>
+<th>Past Due Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>04-Jan-2026</td>
+<td>02-Feb-2026</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>03-Feb-2026</td>
+<td>04-Mar-2026</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>05-Mar-2026</td>
+<td>03-Apr-2026</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>300.00</td>
+<td>150.00</td>
+<td>150.00</td>
+<td>150.00</td>
+</tr>
+</tbody></table>
+<p>A Working Capital loan has an approved principal of 10,000. The product-level delinquency configuration sets 3% every 30 days, so the original expected amount is 300.00 per period. On 01-Mar-2026 a delinquency reschedule changes the minimum payment to 1% with the same 30-day frequency. Periods already evaluated keep their original expected amount; the current period and all future periods use the new expected amount of 100.00. The example shows that evaluated periods preserve their historical expected amounts while future periods are regenerated with the rescheduled percentage.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From Date</th>
+<th>To Date</th>
+<th>Expected Amount</th>
+<th>Paid Amount</th>
+<th>Outstanding Amount</th>
+<th>Past Due Amount</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>01-Jan-2026</td>
+<td>30-Jan-2026</td>
+<td>300.00</td>
+<td>300.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>Evaluated</td>
+</tr>
+<tr>
+<td>2</td>
+<td>31-Jan-2026</td>
+<td>01-Mar-2026</td>
+<td>300.00</td>
+<td>100.00</td>
+<td>200.00</td>
+<td>200.00</td>
+<td>Evaluated</td>
+</tr>
+<tr>
+<td>3</td>
+<td>02-Mar-2026</td>
+<td>31-Mar-2026</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>Rescheduled</td>
+</tr>
+<tr>
+<td>4</td>
+<td>01-Apr-2026</td>
+<td>30-Apr-2026</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>Rescheduled</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>800.00</td>
+<td>400.00</td>
+<td>400.00</td>
+<td>400.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan runs 30-day delinquency periods starting 01-Jan-2026. A delinquency pause is applied from 20-Jan-2026 to 29-Jan-2026, extending the active period and all future periods by 10 days. If the pause is resumed on 25-Jan-2026, the pause lasts 5 days and the shift applied to the active and future periods is reduced accordingly. The table shows period end dates under the original schedule, a 10-day pause, and a 5-day pause. The example shows that resuming a pause early shortens the extension applied to the active and all future periods.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Original To Date</th>
+<th>To Date with 10-Day Pause</th>
+<th>To Date with 5-Day Pause</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>30-Jan-2026</td>
+<td>09-Feb-2026</td>
+<td>04-Feb-2026</td>
+</tr>
+<tr>
+<td>2</td>
+<td>01-Mar-2026</td>
+<td>11-Mar-2026</td>
+<td>06-Mar-2026</td>
+</tr>
+<tr>
+<td>3</td>
+<td>31-Mar-2026</td>
+<td>10-Apr-2026</td>
+<td>05-Apr-2026</td>
+</tr>
+</tbody></table>
+<p>Breach uses a 50% minimum payment every 60 days on a 1,000 loan, so each 60-day breach period expects 400.00. Payments are allocated only to the current breach period. Period past due equals total amount due for the period minus total amount paid for the period, and it is never negative. The example shows that breach past due is the unpaid minimum for the period, floored at zero, and that a later payment can clear the period only when it covers the full expected amount.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From Date</th>
+<th>To Date</th>
+<th>Expected Amount</th>
+<th>Paid Amount</th>
+<th>Past Due Amount</th>
+<th>Breach Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>01-Jan-2026</td>
+<td>01-Mar-2026</td>
+<td>400.00</td>
+<td>300.00</td>
+<td>100.00</td>
+<td>Y</td>
+</tr>
+<tr>
+<td>2</td>
+<td>02-Mar-2026</td>
+<td>01-May-2026</td>
+<td>400.00</td>
+<td>50.00</td>
+<td>350.00</td>
+<td>Y</td>
+</tr>
+<tr>
+<td>3</td>
+<td>02-May-2026</td>
+<td>01-Jul-2026</td>
+<td>400.00</td>
+<td>425.00</td>
+<td>0.00</td>
+<td>N</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Batch Jobs"/><ac:plain-text-link-body><![CDATA[Batch Jobs]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

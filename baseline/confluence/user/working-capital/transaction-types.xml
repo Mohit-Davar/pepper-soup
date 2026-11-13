@@ -1,0 +1,902 @@
+<h2>Transaction types overview</h2>
+<p>Transaction types record money movements and account changes at loan account level. Monetary types include Disbursement, Repayment, Discount fees Amortization, Prepayment, Charge Adjustment, Discount Fees, Credit Balance Refund, Goodwill Credit Transaction, Recovery Payment (post write-off), and Payout Refund. Non-monetary types include Charge Application, Charge Waiver, Write-Off / Charge-Off, and Adjustments / Reversals. All transaction types follow APIs and parameters consistent with term loan product implementations.</p>
+<p>Transaction date rules:</p>
+<ul>
+<li>The transaction date must not precede the loan disbursement date.</li>
+<li>The transaction date must comply with backdating rules.</li>
+<li>Transactions are allowed only for valid loan states: Active, Charged-Off (with restrictions), and Written-Off (restricted to recovery transactions).</li>
+</ul>
+<p>Allocation and reversal:</p>
+<ul>
+<li>Transaction allocation distributes amounts into Penalties, Fees, and Principal.</li>
+<li>The priority order for allocation is configurable at Transaction level.</li>
+<li>Transactions can be reversed subject to no dependency conflicts and valid loan status.</li>
+</ul>
+<p>Backdated transactions are supported for most transaction types. Every transaction triggers Journal Entries (JE) based on configuration.</p>
+<h2>Prepay a loan</h2>
+<p>Use this screen to record a prepayment against a loan account, entering the date and amount and choosing how the payment is classified.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Prepay Loan</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transaction Date</td>
+<td>Yes</td>
+<td>Enter the date of the prepayment transaction. This field is required.</td>
+</tr>
+<tr>
+<td>Transaction Amount</td>
+<td>Yes</td>
+<td>Enter the prepayment amount. This field is required.</td>
+</tr>
+<tr>
+<td>Payment Type</td>
+<td>No</td>
+<td>Select the payment type used for the prepayment.</td>
+</tr>
+<tr>
+<td>Classification</td>
+<td>No</td>
+<td>Select the classification for the prepayment transaction.</td>
+</tr>
+<tr>
+<td>Show Payment Details</td>
+<td>No</td>
+<td>Choose whether to show payment details.</td>
+</tr>
+<tr>
+<td>Account</td>
+<td>No</td>
+<td>Select the loan account to which the prepayment applies.</td>
+</tr>
+<tr>
+<td>Cheque</td>
+<td>No</td>
+<td>Enter cheque details if paying by cheque.</td>
+</tr>
+<tr>
+<td>Routing Code</td>
+<td>No</td>
+<td>Enter the routing code for the payment.</td>
+</tr>
+<tr>
+<td>Receipt</td>
+<td>No</td>
+<td>Enter the receipt number for the prepayment.</td>
+</tr>
+<tr>
+<td>Bank</td>
+<td>No</td>
+<td>Select the bank used for the payment.</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td>Enter a note for the prepayment transaction.</td>
+</tr>
+<tr>
+<td>External Id</td>
+<td>No</td>
+<td>Enter an external identifier for the prepayment transaction.</td>
+</tr>
+</tbody></table>
+<p>The prepayment is posted to the loan account and allocated across principal, fees, and penalties according to the configured allocation priority.</p>
+<h2>Record a recovery payment</h2>
+<p>Use this screen to record money collected after a loan has been written off; the loan stays closed with a zero balance and only the recovered total changes.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Recovery Payment</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Transaction Date</td>
+<td>Yes</td>
+<td>Enter the date of the recovery payment.</td>
+</tr>
+<tr>
+<td>Transaction Amount</td>
+<td>Yes</td>
+<td>Enter the amount recovered.</td>
+</tr>
+<tr>
+<td>Payment Type</td>
+<td>No</td>
+<td>Select the payment type.</td>
+</tr>
+<tr>
+<td>Show Payment Details</td>
+<td>No</td>
+<td>Choose whether to show payment details.</td>
+</tr>
+<tr>
+<td>Account</td>
+<td>No</td>
+<td>Select the loan account receiving the recovery payment.</td>
+</tr>
+<tr>
+<td>Cheque</td>
+<td>No</td>
+<td>Enter cheque details if paying by cheque.</td>
+</tr>
+<tr>
+<td>Routing Code</td>
+<td>No</td>
+<td>Enter the routing code for the payment.</td>
+</tr>
+<tr>
+<td>Receipt</td>
+<td>No</td>
+<td>Enter the receipt number or details.</td>
+</tr>
+<tr>
+<td>Bank</td>
+<td>No</td>
+<td>Enter the bank receiving or processing the payment.</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td>Enter a note about the recovery payment.</td>
+</tr>
+<tr>
+<td>External Id</td>
+<td>No</td>
+<td>Enter an external identifier for the recovery payment.</td>
+</tr>
+</tbody></table>
+<p>The recovery payment is recorded and the recovered total on the written-off loan is updated while the loan remains closed with a zero balance.</p>
+<h2>Repayment</h2>
+<p>A Repayment transaction records money paid toward a loan. You can post a repayment on an active loan account or on a closed or charged-off loan account. Repayment reduces the outstanding balance, updates the amortization schedule, allocates the payment across components, posts discount fees amortization, and triggers accounting entries. Real-time allocation covers Principal and Deferred Income Amortization. Accounting is the same as existing, the transaction is the same as existing, and balances are new based on the balances table. You can view repayments on the transaction tab and undo a repayment transaction.</p>
+<p>Repayment types include:</p>
+<ul>
+<li>Regular repayment.</li>
+<li>Partial payment.</li>
+<li>Excess payment or advance payment.</li>
+</ul>
+<p>A Repayment transaction requires:</p>
+<ul>
+<li>Transaction amount.</li>
+<li>Transaction date.</li>
+<li>Classification.</li>
+<li>Payment type.</li>
+</ul>
+<p>Repayment rules:</p>
+<ul>
+<li>Repayment amount must be greater than zero.</li>
+<li>Repayment amount follows the allocation strategy set for the Repayment transaction type; otherwise it follows the default strategy.</li>
+</ul>
+<p>Repayment reversal:</p>
+<ul>
+<li>Repayment reversal creates a linked reversal transaction.</li>
+<li>Repayment reversal reverses allocated components such as penalty, fee, and principal.</li>
+<li>Repayment reversal reverses the outstanding balance impact.</li>
+<li>Repayment reversal reverses accounting entries.</li>
+<li>Repayment reversal reprocesses the amortization schedule.</li>
+<li>Repayment reversal replays subsequent transactions if applicable.</li>
+</ul>
+<p>Backdated repayments:</p>
+<ul>
+<li>The system reprocesses the schedule.</li>
+<li>The system replays all subsequent transactions and accounting entries.</li>
+</ul>
+<h2>Undoing and reversing transactions</h2>
+<p>Rules for undoing a transaction:</p>
+<ul>
+<li>Only non-reversed transactions can be undone.</li>
+<li>A reversal external ID can be provided or auto-generated where applicable.</li>
+<li>You can add a note, which is created accordingly.</li>
+</ul>
+<p>Fields supported when undoing a transaction:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reversal external ID</td>
+<td>Provided by you or auto-generated where applicable.</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>Supported and created accordingly.</td>
+</tr>
+</tbody></table>
+<h2>Discount fee</h2>
+<p>A Discount fee transaction reduces the amount disbursed on a loan.</p>
+<p>Rules for Discount fee transactions:</p>
+<ul>
+<li>Only one Discount transaction is allowed per Disbursement, and a relation is made between them.</li>
+<li>Real-time allocation for Discount covers Principal.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> When overriding select terms and settings in loan accounts is disabled, creating a loan account with discount set up results in an error.</p>
+</blockquote>
+<h2>Credit Balance Refund</h2>
+<p>A Credit Balance Refund returns an overpaid amount on a loan. It requires the transaction amount, transaction date, classification, and payment type, and allocates in real time to Overpayment.</p>
+<p>Accounting follows the existing approach, and balances and status change are new based on the balances table with WC loan details.</p>
+<h2>Disbursement</h2>
+<p>A disbursement pays out the loan principal to the borrower.</p>
+<blockquote>
+<p><strong>Note:</strong> You cannot undo a disbursement if any monetary transaction other than Disbursement or Discount exists on the account.</p>
+</blockquote>
+<h2>Charge Adjustment</h2>
+<p>Charge Adjustment pays down an existing charge on a loan.</p>
+<h2>Discount fee adjustment</h2>
+<p>A Discount fee adjustment reduces the principal balance.</p>
+<h2>Transaction allocation</h2>
+<p>Transaction allocation decides how a payment applies to principal and charges on a loan. Allocation changes only when charges exist on the loan and a backdated transaction occurs, based on the new chronological order and whether the backdated transaction pays any portion of the charge.</p>
+<h2>Payout Refund</h2>
+<p>Use Payout Refund to recover disbursed funds from fraudulent WCP loan accounts.</p>
+<p>You can enter:</p>
+<ul>
+<li>A refund amount.</li>
+<li>A transaction date.</li>
+</ul>
+<h2>Charge-off and write-off</h2>
+<p>Charge-off moves a loan account from Active Delinquent to Charged-Off, removes outstanding balances from the loan asset books, and posts accounting entries according to the configured charge-off journal entry rules.</p>
+<h2>Charges</h2>
+<p>A Charge Transaction applies fees or penalties to a loan account.</p>
+<p>Accounting entries are created as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Charge type</th>
+<th>Accounting entry date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement Charge</td>
+<td>Transaction date</td>
+</tr>
+<tr>
+<td>Specific due date charge</td>
+<td>Submitted date</td>
+</tr>
+</tbody></table>
+<h2>Disbursement reversal</h2>
+<p>You can reverse a disbursement.</p>
+<h2>Charge Adjustment reversal</h2>
+<p>You can reverse any Charge Adjustment on an active or closed loan account.</p>
+<h2>Disbursement accounting</h2>
+<p>A disbursement posts two journal entries: it debits GL 112601 Loans Receivable Principal and credits GL 145023 Suspence/clearing account.</p>
+<h2>Repayment accounting</h2>
+<p>Repayment posts the payment to the suspense/clearing account and reduces the loan principal, while any excess goes to the other credit liability account and fees and penalties go to fee receivable.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment</td>
+<td>GL 145023 Suspence/clearing account (Asset/Liability, Prin, Fees, Penalty and excess)</td>
+<td>GL 112601 Loans Receivable Principal (Asset, Prin); GL 245000 Other Credit liability (Liability, excess); GL 112603 Fee Receivable (Asset, Penalty); GL 112603 Fee Receivable (Asset, fees)</td>
+</tr>
+<tr>
+<td>Repayment Reversal</td>
+<td>GL 112601 Loans Receivable Principal (Asset, Prin); GL 245000 Other Credit liability (Liability, excess); GL 112603 Fee Receivable (Asset, fees); GL 112603 Fee Receivable (Asset, Penalty)</td>
+<td>GL 145023 Suspence/clearing account (Asset/Liability, Prin, Fees, Penalty and excess)</td>
+</tr>
+</tbody></table>
+<h2>Write-off accounting</h2>
+<p>A write-off removes the principal, fees and penalty from the loan balance by posting them to recoveries.</p>
+<p>Accounting entries</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Write-off</td>
+<td>GL 744008 recoveries (Expense, Prin, fees, and Penalty)</td>
+<td>GL 112603 Fee Receivable (Asset, fees); GL 112603 Fee Receivable (Asset, Penalty); GL 112601 Loans Receivable Principal (Asset, Prin)</td>
+</tr>
+<tr>
+<td>Write-off Reversal</td>
+<td>GL 112601 Loans Receivable Principal (Asset, Prin); GL 112603 Fee Receivable (Asset, fees); GL 112603 Fee Receivable (Asset, Penalty)</td>
+<td>GL 744008 recoveries (Expense, Prin, fees, and Penalty)</td>
+</tr>
+</tbody></table>
+<h2>Credit Balance Refund accounting</h2>
+<p>A Credit Balance Refund debits GL 245000 Other Credit liability and credits GL 145023 Suspence/clearing account.</p>
+<h2>Charge accounting</h2>
+<p>Charge accounting posts a charge addition to Fee Receivable and Fee Income, and a charge waiver reverses those entries.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge addition</td>
+<td>112603 Fee Receivable (Asset, fees)</td>
+<td>404007 Fee Income (Income, fees)</td>
+</tr>
+<tr>
+<td>Charge waive</td>
+<td>404007 Fee Income (Income, fees)</td>
+<td>112603 Fee Receivable (Asset, fees)</td>
+</tr>
+</tbody></table>
+<h2>Charge-off accounting</h2>
+<p>Charge-off accounting moves overdue principal, fees and penalty from the loan receivable accounts to credit loss and charge-off income accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit accounts</th>
+<th>Credit accounts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off</td>
+<td>GL 744007 Credit loss-bad dept (Expense, Prin), GL 744037 Credit loss-bad dept- fraud (Expense, Prin), GL 404008 Fee Charge off (Income, fees), GL 404008 Fee Charge off (Income, Penalty)</td>
+<td>GL 112601 Loans Receivable Principal (Asset, Prin), GL 112603 Fee Receivable (Asset, fees), GL 112603 Fee Receivable (Asset, Penalty)</td>
+</tr>
+<tr>
+<td>Charge-off Reversal</td>
+<td>GL 112603 Fee Receivable (Asset, fees), GL 112603 Fee Receivable (Asset, Penalty)</td>
+<td>GL 112601 Loans Receivable Principal (Asset, Prin), GL 404008 Fee Charge off (Income, fees), GL 404008 Fee Charge off (Income, Penalty)</td>
+</tr>
+</tbody></table>
+<h2>Repayment after charge-off accounting</h2>
+<p>Repayment after charge-off records money received on a charged-off loan.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment after charge-off</td>
+<td>GL 145023 Suspence/clearing account (Asset/Liability, Prin, Fees, Penalty and excess)</td>
+<td>GL 744008 recoveries (Income, Prin); GL 245000 Other Credit liability (Liability, excess); GL 744008 recoveries (Income, Penalty); GL 744008 recoveries (Income, fees)</td>
+</tr>
+<tr>
+<td>Repayment reversal after charge-off</td>
+<td>GL 744008 recoveries (Income, Prin); GL 245000 Other Credit liability (Liability, excess); GL 744008 recoveries (Income, Penalty); GL 744008 recoveries (Income, fees)</td>
+<td>GL 145023 Suspence/clearing account (Asset/Liability, Prin, Fees, Penalty and excess)</td>
+</tr>
+</tbody></table>
+<h2>Credit Balance Refund after charge-off accounting</h2>
+<p>A credit balance refund after charge-off debits GL 245000 Other Credit liability and credits GL 145023 Suspence/clearing account.</p>
+<h2>Goodwill Credit after charge-off accounting</h2>
+<p>Goodwill Credit after charge-off posts accounting entries that adjust principal, fees and penalties against recoveries and other credit liability.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit (Dr)</th>
+<th>Credit (Cr)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Goodwill Credit after charge-off</td>
+<td>GL 744003 Principal bal adjustment (Expense, Prin,excess); GL 404008 Fee Charge off (Income, fees); GL 404008 Fee Charge off (Income, Penalty)</td>
+<td>GL 744008 recoveries (Income, prin); GL 744008 recoveries (Income, fees); GL 744008 recoveries (Income, Penalty); GL 245000 Other Credit liability (Liability, excess)</td>
+</tr>
+<tr>
+<td>Goodwill Credit Reversal after charge-off</td>
+<td>GL 744008 recoveries (Income, prin); GL 744008 recoveries (Income, fees); GL 744008 recoveries (Income, Penalty); GL 245000 Other Credit liability (Liability, excess)</td>
+<td>GL 404008 Fee Charge off (Income, fees); GL 404008 Fee Charge off (Income, Penalty)</td>
+</tr>
+</tbody></table>
+<h2>Discount fee accounting</h2>
+<p>Discount fee accounting records how discount fees move between general ledger accounts when they are charged, adjusted, or amortized into interest income.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Discount fees</td>
+<td>112601 Loans Receivable Principal (Asset, Prin, Fees, and Penalty)</td>
+<td>240005 Deferred Interest (Liability, Prin, Fees, and Penalty)</td>
+</tr>
+<tr>
+<td>Discount fees Adjustment</td>
+<td>240005 Deferred Interest (Liability, Prin, Fees, and Penalty)</td>
+<td>112601 Loans Receivable Principal (Asset, Prin, Fees, and Penalty)</td>
+</tr>
+<tr>
+<td>Amortization</td>
+<td>240005 Deferred Interest (Liability, Int)</td>
+<td>404000 Interest income (Income, Int)</td>
+</tr>
+<tr>
+<td>Amortization after charge-off</td>
+<td>240005 Deferred Interest (Liability, Int)</td>
+<td>404000 Interest income (Income, Int)</td>
+</tr>
+</tbody></table>
+<h2>Payout Refund accounting</h2>
+<table>
+<thead>
+<tr>
+<th>Account status</th>
+<th>Charge type</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Fees</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Principal</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Fees</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Principal</td>
+<td>145023</td>
+<td>744007/740037</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Account status</th>
+<th>Charge type</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active</td>
+<td>Penalty</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Fees</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Principal</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Penalty</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Fees</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Principal</td>
+<td>744007/740037</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<h2>Goodwill Credit accounting summary</h2>
+<p>Goodwill Credit debits Principal bal adjustment GL 744003 and Fee Charge off GL 404008, and credits Loans Receivable Principal GL 112601, Fee Receivable GL 112603, and Other Credit liability GL 245000.</p>
+<p>Goodwill Credit accounting entries</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>GL name</th>
+<th>Type</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>744003</td>
+<td>Principal bal adjustment</td>
+<td>Expense from Goodwill Credit</td>
+<td>Prin,excess</td>
+</tr>
+<tr>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penalty</td>
+</tr>
+</tbody></table>
+<p>Credit entries</p>
+<table>
+<thead>
+<tr>
+<th>Credit GL</th>
+<th>GL name</th>
+<th>Type</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112601</td>
+<td>Loans Receivable Principal</td>
+<td>Loan Portfolio</td>
+<td>prin</td>
+</tr>
+<tr>
+<td>112603</td>
+<td>Fee Receivable</td>
+<td>Fees Receivable</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>112603</td>
+<td>Fee Receivable</td>
+<td>Penalty Receivable</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>245000</td>
+<td>Other Credit liability</td>
+<td>Overpayment Liability</td>
+<td>excess</td>
+</tr>
+</tbody></table>
+<h2>Backdated transactions</h2>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Post backdated repayment or reverse repayment"]
+  n2["Recalculate amortization schedule and EIR"]
+  n3["Replay amortization values, subsequent transactions, and accounting entries"]
+  n1 --> n2
+  n2 --> n3]]></ac:plain-text-body></ac:structured-macro>
+<h2>Disbursement effects</h2>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Disbursement"]
+  n2["Loan activation"]
+  n3["Creation/Update of Amortization schedule"]
+  n4["Booking of principal outstanding"]
+  n5["Triggering of accounting entries"]
+  n1 --> n2
+  n1 --> n3
+  n1 --> n4
+  n1 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Prepayment</h2>
+<p>Prepayment pays off a loan in full before its scheduled end date.</p>
+<h2>Payout Refund submission</h2>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Submit Payout Refund"]
+  n2["Enter refund amount"]
+  n3["Select transaction date"]
+  n4["Validate eligibility"]
+  n5["Apply refund against principal and Fees/Penalty balance"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Transaction display and UI</h2>
+<p>Transactions appear in chronological order by transaction date. You can filter by type and date range, drill down to detailed transaction data, and follow the linkage between an original transaction and its reversal.</p>
+<h2>Transaction lifecycle</h2>
+<p>A loan account can have transactions only while it is open.</p>
+<h2>Repayment accounting summary</h2>
+<table>
+<thead>
+<tr>
+<th>GL code</th>
+<th>Account name</th>
+<th>Mapped to</th>
+<th>Debit or credit</th>
+<th>Applies to</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>145023</td>
+<td>Suspence/clearing account</td>
+<td>Fund source</td>
+<td>Debit</td>
+<td>Principal, fees, penalty and excess</td>
+</tr>
+<tr>
+<td>744008</td>
+<td>Recoveries</td>
+<td>Income from Recovery Repayment</td>
+<td>Credit</td>
+<td>Principal, penalty and fees</td>
+</tr>
+<tr>
+<td>245000</td>
+<td>Other Credit liability</td>
+<td>Overpayment Liability</td>
+<td>Credit</td>
+<td>Excess</td>
+</tr>
+</tbody></table>
+<h2>Repayment reversal accounting summary</h2>
+<table>
+<thead>
+<tr>
+<th>Amount</th>
+<th>Debit GL code</th>
+<th>Debit mapping</th>
+<th>Credit GL code</th>
+<th>Credit mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>744008</td>
+<td>Income from Recovery Repayment for Prin.</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>744008</td>
+<td>Income from Recovery Repayment for fees</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>744008</td>
+<td>Income from Recovery Repayment for Penalty</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Excess</td>
+<td>245000</td>
+<td>Overpayment Liability</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+</tbody></table>
+<h2>Goodwill Credit reversal accounting summary</h2>
+<table>
+<thead>
+<tr>
+<th>Amount type</th>
+<th>Debit GL code</th>
+<th>Debit mapping</th>
+<th>Credit GL code</th>
+<th>Credit mapping</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>404008</td>
+<td>Income from Goodwill Credit Fees</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+<td>404008</td>
+<td>Income from Goodwill Credit Penalty</td>
+</tr>
+<tr>
+<td>Excess</td>
+<td>245000</td>
+<td>Overpayment Liability</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<h2>Goodwill Credit user actions</h2>
+<p>Goodwill Credit lets you credit a loan account without applying charges. You can do it on active and closed or charge-off loan accounts. You can view the transaction on the transaction tab and undo it. Reversal of a Goodwill Credit transaction is allowed.</p>
+<h2>Charge Adjustment user actions</h2>
+<h2>Payout Refund user actions</h2>
+<h2>Disbursement definition</h2>
+<h2>Discount fees transaction definition</h2>
+<h2>Credit balance</h2>
+<h2>Goodwill Credit definition</h2>
+<h2>Goodwill Credit effects</h2>
+<h2>Charges definition</h2>
+<h2>Charges tax-inclusive</h2>
+<h2>Charges waiver</h2>
+<h2>Abbreviations</h2>
+<table>
+<thead>
+<tr>
+<th>Abbreviation</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WCP</td>
+<td>Working Capital Product</td>
+</tr>
+<tr>
+<td>TPV</td>
+<td>Total Payment Volume</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A loan officer posts two repayments on an active loan with a principal balance of 1,000.00. The first repayment of 300.00 is allocated as 50.00 toward a fee and 250.00 toward principal. The second repayment of 200.00 is applied entirely to principal because the fee is already settled. When the first repayment is reversed, the system undoes its fee and principal portions and reprocesses the second repayment against the now-outstanding fee. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Fee portion</th>
+<th>Principal portion</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment 1</td>
+<td>300.00</td>
+<td>50.00</td>
+<td>250.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Repayment 2</td>
+<td>200.00</td>
+<td>0.00</td>
+<td>200.00</td>
+<td>550.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Reverse Repayment 1</td>
+<td>-300.00</td>
+<td>-50.00</td>
+<td>-250.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Reprocess Repayment 2</td>
+<td>200.00</td>
+<td>50.00</td>
+<td>150.00</td>
+<td>850.00</td>
+</tr>
+</tbody></table>
+<p>Reversing Repayment 1 causes Repayment 2 to be reprocessed as 50.00 fee and 150.00 principal; if Repayment 2 is backdated before Repayment 1 instead, it pays the same 50.00 fee and 150.00 principal, while Repayment 1 pays 300.00 principal, leaving a final principal balance of 550.00 instead of 850.00.</p>
+<p>A loan officer disburses 1,000.00 on a working capital loan. An upfront charge of 100.00 is added at disbursement, and a discount fee of 50.00 is applied in the same step. The disbursement transaction allocates its full amount to principal, the charge adds to the fee balance, and the discount fee transaction allocates to principal while creating a matching deferred income liability. If no charge is added, the charge step is omitted; if no discount fee is set, the discount step is omitted and only the disbursement transaction is posted.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Principal portion</th>
+<th>Fee portion</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Upfront charge</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Discount fee</td>
+<td>50.00</td>
+<td>50.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,150.00</td>
+<td>1,050.00</td>
+<td>100.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Accounting"/><ac:plain-text-link-body><![CDATA[Accounting]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

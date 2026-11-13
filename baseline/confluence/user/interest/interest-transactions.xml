@@ -1,0 +1,629 @@
+<h2>Interest Waivers</h2>
+<p>An interest payment waiver reduces the interest balance on a loan account. You can post it on active and closed loan accounts. The waiver applies to interest balances first, then follows the payment allocation order set at the advance allocation strategy.</p>
+<p>You can do the following with an interest payment waiver:</p>
+<ul>
+<li>Undo or modify the transaction on the UI.</li>
+<li>Do a charge-back for the transaction from the UI.</li>
+<li>Revert and replay the transaction when allocation changes.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Reverse replay works the same for an interest payment waiver as for any other transaction type.</p>
+</blockquote>
+<h3>Waive interest on a loan</h3>
+<p>Use this screen to waive interest on active and closed loan accounts by entering the waived amount and date.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Waive Interest</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest waived on</td>
+<td>Yes</td>
+<td>Enter the date on which the interest is waived.</td>
+</tr>
+<tr>
+<td>Transaction Amount</td>
+<td>Yes</td>
+<td>Enter the amount of interest to waive.</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td>Enter a note for the waiver.</td>
+</tr>
+</tbody></table>
+<p>After you submit, the interest waiver transaction is posted and visible on the transaction tab.</p>
+<h3>Worked examples</h3>
+<p>A customer takes out a loan of 900.00 on January 1 and agrees to three monthly installments of 310.00 each, due on February 1, March 1 and April 1. Each installment consists of 300.00 principal and 10.00 interest. On February 1, the officer posts a Payment Waiver of 310.00. The waiver applies 10.00 to the interest balance and 300.00 to principal, so the loan balance falls to 600.00 and the February installment shows no amount due. The March and April installments remain 310.00 each. The figures in this example are illustrative. If the advance payment strategy is set to reduce the final installment instead of the next one, the February installment stays due and the April installment is reduced to zero.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Loan balance</th>
+<th>Installment due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>January 1</td>
+<td>Disbursement</td>
+<td>900.00</td>
+<td>—</td>
+<td>900.00</td>
+<td>310.00</td>
+</tr>
+<tr>
+<td>February 1</td>
+<td>Payment Waiver 310.00</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>600.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>March 1</td>
+<td>Installment</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>300.00</td>
+<td>310.00</td>
+</tr>
+<tr>
+<td>April 1</td>
+<td>Installment</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>310.00</td>
+</tr>
+</tbody></table>
+<p>The example shows how a waiver reduces principal, clears the next installment, and leaves later installments unchanged.</p>
+<p>A loan of 600.00 is disbursed on January 1 and repaid in two installments of 310.00 on February 1 and March 1, bringing the loan balance to zero. Ten dollars of interest remains outstanding. On April 10, the officer posts a Payment Waiver of 20.00 on the closed account. The waiver applies 10.00 to the interest balance and 10.00 to overpayment. The loan balance stays at zero and the overpayment balance increases by 10.00.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Overpayment</th>
+<th>Loan balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>January 1</td>
+<td>Disbursement</td>
+<td>600.00</td>
+<td>—</td>
+<td>—</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>February 1</td>
+<td>Repayment</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>—</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>March 1</td>
+<td>Repayment</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>—</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>April 10</td>
+<td>Payment Waiver 20.00</td>
+<td>—</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that a waiver on a paid-off loan can create an overpayment without changing the loan balance.</p>
+<p>A loan of 900.00 is disbursed on January 1 with three installments of 310.00 due on February 1, March 1 and April 1. On February 1, the officer posts a Payment Waiver of 310.00, applying 300.00 to principal and 10.00 to interest. The balance falls to 600.00 and the February installment shows no amount due. The officer then reverses the waiver on February 2, which restores the balance to 900.00 and brings the February installment back to 310.00 due. Finally, the officer replays a repayment of 310.00 on February 1, applying 300.00 to principal and 10.00 to interest, leaving the balance at 600.00.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Loan balance</th>
+<th>February 1 due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>January 1</td>
+<td>Disbursement</td>
+<td>900.00</td>
+<td>—</td>
+<td>900.00</td>
+<td>310.00</td>
+</tr>
+<tr>
+<td>February 1</td>
+<td>Payment Waiver 310.00</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>600.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>February 2</td>
+<td>Reverse waiver</td>
+<td>(300.00)</td>
+<td>(10.00)</td>
+<td>900.00</td>
+<td>310.00</td>
+</tr>
+<tr>
+<td>February 1</td>
+<td>Repayment replayed</td>
+<td>300.00</td>
+<td>10.00</td>
+<td>600.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that reversing a waiver restores the original balance and schedule, and replaying a repayment reapplies the allocation.</p>
+<h2>Interest Refunds</h2>
+<h3>Interest Refund overview</h3>
+<p>An Interest Refund is a system-calculated credit for interest charged to a progressive, interest-bearing loan. It is created when a configured refund transaction posts. The configuration is optional and can be set on the loan product and overridden on the loan account.</p>
+<h3>Select interest refund transaction types</h3>
+<p>Use this screen to choose which refund transaction types trigger an interest refund for a progressive, interest bearing loan product.</p>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>INTEREST REFUND</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Supported Interest Refund Types</td>
+<td>No</td>
+<td>Select one or both of the available refund transaction types, Payout refund or Merchant issued refund, to control when interest refund transactions occur and their balance.</td>
+</tr>
+</tbody></table>
+<p>The system creates an Interest Refund transaction whenever a configured refund transaction posts on a progressive, interest bearing loan.</p>
+<h3>How Interest Refund is calculated</h3>
+<p>The system calculates an interest refund by reducing the principal balance with the refund amount, then recalculating interest day by day on the lower balance. The refund equals the original interest accrual minus the recalculated interest accrual.</p>
+<p>The calculation follows these steps:</p>
+<ul>
+<li>Apply the refund to the oldest disbursement first, working forward in time when the refund is greater than the disbursement record.</li>
+<li>Recalculate total interest to date for the loan.</li>
+<li>For each day, subtract the applicable refund from disbursements to get the new principal balance.</li>
+<li>Multiply the new principal balance by the daily periodic interest rate to get the new interest accrual for that date.</li>
+<li>Subtract the new interest accrual from the original interest accrual to get the interest refund.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The adjusted principal balance cannot be less than 0.00.</p>
+</blockquote>
+<h3>Journal entries for Interest Refund</h3>
+<p>The journal entries for an Interest Refund depend on whether the loan account is charge-off or non charge-off.</p>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non charge-off</td>
+<td>Income from Interest (GL-Code 404000) for the total amount to be refunded</td>
+<td>Loan portfolio (GL-Code 112601) for the principal portion allocated; Interest Receivable (GL-Code 112603) for the interest portion allocated; Fees Receivable (GL-Code 112603) for the fees portion allocated; Penalties Receivable (GL-Code 112603) for the penalties portion allocated; Overpayment (GL-Code 245000) for the overpayment portion allocated</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Income from Interest (GL-Code 404000) for the total amount entered for the Payment Waiver transaction</td>
+<td>Income from charge-off Interest (GL-Code 404001) for the principal, interest, fees and penalties portions allocated; Overpayment (GL-Code 245000) for the overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Account type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non charge-off</td>
+<td>Loan portfolio (GL-Code 112601) for the principal portion allocated; Interest Receivable (GL-Code 112603) for the interest portion allocated; Fees Receivable (GL-Code 112603) for the fees portion allocated; Penalties Receivable (GL-Code 112603) for the penalties portion allocated; Overpayment (GL-Code 245000) for the overpayment portion allocated</td>
+<td>Income from Interest (GL-Code 404000) for the total amount to be refunded</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Income from charge-off Interest (GL-Code 404001) for the principal, interest, fees and penalties portions allocated; Overpayment (GL-Code 245000) for the overpayment portion allocated</td>
+<td>Income from Interest (GL-Code 404000) for the total amount entered for the Payment Waiver transaction</td>
+</tr>
+</tbody></table>
+<h3>Payment allocation for Interest Refund</h3>
+<p>An interest refund pays off interest accrual first. Any amount left over pays down principal. Payment allocation rules control this order.</p>
+<p>If the refund is larger than the outstanding principal balance:</p>
+<ul>
+<li>The excess amount is recorded as overpayment.</li>
+</ul>
+<h3>Business events and transaction links</h3>
+<p>Creating an Interest Refund transaction triggers a business event and links the transaction to the related Merchant issued or Payout Refund transaction. The link is automatic when the Interest Refund transaction is the first one created.</p>
+<h3>Reversals and reverse-replay</h3>
+<p>When a Merchant Issued Refund transaction is reverted, the related Interest Refund transaction is reverted as well. If backdated transactions or reversals change the interest due amounts, the Interest Refund transaction amount is recalculated and reverse-replayed during loan transaction reprocessing.</p>
+<p>After reverse-replay:</p>
+<ul>
+<li>The related Interest Refund transaction is marked as reverse-replayed automatically when the Merchant Issued Refund transaction is reverse-replayed.</li>
+<li>The RELATED relationship between the Merchant Issued Refund or Payout Refund transaction and the related Interest Refund transaction is reestablished.</li>
+<li>LoanAdjustTransactionBusinessEvent is triggered for both the reverted Merchant Issued Refund transaction and the reverted Interest Refund transaction.</li>
+</ul>
+<h3>Partial and multiple refunds</h3>
+<p>You can refund interest in multiple partial amounts.</p>
+<h3>Worked examples</h3>
+<p>A merchant refund posts on a loan with a single disbursement of 1,000.00 made on January 1. The annual interest rate is 12 percent, the months have 30 days, and the daily periodic rate is 0.0333 percent. A partial refund of 500.00 is applied to the oldest disbursement, leaving an adjusted principal of 500.00. The system posts the calculated interest as a credit adjustment of type Interest Refund. The figures in this example are illustrative. If the same refund is posted after the first installment period or after all installments are paid, the calculation is identical, but any amount above the outstanding principal is recorded as overpayment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Original principal</th>
+<th>Original daily interest</th>
+<th>Original interest PTD</th>
+<th>Adjusted principal</th>
+<th>New daily interest</th>
+<th>New interest PTD</th>
+<th>Interest refund</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jan 1</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>0.33</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>0.17</td>
+<td>0.16</td>
+</tr>
+<tr>
+<td>Jan 2</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>0.66</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>0.34</td>
+<td>0.32</td>
+</tr>
+<tr>
+<td>Jan 3</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>0.99</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>0.51</td>
+<td>0.48</td>
+</tr>
+<tr>
+<td>Jan 4</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.32</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>0.68</td>
+<td>0.64</td>
+</tr>
+<tr>
+<td>Jan 5</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.65</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>0.85</td>
+<td>0.80</td>
+</tr>
+<tr>
+<td>Jan 6</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.98</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>1.02</td>
+<td>0.96</td>
+</tr>
+<tr>
+<td>Jan 7</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>2.31</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>1.19</td>
+<td>1.12</td>
+</tr>
+<tr>
+<td>Jan 8</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>2.64</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>1.36</td>
+<td>1.28</td>
+</tr>
+<tr>
+<td>Jan 9</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>2.97</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>1.53</td>
+<td>1.44</td>
+</tr>
+<tr>
+<td>Jan 10</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>3.30</td>
+<td>500.00</td>
+<td>0.17</td>
+<td>1.70</td>
+<td>1.60</td>
+</tr>
+</tbody></table>
+<p>The example shows how a partial refund lowers the adjusted principal, reduces daily interest, and creates a daily interest refund equal to the difference between original and new interest accrual.</p>
+<p>A loan receives two disbursements on different days: 400.00 on January 1 and 600.00 on January 6, for a total principal of 1,000.00. The annual interest rate is 12 percent and the daily periodic rate is 0.0333 percent. A full refund of 1,000.00 posts on January 10 and is applied to the oldest disbursement first, working forward in time. The system posts the calculated interest as a credit adjustment of type Interest Refund.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Disbursements to date</th>
+<th>Original daily interest</th>
+<th>Original interest PTD</th>
+<th>Applicable refund</th>
+<th>Adjusted principal</th>
+<th>New daily interest</th>
+<th>New interest PTD</th>
+<th>Interest refund</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jan 1</td>
+<td>400.00</td>
+<td>0.13</td>
+<td>0.13</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>Jan 2</td>
+<td>400.00</td>
+<td>0.13</td>
+<td>0.26</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.26</td>
+</tr>
+<tr>
+<td>Jan 3</td>
+<td>400.00</td>
+<td>0.13</td>
+<td>0.39</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.39</td>
+</tr>
+<tr>
+<td>Jan 4</td>
+<td>400.00</td>
+<td>0.13</td>
+<td>0.52</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.52</td>
+</tr>
+<tr>
+<td>Jan 5</td>
+<td>400.00</td>
+<td>0.13</td>
+<td>0.65</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.65</td>
+</tr>
+<tr>
+<td>Jan 6</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>0.98</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.98</td>
+</tr>
+<tr>
+<td>Jan 7</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.31</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1.31</td>
+</tr>
+<tr>
+<td>Jan 8</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.64</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1.64</td>
+</tr>
+<tr>
+<td>Jan 9</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>1.97</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1.97</td>
+</tr>
+<tr>
+<td>Jan 10</td>
+<td>1,000.00</td>
+<td>0.33</td>
+<td>2.30</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>2.30</td>
+</tr>
+</tbody></table>
+<p>The example shows that a full refund is applied to the oldest disbursement first, so the adjusted principal reaches zero and the interest refund equals the original interest accrued to date.</p>
+<p>A loan receives a single disbursement of 1,000.00 on January 1. A first refund of 500.00 posts on January 5 and a second refund of 400.00 posts on January 10. The annual interest rate is 12 percent and the daily periodic rate is 0.0333 percent. The refunds are applied to the oldest disbursement, leaving an adjusted principal of 100.00, which cannot fall below zero. The system posts the calculated interest as a credit adjustment of type Interest Refund.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Original daily interest</th>
+<th>Original interest PTD</th>
+<th>Adjusted principal</th>
+<th>New daily interest</th>
+<th>New interest PTD</th>
+<th>Interest refund</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jan 1</td>
+<td>0.33</td>
+<td>0.33</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.03</td>
+<td>0.30</td>
+</tr>
+<tr>
+<td>Jan 2</td>
+<td>0.33</td>
+<td>0.66</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.06</td>
+<td>0.60</td>
+</tr>
+<tr>
+<td>Jan 3</td>
+<td>0.33</td>
+<td>0.99</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.09</td>
+<td>0.90</td>
+</tr>
+<tr>
+<td>Jan 4</td>
+<td>0.33</td>
+<td>1.32</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.12</td>
+<td>1.20</td>
+</tr>
+<tr>
+<td>Jan 5</td>
+<td>0.33</td>
+<td>1.65</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.15</td>
+<td>1.50</td>
+</tr>
+<tr>
+<td>Jan 6</td>
+<td>0.33</td>
+<td>1.98</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.18</td>
+<td>1.80</td>
+</tr>
+<tr>
+<td>Jan 7</td>
+<td>0.33</td>
+<td>2.31</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.21</td>
+<td>2.10</td>
+</tr>
+<tr>
+<td>Jan 8</td>
+<td>0.33</td>
+<td>2.64</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.24</td>
+<td>2.40</td>
+</tr>
+<tr>
+<td>Jan 9</td>
+<td>0.33</td>
+<td>2.97</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.27</td>
+<td>2.70</td>
+</tr>
+<tr>
+<td>Jan 10</td>
+<td>0.33</td>
+<td>3.30</td>
+<td>100.00</td>
+<td>0.03</td>
+<td>0.30</td>
+<td>3.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that multiple partial refunds reduce the adjusted principal cumulatively, and the interest refund grows each day as the gap between original and new interest widens.</p>

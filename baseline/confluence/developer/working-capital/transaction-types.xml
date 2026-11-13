@@ -1,0 +1,745 @@
+<h2>Transaction types overview</h2>
+<p>Transaction types record how money moves on a loan account. They include repayment, discount, credit balance refund, disbursement, charge adjustment, discount fee adjustment, payout refund, transaction reversal, write-off, discount fee amortization accounting, repayment on charge-off loans, goodwill credit on charge-off loans, payout refund accounting, backdated transactions, overpayment and loan status, undo disbursement, loan creation fields and defaults, flat amortization, repayment percentage rate changes, transaction processing and storage, amortization schedule, amortization calculation, services, API endpoints, loan lifecycle commands, data model and scoping, UI behavior, accrual, written-off loans, money-in transaction rules, fully paid loans, glossary, projected balances, accounting, batch jobs, breach management, delinquency restrictions, and charges, refunds and chargebacks.</p>
+<p>New transaction types include:</p>
+<ul>
+<li>Refund transactions.</li>
+<li>Chargeback transactions.</li>
+<li>Goodwill credit transactions.</li>
+<li>Interest waiver transactions.</li>
+<li>Merchant issue refund transactions.</li>
+<li>Payout transactions.</li>
+<li>Refund interest payment transactions.</li>
+<li>Re-amortization transactions.</li>
+</ul>
+<p>A principal adjustment balance increases the principal to be paid for credit balance refund edge cases where the refund issued more money back to the customer than it should based on current state.</p>
+<h2>Repayment</h2>
+<p>A Repayment transaction records money received toward a loan. You can post it on active, closed, or charge-off loan accounts. On a charge-off loan it behaves like a normal repayment on an active loan, except for accounting handling. On a closed loan it is treated as an overpayment and moves the loan to overpaid status. You can post repayment to close a loan as fully paid, and you can post repayment on closed loan accounts that are fully paid or overpaid.</p>
+<p>A Repayment transaction requires:</p>
+<ul>
+<li>Transaction amount.</li>
+<li>Transaction date.</li>
+<li>Classification.</li>
+<li>Payment type.</li>
+</ul>
+<p>Real-time allocation covers:</p>
+<ul>
+<li>Principal.</li>
+<li>Deferred Income Amortization.</li>
+</ul>
+<p>After posting, the system:</p>
+<ul>
+<li>Updates the amortization schedule with the repayment payment.</li>
+<li>Stores the transaction in the transaction table.</li>
+<li>Stores allocations in the allocation table.</li>
+<li>Stores and updates balances in the balances table.</li>
+<li>Creates accounting entries based on the allocation.</li>
+<li>Triggers external business events.</li>
+</ul>
+<p>Outcomes:</p>
+<ul>
+<li>Repayments can be closed as fully paid or overpaid based on the updated amortization schedule.</li>
+<li>You can undo a repayment transaction.</li>
+</ul>
+<p>Accounting, transaction behaviour, and balances:</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Accounting</td>
+<td>Same as existing.</td>
+</tr>
+<tr>
+<td>Transaction</td>
+<td>Same as existing.</td>
+</tr>
+<tr>
+<td>Balances</td>
+<td>New, based on the balances table.</td>
+</tr>
+</tbody></table>
+<h2>Discount</h2>
+<p>Discount allocates in real time to Principal. Its accounting and transaction behaviour match existing behaviour, while balances are new based on the balances table. The amortization schedule reflects and calculates Discount fee as capitalized.</p>
+<p>Discount fee amortization occurs only when:</p>
+<ul>
+<li>A payment was made.</li>
+<li>The loan has a Discount fee.</li>
+</ul>
+<p>The system uses the close of business (COB) date as the transaction date for Discount fee amortization.</p>
+<h2>Credit Balance Refund</h2>
+<p>A Credit Balance Refund refunds excess funds to the borrower when a loan account is overpaid. It reduces or eliminates the credit balance and triggers accounting entries and journal entries. You can initiate it when the loan is overpaid, and it requires a transaction amount, transaction date, classification, and payment type.</p>
+<p>Processing and storage:</p>
+<ul>
+<li>The transaction is stored in the transaction table.</li>
+<li>Balances are stored in the balances table and updated after the transaction.</li>
+<li>Accounting entries are created based on the allocation.</li>
+<li>External business events are triggered.</li>
+<li>Real-time allocation covers overpayment.</li>
+</ul>
+<p>Accounting and balances:</p>
+<ul>
+<li>Accounting is the same as existing.</li>
+<li>The transaction is the same as existing.</li>
+<li>Balances are new based on the balances table.</li>
+<li>Status change is new with WC loan details.</li>
+</ul>
+<h2>Disbursement</h2>
+<p>A disbursement allocates funds to the loan principal in real time. Its accounting, transaction handling, and balances follow the existing approach, with new balances based on the balances table.</p>
+<p>Undo disbursement is not allowed when any monetary transaction other than Disbursement or Discount exists on the loan account.</p>
+<ul>
+<li>Undo disbursement is not allowed if there was any monetary transaction except Disbursement and Discount.</li>
+</ul>
+<p>Creating a loan account with a discount set up results in an error when overriding select terms and settings in loan accounts is disabled.</p>
+<ul>
+<li>Creating a loan account with discount set up results in an error when overriding select terms and settings in loan accounts is disabled.</li>
+</ul>
+<h2>Charge Adjustment</h2>
+<p>Charge Adjustment behaves like a repayment and decreases the income of the target charge, with the amount allocated as repayment. It pays principal directly. It adds charge adjustment balance to the balances table, maintains its value, increases total payment and total paid principal if applicable, and decreases principal outstanding. It is related to an existing charge through a transaction relationship. The total charge adjustment amount cannot exceed the original charge amount and cannot be earlier than the date the original charge was added to the loan. Charge Adjustment can be reverted at any time with no validation on reversal. Charge Adjustment does not handle backdated transactions, business events, or closed, charged-off or written-off loans; reversal is handled separately.</p>
+<h2>Discount Fee Adjustment</h2>
+<p>A Discount Fee Adjustment reduces the discount on a loan and allocates the full adjustment amount to the principal portion. You can post multiple adjustments until the remaining adjustable discount reaches zero. The system uses the close of business date as the transaction date.</p>
+<p>Processing rules:</p>
+<ul>
+<li>The system creates a linked adjustment transaction of type DISCOUNT_FEE_ADJUSTMENT linked to the parent Discount Fee transaction through relatedResourceId.</li>
+<li>The system stores the transaction allocation in m_wc_loan_transaction_allocation with the full amount allocated to the principal portion.</li>
+<li>The system reduces the loan-level discount by the adjustment amount, with a minimum of zero.</li>
+<li>The system recalculates principalOutstanding from disbursement plus the updated discount.</li>
+<li>The system restates projected amortization by regenerating the schedule with the new discount and disbursement parameters.</li>
+<li>The system re-applies all recorded actual repayments from the previous model.</li>
+<li>The system recalculates EIR-based projected payments, NPV, and deferred balance.</li>
+<li>The system raises the WorkingCapitalLoanDiscountFeeAdjustmentTransactionBusinessEvent.</li>
+<li>The system posts new accounting entries for the adjustment.</li>
+<li>The system reprocesses amortization, outstanding balances, and subsequent transactions.</li>
+</ul>
+<p>Validation and accounting:</p>
+<ul>
+<li>The system validates the total value of the adjustment against the Discount fee.</li>
+<li>The system updates the Realized and unrealized income balance.</li>
+<li>Accounting follows the existing transaction treatment, with new balances based on the balances table.</li>
+</ul>
+<p>Backdated adjustments and reversals:</p>
+<ul>
+<li>When a discount adjustment is posted backdated, the system recalculates the amortization schedule and posts the relevant amortization adjustment or amortization transaction for the difference amount.</li>
+<li>When a discount adjustment transaction is undone, the system reverses the amortization adjustment or amortization transaction posted with it, recalculates the amortization schedule, and posts the relevant amortization adjustment or amortization transaction for the difference amount.</li>
+</ul>
+<h2>Payout Refund</h2>
+<p>Payout Refund is a transaction type for WCP loans. It works like a repayment and reduces the outstanding principal and fees balance according to the allocation rule configured for Payout Refund. You can apply it to active, closed or overpaid WCP loans, enter a transaction amount and date, post it backdated, or undo it. When Accounting is enabled for the WCP product, attached journal entry lines are posted for this transaction type.</p>
+<h2>Transaction reversal</h2>
+<p>You can reverse any monetary transaction. Reversing a transaction does not replay the transaction itself; it reverses its accounting effect and updates the related balances and amortization schedule.</p>
+<p>A reversal does the following:</p>
+<ul>
+<li>Creates mirror accounting entries that undo the transaction.</li>
+<li>Creates reversal journal entries.</li>
+<li>Updates paid and outstanding balances and the loan balance.</li>
+<li>Updates the breach schedule.</li>
+<li>Updates the amortization schedule by undoing the payment related to the transaction.</li>
+<li>May change existing transaction allocation, which is then reprocessed based on the configured payment allocation by transaction type.</li>
+</ul>
+<p>Validation and reversal details:</p>
+<ul>
+<li>Only non-reversed transactions can be reversed.</li>
+<li>The transaction is marked with the reversal flag and reversed=true.</li>
+<li>A reversal external ID can be provided or auto-generated where applicable.</li>
+<li>A note can be recorded for the reversal.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Recalculation is supported only from the original transaction date.</p>
+</blockquote>
+<h2>Write-off</h2>
+<p>Write-off zeroes all outstanding balances on an active loan account and closes the loan with written-off status. Written-off status can be undone, but backdated transactions and transaction undo are not supported on written-off loans.</p>
+<p>Write-off posts the following journal entries:</p>
+<ul>
+<li>Dr 744008 recoveries Losses Written-off Expense Prin, fees, and Penalty.</li>
+<li>Cr 112603 Fee Receivable Fees Receivable Asset fees.</li>
+<li>Cr 112603 Fee Receivable Penalty Receivable Asset Penalty.</li>
+<li>Cr 112601 Loans Receivable Principal Loan Portfolio Asset Prin.</li>
+</ul>
+<p>Undo write-off reverses the balances and posts the following journal entries:</p>
+<ul>
+<li>Dr 112601 Loans Receivable Principal Loan Portfolio Asset Prin.</li>
+<li>Dr 112603 Fee Receivable Fees Receivable Asset fees.</li>
+<li>Dr 112603 Fee Receivable Penalty Receivable Asset Penalty.</li>
+<li>Cr 744008 recoveries Losses Written-off Expense Prin, fees, and Penalty.</li>
+</ul>
+<h2>Discount fee amortization accounting</h2>
+<p>A Discount Fee Amortization transaction posts two journal entries: a debit to GLCode 404000 Interest income (Income from Discount Fee, Income, Allocation Type Int) and a credit to GLCode 240005 Deferred Interest (Deferred Income, Liability, Allocation Type Int).</p>
+<h2>Repayment on charge-off loans</h2>
+<p>A repayment on a charge-off loan posts to recovery and liability accounts instead of reducing the loan balance. The debit goes to the suspense/clearing account, and credits go to recoveries for principal, penalty and fees, with any excess posted to the overpayment liability account.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>GL code</th>
+<th>Account</th>
+<th>Type</th>
+<th>Allocation type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>145023</td>
+<td>Suspense/clearing account</td>
+<td>Liability</td>
+<td>Principal, fees, penalty and excess</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>Recoveries</td>
+<td>Income</td>
+<td>Principal</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>Recoveries</td>
+<td>Income</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>Recoveries</td>
+<td>Income</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>245000</td>
+<td>Other credit liability</td>
+<td>Liability</td>
+<td>Excess</td>
+</tr>
+</tbody></table>
+<h2>Goodwill Credit on charge-off loans</h2>
+<p>Goodwill Credit on a charge-off loan behaves like a repayment. It allocates the amount based on configured rules, creates accounting entries, adds the goodwill credit balance to the balances table, increases total payment and total paid principal when applicable, and decreases principal outstanding. Reversing a transaction dated before the charge-off is not supported.</p>
+<p>Accounting entries for Goodwill Credit on a charge-off loan:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>GL Code</th>
+<th>Account</th>
+<th>Category</th>
+<th>Allocation Type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>744003</td>
+<td>Principal bal adjustment</td>
+<td>Expense from Goodwill Credit</td>
+<td>Prin, excess</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>404008</td>
+<td>Fee Charge off</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>recoveries</td>
+<td>Income from Recovery Repayment</td>
+<td>prin</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>recoveries</td>
+<td>Income from Recovery Repayment</td>
+<td>fees</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>744008</td>
+<td>recoveries</td>
+<td>Income from Recovery Repayment</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>245000</td>
+<td>Other Credit liability</td>
+<td>Overpayment Liability</td>
+<td>excess</td>
+</tr>
+</tbody></table>
+<h2>Payout Refund accounting</h2>
+<p>A payout refund payment posts to Fund source GL 145023. The credit account depends on the loan status and the payment component: Principal, Penalty, Fees, or Unallocated Credit (UNC). A payout refund reversal posts the opposite entries to the same accounts. The accounting entries apply to active loans and charge-off loans.</p>
+<table>
+<thead>
+<tr>
+<th>Loan status</th>
+<th>Component</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Fees</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Principal</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Penalty</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Fees</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Principal</td>
+<td>145023</td>
+<td>744007/740037</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Loan status</th>
+<th>Component</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active</td>
+<td>Penalty</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Fees</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Principal</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Active</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Penalty</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Fees</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Principal</td>
+<td>744007/740037</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+</tbody></table>
+<h2>Backdated transactions</h2>
+<p>You can post backdated repayments and reverse old transactions after a loan has completed a Credit Balance Refund (CBR). Backdated actions trigger reprocessing and recalculation, and any difference in amortization is adjusted at end of day (COB), the nightly job that posts interest and fees. A CBR transaction is treated in the same way as in term loans during reprocessing.</p>
+<p>Transaction allocation rules:</p>
+<ul>
+<li>Transaction allocation and allocation changes occur only if there are charges on the loan and a backdated transaction occurs, based on new chronological order investigating whether the backdated transaction pays any portion of the charge.</li>
+<li>You can reverse any Charge Adjustment on an active or closed loan using a reversal transaction.</li>
+<li>Loan status changes according to the new loan balance created by the reversal transaction.</li>
+</ul>
+<p>Reschedule behavior:</p>
+<ul>
+<li>Before reschedule, Current Period has the original expected amount.</li>
+<li>After reschedule, Current Period has the updated expected amount and outstanding is recalculated.</li>
+</ul>
+<h2>Overpayment and loan status</h2>
+<p>A loan moves to overpaid status when its balance becomes zero or negative because of a goodwill credit (GWC), a backdated GWC, a reversal of GWC, a reversal of payment, or a charge-adjustment transaction on a closed loan account. If the credit balance refund amount is greater than the overpaid amount, the system rejects it through validation. Once a loan is overpaid, the overpaid-on date appears on the timeline.</p>
+<p>Loan status changes as follows:</p>
+<ul>
+<li>If a backdated GWC makes the loan balance zero, the loan moves to closed status.</li>
+<li>If a backdated GWC makes the loan overpaid, the loan moves to overpaid status.</li>
+<li>If a reversal of GWC is done on a closed loan account, the loan becomes active again.</li>
+<li>If a reversal of payment is done on a closed loan account, the loan becomes active again.</li>
+</ul>
+<h2>Undo disbursement</h2>
+<p>Undo disbursement reverts the current disbursement transaction, its accounting, and balances, moves the loan from Active back to Approved, triggers external business events, and creates a LoanTransaction reversed status change.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Disbursed" as n1
+  state "Active" as n2
+  state "Approved" as n3
+  n1 --> n2
+  n2 --> n3 : Undo disbursement]]></ac:plain-text-body></ac:structured-macro>
+<h2>Loan creation fields and defaults</h2>
+<p>When you create a loan account, Currency, Settings, and Term are copied from the loan product. You can modify Disbursement Amount, Period Payment Rate, Total Payment Value, Discount, Loan Application Submitted Date, Expected Disbursement Date, LP overridables (if enabled), Flat - % amount, Delinquency Bucket Classification, and Period payment frequency; all other values are inherited from the loan product.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default</th>
+<th>Can you change it?</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement Amount</td>
+<td>Shown</td>
+<td>Yes, between Min and Max Values</td>
+</tr>
+<tr>
+<td>Period Payment Rate</td>
+<td>Shown</td>
+<td>Yes, between Min and Max Values</td>
+</tr>
+<tr>
+<td>Total Payment Value</td>
+<td>Not set</td>
+<td>Yes, you enter it</td>
+</tr>
+<tr>
+<td>Discount</td>
+<td>Shown</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Loan Application Submitted Date</td>
+<td>Current date if not provided</td>
+<td>Yes</td>
+</tr>
+</tbody></table>
+<h2>Flat Amortization</h2>
+<p>Flat Amortization amortises income in a straight-line manner over the loan tenure. It distributes deferred income equally across the loan term, independent of actual repayment patterns, using simpler calculation logic with a fixed amortization amount per period and minimal recalculation unless tenure changes.</p>
+<h2>Repayment percentage rate changes</h2>
+<p>When you modify the repayment percentage rate, the system recalculates the effective interest rate (EIR), updates dependent values, and recalculates the amortization schedule. The change applies only from the current business date onward; no backdated recalculation is performed.</p>
+<h2>Transaction processing and storage</h2>
+<p>The system captures, processes, displays, and accounts for loan transactions at loan account level. A monetary transaction amount must be greater than zero. WCP supports only single disbursements per loan account.</p>
+<p>For prepayment, the following restrictions apply:</p>
+<ul>
+<li>Users cannot enter repayment allocation amounts.</li>
+<li>Users cannot modify principal, interest, fee, or penalty portions.</li>
+<li>Users cannot override the total payoff amount.</li>
+</ul>
+<p>All journal entries generated during prepayment processing are identical to those generated by an equivalent repayment transaction.</p>
+<h2>Amortization schedule</h2>
+<p>The amortization schedule is recalculated at approval and disbursement, and continuously updated to reflect actual repayment behavior.</p>
+<p>When the prepayment date changes:</p>
+<ul>
+<li>The system recalculates the payoff amount.</li>
+<li>The system recalculates outstanding principal, interest, fees, and penalties as of the selected date.</li>
+<li>The system displays the updated payoff amount before transaction submission.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Approval"]
+  n2["Disbursement"]
+  n3["Actual repayment"]
+  n4["Prepayment Date changes"]
+  n5["Recalculate payoff amount"]
+  n6["Recalculate outstanding principal, interest, fees, penalties"]
+  n7["Display updated payoff amount before submission"]
+  n1 --> n2
+  n2 --> n3
+  n3 -->|"Continuously updated"| n3
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7]]></ac:plain-text-body></ac:structured-macro>
+<h2>Amortization calculation</h2>
+<p>Amortization calculation determines how much of each payment applies to the discount fee amortization. The system builds the amortization schedule from past and projected payments, then trims trailing zero-forecast rows.</p>
+<p>The calculation uses these rules:</p>
+<ul>
+<li>Current day amortized amount equals total amortized amount minus previous total amortized amount.</li>
+<li>Total amortized amount is the sum of the running NPV value of each past and projected payment on the amortization schedule.</li>
+<li>The calculated Discount fee amortization amount is based on the current date total payments versus total amortization amount from the amortization schedule.</li>
+<li>expectedPaymentAmount = (TPV × periodPaymentRate) / npvDayCount.</li>
+<li>Cursor-based actual amortization advances the cursor by actualPayment divided by expectedPayment periods and interpolates partial periods.</li>
+</ul>
+<p>The actual repayment transaction calculates and posts Actual Amortization (Income) on the payment date, along with the repayment transaction.</p>
+<h2>Services</h2>
+<p>Working capital loan services handle product and loan lifecycle work: product creation, updates, closure, defaults, and payment allocation rules; loan creation from a product, draft and submitted loan updates, approval, rejection, closure, loan-level payment allocation rules, and notes; expected and actual disbursement, disbursement validation, maturity and balance updates; balance initialization, repayment effects, accrual and realization, and derived totals; loan locking, lock release, and lock error recording; and loan summary, full details, notes, balances, disbursements, and allocation rules.</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Responsibilities</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WorkingCapitalLoanProductWriteService</td>
+<td>Create product, update product, close product, maintain configurable attributes, maintain product payment allocation rules</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanProductReadService</td>
+<td>Fetch product details, fetch product defaults, list active products</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanWriteService</td>
+<td>Create loan from product, update draft or submitted loan, approve loan, reject loan, close loan, update loan-level payment allocation rules, add notes</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanDisbursementService</td>
+<td>Record expected disbursement, disburse loan or tranche, validate disbursement totals, update maturity and balance</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanBalanceService</td>
+<td>Initialize balance, apply repayment effects, apply accrual and realization, recompute derived totals</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanLockService</td>
+<td>Acquire lock, release lock, record processing error on lock</td>
+</tr>
+<tr>
+<td>WorkingCapitalLoanReadService</td>
+<td>Retrieve loan summary, retrieve full loan details, list notes, balances, disbursements, and allocation rules</td>
+</tr>
+</tbody></table>
+<h2>API endpoints</h2>
+<p>Use these endpoints to manage Working Capital loans through the API.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Purpose</th>
+<th>Request fields</th>
+<th>Response fields</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>POST /v1/working-capital-loans/{loanId}/transactions?command=discountFee</td>
+<td>Apply a discount fee to a loan</td>
+<td>transactionAmount</td>
+<td>Not specified</td>
+</tr>
+<tr>
+<td>POST /v1/working-capital-loans/external-id/{loanExternalId}/transactions?command=discountFee</td>
+<td>Apply a discount fee to a loan identified by external ID</td>
+<td>transactionAmount</td>
+<td>Not specified</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/{loanId}?command=approve</td>
+<td>Approve a loan application</td>
+<td>approvedOnDate, approvedLoanAmount, expectedDisbursementDate, discountAmount, note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status APPROVED</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/external-id/{loanExternalId}?command=approve</td>
+<td>Approve a loan application identified by external ID</td>
+<td>approvedOnDate, approvedLoanAmount, expectedDisbursementDate, discountAmount, note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status APPROVED</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/{loanId}?command=undoapproval</td>
+<td>Undo approval of a loan application</td>
+<td>note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status SUBMITTED_AND_PENDING_APPROVAL and note Undo approval</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/external-id/{loanExternalId}?command=undoapproval</td>
+<td>Undo approval of a loan application identified by external ID</td>
+<td>note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status SUBMITTED_AND_PENDING_APPROVAL and note Undo approval</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/{loanId}?command=undodisbursal</td>
+<td>Undo disbursal of a loan</td>
+<td>note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status APPROVED and note Undo disburse</td>
+</tr>
+<tr>
+<td>POST working-capital-loans/external-id/{loanExternalId}?command=undodisbursal</td>
+<td>Undo disbursal of a loan identified by external ID</td>
+<td>note, locale, dateFormat</td>
+<td>resourceId, resourceExternalId, officeId, clientId, loanId, changes with status APPROVED and note Undo disburse</td>
+</tr>
+</tbody></table>
+<h2>Loan lifecycle commands</h2>
+<p>Loan lifecycle commands move a loan between states. Approve moves a loan from Submitted and pending approval to Approved. Undo approval moves it from Approved back to Submitted and pending approval. Undo disbursal moves it from Active back to Approved.</p>
+<p>Approve requires:</p>
+<ul>
+<li>approvedOnDate, which must not be a future date and must not be before the submitted date</li>
+<li>expectedDisbursementDate</li>
+<li>approvedLoanAmount less than or equal to the proposed principal</li>
+<li>discountAmount less than or equal to the created discount</li>
+</ul>
+<p>Undo approval requires no fields and is only allowed when the loan is Approved.</p>
+<p>Undo disbursal requires no fields and is only allowed after disbursement when the loan is Active.</p>
+<h2>Data model and scoping</h2>
+<p>Transaction types apply to Working Capital (WC) loans and Term loans. Datatables created for the WC loan entity are visible only to WC loan products and accounts. Datatables created for the Term loan entity are visible only to Term loan products and accounts.</p>
+<p>Data scoping for WC_LOAN restricts record access by the caller&#39;s office hierarchy through m_wc_loan to m_client to m_office. Data scoping for WC_LOAN_PRODUCT applies no office filter.</p>
+<p>Working Capital loan products use a separate, dedicated product configuration that does not impact existing loan products.</p>
+<p>The configurable attributes table defines which product attributes may be overridden at loan account level and indicates whether selected product defaults can be changed during loan creation or update.</p>
+<p>The configurable attributes table relates to the WC loan product as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>wc_loan_product_id</td>
+<td>Unique foreign key to m_wc_loan_product</td>
+</tr>
+<tr>
+<td>delinquency_bucket_classification_overridable</td>
+<td>Configurable attribute</td>
+</tr>
+<tr>
+<td>discount_default_overridable</td>
+<td>Configurable attribute</td>
+</tr>
+<tr>
+<td>period_payment_frequency_overridable</td>
+<td>Configurable attribute</td>
+</tr>
+<tr>
+<td>period_payment_frequency_type_overridable</td>
+<td>Configurable attribute</td>
+</tr>
+</tbody></table>
+<p>The balances table stores relevant balances including loan balance, paid balance, outstanding balance, realized income, unrealized income, and etc.</p>
+<p>The currency fields are currency_code, currency_digits, and currency_multiplesof.</p>
+<h2>UI behavior</h2>
+<p>You can undo working capital loan transactions from the UI, including from the transaction list view, and you can send undo details to the backend. The UI shows the transaction date returned by the backend for working capital loan transactions. The UI does not provide an Edit button or a Chargeback button for working capital loan transactions.</p>
+<p>When a working capital loan is overpaid, the UI menu shows:</p>
+<ul>
+<li>CBR</li>
+<li>Repayment</li>
+<li>Add Loan charge</li>
+<li>Payout Refund</li>
+</ul>
+<p>The Discount Fee Adjustment row menu offers:</p>
+<ul>
+<li>Undo Transaction</li>
+<li>View Receipts</li>
+<li>View Journal Entries</li>
+</ul>
+<p>View Transaction is available consistently for all working capital loan transaction types and opens the transaction detail view, including Discount Fee Adjustment.</p>
+<h2>Accrual</h2>
+<p>An accrual transaction records charge income when a charge is added to a loan. The system posts it as of the due date or the submitted date, depending on the charge-accrual-date global configuration. When the configuration is submitted_date, the accrual transaction is created in real time when the charge is added.</p>
+<h2>Written-off loans</h2>
+<p>A written-off loan blocks all monetary transactions. You can perform a write-off manually through the UI or API, and you can backdate or reverse it if no monetary transactions exist after the effective write-off date.</p>
+<h2>Money-in transaction rules</h2>
+<p>Money-in transactions include repayment, goodwill credit and payout refund. Each type can apply on-time, backdated, as an undo, on a CLOSED loan, on an OVERPAID loan, or on a CHARGED-OFF loan. Rules can differ between product level and loan level. An overpayment moves the loan to OVERPAID. Payment types follow, and external IDs are auto-generated under.</p>
+<h2>Fully paid loans</h2>
+<p>No monetary transaction occurs once a loan is fully paid.</p>
+<h2>Glossary</h2>
+<p>Total payment volume (TPV) is the total amount expected to be recovered from the borrower over the loan lifecycle. An underpayment is a payment amount that is less than the expected payment for the period. A current state schedule is a schedule that always reflects real-time loan conditions based on actual transactions.</p>
+<h2>Worked examples</h2>
+<p>A repayment reduces the principal outstanding on a loan. The figures are illustrative. A borrower repays 300 on a loan with a principal of 1,000, an annual interest rate of 12%, and 3 monthly installments over 30-day months. The repayment can be posted on an active loan account or on a closed loan account; the calculation is the same in both cases, but on a closed loan the loan moves to overpaid status instead of remaining active.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Description</th>
+<th>Amount</th>
+<th>Principal outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Opening principal outstanding</td>
+<td>-</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Repayment amount posted</td>
+<td>300.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Principal portion allocated</td>
+<td>300.00</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Deferred income amortization allocated</td>
+<td>0.00</td>
+<td>700.00</td>
+</tr>
+</tbody></table>
+<p>A Credit Balance Refund returns excess funds to the borrower when a loan is overpaid. The figures are illustrative. A loan has a credit balance of 200 after overpayment. A refund of 150 is initiated, requiring a transaction amount, transaction date, classification, and payment type. The refund reduces or eliminates the credit balance and triggers accounting entries.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Description</th>
+<th>Amount</th>
+<th>Credit balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Opening credit balance</td>
+<td>-</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Credit Balance Refund posted</td>
+<td>150.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Excess refunded to customer</td>
+<td>150.00</td>
+<td>50.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Charges, Refunds and Chargebacks"/><ac:plain-text-link-body><![CDATA[Charges, Refunds and Chargebacks]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Batch Jobs"/><ac:plain-text-link-body><![CDATA[Batch Jobs]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Accounting"/><ac:plain-text-link-body><![CDATA[Accounting]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

@@ -1,235 +1,145 @@
-<h2>Loan Originator Details</h2>
-<h3>Originator ID and revenue share attribution</h3>
-<p>The Originator ID identifies the merchant or channel that originated a loan and is stored as metadata at the loan level. It may be null for loans not originated by large merchants, and no transformations or validation logic are applied beyond basic existence checks when using the registry model. The system accepts and stores the ID during loan creation and persists it in the database.</p>
-<p>The Originator ID is available through the following channels:</p>
+<h2>About loan originators</h2>
+<p>A loan originator is the merchant or channel that originated the loan. Attributing loans to an originator supports revenue share and reporting. The Originator ID, also called the Revenue Share ID, is captured at loan level and is available through the Retrieve Loan API association, external business events, and reporting such as Transaction Summary and Trial Balance. The system performs no automatic revenue-share calculations.</p>
+<h2>View loan originators</h2>
+<p>The Loan Originators tab lists the originators attached to the loan so you can see which merchant or channel originated it.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Buy Down Fees</strong> tab.</li>
+</ol>
+<p>The screen shows each originator&#39;s ID, external ID, name, status, originator type, and channel type, or an empty state when no originators are attached.</p>
+<h2>Attach an originator to a loan</h2>
+<p>Use this screen to link a loan originator to a loan so that loan income can be attributed to that merchant or channel for revenue share and reporting.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Attach Loan Originator</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan Originator</td>
+<td>No</td>
+<td>Enter the Originator ID, which represents the merchant or channel that originated the loan.</td>
+</tr>
+</tbody></table>
+<p>The originator is attached to the loan.</p>
+<h2>Enter loan originator details</h2>
+<p>Use this screen to record the merchant or channel that originated the loan so loan income can be attributed to that originator for revenue share and reporting.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Open the client actions menu (the ☰ button next to the client name) and select <strong>Applications</strong> &gt; <strong>New Loan Account</strong>.</li>
+<li>Select <strong>DETAILS</strong>.</li>
+<li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>External id</td>
+<td>No</td>
+<td>Enter the Originator ID, also called the Revenue Share ID, used for reporting and revenue sharing.</td>
+</tr>
+<tr>
+<td>Loan Originator</td>
+<td>No</td>
+<td>Select the loan originator, which represents the merchant or channel that originated the loan.</td>
+</tr>
+</tbody></table>
+<p>The Originator ID is stored as metadata at the loan level and becomes available for reporting, including the Transaction Summary and Trial Balance reports.</p>
+<h2>Originator registry</h2>
+<p>The Originator Registry manages partner records, including external ID, type, channel type, and status. You can associate originators with loans, detach them, and query originators for a loan.</p>
+<h2>Originator fields and validation</h2>
+<p>Originator details require an external ID, which must be unique. The system validates originator_external_id uniqueness and checks that any originator type and channel type codes you provide exist. If you do not provide a status, the system sets it to ACTIVE. No additional logic, validation, or transformations apply to the Originator ID field.</p>
+<h2>Module availability</h2>
+<p>The loan origination module is optional. It is unavailable when disabled, and not all Fineract users use it.</p>
+<p>Enable or disable the module with this setting:</p>
 <ul>
-<li>Retrieve a Loan API response payload.</li>
-<li>External business events.</li>
-<li>Reporting, including Transaction Summary and Trial Balance.</li>
+<li>fineract.module.loan-origination.enabled in application.properties controls whether the fineract-loan-origination module is enabled or disabled.</li>
+<li>The default value is false.</li>
 </ul>
-<p>The model supports multiple originators per loan because the API and event field is a list. Originator External ID is the Originator ID or revenue share ID used for reporting and sharing, and there are no automatic revenue-share calculations.</p>
-<h3>Originator registry and configuration</h3>
-<p>The Originator Registry manages partner records including external ID, type, channel type, and status. Basic properties of the loan origination must be stored, and originator entities are conditionally created based on fineract.module.loan-origination.enabled being true. The loan origination function is optional and not necessarily used by all Fineract users.</p>
-<p>Originator type codes and channel type codes are system defined.</p>
-<ul>
-<li>Originator type codes are MERCHAT, BROKER, AFFILIATE, and PLATFORM.</li>
-<li>Channel type codes are ONLINE, IN_STORE, API, and AGGREGATOR.</li>
-</ul>
-<p>Originator records follow these rules.</p>
-<ul>
-<li>External ID is mandatory and must be unique.</li>
-<li>Status defaults to ACTIVE if not provided.</li>
-<li>Id or external ID is mandatory for an originator entry.</li>
-<li>Provided code values must be valid if applicable.</li>
-<li>Code values must exist for originator type and channel type when provided.</li>
-</ul>
-<p>Originator attachment and creation behave as follows.</p>
-<ul>
-<li>When Id is provided, the existing originator is attached to the loan.</li>
-<li>When External ID is provided, a new entry is created if not existing based on configuration and attached to the loan.</li>
-<li>The rest of the originator fields are optional and a new entry is created if not existing.</li>
-</ul>
-<p>Configuration controls the optional loan origination module.</p>
-<ul>
-<li>The fineract-loan-origination module can be enabled or disabled via application.properties using fineract.module.loan-origination.enabled, defaulting to false.</li>
-<li>A global configuration entry enables creating an originator on the fly, defaulting to false.</li>
-</ul>
-<p>The loan origination module is optional and is implemented as an optional module with optional schema and optional event/report extensions. The architecture supports attaching, detaching, and querying originators for a loan. Originator external ID uniqueness is validated.</p>
-<p>A new global configuration parameter controls whether an originator can be created during loan application. Global configuration enable_originator_creation_during_loan_application defaults to false.</p>
-<p>The feature is configurable via application.properties with fineract.module.loan-origination.enabled=false as the default value.</p>
-<h3>Originator lifecycle management</h3>
-<p>You can create, view, update, and delete loan originators at organization level through the UI or API. Duplicate originator external IDs are rejected.</p>
-<p>Originator forms enforce required fields and show validation messages.</p>
+<h2>Creating originators</h2>
+<p>You create loan originators at organization level under Organization &gt; Manage Loan Originators. Originators can be created, viewed, updated, and deleted through the UI or API.</p>
+<p>When creating or editing an originator, these fields apply:</p>
 <ul>
 <li>Name, External Id, and Status are mandatory.</li>
 <li>Originator Type and Channel Type are optional.</li>
-<li>Added originators appear in a searchable data grid by Name and External Id.</li>
 </ul>
-<h3>Attaching and detaching originators from loans</h3>
-<p>You can attach and detach originators only while a loan is created but not yet approved. After approval, attach and detach operations are blocked. Multiple originators can be attached to a single loan.</p>
-<p>The following rules apply to attach and detach operations:</p>
+<p>Added originators appear in a data grid that you can search by Name or External Id.</p>
+<blockquote>
+<p><strong>Note:</strong> Originator endpoints require CREATE_LOAN_ORIGINATOR, UPDATE_LOAN_ORIGINATOR, DELETE_LOAN_ORIGINATOR, or READ_LOAN_ORIGINATOR permissions.</p>
+</blockquote>
+<h2>Originator ID on loans</h2>
+<p>It is stored as metadata at the loan level and may be null or absent for loans not originated by large merchants. You can provide originator details during loan creation, and the system accepts and stores the Originator ID.</p>
+<h2>Attaching originators to loans</h2>
+<p>You can attach originators to a loan only while the loan is created but not yet approved. Once approved, originators cannot be added or removed. Multiple originators can be attached to a single loan, but the same originator cannot be added twice.</p>
+<p>To attach an originator, provide these mandatory details:</p>
 <ul>
-<li>Loan ID and originator ID are mandatory.</li>
-<li>Only ACTIVE status originators can be attached to a loan.</li>
-<li>An originator cannot be added twice to the same loan.</li>
-<li>An originator cannot be removed twice from the same loan.</li>
+<li>Loan id.</li>
+<li>Originator id.</li>
+<li>Only originators with ACTIVE status can be attached.</li>
 </ul>
-<p>The system returns the following HTTP status codes:</p>
-<ul>
-<li>HTTP 400 if a required parameter is missing or incorrect data format is provided.</li>
-<li>HTTP 403 for duplication related errors or if functionality is not enabled.</li>
-<li>HTTP 404 if the targeted loan or originator does not exist.</li>
-</ul>
-<p>Attach and detach endpoints require the following permissions:</p>
-<ul>
-<li>ATTACH_LOAN_ORIGINATOR</li>
-<li>DETACH_LOAN_ORIGINATOR</li>
-</ul>
-<p>Originator creation during loan application works as follows:</p>
-<ul>
-<li>An originator can be created and attached inline during loan application when config is enabled.</li>
-<li>An existing originator is matched by external ID during inline creation, preventing duplicates.</li>
-</ul>
-<h3>Loan details and API responses</h3>
-<p>Loan originator details show which originators are linked to a loan and how they are returned through the API. The loan id or external id must exist when fetching these details, and the caller needs READ_LOAN permission.</p>
-<p>The API behaves as follows:</p>
-<ul>
-<li>If the targeted loan does not exist, the system returns HTTP 404.</li>
-<li>If no originator entries exist for a loan, the returned originators list is empty.</li>
-<li>If loan origination functionality is not enabled, the originators field is omitted from the loan details response.</li>
-<li>When retrieving a loan with associations, originator details are returned and partner details are fetched when originators or all associations are provided.</li>
-<li>In POST /loans, an originators array entry with an id attaches an existing originator; an entry with an external id attaches an existing originator or creates a new entry based on global configuration; name, type and channel type are optional and used to create a new entry if the external id does not exist yet.</li>
-</ul>
-<h3>Originator API endpoints and security</h3>
-<p>Originator API endpoints are secured with permissions that control who can create, update, read, attach, detach, and delete originators.</p>
-<p>The API returns the following status codes for request problems:</p>
-<ul>
-<li>HTTP 400 when a required parameter is missing or the data format is incorrect.</li>
-<li>HTTP 403 for duplication-related errors, functionality that is not enabled, or removal attempted on an already mapped originator.</li>
-<li>HTTP 404 when provided values do not exist.</li>
-</ul>
-<p>Specific endpoints return these status codes:</p>
-<ul>
-<li>POST /loan-originators returns HTTP 400 for missing or incorrectly formatted required parameters, HTTP 403 for duplication-related errors, and HTTP 404 when the originator type or channel type does not exist.</li>
-<li>PUT /loan-originators returns HTTP 400 for missing or incorrectly formatted required parameters, HTTP 403 for duplication-related errors, and HTTP 404 when the originator type or channel type does not exist.</li>
-<li>DELETE /loan-originators returns HTTP 404 when the targeted originator does not exist.</li>
-<li>POST /loans/<em>{loan id}</em>/originators/... returns HTTP 404 when the targeted loan or originator does not exist.</li>
-<li>DELETE /loans/<em>{loan id}</em>/originators/... returns HTTP 404 when the targeted loan or originator does not exist.</li>
-</ul>
-<h3>Reporting and revenue share purpose</h3>
-<p>Reporting attributes loan income and revenue to a loan originator such as a merchant, broker, affiliate, platform or channel so revenue share can be calculated and shared. The MerchantOriginator ID appears in the Transaction Summary Report and Trial Balance Report, and multiple originator external ids attached to a loan are concatenated into one string while keeping one row per entry. The feature is unavailable when the loan origination module is disabled, though originator details can still be provided during loan creation.</p>
-<h3>UI screens and navigation</h3>
-<p>The loan details view includes an Originators tab that lists attached loan originators when any are attached and shows an empty state when none are attached. You can add or remove an originator only while a loan is created but not yet approved; attach and detach options are hidden or disabled for approved loans.</p>
-<p>The Originators tab screen shows the following columns:</p>
-<ul>
-<li>Id</li>
-<li>External Id</li>
-<li>Name</li>
-<li>Status</li>
-<li>Originator Type</li>
-<li>Channel Type</li>
-<li>Actions</li>
-</ul>
-<p>The Originators tab screen includes the following button:</p>
-<ul>
-<li>Delete</li>
-</ul>
-<p>The attach originator screen includes the following field and buttons:</p>
-<ul>
-<li>Loan Originator</li>
-<li>Cancel</li>
-<li>Submit</li>
-</ul>
-<ol>
-<li>Open the loan account and choose &quot;Buy Down Fees&quot; from the tabs.</li>
-<li>Open the Create Loans Account screen and choose &quot;DETAILS&quot; from the stepper.</li>
-</ol>
-<p>The loans account details step screen includes the following fields:</p>
-<ul>
-<li>Product Name</li>
-<li>Submitted on (required)</li>
-<li>Disbursement on (required)</li>
-<li>External id</li>
-<li>Loan Originator</li>
-<li>Loan officer</li>
-<li>Loan Purpose</li>
-<li>Fund</li>
-<li>Link savings</li>
-<li>Create standing instructions at disbursement</li>
-</ul>
-<p>The loans account details step screen includes the following buttons:</p>
-<ul>
-<li>Previous</li>
-<li>Next</li>
-<li>Cancel</li>
-</ul>
-<p>The loans account details step screen shows the following text:</p>
-<ul>
-<li>Savings Linkage</li>
-<li>Product Type</li>
-<li>Short Name</li>
-<li>Currency</li>
-</ul>
-<h3>Worked examples</h3>
-<p>A loan officer creates a merchant originator with external ID best-merchant-us-east and attaches it to a new term loan while the loan is still created but not yet approved. The figures are illustrative: a principal of 1,000, an annual interest rate of 12%, two monthly installments, and 30-day months. The originator ID is stored at loan level and is returned with the loan details. The table shows the repayment schedule for that loan.</p>
 <table>
 <thead>
 <tr>
-<th>Installment</th>
-<th>Due date</th>
-<th>Opening balance</th>
-<th>Interest</th>
-<th>Principal paid</th>
-<th>Closing balance</th>
+<th>Originator entry</th>
+<th>Effect</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>1</td>
-<td>30 days</td>
-<td>1,000.00</td>
-<td>10.00</td>
-<td>497.51</td>
-<td>502.49</td>
+<td>Id provided</td>
+<td>The existing originator is attached to the loan.</td>
 </tr>
 <tr>
-<td>2</td>
-<td>60 days</td>
-<td>502.49</td>
-<td>5.02</td>
-<td>502.49</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>Total</td>
-<td>-</td>
-<td>-</td>
-<td>15.02</td>
-<td>1,000.00</td>
-<td>-</td>
+<td>external ID provided</td>
+<td>An existing originator is matched by external ID to avoid duplicates.</td>
 </tr>
 </tbody></table>
-<p>The same loan is set up with three monthly installments instead of two, while the merchant originator remains attached. Extending the term to three installments spreads the principal over more payments and increases total interest from 15.02 to 20.07. The originator ID continues to appear in the loan details and reports.</p>
-<table>
-<thead>
-<tr>
-<th>Installment</th>
-<th>Due date</th>
-<th>Opening balance</th>
-<th>Interest</th>
-<th>Principal paid</th>
-<th>Closing balance</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>30 days</td>
-<td>1,000.00</td>
-<td>10.00</td>
-<td>330.02</td>
-<td>669.98</td>
-</tr>
-<tr>
-<td>2</td>
-<td>60 days</td>
-<td>669.98</td>
-<td>6.70</td>
-<td>333.32</td>
-<td>336.66</td>
-</tr>
-<tr>
-<td>3</td>
-<td>90 days</td>
-<td>336.66</td>
-<td>3.37</td>
-<td>336.66</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>Total</td>
-<td>-</td>
-<td>-</td>
-<td>20.07</td>
-<td>1,000.00</td>
-<td>-</td>
-</tr>
-</tbody></table>
+<h2>Detaching originators from loans</h2>
+<p>You can detach an originator from a loan before the loan is approved.</p>
+<p>The API supports these operations:</p>
+<ul>
+<li>Add an originator to a loan.</li>
+<li>Remove an originator from a loan.</li>
+</ul>
+<h2>Creating originators during loan application</h2>
+<p>When you enter an external ID during loan application, the system attaches an existing originator to the loan or creates a new originator entry, depending on global configuration. Originator creation during loan application is disabled by default.</p>
+<h2>Originator entry fields during loan creation</h2>
+<p>The originators field supports external ID, ID, name, type ID, and channel type ID. All other originator fields are optional. Incoming values are validated, and the originator is attached to the loan.</p>
+<p>Optional fields behave as follows:</p>
+<ul>
+<li>name is an optional string and creates a new entry if the external ID does not already exist.</li>
+<li>ChannelTypeId is an optional code value ID and creates a new entry if the external ID does not already exist.</li>
+</ul>
+<h2>Viewing originators on a loan</h2>
+<p>Originator details appear when you retrieve a loan with associations. If no originator entries exist for the loan, the originators list is empty. If loan origination functionality is not enabled, the originators field is omitted from the response.</p>
+<h2>Multiple originators per loan</h2>
+<p>Each originator keeps its own row, and their external ids are combined into one string.</p>
+<h2>Reporting</h2>
+<p>The Merchant Originator ID appears in the Trial Summary Report and the Trial Balance Report.</p>
+<h2>UI on loan details view</h2>
+<p>The Originators tab on the loan details view lists the loan originators attached to a loan.</p>
+<p>You can:</p>
+<ul>
+<li>Add or remove originators from a loan that is created but not approved.</li>
+<li>See an empty state when no originators are attached.</li>
+</ul>
+<p>The UI:</p>
+<ul>
+<li>Enforces required fields on originator forms.</li>
+<li>Displays validation messages on originator forms.</li>
+<li>Hides or disables attach and detach options for approved loans.</li>
+</ul>

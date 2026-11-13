@@ -1,9 +1,0 @@
-# Tenant Separation and Authentication
-
-## Tenant Separation and Authentication
-
-The system encrypts tenant passwords and stores them in the fineract_tenants schema so they are not available for non-authorised access. Old passwords are removed from the database, and existing tenants are migrated over to encrypted passwords seamlessly. Encryption cannot be turned off. You can configure the master password and initialization vector (IV) through environment variables.
-
-Encryption uses Java rather than DB level encryption:
-
-- The AES mode is CBC (AES/CBC/PKCS5Padding).

@@ -1,0 +1,156 @@
+<h2>Interest-bearing loan products</h2>
+<p>Long-Term Interest-Bearing Loan supports complex amortization schedules, interest calculations, and flexible repayment terms for long-duration lending. Progressive Schedule provides enhanced schedule handling for flexible repayment timelines.</p>
+<h2>Progressive schedule capabilities</h2>
+<p>The progressive schedule strategy supports interest rate recalculations, all other types of charges, planned tranches, FLAT type interest calculation, performance improvements, and moratorium parameters.</p>
+<p>The effective rate limit is:</p>
+<ul>
+<li>0.09995, and it can change.</li>
+</ul>
+<h2>Progressive schedule limitations</h2>
+<p>The progressive schedule strategy does not support floating rates, individual term and interest rate definition for full term tranches, variable installments, fixed EMI options, top-up loan options, or collateral options.</p>
+<blockquote>
+<p><strong>Note:</strong> Interest pause is forbidden for a progressive loan with interest recalculation enabled and an interest rate of zero.</p>
+</blockquote>
+<h2>Iteration rules</h2>
+<p>Iteration applies only to interest-bearing loan products. It does not apply to non-interest-bearing loans, S1 interest split loans, S1.1 backdated re-aging, or when iteration is disabled.</p>
+<h2>Loan actions</h2>
+<p>Actions on loans include generating the schedule, creating notes and calendar entries when applicable, posting to the general ledger interface module (GLIM), and saving the account link. After validations pass, the system assembles the entities and executes the actions on the loans. Undo last disbursement reverts the last disbursement on a multidisbursal loan.</p>
+<h2>Charge-off rules</h2>
+<p>Charge-off rules determine when a loan can be charged off and what happens to its balance.</p>
+<p>Charge-off rules:</p>
+<ul>
+<li>Charge-off is prevented if there is any transaction after the charge-off date, except reversed transactions.</li>
+<li>The charge-off transaction is reversed if the amount balance becomes zero.</li>
+<li>The final balance is $0.00 after the last repayment.</li>
+</ul>
+<h2>Chargeback behavior</h2>
+<p>When a chargeback (CBR) is replayed and the overpayment amount is not lower than the CBR amount, the system reflects the overpayment as credit on the EmiModel and calculates interest based on the outstanding amount. A CBR behaves like a chargeback, so the actual current installment EMI gets increased.</p>
+<h2>First installment interest recalculation</h2>
+<p>The system recalculates interest on the first installment each day until the loan reaches its maturity date.</p>
+<p>When the CBR amount is more than the overpayment amount, the system credits the loan schedule with the difference between the CBR amount and the overpayment amount.</p>
+<ul>
+<li>In this situation, the difference is 100.</li>
+</ul>
+<h2>Penalty accrual</h2>
+<p>Penalty accrual is created during close of business (COB), the nightly job that posts interest and fees.</p>
+<p>During COB, only accrual activity is reverse-replayed, and the penalty allocation is added to it.</p>
+<ul>
+<li>No new accrual is created during COB.</li>
+<li>The existing accrual for interest is not reverse-replayed to allocate the penalty amount.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A progressive interest-bearing loan product is configured with interest recalculation enabled and an annual interest rate of 0.00%. The principal is 1,000.00 and the term is 3 monthly installments with 30-day months. The figures are illustrative. When a request attempts to add an interest pause to this loan, the product forbids the change because an interest pause is not permitted when interest recalculation is enabled and the interest rate is zero.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Product type</td>
+<td>Progressive interest-bearing</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Annual interest rate</td>
+<td>0.00%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest recalculation</td>
+<td>Enabled</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Requested action</td>
+<td>Add interest pause</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Result</td>
+<td>Forbidden</td>
+</tr>
+</tbody></table>
+<p>The example shows that the system rejects an interest pause when recalculation is enabled and the rate is zero, protecting the repayment schedule.</p>
+<p>A progressive interest-bearing loan has a principal of 1,000.00, a 12.00% annual flat interest rate, and 2 monthly installments with 30-day months. The figures are illustrative. Monthly interest is 10.00 and monthly principal is 500.00, so each normal installment is 610.00. After the first installment, the outstanding balance is 500.00. The customer holds an overpayment of 100.00. A chargeback (CBR) of 200.00 is posted. Because the CBR amount is greater than the overpayment, the difference of 100.00 is credited to the loan schedule, and the current installment EMI is increased.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>EMI before CBR</th>
+<th>EMI after CBR</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>10.00</td>
+<td>500.00</td>
+<td>610.00</td>
+<td>610.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>10.00</td>
+<td>500.00</td>
+<td>610.00</td>
+<td>710.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>20.00</td>
+<td>1,000.00</td>
+<td>1,220.00</td>
+<td>1,320.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The example shows that when a CBR exceeds the overpayment, the difference is credited to the schedule and the current installment EMI is increased so the loan still repays to zero.</p>
+<p>A progressive loan product is configured with one tranche of 1,000.00. Two disbursements are posted: 700.00 and 300.00. The figures are illustrative. Because the product allows only one tranche but two disbursements exist, the system rejects a request to undo the last disbursement. The loan state remains unchanged and the disbursement stays posted.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Configured tranches</td>
+<td>1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Tranche amount</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Disbursement 1</td>
+<td>700.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Disbursement 2</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Requested action</td>
+<td>Undo last disbursement</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Result</td>
+<td>Rejected</td>
+</tr>
+</tbody></table>
+<p>The example shows that undoing a disbursement is forbidden when the number of disbursements exceeds the configured tranches on a progressive loan product.</p>

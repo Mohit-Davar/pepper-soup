@@ -1,0 +1,333 @@
+<h2>Payment allocation strategy overview</h2>
+<p>Payment allocation strategies decide how the system applies a payment to principal, interest, fees, and penalties. Advance Payment Allocation provides flexible strategies for allocating early payments across those components. Advance Repayment Strategy provides fully configurable payment application logic covering principal, interest, fees, and penalty.</p>
+<h2>Payment allocation priority order</h2>
+<p>A payment is applied to loan components in this priority order: overdue fees and penalties first, then accrued interest, then principal, then future installments. Partial payments are split across components based on this priority, and each component closes automatically once it is fully satisfied.</p>
+<h2>Repayment payment order</h2>
+<p>The repayment payment order decides how the system applies a repayment across charges, penalties, fees, interest and principal.</p>
+<h2>Regional product configuration</h2>
+<p>The payment allocation strategy applies to the PayIn30 product in the DE region. The allocation order is DuePenalties, DueInterest, DuePrincipal, DueFees, InAdvancePenalties, InAdvanceInterest, InAdvancePrincipal, InAdvanceFees, and it stays the same for all transaction types.</p>
+<h2>Scope of payment allocation</h2>
+<p>Payment Allocation applies to credit adjustments, repayments, refunds, goodwill credits, and waivers, whether the amount is paid in full, partial or excess.</p>
+<h2>Transaction allocation rules</h2>
+<p>Predefined transaction allocation rules decide how a payment is applied to principal, fees, and penalties. DUE PRINCIPAL is projected principal payment; DUE FEE and DUE PENALTY are current or older charges based on their specific due date. IN ADVANCE PRINCIPAL is over projected principal payment; IN ADVANCE FEE and IN ADVANCE PENALTY are future charges based on their specific due date.</p>
+<p>Allocation targets depend on the transaction type:</p>
+<ul>
+<li>For PRINCIPAL, allocation runs on the amortization schedule.</li>
+<li>For FEE or PENALTY, allocation runs on charge payment handling (charge balances).</li>
+<li>For overpayment, allocation runs on overpayment handling (overpayment balances and status).</li>
+</ul>
+<p>For all monetary transactions, allocation mapping entries are created for fee, penalty, and principal based on the allocation rules.</p>
+<h2>Same-day repayment and charge behavior</h2>
+<p>If you add a repayment and then add a charge on the same day, the system does not reverse-replay the repayment. If you add another repayment on the same day as a charge, that repayment pays the charge.</p>
+<h2>Accrual configuration and posting</h2>
+<p>You can configure how the system accrues charges and posts accrual journal entries. Accrual timing controls whether accrual happens immediately or through the nightly close of business job. Charge accrual date controls whether accrual uses the charge created date or the due date. Immediate accrual can post multiple accruals on the same day.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>charge_accrual_date</td>
+<td>submitted on, due date</td>
+<td>due date</td>
+</tr>
+<tr>
+<td>Accrual_timing</td>
+<td>immediate, job</td>
+<td>job</td>
+</tr>
+</tbody></table>
+<p>Jobs, close of business jobs, and accrual through the API behave consistently. When reverse replay recreates an accrual on the submitted-on date instead of the due date, it uses the same value date as the original accrual.</p>
+<h2>Advanced payment transaction processor</h2>
+<p>The Advanced payment transaction processor resets the due principals on the repayment schedule before reprocessing the transactions, including the disbursement transaction. It applies transactions and charges one by one. When processing a disbursement transaction, it calls the EMICalculator and uses the generated model to update the repayment periods, principal due, interest due, and related fields instead of calculating an EMI itself. This processor does not use the EMICalculator for interest recalculation or multi-disbursement loans.</p>
+<h2>Schedule and installment rules</h2>
+<p>A schedule must not have a middle installment with a higher amount while the last installment is paid.</p>
+<h2>Allocation targets and overpayment handling</h2>
+<p>Repayment-like transactions pay down outstanding balances. If more repayment occurs than the total outstanding balance, the excess is an overpayment.</p>
+<h2>Backdated transactions and reverse replay</h2>
+<p>Backdated transactions and reverse replay can change how money is distributed and pay off fees retrospectively, which changes the amount of income. Fees added to an instalment must be paid by a payment created after the fee is due; this applies to any other income source too.</p>
+<h2>New repayment strategy buckets</h2>
+<p>The new repayment strategy adds two buckets: Due charges and In advance principal. You can pay charges on or after their due date, and the strategy accounts for any unpaid charge or penalty that is due.</p>
+<h2>Worked examples</h2>
+<p>The figures in this example are illustrative. A loan of 1,000.00 is disbursed on 1 January and falls due in full on 31 January. There are no fees or penalties. The borrower repays 1,000.00 on 31 January, and the entire amount is applied to the due principal.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Due principal paid</th>
+<th>Principal balance</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>31 January</td>
+<td>Repayment</td>
+<td>(1,000.00)</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000.00 is disbursed on 1 January and is due on 31 January. A fee of 40.00 is posted on 15 January and is due on 20 January. The borrower repays 100.00 on 17 January, before the fee is due, and then repays 100.00 on 20 January, the fee due date. A second fee of 30.00 is posted on 25 January and is not settled by the earlier repayment. If the repayment on 17 January had arrived after 20 January, it would have settled the due fee before reducing principal.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Due fee paid</th>
+<th>In-advance principal paid</th>
+<th>Principal balance</th>
+<th>Fee balance</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>15 January</td>
+<td>Fee posted</td>
+<td>40.00</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>40.00</td>
+<td>1,040.00</td>
+</tr>
+<tr>
+<td>17 January</td>
+<td>Repayment</td>
+<td>(100.00)</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>900.00</td>
+<td>40.00</td>
+<td>940.00</td>
+</tr>
+<tr>
+<td>20 January</td>
+<td>Repayment</td>
+<td>(100.00)</td>
+<td>40.00</td>
+<td>60.00</td>
+<td>840.00</td>
+<td>0.00</td>
+<td>840.00</td>
+</tr>
+<tr>
+<td>25 January</td>
+<td>Fee posted</td>
+<td>30.00</td>
+<td>–</td>
+<td>–</td>
+<td>840.00</td>
+<td>30.00</td>
+<td>870.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>870.00</td>
+<td>40.00</td>
+<td>160.00</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000.00 is disbursed on 1 January and is due on 31 January. A fee of 25.00 is posted on 25 January and is due on 1 March. The borrower repays 500.00 on 1 February, before the fee is due, and then repays 525.00 on 1 March, when both the installment and the fee are due. Without the fee, the repayment on 1 March would allocate entirely to due principal.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>In-advance principal paid</th>
+<th>Due principal paid</th>
+<th>Due fee paid</th>
+<th>Principal balance</th>
+<th>Fee balance</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>25 January</td>
+<td>Fee posted</td>
+<td>25.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>25.00</td>
+<td>1,025.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment</td>
+<td>(500.00)</td>
+<td>500.00</td>
+<td>–</td>
+<td>–</td>
+<td>500.00</td>
+<td>25.00</td>
+<td>525.00</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Repayment</td>
+<td>(525.00)</td>
+<td>–</td>
+<td>500.00</td>
+<td>25.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>0.00</td>
+<td>500.00</td>
+<td>500.00</td>
+<td>25.00</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A loan of 1,000.00 is disbursed on 1 January and is due on 31 January. A penalty of 10.00 is posted on 15 February and is due the same day. A fee of 20.00 is posted on 25 February and is due on 1 March. A second penalty of 10.00 is posted on 5 March and is due the same day. The borrower repays 1,040.00 on 8 March. If only one penalty existed, the repayment would clear that penalty first and then move to principal.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Penalty 15-Feb paid</th>
+<th>Penalty 5-Mar paid</th>
+<th>Due principal paid</th>
+<th>Due fee paid</th>
+<th>Principal balance</th>
+<th>Penalty balance</th>
+<th>Fee balance</th>
+<th>Total balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>15 February</td>
+<td>Penalty posted</td>
+<td>10.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>1,010.00</td>
+</tr>
+<tr>
+<td>25 February</td>
+<td>Fee posted</td>
+<td>20.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>20.00</td>
+<td>1,030.00</td>
+</tr>
+<tr>
+<td>5 March</td>
+<td>Penalty posted</td>
+<td>10.00</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+<td>20.00</td>
+<td>20.00</td>
+<td>1,040.00</td>
+</tr>
+<tr>
+<td>8 March</td>
+<td>Repayment</td>
+<td>(1,040.00)</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>1,000.00</td>
+<td>20.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>0.00</td>
+<td>10.00</td>
+<td>10.00</td>
+<td>1,000.00</td>
+<td>20.00</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>

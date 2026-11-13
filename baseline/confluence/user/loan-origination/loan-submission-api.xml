@@ -1,0 +1,149 @@
+<p>Down payment fields decide whether a loan is a down payment loan under the same product constraints, and they control how much of the disbursed amount goes toward the down payment. You can enable or disable the down payment feature when you create or modify a loan account.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Down payment enabled</td>
+<td>Decides dynamically whether the loan is a down payment loan under the same product constraints.</td>
+</tr>
+<tr>
+<td>Down payment override</td>
+<td>Overrides the down payment setting configured on the loan product.</td>
+</tr>
+<tr>
+<td>Automatic repayment for down payment</td>
+<td>Overrides the value set on the loan product when provided; otherwise the loan product value is used.</td>
+</tr>
+<tr>
+<td>Disbursed amount percentage for down payment</td>
+<td>Overrides the value set on the loan product when provided; otherwise the loan product value is used.</td>
+</tr>
+</tbody></table>
+<p>The only allowed use case for overriding down payment is when down payment was configured on the loan product but should be disabled during loan submission.</p>
+<ul>
+<li>If down payment was not set and enabled on the loan product, it cannot be set and configured on the loan level.</li>
+</ul>
+<p>Situation: payable interest inside one installment period. Figures are illustrative. A 10-day installment period carries 10.00 of interest payable for the period, and no payment is made until day 5, when the borrower pays 3.00 toward interest. Each day the system spreads the unpaid part of the period&#39;s interest over the days left in the period, so payable interest builds up day by day, and a payment lowers what is still payable.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Days left</th>
+<th>Daily accrual</th>
+<th>Payable before payment</th>
+<th>Payment</th>
+<th>Payable after payment</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>10</td>
+<td>1.00</td>
+<td>1.00</td>
+<td>0.00</td>
+<td>1.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>9</td>
+<td>1.00</td>
+<td>2.00</td>
+<td>0.00</td>
+<td>2.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>8</td>
+<td>1.00</td>
+<td>3.00</td>
+<td>0.00</td>
+<td>3.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>7</td>
+<td>1.00</td>
+<td>4.00</td>
+<td>0.00</td>
+<td>4.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>6</td>
+<td>1.00</td>
+<td>5.00</td>
+<td>3.00</td>
+<td>2.00</td>
+</tr>
+</tbody></table>
+<p>The example shows payable interest accumulating daily within the period and a payment reducing the amount still payable; the daily amount equals the unpaid period interest divided by the days left.</p>
+<p>Situation: a disbursement repaid through equal monthly installments. A loan of 1,000.00 is disbursed at an annual interest rate of 12% and repaid in 3 monthly installments over 30-day months. Interest each month is 1% of the opening balance, principal is repaid in equal parts, the first installment is paid on time, and the later installments remain outstanding.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal due</th>
+<th>Due</th>
+<th>Paid</th>
+<th>Ending balance</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Disbursement</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>333.33</td>
+<td>343.33</td>
+<td>343.33</td>
+<td>666.67</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>666.67</td>
+<td>6.67</td>
+<td>333.33</td>
+<td>340.00</td>
+<td>0.00</td>
+<td>333.34</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>333.34</td>
+<td>3.33</td>
+<td>333.34</td>
+<td>336.67</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>336.67</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>-</td>
+<td>20.00</td>
+<td>1,000.00</td>
+<td>1,020.00</td>
+<td>343.33</td>
+<td>-</td>
+<td>676.67</td>
+</tr>
+</tbody></table>
+<p>The example shows interest falling as the balance falls and an on-time payment clearing an installment from outstanding; if the first installment were left unpaid, it would stay outstanding at 343.33 and its payable interest would keep accruing daily instead.</p>

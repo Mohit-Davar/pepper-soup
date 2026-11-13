@@ -1,134 +1,63 @@
-<h2>Loan Lifecycle Dates</h2>
-<p>The custom module records extra dates whenever the loan lifecycle changes, such as when a loan becomes overpaid or matured. You can configure which status changes the module tracks.</p>
+<p>The loan lifecycle dates feature records extra dates when a loan changes status, such as when it matures or becomes overpaid. You choose which status changes to track. The system stores the actual business date each time a tracked status change occurs.</p>
+<p>Loan statuses:</p>
+<ul>
+<li>Created</li>
+<li>Approved</li>
+<li>Disbursed</li>
+<li>Active</li>
+<li>Closed (fully paid)</li>
+<li>Overpaid</li>
+</ul>
 <p>Configuration key custom.module.loan.lifecycle.allowed.status.codes accepts a list of statuses:</p>
-<ul>
-<li>ALL tracks every status change and is the default.</li>
-<li>OVERPAID,CLOSED_OBLIGATIONS_MET tracks when the loan gets closed because it is fully paid or when the loan gets overpaid.</li>
-</ul>
-<p>When a loan is overpaid, the system records the date as follows:</p>
-<ul>
-<li>Overpaid on date is set as the date the loan was submitted instead of the transaction date.</li>
-</ul>
-<p>Example 1: Overpaid loan records the submission date. A loan officer opens a loan of 1,200 with an annual interest rate of 12%, three monthly installments, and 30-day months. The first two installments are 412 each. In the final month the borrower pays 412, although only 399.96 is due. The figures in this example are illustrative. The system records the date the payment was submitted as the overpaid date, rather than the date the transaction was processed.</p>
 <table>
 <thead>
 <tr>
-<th>Month</th>
-<th>Opening Balance</th>
-<th>Interest</th>
-<th>Payment</th>
-<th>Principal</th>
-<th>Closing Balance</th>
-<th>Overpaid</th>
+<th>Value</th>
+<th>Tracks</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>1</td>
-<td>1,200.00</td>
-<td>12.00</td>
-<td>412.00</td>
-<td>400.00</td>
-<td>800.00</td>
-<td>0.00</td>
+<td>ALL</td>
+<td>Every status change (default)</td>
 </tr>
 <tr>
-<td>2</td>
-<td>800.00</td>
-<td>8.00</td>
-<td>412.00</td>
-<td>404.00</td>
-<td>396.00</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>3</td>
-<td>396.00</td>
-<td>3.96</td>
-<td>412.00</td>
-<td>396.00</td>
-<td>0.00</td>
-<td>12.04</td>
+<td>OVERPAID, CLOSED_OBLIGATIONS_MET</td>
+<td>When the loan is closed and fully paid, or when the loan is overpaid</td>
 </tr>
 </tbody></table>
-<p>Example 2: On-time repayment marks the loan as matured. Using the same loan of 1,200 at 12% annual interest with three monthly installments, the borrower pays exactly 399.96 in the final month. The balance reaches zero and the system records the matured date as a lifecycle change.</p>
+<p>A loan officer issues a loan of 1,000 at 12% annual interest with 3 monthly installments and 30-day months. The figures are illustrative. The loan starts as Created, moves to Approved, then to Disbursed and Active. When the borrower repays the full amount early, the status becomes Overpaid. The system records the overpaid date as the transaction date, not the date the repayment was submitted. If the overpayment is backdated, a correction request is required and no details are sent to other systems.</p>
 <table>
 <thead>
 <tr>
-<th>Month</th>
-<th>Opening Balance</th>
-<th>Interest</th>
-<th>Payment</th>
-<th>Principal</th>
-<th>Closing Balance</th>
+<th>Step</th>
+<th>Date</th>
 <th>Status</th>
+<th>Extra date stored</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>1</td>
-<td>1,200.00</td>
-<td>12.00</td>
-<td>412.00</td>
-<td>400.00</td>
-<td>800.00</td>
-<td>Active</td>
+<td>Created</td>
+<td>Day 0</td>
+<td>Created</td>
+<td>—</td>
 </tr>
 <tr>
-<td>2</td>
-<td>800.00</td>
-<td>8.00</td>
-<td>412.00</td>
-<td>404.00</td>
-<td>396.00</td>
-<td>Active</td>
+<td>Approved</td>
+<td>Day 5</td>
+<td>Approved</td>
+<td>—</td>
 </tr>
 <tr>
-<td>3</td>
-<td>396.00</td>
-<td>3.96</td>
-<td>399.96</td>
-<td>396.00</td>
-<td>0.00</td>
-<td>Matured</td>
+<td>Disbursed</td>
+<td>Day 10</td>
+<td>Active</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Overpaid</td>
+<td>Day 20</td>
+<td>Overpaid</td>
+<td>Day 20</td>
 </tr>
 </tbody></table>
-<p>Example 3: Rescheduling stores a new lifecycle date. After the first installment, the outstanding balance is 800. A loan officer reschedules the loan to two remaining installments of 408 each. The system records the reschedule date as a status change. A user may reschedule the same active loan more than once, even on the same date, and each reschedule is stored as a separate change that can be found by date or by status.</p>
-<table>
-<thead>
-<tr>
-<th>Month</th>
-<th>Opening Balance</th>
-<th>Interest</th>
-<th>Payment</th>
-<th>Principal</th>
-<th>Closing Balance</th>
-<th>Event</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1</td>
-<td>1,200.00</td>
-<td>12.00</td>
-<td>412.00</td>
-<td>400.00</td>
-<td>800.00</td>
-<td>Rescheduled</td>
-</tr>
-<tr>
-<td>2</td>
-<td>800.00</td>
-<td>8.00</td>
-<td>408.00</td>
-<td>400.00</td>
-<td>400.00</td>
-<td>Active</td>
-</tr>
-<tr>
-<td>3</td>
-<td>400.00</td>
-<td>4.00</td>
-<td>404.00</td>
-<td>400.00</td>
-<td>0.00</td>
-<td>Matured</td>
-</tr>
-</tbody></table>
+<p>The example shows that the overpaid date comes from the transaction date and that the system keeps a dated history of each lifecycle status change.</p>

@@ -1,5 +1,0 @@
-# Asynchronous Jobs
-
-## Asynchronous Jobs
-
-The SendAsynchronous Job marks events from TO_BE_SENT to SENT using parallel commits. It processes COB events before start-of-the-day events by querying with findByStatusOrderByIdAndBusinessDate instead of findByStatusOrderById.

@@ -1,0 +1,488 @@
+<h2>Working capital loan overview</h2>
+<p>The Working Capital Loan product uses an Effective Interest Rate (EIR)–based calculation that supports PayPal’s Working Capital financing offerings. It applies to zero-interest, discount/fee-based products with flexible, sales-based repayments. The projected amortization schedule dynamically updates based on approval, disbursement, and repayment activity and uses EIR methodology for income recognition, deferral, and Net Present Value (NPV) calculation. WCP is the abbreviation for Working Capital Product. Merchant Term Loan Products use Origination fees with Straight line amortization.</p>
+<p>The product does not charge interest or use traditional installment structures:</p>
+<ul>
+<li>No interest is charged on the disbursed loan account.</li>
+<li>No multi-disbursement (tranche) scenarios exist.</li>
+<li>No traditional installments with defined amount allocations exist.</li>
+<li>No partial fee adjustments occur.</li>
+<li>N+1 type special scenarios could exist.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Created" as n1
+  state "Approved" as n2
+  state "Disbursed" as n3
+  state "Active" as n4
+  state "Closed" as n5
+  n1 --> n2 : approve
+  n2 --> n3 : disburse
+  n3 --> n4 : loan activation
+  n4 --> n5 : prepayment payoff]]></ac:plain-text-body></ac:structured-macro>
+<h2>Unsupported features</h2>
+<p>Working Capital loans do not support the following features, and requests that use them are rejected rather than silently accepted: flat amortization, prepayment, charge waiver, chargeback, real-time charge accrual, EIR for MTR, Repayment-% API, payment-amount strategies, disbursement charges on working capital products, and tax component on working capital products.</p>
+<h2>Product configuration</h2>
+<p>A working capital loan product is a product template from which loan accounts are created and stored in table m_wc_loan_product. You select Regular (the default) or Working capital as the loan product type. The product defines financial defaults, repayment settings, allowable principal and rate ranges, default delinquency bucket classification, and currency and amortization setup. Each product has a one-to-one relationship with m_wc_loan_product_configurable_attributes and a one-to-many relationship with m_wc_loan_product_payment_allocation_rule. The instantiated account is stored in m_wc_loan.</p>
+<p>Product fields must meet these uniqueness and range rules:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>name</td>
+<td>Must be unique.</td>
+</tr>
+<tr>
+<td>short_name</td>
+<td>Must be unique.</td>
+</tr>
+<tr>
+<td>external_id</td>
+<td>Must be unique when provided.</td>
+</tr>
+<tr>
+<td>principal_amount</td>
+<td>Must be within min/max when min/max are present.</td>
+</tr>
+<tr>
+<td>period_payment_rate</td>
+<td>Must be within min/max when min/max are present.</td>
+</tr>
+<tr>
+<td>start_date</td>
+<td>Must be less than or equal to close_date when both are present.</td>
+</tr>
+<tr>
+<td>currency fields</td>
+<td>Required fields must be populated.</td>
+</tr>
+<tr>
+<td>repayment configuration</td>
+<td>Required configuration must be populated.</td>
+</tr>
+</tbody></table>
+<p>Configuration values:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NPV day count</td>
+<td>360, 365</td>
+</tr>
+<tr>
+<td>Period payment frequency</td>
+<td>DAYS (1, 7, 30), WEEKS, MONTHS (month-end anchor)</td>
+</tr>
+<tr>
+<td>Discount timing</td>
+<td>none, at approval, at disbursement, added after disbursement, adjusted</td>
+</tr>
+<tr>
+<td>Delinquency start type</td>
+<td>LOAN_CREATION, DISBURSEMENT</td>
+</tr>
+<tr>
+<td>Delinquency grace days</td>
+<td>null, 0, n</td>
+</tr>
+<tr>
+<td>Minimum payment rule</td>
+<td>FLAT, PERCENTAGE</td>
+</tr>
+<tr>
+<td>Breach / near-breach</td>
+<td>none, breach only, breach + near-breach</td>
+</tr>
+<tr>
+<td>Breach / near-breach grace days</td>
+<td>0, n</td>
+</tr>
+<tr>
+<td>Allocation</td>
+<td>product default, per-transaction-type, loan-level override, DUE / IN_ADVANCE modifiers</td>
+</tr>
+<tr>
+<td>Charge timing</td>
+<td>none, specified-due-date before maturity, after maturity (N+1), penalty vs fee</td>
+</tr>
+</tbody></table>
+<p>Additional configuration rules:</p>
+<ul>
+<li>Frequency shorter than or equal to the loan frequency must be rejected for breach / near-breach.</li>
+<li>The allocations table stores the mapping of the balance portion allocation to transaction.</li>
+<li>The amortization field is amortization_type.</li>
+</ul>
+<h2>Loan account creation and lifecycle</h2>
+<p>A working capital (WC) loan account follows the lifecycle of create, modify, approve, undo-approve, reject, disburse, undo-disburse, and delete. Approval requires a submitted state, and disbursement requires an approved state. Disbursement is a monetary transaction executed on an approved loan account.</p>
+<p>A WC loan account can be created with Grace Days and Grace Days Start date left blank when the product does not allow overriding terms and settings on the loan account level. Fields and values remain the same as a regular loan account, including Balance, Fee/penalty due, Fee/penalty paid, and Fee/penalty outstanding.</p>
+<p>Discount handling depends on whether the product allows attribute override. When override is disallowed and the product has a defined discount value, the proposed discount value on loan account creation is the inherited product-level value of 50, and leaving the discount field empty on approve or disburse screens means the discount is assumed to be that default inherited value. When override is allowed and the discount value is left empty, the discount is set to null or empty as currently implemented. Removing the discount value during loan creation leaves no value on the loan account.</p>
+<p>During approval, the user can modify Principal Amount, Discount Amount, Approved Date, Expected disbursement date, and Notes. Principal Amount and Approved Date are mandatory; Principal Amount defaults to the amount entered during loan creation and can be changed to a lesser amount. Discount Amount is optional, defaults to the amount entered during loan creation, and can be changed to a lesser amount. Expected disbursement date is mandatory and represents the Expected Disbursement of the loan account. Notes is optional.</p>
+<p>During disbursal, the user can enter or modify Disbursed on, Disbursement amount, Discount Amount, External ID, Payment Type, Payment Details, and Notes. Disbursed on is mandatory and represents the Actual Disbursement date. Disbursement amount is mandatory, defaults to the approved amount, and can be modified to any amount lesser than the approved amount. Payment Type is a drop down of payment type entities, and Payment Details contains Account No, Cheque No, Routing Code, Receipt No, and Bank code.</p>
+<p>Disbursement date must not precede loan approval date and must comply with backdating rules. Disbursement amount must be greater than zero and must not exceed the approved loan amount for single disbursement. Disbursement triggers Journal Entries (JE).</p>
+<p>Disbursement reversal is allowed. It creates a linked reversal transaction, reverses all other monetary transactions, reverses principal outstanding, reverses accounting entries, and reverts the loan status to the approved state.</p>
+<p>Amortization is driven by payment events and is not independently triggered or scheduled. At least one disbursement must have an actual disbursement date.</p>
+<blockquote>
+<p><strong>Note:</strong> Backdated disability is not permitted.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> No pre-generated future periods exist.</p>
+</blockquote>
+<h2>Amortization schedule</h2>
+<p>The amortization schedule for working capital loans shows net disbursement, discount, charges, discount adjustment, paid amounts, and outstanding amounts for each payment period. It contains no negative balances, and the expected running balance, actual running balance, expected running balance of discount fee, and actual running balance of discount fee all reach zero with the last payment period. Aggregated balances are accurate, and loan dates are correct: submitted, approved, disbursed, closed on date, overpaid on date, and maturity date.</p>
+<p>The schedule recalculates when the percentage period payment rate changes:</p>
+<ul>
+<li>All balances remain accurate with no negative balances and no leftover or overflow.</li>
+<li>Aggregated balances match global balances.</li>
+</ul>
+<p>Each record in the projected amortization schedule contains:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Amortization Installment Number</td>
+</tr>
+<tr>
+<td>Amortization Installment Date</td>
+</tr>
+<tr>
+<td>Expected Payment Amount</td>
+</tr>
+<tr>
+<td>Discount Factor</td>
+</tr>
+<tr>
+<td>NPV Value</td>
+</tr>
+<tr>
+<td>Balance</td>
+</tr>
+<tr>
+<td>Net Amortization Amount</td>
+</tr>
+<tr>
+<td>Actual Payment Amount</td>
+</tr>
+<tr>
+<td>Actual Amortization Amount</td>
+</tr>
+<tr>
+<td>Income Modification</td>
+</tr>
+<tr>
+<td>Deferred Balance</td>
+</tr>
+</tbody></table>
+<h2>Discount fee</h2>
+<p>A discount fee is a one-time fee applied to a Working Capital loan disbursement. You set it once per loan through the discount fee command. The system validates the related transaction, applies the fee, and tracks realized and unrealized discount fee income across the loan lifecycle.</p>
+<p>Validation rules:</p>
+<ul>
+<li>The related transaction must exist, belong to the loan, be a DISBURSEMENT, and not be reversed; otherwise the command is rejected with 400.</li>
+<li>A second discount fee is always rejected with discount.already.set.before.disbursement, so discountFee, totalDiscountFee, schedule, and unrealized income stay consistent.</li>
+</ul>
+<p>Accounting behavior by product type:</p>
+<table>
+<thead>
+<tr>
+<th>Product type</th>
+<th>Write-off behavior</th>
+<th>Charge-off behavior</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WCLP_ADVANCED_ACCOUNTING</td>
+<td>Write-off recognizes the remaining unrealized discount fee on the write-off date by posting a final Discount Fee Amortization with journal entries to the configured write-off expense account.</td>
+<td>The discount fee command is rejected with a loan-status error; no transaction, balance, or journal entry is created.</td>
+</tr>
+<tr>
+<td>NONE or ACC_DEF_REV_AM</td>
+<td>Write-off discount fee handling works with transaction-only processing and no journal entries.</td>
+<td>Not specified.</td>
+</tr>
+</tbody></table>
+<p>Income and GL balance after charge-off or write-off:</p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Realized income</td>
+<td>Net discount fee</td>
+</tr>
+<tr>
+<td>Unrealized income</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>GL 240005 balance for the loan</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Reversals:</p>
+<ul>
+<li>Undoing a write-off reverses the final amortization and restores realized and unrealized income.</li>
+<li>Undoing charge-off or write-off reverses the correction derived from active amortization transactions.</li>
+<li>Undo charge-off and the existing discount fee adjustment guard keep working when discount fee is rejected on a charged-off loan.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The final discount fee processing on charge-off and write-off derives the delta from the active amortization transactions, not from the clipped unrealized balance, and posts a positive or negative correction.</p>
+</blockquote>
+<h2>Write-off and charge-off</h2>
+<p>Write-off permanently closes a loan or account by extinguishing all outstanding dues when recovery is no longer feasible. Charge-off removes outstanding balances from loan asset books and posts accounting entries as per configured charge-off journal entry rules.</p>
+<p>Write-off covers:</p>
+<ul>
+<li>All outstanding principal, interest, fees, and penalties are marked as written-off and removed from the books through accounting entries.</li>
+</ul>
+<h2>Repayment and allocation</h2>
+<p>Repayment on disbursement day is supported, and you can undo a disbursement together with its discount. On repayment, the system adjusts outstanding balances. Any repayment amount above the outstanding obligation is stored in overpaymentAmount. Allocation order is penalty, then fee, then principal, with DUE and IN_ADVANCE modifiers. Per-type rules can be set at product level or loan level. Backdated re-age is not permitted. Evaluations and records before the re-age date remain unchanged and are not modified or reprocessed.</p>
+<h2>Validation rules</h2>
+<p>The backend enforces validation rules for working capital loan products, loans, and transactions. Treat <code>allocation_types</code> as an ordered collection in code. A working capital loan holds core loan contract data, lifecycle dates and user actions, final account-level financial terms, and links to a client, product, fund, and delinquency bucket. It supports maturity and closure. Many loans belong to one client, use one product, and may reference one fund.</p>
+<h2>Business date behavior</h2>
+<p>Business Date behavior controls the date that WCP features use when they create or submit records. When Business Date is enabled, those features use the configured Business Date for created_date and submitted_date wherever applicable. When Business Date is disabled, they use the current system date and time. The same rule applies across all WCP features and tabs, including Delinquency, Breach, Period Payment Rate, Transactions, Accounting Entries, and Charges.</p>
+<h2>Datatables</h2>
+<p>Datatables let you store custom tabular data against a loan product or loan account. You can explicitly add supported datatables to working capital product (WCP) loan accounts, and view, modify, update, and delete their records where configured datatable rules and your user permissions permit. Datatable functionality splits into Term Loan Product and Term Loan Account for regular loans, and WCP Loan Product and WCP Loan Account for WCP loans. Datatables created for WCP loans are visible only to WCP loan products and accounts; datatables created for Term loans are visible only to Term loan products and accounts. The rest of datatable functionality remains unchanged.</p>
+<p>Entity types, application tables, and foreign key columns:</p>
+<table>
+<thead>
+<tr>
+<th>Entity type</th>
+<th>Apptable name</th>
+<th>Foreign key column</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WCP Loan Account</td>
+<td>m_wc_loan</td>
+<td>wc_loan_id</td>
+</tr>
+<tr>
+<td>WCP Loan Product</td>
+<td>m_wc_loan_product</td>
+<td>wc_product_loan_id</td>
+</tr>
+<tr>
+<td>Term Loan Account</td>
+<td>m_loan</td>
+<td>loan_id</td>
+</tr>
+<tr>
+<td>Term Loan Product</td>
+<td>m_product_loan</td>
+<td>product_loan_id</td>
+</tr>
+</tbody></table>
+<p>Datatable strategy supports single-row datatables, which allow only one value for the same loan or product, and multi-row datatables, which allow multiple values for the same loan or product.</p>
+<p>Single-row and multi-row datatable storage:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Entries per parent</th>
+<th>Foreign key</th>
+<th>Primary key</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Single-row</td>
+<td>One</td>
+<td>Added as primary key, unique, and indexed</td>
+<td>The foreign key column</td>
+</tr>
+<tr>
+<td>Multi-row</td>
+<td>Multiple</td>
+<td>Added as non-unique indexed foreign key</td>
+<td>The auto-generated id column</td>
+</tr>
+</tbody></table>
+<p>Datatable operations are create datatable, update datatable, fetch datatable, and remove datatable. Datatable entry operations are create a new entry, fetch it, update it, delete it, and fetch it to see the void.</p>
+<p>Datatable API endpoints:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Endpoint</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Update datatable</td>
+<td>PUT /v1/datatables/{datatable}</td>
+</tr>
+<tr>
+<td>Deregister datatable</td>
+<td>POST /v1/datatables/deregister/{datatable}</td>
+</tr>
+<tr>
+<td>Update a single-row entry</td>
+<td>PUT /v1/datatables/{datatable}/{apptableId}</td>
+</tr>
+<tr>
+<td>Update a multi-row entry</td>
+<td>PUT /v1/datatables/{datatable}/{apptableId}/{datatableId}</td>
+</tr>
+<tr>
+<td>Delete all entries for a parent</td>
+<td>DELETE /v1/datatables/{datatable}/{apptableId}</td>
+</tr>
+<tr>
+<td>Delete a specific multi-row entry</td>
+<td>DELETE /v1/datatables/{datatable}/{apptableId}/{datatableId}</td>
+</tr>
+</tbody></table>
+<p>Datatables registered against m_wc_loan appear only for WCP loan accounts and not for m_loan; datatables registered against m_wc_loan_product appear only for WCP loan products and not for m_product_loan. Term loan datatables are not exposed under WCP apptable names.</p>
+<h2>Period payment rate</h2>
+<p>The Period Payment Rate field takes a BigDecimal value. You can modify it only on Active loans.</p>
+<h2>API endpoints</h2>
+<p>Loan APIs support create loan, get loan, list loans, approve loan, reject loan, disburse loan, close loan, add loan note, update payment allocation rules, get loan balance, and get disbursement schedule/details. You can delete a working capital loan product by its ID or external ID.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Endpoint</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DELETE</td>
+<td>/working-capital-loan-products/&lt;loanProductId&gt;</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td>/working-capital-loan-products/external-id/&lt;loanProductExternalId&gt;</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A working capital loan projects its cash flows with an effective-interest-rate schedule. The figures below are illustrative: a borrower receives a net disbursement of 900.00, owes a discount fee of 100.00, and repays 1,000.00 in four monthly installments of 250.00. The period effective interest rate is 5.00%. Each future payment is discounted using discountFactor = 1 / (1 + EIR) ^ paymentsLeft; the model returns 1.00 if the result is zero or negative. Row 0 is the disbursement and is entered unclamped. This example shows how the discount factor and NPV value are derived for each installment.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>PaymentsLeft</th>
+<th>DiscountFactor</th>
+<th>ExpectedPayment</th>
+<th>NPVValue</th>
+<th>RunningNPV</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>0 (Disbursement)</td>
+<td>4</td>
+<td>1.0000</td>
+<td>–</td>
+<td>-900.00</td>
+<td>-900.00</td>
+</tr>
+<tr>
+<td>1</td>
+<td>4</td>
+<td>0.8227</td>
+<td>250.00</td>
+<td>205.68</td>
+<td>-694.32</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3</td>
+<td>0.8638</td>
+<td>250.00</td>
+<td>215.96</td>
+<td>-478.36</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>0.9070</td>
+<td>250.00</td>
+<td>226.76</td>
+<td>-251.60</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>0.9524</td>
+<td>250.00</td>
+<td>238.10</td>
+<td>-13.50</td>
+</tr>
+</tbody></table>
+<p>When a working capital loan is written off, the remaining unamortized discount fee is recognized immediately so that no deferred income remains on the books. The figures below are illustrative: a loan carries a 100.00 discount fee, and one repayment plus cost-of-business processing have already recognized 10.00 of that fee. The deferred balance is therefore 90.00. On write-off, a final amortization posts the remaining 90.00 as realized income. This example shows the income and ledger movement at write-off.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>RealizedIncome</th>
+<th>UnrealizedIncome</th>
+<th>GL240005Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before write-off</td>
+<td>10.00</td>
+<td>90.00</td>
+<td>90.00 credit</td>
+</tr>
+<tr>
+<td>Write-off adjustment</td>
+<td>+90.00</td>
+<td>-90.00</td>
+<td>90.00 debit</td>
+</tr>
+<tr>
+<td>After write-off</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A working capital loan can be overpaid when a repayment exceeds the outstanding obligation. The figures below are illustrative: the loan expects 1,000.00 in total, made up of 900.00 principal and 100.00 discount fee. A repayment of 1,050.00 settles the obligation and leaves 50.00 as overpayment, moving the account to OVERPAID. A credit balance refund of 50.00 then clears the overpayment and moves the account to CLOSED_OBLIGATIONS_MET. This example shows how overpayment and refund change the account status.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>PrincipalOutstanding</th>
+<th>TotalPaidPrincipal</th>
+<th>TotalPayment</th>
+<th>RealizedIncome</th>
+<th>OverpaymentAmount</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before repayment</td>
+<td>900.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>ACTIVE</td>
+</tr>
+<tr>
+<td>After repayment 1,050.00</td>
+<td>0.00</td>
+<td>900.00</td>
+<td>1,000.00</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>OVERPAID</td>
+</tr>
+<tr>
+<td>After CBR 50.00</td>
+<td>0.00</td>
+<td>900.00</td>
+<td>1,000.00</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>CLOSED_OBLIGATIONS_MET</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Charges, Refunds and Chargebacks"/><ac:plain-text-link-body><![CDATA[Charges, Refunds and Chargebacks]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Transaction Types"/><ac:plain-text-link-body><![CDATA[Transaction Types]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Batch Jobs"/><ac:plain-text-link-body><![CDATA[Batch Jobs]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Accounting"/><ac:plain-text-link-body><![CDATA[Accounting]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

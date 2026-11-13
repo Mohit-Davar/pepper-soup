@@ -1,0 +1,17 @@
+# Interest and Accruals
+
+- [Interest-Bearing Loan Products](interest-bearing-products.md)
+- [EMI Calculation](emi.md)
+- [Interest Rates by Balance Status](rates-by-balance-status.md)
+- [366-Day Year Interest](366-day-year.md)
+- [Leap Year Interest Calculation](leap-year.md)
+- [Interest Waivers](waivers.md)
+- [Interest Refunds](refunds.md)
+- [Progressive Loan Accruals](accrual-rework.md)
+- [Accrual Activity on Installment Dates](accrual-activity.md)
+- [Pausing and Resuming Accruals](pause-resume.md)
+- [Early and Late Repayment Interest](early-late-repayment.md)
+- [Interest Rate Changes](rate-changes.md)
+- [Backdated Rate Changes](backdated-rate-changes.md)
+- [First-Day Interest](first-day.md)
+- [Real-Time Charge Accruals](real-time-charge-accruals.md)

@@ -1,0 +1,346 @@
+<h2>Charge amortization overview</h2>
+<p>Charge amortization spreads certain loan charge income over the loan term instead of recognizing it all at once. It applies to charges such as origination, arrangement, and processing fees that accounting standards require to be deferred and recognized as a yield adjustment.</p>
+<p>Today Fineract recognizes charge income depending on the product&#39;s accounting rule: ACCRUAL_PERIODIC accrues periodically, ACCRUAL_UPFRONT accrues fully at disbursement, CASH_BASED is recognized when paid, and NONE creates no journal entries. None of today&#39;s accounting rules can spread a fee&#39;s income over the loan term or over a fixed number of days independently of when the fee is due or paid.</p>
+<p>Default NONE everywhere; existing charges, products and loans behave the same, no data migration is needed, and API changes only add fields.</p>
+<h2>Eligibility and supported charges</h2>
+<p>Charge amortization applies only to progressive loans (advanced-payment-allocation-strategy) and only to loan fees. Eligible charge time types are DISBURSEMENT, TRANCHE_DISBURSEMENT and SPECIFIED_DUE_DATE. It does not apply to cumulative loans, installment or overdue fees, or savings charges, and it does not recalculate historical periods under the effective rate method.</p>
+<h2>Charge amortization configuration</h2>
+<p>Each charge can have an amortization schedule. A loan charge definition sets an amortization period type of NONE (default), FULL_LOAN_TERM or NUMBER_OF_DAYS; NUMBER_OF_DAYS requires a positive integer amortization days value. It also sets an amortization calculation type of FLAT (default) or EFFECTIVE_RATE, and an amortization income type of FEE (default) or INTEREST. The charge definition&#39;s amortization configuration is copied onto the loan charge when the loan charge is created; later changes to the charge definition do not affect existing loan charges.</p>
+<p>Charge amortization applies to a loan product only when its enable charge amortization flag is on.</p>
+<ul>
+<li>The flag defaults to false.</li>
+<li>Charge amortization is allowed with ACCRUAL_PERIODIC, ACCRUAL_UPFRONT and NONE, and rejected for CASH_BASED.</li>
+<li>A product can optionally override the charge-level amortization configuration for each attached charge.</li>
+</ul>
+<p>Amortization period type options.</p>
+<table>
+<thead>
+<tr>
+<th>Period type</th>
+<th>Requirement</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>NONE</td>
+<td>Default; no amortization days value required.</td>
+</tr>
+<tr>
+<td>FULL_LOAN_TERM</td>
+<td>No amortization days value required.</td>
+</tr>
+<tr>
+<td>NUMBER_OF_DAYS</td>
+<td>Requires a positive integer amortization days value.</td>
+</tr>
+</tbody></table>
+<p>Amortization calculation and income type options.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Calculation type</td>
+<td>FLAT or EFFECTIVE_RATE</td>
+<td>FLAT</td>
+</tr>
+<tr>
+<td>Income type</td>
+<td>FEE or INTEREST</td>
+<td>FEE</td>
+</tr>
+</tbody></table>
+<h2>Accounting rules and journal entries</h2>
+<p>When you apply an amortized charge, its full amount goes to deferred income liability and the receivable is booked against it. Daily amortization moves income from deferred income into income. Accrual does not recognize income for an amortized charge, so income is never counted twice. Amortized charges are excluded from all accrual processing: periodic, upfront, accrual adjustment, accrual activity, and accrual on closure or charge-off.</p>
+<p>Journal entries for amortized charges:</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge becomes effective</td>
+<td>Fee receivable</td>
+<td>Deferred income</td>
+</tr>
+<tr>
+<td>Daily amortization</td>
+<td>Deferred income</td>
+<td>Fee income or Interest income</td>
+</tr>
+<tr>
+<td>Amortization reversal</td>
+<td>Fee income or Interest income</td>
+<td>Deferred income</td>
+</tr>
+<tr>
+<td>Repayment of the charge</td>
+<td>Fund source</td>
+<td>Fee receivable</td>
+</tr>
+<tr>
+<td>Waiver or charge adjustment</td>
+<td>Deferred income</td>
+<td>Fee receivable</td>
+</tr>
+<tr>
+<td>Closure (paid off or overpaid)</td>
+<td>Deferred income</td>
+<td>Fee income or Interest income</td>
+</tr>
+<tr>
+<td>Closure (written off)</td>
+<td>Deferred income</td>
+<td>Losses written off</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Deferred income</td>
+<td>Charge-off expense, fraud expense, or the account mapped to the reason</td>
+</tr>
+</tbody></table>
+<p>Transaction types and their journal lines:</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DEFERRED_CHARGE</td>
+<td>FEES_RECEIVABLE</td>
+<td>DEFERRED_INCOME_LIABILITY</td>
+</tr>
+<tr>
+<td>DEFERRED_CHARGE_AMORTIZATION (not charged off)</td>
+<td>DEFERRED_INCOME_LIABILITY</td>
+<td>INCOME_FROM_FEES or the income account mapped to the charge, or INTEREST_ON_LOANS; LOSSES_WRITTEN_OFF if the loan is written off</td>
+</tr>
+<tr>
+<td>DEFERRED_CHARGE_AMORTIZATION (charged off)</td>
+<td>DEFERRED_INCOME_LIABILITY</td>
+<td>The account mapped to the charge-off reason, otherwise CHARGE_OFF_EXPENSE or CHARGE_OFF_FRAUD_EXPENSE</td>
+</tr>
+<tr>
+<td>DEFERRED_CHARGE_AMORTIZATION_ADJUSTMENT</td>
+<td>Fee income or interest income</td>
+<td>DEFERRED_INCOME_LIABILITY</td>
+</tr>
+<tr>
+<td>WAIVE_CHARGES or CHARGE_ADJUSTMENT on an amortized charge</td>
+<td>DEFERRED_INCOME_LIABILITY</td>
+<td>FEES_RECEIVABLE</td>
+</tr>
+<tr>
+<td>Repayment (fee portion)</td>
+<td>Fund source</td>
+<td>FEES_RECEIVABLE</td>
+</tr>
+</tbody></table>
+<p>All posting rules go in AccrualBasedAccountingProcessorForLoan. With accrual accounting, the product must have GL mappings for fee receivable, deferred income liability, fee income, and interest income if any attached charge uses income type INTEREST. When a loan has several amortized charges, their amounts are combined into one transaction per day; the amount per charge stays traceable through allocation mappings, the read API, and fee income accounts mapped to individual charges.</p>
+<h2>Amortization calculation methods</h2>
+<p>Two calculation methods amortize charge amounts over the amortization window: FLAT and EFFECTIVE_RATE. FLAT spreads the amount evenly by day over the window. EFFECTIVE_RATE uses a level-yield method based on the loan&#39;s contractual cash flows and amortizes all effective-rate charges on a loan as one group before splitting the result back to each charge.</p>
+<p>FLAT rules:</p>
+<ul>
+<li>Waivers and adjustments reduce the amount still to recognize from their date onward.</li>
+<li>A change in maturity spreads the remaining amount over the days left.</li>
+<li>Recognizable(tillDate) equals the sum over adjustment segments of <code>unrecognized_at_segment_start * days_in_segment / days_from_segment_start_to_window_end</code>.</li>
+</ul>
+<p>EFFECTIVE_RATE rules:</p>
+<ul>
+<li>The starting net carrying amount N0 equals disbursed principal minus the sum of effective-rate charge amounts collected at t0; charges collected later count as cash inflows on their due dates.</li>
+<li>Contractual cash flow CFi equals principal plus interest plus any effective-rate charge portion due on each installment date ti, taken from the progressive schedule model.</li>
+<li>The rate r is solved such that <code>sum(CFi / (1+r)^(di/365)) = N0</code>, using Newton–Raphson with bisection fallback, following the product&#39;s days-in-year setting.</li>
+<li>For period k, EIR income k equals <code>C k-1 * ((1+r)^(days k/365) - 1)</code>, amortization k equals EIR income k minus contractual interest k, and <code>C k = C k-1 + EIR income k - CF k</code>.</li>
+</ul>
+<h2>Amortization window and timing</h2>
+<p>The amortization window runs from the balance date to either window_end_date or the loan&#39;s current maturity date, whichever comes first. A NUMBER_OF_DAYS window ends at min(start + X, maturity). A COB run for business date D recognizes income through the end of D, using tillDate + 1 as the exclusive end.</p>
+<h2>Daily COB amortization</h2>
+<p>Charge amortization recognizes the portion of deferred income as income each day at close of business (COB), the nightly job that posts interest and fees. The system keeps the fee balance during amortization and creates one aggregated Deferred Charge Amortization transaction per loan at end of day (EOD).</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["COB step DEFERRED_CHARGE_AMORTIZATION"]
+  n2["Open deferred charge balance?"]
+  n3["Delta = recognizable(tillDate) - alreadyAmortized"]
+  n4["Allocation mapping AM or AM_ADJ"]
+  n5["One aggregated DEFERRED_CHARGE_AMORTIZATION transaction per loan"]
+  n6["DEBIT Deferred income / CREDIT Fee income (or Interest income)"]
+  n7["Create Deferred Charge transaction for future-dated charge once due date arrives"]
+  n8["End"]
+  n1 --> n2
+  n2 -->|"Yes"| n3
+  n2 -->|"No"| n8
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n5 --> n7
+  n7 --> n8]]></ac:plain-text-body></ac:structured-macro>
+<h2>Transaction types and balancing</h2>
+<p>The system calculates the difference between the discount fee amortization balance on the schedule and the total discount fee amortization transactions minus total discount fee amortization adjustment transactions. A positive difference creates a Discount fee amortization transaction for the difference amount. A negative difference creates a Discount fee amortization adjustment transaction for the difference amount. When the difference is zero, no transaction is created. At end of day, the system recalculates and posts any difference as of the current date. When a loan is fully paid or overpaid, the system creates the transaction immediately and updates realized and unrealized discount fee income balances.</p>
+<table>
+<thead>
+<tr>
+<th>Difference</th>
+<th>Transaction created</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Positive</td>
+<td>Discount fee amortization transaction</td>
+</tr>
+<tr>
+<td>Negative</td>
+<td>Discount fee amortization adjustment transaction</td>
+</tr>
+<tr>
+<td>Zero</td>
+<td>No transaction</td>
+</tr>
+</tbody></table>
+<h2>Closure, charge-off, sale, and reopening</h2>
+<p>When a loan closes, is overpaid, is written off, is sold or transferred to an external asset owner, or is reopened, the remaining deferred charge balance is recognized or released according to the event.</p>
+<p>Closure and overpayment:</p>
+<ul>
+<li>When the loan reaches closed obligations met or overpaid, the remaining deferred balance is recognized in one shot on the closed or overpaid date.</li>
+<li>When written off, the remaining amount is released and credited to Losses written off.</li>
+<li>When reopened after closure, the next run recalculates against the real window and reverses any over-recognized income.</li>
+</ul>
+<p>Charge-off:</p>
+<ul>
+<li>Before charge-off, amortization catches up to the business date.</li>
+<li>On charge-off, the remaining amount is released linked to the charge-off with RELATED; charged_off_amount equals unrecognized_amount, then unrecognized_amount becomes 0.</li>
+<li>The credit goes to charge-off expense, charge-off fraud expense, or the account mapped to the charge-off reason.</li>
+</ul>
+<p>Sale or transfer:</p>
+<ul>
+<li>When an external asset owner sale or transfer settles, the remaining balance is recognized on the settlement date.</li>
+</ul>
+<p>Undo disbursement:</p>
+<ul>
+<li>Undoing disbursement reverses or removes all Deferred Charge transactions, amortizations and balances.</li>
+</ul>
+<p>Business events:</p>
+<ul>
+<li>Before LoanCloseBusinessEvent, release on closure without journal entries.</li>
+<li>After LoanBalanceChangedBusinessEvent, release on closure with journal entries.</li>
+<li>Before LoanChargeOffPreBusinessEvent, catch up to the business date.</li>
+<li>After LoanChargeOffPostBusinessEvent, release linked to the charge-off.</li>
+<li>After LoanUndoChargeOffBusinessEvent, reverse the release and restore the balance.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Active" as n1
+  state "Closed" as n2
+  state "Overpaid" as n3
+  state "Written Off" as n4
+  state "Charge Off" as n5
+  state "Reopened" as n6
+  n1 --> n2 : paid off / obligations met
+  n1 --> n3 : overpaid
+  n1 --> n4 : written off
+  n1 --> n5 : charge-off
+  n2 --> n6 : reopened
+  n5 --> n6 : undo charge-off]]></ac:plain-text-body></ac:structured-macro>
+<h2>Waivers, adjustments, deletions, and reversals</h2>
+<p>When a charge is waived or adjusted, amount_adjustment grows from that date, amortization is recalculated, and income already recognized above the new amount is reversed with AM_ADJ. When a loan charge is deleted or inactivated, the DEFERRED_CHARGE transaction is reversed and the balance is marked deleted; all recognized income is reversed with AM_ADJ, then the balance is closed. For a backdated repayment or reversal (replay), there is no effect for FLAT; EFFECTIVE_RATE is recalculated only if the cash flows changed.</p>
+<h2>Reschedule, re-age, and maturity changes</h2>
+<p>A reschedule, re-age, re-amortization, or maturity change sets the full loan term to the new maturity, leaves the number of days unchanged except for the maturity cap, and recalculates the effective rate going forward using the current carrying amount, the unrecognized balance, and the remaining cash flows.</p>
+<h2>Discount fee amortization</h2>
+<p>Discount fee amortization applies to discount fee transactions at disbursement, after disbursement on the effective disbursement date, or when disbursement and discount fee occur in one transaction.</p>
+<p>Adjustments follow these rules:</p>
+<ul>
+<li>You can make partial adjustments multiple times until the remaining amount reaches zero.</li>
+<li>An adjustment greater than the remaining amount is rejected.</li>
+<li>You can backdate an adjustment or undo it.</li>
+<li>You can undo a discount fee adjustment on a repaid or closed loan.</li>
+</ul>
+<h2>Database schema and indexes</h2>
+<p>The m_loan_deferred_charge_balance table has an index on (loan_id, is_closed). The m_loan_amortization_allocation_mapping table is reused unchanged.</p>
+<h2>Business events and listeners</h2>
+<p>The LoanDeferredChargeAmortizationEventService mirrors LoanCapitalizedIncomeAmortizationEventService and handles charge amortization events for loans. Each listener first checks that enableChargeAmortization is on and that the loan has open balances.</p>
+<h2>Events and permissions</h2>
+<p>Business events and Avro schemas exist for every new transaction type and are registered in the external event configuration, where they are disabled by default. The new read endpoints use the existing READ_LOAN permission; configuration changes use the existing charge and loan product permissions.</p>
+<h2>Read API endpoints</h2>
+<p>Use these endpoints to read charge amortization data for a loan. POST/PUT /charges and GET /charges/template add amortizationPeriodType, amortizationDays, amortizationCalculationType, amortizationIncomeType and the template options. POST/PUT /loanproducts adds enableChargeAmortization and the accounting mapping validation.</p>
+<p>Charge-level endpoints:</p>
+<ul>
+<li>GET /loans/{loanId}/deferred-charges returns the balance per charge: amount, adjustment, recognized, unrecognized, charged-off, window, and configuration.</li>
+<li>GET /loans/{loanId}/deferred-charges/{loanChargeId}/amortization-schedule returns projected and actual amortization rows per installment period for one charge.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A progressive loan is disbursed on day 1 with a 120-day term (four 30-day months). A disbursement fee of 1,200.00 is configured with amortization period type FULL_LOAN_TERM, calculation type FLAT, and income type FEE. The figures are illustrative. When the charge is applied, a DEFERRED_CHARGE transaction debits FEES_RECEIVABLE 1,200.00 and credits DEFERRED_INCOME_LIABILITY 1,200.00, and the fee is repaid the same day by debiting the fund source and crediting FEES_RECEIVABLE 1,200.00. Each COB run books a DEFERRED_CHARGE_AMORTIZATION of 10.00 per day (1,200.00 divided by 120 days), debiting DEFERRED_INCOME_LIABILITY and crediting INCOME_FROM_FEES. Amounts are cumulative, so the entry for any date equals recognizable income to date minus income already amortized, which prevents rounding drift. If the loan is paid off before maturity, the remaining deferred balance is released in one shot on the closure date. With NUMBER_OF_DAYS instead of FULL_LOAN_TERM, the window ends at the earlier of the configured day count or maturity, so the daily amount is larger and recognition stops earlier.</p>
+<p>The example shows that the full deferred amount is recognized by maturity or early closure, with any unrecognized balance released in one shot when the loan is paid off.</p>
+<table>
+<thead>
+<tr>
+<th>Business date</th>
+<th>Event</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Cumulative fee income</th>
+<th>Unrecognized deferred balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 1</td>
+<td>Charge applied (DEFERRED_CHARGE)</td>
+<td>FEES_RECEIVABLE 1,200.00</td>
+<td>DEFERRED_INCOME_LIABILITY 1,200.00</td>
+<td>0.00</td>
+<td>1,200.00</td>
+</tr>
+<tr>
+<td>Day 1</td>
+<td>Fee repaid</td>
+<td>Fund source 1,200.00</td>
+<td>FEES_RECEIVABLE 1,200.00</td>
+<td>0.00</td>
+<td>1,200.00</td>
+</tr>
+<tr>
+<td>Day 1</td>
+<td>Daily amortization</td>
+<td>DEFERRED_INCOME_LIABILITY 10.00</td>
+<td>INCOME_FROM_FEES 10.00</td>
+<td>10.00</td>
+<td>1,190.00</td>
+</tr>
+<tr>
+<td>Day 30</td>
+<td>Daily amortization (days 2–30)</td>
+<td>DEFERRED_INCOME_LIABILITY 290.00</td>
+<td>INCOME_FROM_FEES 290.00</td>
+<td>300.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>Day 60</td>
+<td>Daily amortization (days 31–60)</td>
+<td>DEFERRED_INCOME_LIABILITY 300.00</td>
+<td>INCOME_FROM_FEES 300.00</td>
+<td>600.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>Day 90</td>
+<td>Daily amortization (days 61–90)</td>
+<td>DEFERRED_INCOME_LIABILITY 300.00</td>
+<td>INCOME_FROM_FEES 300.00</td>
+<td>900.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Day 91</td>
+<td>Loan paid off — one-shot release</td>
+<td>DEFERRED_INCOME_LIABILITY 300.00</td>
+<td>INCOME_FROM_FEES 300.00</td>
+<td>1,200.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

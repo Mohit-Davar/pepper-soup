@@ -1,526 +1,273 @@
-<h2>Pausing Delinquency</h2>
-<h3>Delinquency evaluation basics</h3>
-<p>Delinquency is evaluated at the installment level because both the outstanding amount and the due time change per installment. The system evaluates each overdue installment and assigns its amounts to the respective delinquency bucket for the loan account. Down-payment installments are also considered for delinquency classification.</p>
-<p>Delinquency status and bucket behaviour:</p>
+<h2>About pausing delinquency</h2>
+<p>Pausing delinquency stops delinquency evaluation for an active loan while the pause remains in effect. It applies to both loan-level and installment-level delinquency calculation. You can change delinquency settings at the loan level, including pausing delinquency; re-age delinquency and reset delinquency are not part of this feature.</p>
+<p>Rules:</p>
 <ul>
-<li>The loan account remains delinquent until every installment comes out of its delinquency bucket.</li>
-<li>When an installment moves from one bucket to another, it appears only in the new bucket and no history of the old bucket is stored.</li>
-<li>Delinquency calculation is real-time and no history of bucket changes is maintained.</li>
-<li>Changes to delinquency bucket configuration affect all existing loan account bucket classifications.</li>
-<li>When the overdue loan account is paid and one old installment is paid fully, only that installment comes out of the delinquency bucket; the loan remains delinquent until all installments come out of the delinquency bucket.</li>
+<li>Pause and resume apply only to active loans.</li>
+<li>While a loan is actively paused, no delinquency evaluation runs and the existing delinquency bucket stays as is.</li>
+<li>Paying all delinquent amounts removes the delinquent state or tag even while delinquency is paused.</li>
 </ul>
-<p>Status changes based on days past due:</p>
-<ul>
-<li>At 1 day past due, the loan is marked as PAST_DUE.</li>
-<li>At 4 days past due, the loan is marked as DELINQUENT and the PAST_DUE tag is removed.</li>
-</ul>
-<p>Scope and configuration:</p>
-<ul>
-<li>The delinquency tab at the loan level shows all configured delinquency buckets.</li>
-<li>Delinquency bucket classification configuration remains the same for both levels.</li>
-<li>Delinquency works normally for charge-off tagged loan accounts.</li>
-<li>Charge off of the remaining balance on the loan is triggered for non-payment.</li>
-</ul>
-<p>Other behaviour:</p>
-<ul>
-<li>When reverse or backdated repayment happens, each installment delinquency is recalculated and assigned to the respective new buckets.</li>
-<li>The delinquency level configuration cannot be changed from installment to loan when there are active loans with installment delinquency buckets.</li>
-<li>Grace options for installment delinquency are not required; the past due bucket is configured for 1-3 days and treated as a grace period.</li>
-<li>Past due to D20 to D40 behavior can vary by product and market, and grace period impacts effects.</li>
-</ul>
-<h3>Pause and resume overview</h3>
-<p>Pausing delinquency stops delinquency evaluation for an active loan account while the pause is active, and the delinquency bucket remains unchanged. You can pause and resume delinquency only on active loan accounts, and overlapping pause periods are not allowed.</p>
-<p>Pause periods follow these rules:</p>
-<ul>
-<li>A pause can start today or later and must last at least a day, with the start date before the end date.</li>
-<li>A pause cannot be backdated.</li>
-<li>The end date cannot be the same as the start date.</li>
-<li>A loan account can have multiple pause periods, but they must not overlap.</li>
-<li>If a pause was not manually resumed in the middle of the period, it resumes automatically after the pause period.</li>
-</ul>
-<p>Resume follows these rules:</p>
-<ul>
-<li>Resume is possible only when there is an active pause period.</li>
-<li>The resume date is always the current business date, and no future resume is possible.</li>
-<li>The resume end date must not be specified.</li>
-<li>When a pause period is resumed, the resume date becomes the pause end date of that pause period.</li>
-</ul>
-<p>Delinquency behaviour during and after a pause:</p>
-<ul>
-<li>While delinquency is paused, no evaluation of delinquency is required and the delinquency bucket remains as is.</li>
-<li>Payment in full of delinquent amounts removes any delinquent state or tag even while delinquency is paused.</li>
-<li>If the loan is repaid, delinquency pause stops because the loan is no longer in delinquency.</li>
-<li>When business date equals the last day of pause, delinquency recalculation happens.</li>
-<li>When delinquency is resumed, delinquency is recalculated at next CoB.</li>
-<li>COB takes past paused delinquency periods into account when calculating delinquency after a pause.</li>
-</ul>
-<p>Pause days calculation:</p>
-<ul>
-<li>Pause days calculation happens only till the new end date, which is the resume date.</li>
-<li>The resume date becomes the pause end date for pause dates calculation.</li>
-</ul>
-<p>Pause scope and query results:</p>
-<ul>
-<li>Pause controls whether delinquency re-calculation runs for both loan level delinquency and installment level delinquency calculation.</li>
-<li>If the pause query returns nothing, delinquency calculation is enabled.</li>
-<li>If the pause query returns a PAUSE entry, delinquency calculation is currently paused.</li>
-<li>If the pause query returns a Resume entry, delinquency calculation is enabled.</li>
-</ul>
-<blockquote>
-<p><strong>Note:</strong> Only Pause and Resume actions are currently supported.</p>
-</blockquote>
-<h3>Pause and resume rules and constraints</h3>
-<p>You can set a pause start date in the past. Delinquency recalculation happens when a backdated pause starts, as of the current date loan status, and the loan-level pause flag updates in real time.</p>
-<p>The pause start date must meet these conditions:</p>
-<ul>
-<li>It cannot be before the last pause period end date if a pause period already exists.</li>
-<li>It cannot be before the first disbursement date of the loan account if no pause period exists already.</li>
-<li>It can start as of an old past end date because pause day calculation works on N+1 days.</li>
-</ul>
-<p>The effect of a pause depends on the dates you enter:</p>
-<ul>
-<li>If both the start date and end date are backdated, the pause has no effect.</li>
-<li>If the start date is backdated and the end date is in the future, the pause takes effect.</li>
-<li>If both dates are in the future or are the current date, the pause works normally.</li>
-</ul>
-<p>Overlapping pauses and resumes behave as follows:</p>
-<ul>
-<li>Multiple pauses are allowed for the same period with the same start date but different idempotency keys.</li>
-<li>Multiple resumes are allowed for the same date with different idempotency keys; the same idempotency key returns an idempotent response.</li>
-<li>A resume on an overlapping date resumes both pauses.</li>
-<li>Overlapping pauses are allowed in some scenarios, for example Pause1 from 12/10 to 12/25 and Pause2 from 12/13 to 12/18 can both be created successfully.</li>
-<li>In an overlapping pause scenario, a resume action removes the pause on both pause periods.</li>
-</ul>
-<p>Delinquency ranges and grace periods follow these rules:</p>
-<ul>
-<li>The loan-level delinquency range is the same as the installment-level delinquency range.</li>
-<li>The grace period is not counted in installment-level delinquency.</li>
-</ul>
-<p>The resume option is available only for the current active pause period.</p>
-<h3>Events and flags</h3>
-<p>When delinquency is paused on a loan account, the system emits events that carry the pause flag status, pause start date, and pause end date. If the account never had a delinquency pause set, those fields remain empty.</p>
-<p>The following events and flags apply to delinquency pauses:</p>
-<ul>
-<li>Setting the pause flag to true or false emits an account changed event and an Existing Delinquency Event.</li>
-<li>A flag indicates whether delinquency is paused or not.</li>
-<li>While a loan account is actively paused, no delinquency evaluation is required and the delinquency bucket remains as is.</li>
-<li>When a loan was not paused on the previous day but becomes paused today, the COB job triggers a LoanDelinquencyRangeChangeBusinessEvent.</li>
-<li>When a loan was in pause on the previous day but comes out of pause today, the COB job triggers a LoanDelinquencyRangeChangeBusinessEvent.</li>
-<li>At the COB job, the pause flag is set to false when a pause is resumed and the loan account is included in the delinquency calculation.</li>
-<li>Pause delinquency is the only feature in scope; re-aging/freezing and reset are out of scope.</li>
-</ul>
-<p>Backdated payments reverse and replay the loan account, which recalculates pause and delinquency days, but delinquency recalculation due to backdated actions is out of scope.</p>
-<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
-  state "Delinquency not paused" as n1
-  state "Delinquency paused" as n2
-  n1 --> n2 : Pause flag set to true
-  n2 --> n1 : Pause flag set to false]]></ac:plain-text-body></ac:structured-macro>
-<h3>User interface</h3>
-<p>Delinquency pause is a loan-level feature shown in the Delinquency Settings of the loan. You can pause and resume delinquency at the loan account level using the pause and resume buttons under the more button on the loan account view. The settings menu options include pause delinquency of the loan; re-age delinquency and reset delinquency are out of scope.</p>
-<p>There is an option to select the delinquency level (loan level or installment level) at the loan product level.</p>
+<h2>Pause delinquency on a loan</h2>
+<p>Use the Loan Delinquency Actions dialog to pause delinquency for an active loan by setting a pause period.</p>
 <ol>
-<li>Open the loan account.</li>
-<li>Choose &quot;Loan Reschedules&quot; from the tabs.</li>
-<li>Open the loan delinquency tags tab.</li>
-<li>Choose Enable Delinquency, Pause Delinquency Classification, Reschedule, Reset, Undo Reset, Disable Delinquency or Resume Delinquency Classification.</li>
-<li>On the loan delinquency action dialog, enter the Start Date and End Date, then choose Submit.</li>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Delinquency Tags</strong> tab.</li>
+<li>Select <strong>Create Delinquency Action</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
 </ol>
-<p>The loan delinquency action dialog behaves as follows:</p>
-<ul>
-<li>Start Date and End Date are required fields.</li>
-<li>The dialog offers Cancel and Submit buttons and displays the text Loan Delinquency Actions.</li>
-<li>You can create a pause start date that backdates from the UI.</li>
-<li>Validation messages appear when the pause start date is added before the existing pause end date or before the disbursement date.</li>
-</ul>
 <table>
 <thead>
 <tr>
-<th>Column</th>
+<th>Field</th>
+<th>Required</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Total Actions</td>
-<td>Total number of delinquency actions</td>
-</tr>
-<tr>
-<td>Active Pause</td>
-<td>Whether a pause is active</td>
-</tr>
-<tr>
-<td>Total Days Paused</td>
-<td>Number of days paused</td>
-</tr>
-<tr>
-<td>Last Action</td>
-<td>Most recent delinquency action</td>
-</tr>
-<tr>
-<td>Delinquency evaluation disabled</td>
-<td>Whether delinquency evaluation is disabled</td>
-</tr>
-<tr>
-<td>Pause Active</td>
-<td>Whether a pause is active</td>
-</tr>
-<tr>
-<td>Pause Timeline</td>
-<td>Timeline of pauses</td>
-</tr>
-<tr>
-<td>Active</td>
-<td>Active status</td>
-</tr>
-<tr>
-<td>Scheduled</td>
-<td>Scheduled status</td>
-</tr>
-<tr>
-<td>Expired</td>
-<td>Expired status</td>
-</tr>
-<tr>
-<td>Pauses</td>
-<td>List of pauses</td>
-</tr>
-<tr>
-<td>Today</td>
-<td>Current date reference</td>
-</tr>
-<tr>
-<td>Total Records</td>
-<td>Total number of records</td>
-</tr>
-<tr>
-<td>Id</td>
-<td>Record identifier</td>
-</tr>
-<tr>
-<td>Action</td>
-<td>Action type</td>
-</tr>
-<tr>
-<td>Status</td>
-<td>Action status</td>
-</tr>
-<tr>
 <td>Start Date</td>
-<td>Action start date</td>
+<td>Yes</td>
+<td>Enter the date the pause starts. It must be today or later and cannot be backdated.</td>
 </tr>
 <tr>
 <td>End Date</td>
-<td>Action end date</td>
-</tr>
-<tr>
-<td>Duration</td>
-<td>Action duration</td>
-</tr>
-<tr>
-<td>Minimum Payment</td>
-<td>Minimum payment amount</td>
-</tr>
-<tr>
-<td>Frequency</td>
-<td>Payment frequency</td>
-</tr>
-<tr>
-<td>Created On</td>
-<td>Creation date</td>
-</tr>
-<tr>
-<td>Actions</td>
-<td>Available actions</td>
-</tr>
-<tr>
-<td>Ongoing</td>
-<td>Ongoing status</td>
-</tr>
-<tr>
-<td>No records match the selected filter</td>
-<td>Message when no records match</td>
-</tr>
-<tr>
-<td>No Delinquency Actions</td>
-<td>Message when no actions exist</td>
-</tr>
-<tr>
-<td>No delinquency actions have been recorded for this loan</td>
-<td>Message when no actions are recorded</td>
-</tr>
-<tr>
-<td>Loan Delinquency Range Schedule</td>
-<td>Schedule header</td>
-</tr>
-<tr>
-<td>Period</td>
-<td>Schedule period</td>
-</tr>
-<tr>
-<td>Expected Amount</td>
-<td>Expected payment amount</td>
-</tr>
-<tr>
-<td>Paid Amount</td>
-<td>Amount paid</td>
-</tr>
-<tr>
-<td>Outstanding Amount</td>
-<td>Amount outstanding</td>
-</tr>
-<tr>
-<td>Delinquent Days</td>
-<td>Number of delinquent days</td>
-</tr>
-<tr>
-<td>Delinquent Amount</td>
-<td>Delinquent amount</td>
-</tr>
-<tr>
-<td>Minimum Payment Criteria Met</td>
-<td>Whether minimum payment criteria are met</td>
-</tr>
-<tr>
-<td>Reset delinquency period (neutralized, no expected amount)</td>
-<td>Reset period description</td>
-</tr>
-<tr>
-<td>Reset</td>
-<td>Reset action</td>
-</tr>
-<tr>
-<td>Loan Delinquency Tags</td>
-<td>Tab title</td>
-</tr>
-<tr>
-<td>Delinquency Classification</td>
-<td>Classification section</td>
+<td>Yes</td>
+<td>Enter the date the pause ends. It must be after the start date and cannot be the same day.</td>
 </tr>
 </tbody></table>
+<p>Delinquency calculation is paused for the loan account during the pause period and no delinquency evaluation is required while it is actively paused.</p>
+<h2>Pause delinquency classification</h2>
+<p>Use the loan delinquency tags tab to stop delinquency evaluation for an active loan so its delinquency bucket stays as is while the pause is active.</p>
 <ol>
-<li>You can reset the delinquency from the UI.</li>
-<li>You can see the reset delinquency data.</li>
-<li>You can undo or delete the latest delinquency reset from the UI.</li>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Delinquency Tags</strong> tab.</li>
 </ol>
-<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
-  n1["Open loan account"]
-  n2["Open Loan Delinquency Tags tab"]
-  n3["Choose delinquency action"]
-  n4["Loan Delinquency Actions dialog"]
-  n5["Enter Start Date and End Date"]
-  n6["Submit"]
-  n7["View delinquency tags"]
-  n1 --> n2
-  n2 --> n3
-  n3 --> n4
-  n4 --> n5
-  n5 --> n6
-  n6 --> n7]]></ac:plain-text-body></ac:structured-macro>
-<h3>Reschedule and reset</h3>
-<p>You can reschedule an active loan account multiple times from the UI, including on the same date.</p>
-<h3>COB processing</h3>
-<p>The delinquency job runs every day at close of business. It evaluates each loan to determine the correct delinquency bucket and assigns that bucket. A paused loan can be resumed; a pause cannot be undone by updating or deleting the pause itself, the resume action must be used. When calculation runs after a pause period, it takes the duration of the pause into account.</p>
-<h3>Worked examples</h3>
-<p>A loan officer reviews an active loan with a principal of $1,000 and one installment of $250 due on January 1. The figures are illustrative. On January 5 the installment is four days past due, so the loan is delinquent and the D3 bucket shows $250. The officer pauses delinquency from January 6 through January 10. While the pause is active, the system stops evaluating delinquency and the D3 bucket stays at $250. On January 11 the pause ends automatically and the next end-of-day run recalculates delinquency, subtracting the five paused days from the days past due. This shows that while delinquency is paused, effective days past due stop increasing and the installment remains in the same bucket.</p>
+<p>Delinquency evaluation is disabled for the loan and the pause appears as active on the tab until you resume it or the pause period ends.</p>
+<h2>Eligibility and timing</h2>
+<p>A pause starts today or later and must last at least one day, so the start date must be before the end date. If no pause period exists yet, the start date cannot be before the loan&#39;s first disbursement date. If a pause period already exists, the start date cannot be before that period&#39;s end date. The end date cannot be the same as the start date. Delinquency recalculation happens on the last day of the pause. If the loan is repaid, the delinquency pause stops.</p>
+<h2>Pausing delinquency</h2>
+<p>You can pause delinquency on a loan account from the loan account level. Pause and resume buttons appear under the More button on the loan account view. You can set a pause start date in the past. The system shows a validation error if the pause start date is before an existing pause end date or before the disbursement date.</p>
+<h2>Resuming delinquency</h2>
+<p>When you resume delinquency after a pause, delinquency is recalculated at the next close of business (COB), the nightly job that posts interest and fees. The resume date becomes the pause end date for that pause period, and pause days are calculated only up to that date. Resume affects only the delinquency schedule and calculation; it has no impact on breach management.</p>
+<p>Resume rules:</p>
+<ul>
+<li>You cannot undo a resume.</li>
+<li>You cannot backdate a resume.</li>
+<li>You cannot resume multiple times.</li>
+<li>Only a user with specific permission or all functions permissions can perform the resume action.</li>
+</ul>
+<h2>Pause periods and overlaps</h2>
+<p>A loan account can have multiple pause periods. Pause dates do not overlap with one another, except in some scenarios where overlapping pauses can both be created successfully.</p>
+<p>When pauses overlap:</p>
+<ul>
+<li>One resume on an overlapping date resumes both pauses.</li>
+</ul>
+<p>Multiple pauses and resumes:</p>
+<ul>
+<li>Multiple pauses are allowed for the same period with the same start date but different idempotency key.</li>
+<li>Multiple resumes are allowed for the same date with different idempotency key; the same idempotency key returns an idempotent response.</li>
+</ul>
+<h2>Pause flag and status</h2>
+<p>A pause flag shows whether delinquency calculation is paused for a loan. The flag is true when the current date falls within the pause period.</p>
+<p>The pause status query returns one of the following results:</p>
+<ul>
+<li>No result means delinquency calculation is enabled.</li>
+<li>A PAUSE entry means delinquency calculation is paused.</li>
+<li>A Resume entry means delinquency calculation is enabled.</li>
+</ul>
+<h2>Events and history</h2>
+<p>The system records changes to the pause flag on a loan account and keeps a reschedule history. Each event includes the pause flag status, the pause start date and the pause end date.</p>
+<p>The COB job triggers a LoanDelinquencyRangeChangeBusinessEvent when:</p>
+<ul>
+<li>A loan that was not paused on the previous day becomes paused today.</li>
+<li>A loan that was paused on the previous day comes out of pause today.</li>
+</ul>
+<p>At the COB job:</p>
+<ul>
+<li>The system sets the pause flag of the loan account to false.</li>
+</ul>
+<p>If a user creates a pause on 27th November with a start date of 25th November, the system sends a loan account change event as of 27th November because a new pause period was just added.</p>
+<h2>Backdated pauses</h2>
+<p>A backdated pause applies a pause to a loan account starting from a date in the past. When you create one, the system recalculates delinquency as of the current loan status and updates the loan-level pause flag in real time. It then retriggers and recomputes the delinquency schedule and evaluation based on the new backdated pause. Only pause and resume actions are supported.</p>
+<h2>Delinquency calculation during and after pause</h2>
+<p>The daily delinquency job runs at close of business (COB), evaluates each loan, and assigns it to the correct delinquency bucket. COB disregards delinquency calculation during a pause, so delinquency does not change for loans with paused calculation. Delinquency calculation takes into account a pause that was paused in the past.</p>
+<p>The system retrieves all pause and resume entries for the loan, merges them into effective pause periods, and filters out entries that do not overlap with a pause period.</p>
+<p>Effective delinquency is calculated as:</p>
+<ul>
+<li>current date minus unpaid installment date minus sum of relevant pause days</li>
+</ul>
+<h2>Delinquency buckets and levels</h2>
+<p>Delinquency is calculated at the installment level because both the outstanding amount and the time it is due change per installment. At the loan level under the delinquency tab, the system shows all configured delinquency buckets, evaluates each overdue installment, assigns installment amounts to the respective bucket, and marks the loan delinquent. The loan remains marked delinquent even if only one installment is in a delinquency bucket. Delinquency calculation is real-time; when an installment moves from one bucket to another, only the new bucket is shown and no history of the old bucket is stored. When an overdue loan account is paid and one old installment is paid fully, only that installment comes out of the delinquency bucket; the loan remains delinquent until all installments come out.</p>
+<p>Days past due and the bucket where the past due balance moves:</p>
 <table>
 <thead>
 <tr>
-<th>Date</th>
-<th>Pause flag</th>
-<th>Calendar days past due</th>
-<th>Days paused</th>
-<th>Effective days</th>
-<th>D3 bucket</th>
-<th>Loan tag</th>
+<th>Days past due</th>
+<th>Bucket</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Jan 5</td>
-<td>No</td>
-<td>4</td>
-<td>0</td>
-<td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>1</td>
+<td>PAST_DUE</td>
 </tr>
 <tr>
-<td>Jan 7</td>
-<td>Yes</td>
-<td>6</td>
-<td>2</td>
 <td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>DELINQUENT (PAST_DUE tag removed)</td>
 </tr>
 <tr>
-<td>Jan 9</td>
-<td>Yes</td>
-<td>8</td>
 <td>4</td>
-<td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>D03</td>
 </tr>
 <tr>
-<td>Jan 10</td>
-<td>Yes</td>
-<td>9</td>
-<td>5</td>
-<td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
-</tr>
-<tr>
-<td>Jan 11</td>
-<td>No</td>
 <td>10</td>
-<td>5</td>
-<td>5</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>D10</td>
+</tr>
+<tr>
+<td>15</td>
+<td>D15</td>
+</tr>
+<tr>
+<td>30</td>
+<td>D30</td>
+</tr>
+<tr>
+<td>45</td>
+<td>D45</td>
+</tr>
+<tr>
+<td>60</td>
+<td>D60</td>
+</tr>
+<tr>
+<td>90</td>
+<td>D90</td>
+</tr>
+<tr>
+<td>120</td>
+<td>120</td>
+</tr>
+<tr>
+<td>150</td>
+<td>150</td>
+</tr>
+<tr>
+<td>180</td>
+<td>180</td>
+</tr>
+<tr>
+<td>210</td>
+<td>210</td>
 </tr>
 </tbody></table>
-<p>The same active loan has a principal of $1,000 and a $250 installment due on January 1. On January 5 the installment is four days past due and sits in the D3 bucket. The officer pauses delinquency from January 6 to January 20, but on January 10 decides to resume early. Because the resume date is always the current business date, January 10 becomes the pause end date. Pause days are counted only through January 10, and from January 11 the next end-of-day run resumes delinquency calculation. This shows that resuming early sets the pause end date to the resume date and counts pause days only up to that date.</p>
+<p>Delinquency buckets that apply when pause delinquency is FALSE and the past due balance is greater than 0.00:</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Condition</th>
+<th>Delinquency state</th>
+<th>Delinquency amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Bucket 1 Delinquent 3 Days</td>
+<td>Days past due minus days paused is greater than or equal to 3 days and less than 15 days</td>
+<td>Bucket 1</td>
+<td>Past due amount</td>
+</tr>
+<tr>
+<td>Bucket 2 Delinquent 15 Days</td>
+<td>Days past due minus days paused is greater than or equal to 15 days and less than 30 days</td>
+<td>Bucket 2</td>
+<td>Past due amount</td>
+</tr>
+</tbody></table>
+<p>There is an option to select the delinquency level (loan level or installment level) at the loan product level.</p>
+<h2>Worked examples</h2>
+<p>An operations user pauses delinquency on an active loan so the delinquency clock stops while the borrower is temporarily unable to pay. The figures below are illustrative: a $1,000.00 loan has one $250.00 installment due on January 1. No payment is made. The user pauses delinquency from January 5 through January 10. While the loan is paused, no delinquency evaluation runs and the existing bucket remains as is. When the pause ends, the system recalculates delinquency using the raw days past due minus the pause days. The example shows that pause days are subtracted from the days past due, and the delinquency bucket only changes after the pause ends. If the user resumes the pause early on January 8 instead of January 10, the pause days are counted only through January 8, so effective days past due grow faster after the resume date.</p>
 <table>
 <thead>
 <tr>
 <th>Date</th>
-<th>Action</th>
-<th>Pause flag</th>
-<th>Days paused counted</th>
-<th>Effective days</th>
-<th>D3 bucket</th>
-<th>Loan tag</th>
+<th>Raw days past due</th>
+<th>Pause days</th>
+<th>Effective days past due</th>
+<th>Evaluation runs?</th>
+<th>Delinquency bucket</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Jan 5</td>
-<td>None</td>
-<td>No</td>
+<td>Jan 2</td>
+<td>1</td>
 <td>0</td>
-<td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>1</td>
+<td>Yes</td>
+<td>Not delinquent (Past Due)</td>
 </tr>
 <tr>
-<td>Jan 8</td>
-<td>Pause active</td>
-<td>Yes</td>
-<td>3</td>
+<td>Jan 5</td>
 <td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>1</td>
+<td>3</td>
+<td>No</td>
+<td>Remains as is (Not delinquent)</td>
+</tr>
+<tr>
+<td>Jan 6</td>
+<td>5</td>
+<td>2</td>
+<td>3</td>
+<td>No</td>
+<td>Remains as is (Not delinquent)</td>
 </tr>
 <tr>
 <td>Jan 10</td>
-<td>Resume</td>
+<td>9</td>
+<td>6</td>
+<td>3</td>
 <td>No</td>
-<td>5</td>
-<td>4</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>Remains as is (Not delinquent)</td>
 </tr>
 <tr>
 <td>Jan 11</td>
-<td>None</td>
-<td>No</td>
-<td>5</td>
-<td>5</td>
-<td>$250.00</td>
-<td>Delinquent</td>
+<td>10</td>
+<td>6</td>
+<td>4</td>
+<td>Yes</td>
+<td>Bucket 1</td>
+</tr>
+<tr>
+<td>Jan 22</td>
+<td>21</td>
+<td>6</td>
+<td>15</td>
+<td>Yes</td>
+<td>Bucket 2</td>
 </tr>
 </tbody></table>
-<p>The same active loan has a principal of $1,000 and a $250 installment due on January 1. The installment is overdue and sits in the D3 bucket at $250 while delinquency is paused from January 6 to January 10. On January 8 the borrower pays the full $250. Even though delinquency is paused, payment in full of the delinquent amount removes the delinquent state and tag. The D3 bucket drops to zero and the loan is no longer delinquent, so the pause no longer applies. This shows that paying the full delinquent amount clears the delinquent state even while delinquency is paused.</p>
+<p>An operations user has paused delinquency on an active loan, but the borrower pays the full past due amount while the pause is still active. The figures below are illustrative: a $1,000.00 loan has one $250.00 installment due on January 1 that remains unpaid. Delinquency is paused from January 5 through January 20. On January 10 the loan is in Bucket 1 with $250.00 past due. On January 12 the borrower pays $250.00 in full. Even though delinquency evaluation is paused, paying the delinquent amount in full removes the delinquent state and tag. The example shows that a full payment of delinquent amounts clears the delinquent state even while delinquency calculation is paused.</p>
 <table>
 <thead>
 <tr>
 <th>Date</th>
 <th>Event</th>
-<th>Payment</th>
+<th>Past due balance</th>
+<th>Delinquency tag</th>
 <th>Pause flag</th>
-<th>D3 bucket</th>
-<th>Loan tag</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Jan 6</td>
-<td>Pause starts</td>
-<td>$0.00</td>
-<td>Yes</td>
-<td>$250.00</td>
-<td>Delinquent</td>
-</tr>
-<tr>
-<td>Jan 8</td>
-<td>Payment in full</td>
-<td>$250.00</td>
-<td>Yes</td>
-<td>$-</td>
-<td>Not delinquent</td>
-</tr>
-<tr>
-<td>Jan 9</td>
-<td>None</td>
-<td>$0.00</td>
-<td>Yes</td>
-<td>$-</td>
-<td>Not delinquent</td>
-</tr>
-<tr>
 <td>Jan 10</td>
-<td>Pause ends</td>
-<td>$0.00</td>
-<td>No</td>
-<td>$-</td>
-<td>Not delinquent</td>
-</tr>
-</tbody></table>
-<p>A loan officer manages an active loan with a principal of $1,000 and one installment of $250 due on January 1. No payment is made, so on January 5 the installment is four days past due and in the D3 bucket. The officer pauses delinquency from January 6 through January 12, seven paused days. On January 20 the calendar shows nineteen days past due, but after subtracting the seven paused days the effective days past due is twelve, which keeps the installment in the D3 bucket. Without the pause, nineteen days past due would have moved the installment into the D15 bucket. This shows that paused days are subtracted from calendar days past due, which can keep an installment in a lower bucket after the pause ends.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Pause flag</th>
-<th>Calendar days past due</th>
-<th>Days paused</th>
-<th>Effective days</th>
-<th>Bucket</th>
-<th>Loan tag</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Jan 5</td>
-<td>No</td>
-<td>4</td>
-<td>0</td>
-<td>4</td>
-<td>D3</td>
-<td>Delinquent</td>
+<td>Delinquency evaluated before payment</td>
+<td>$250.00</td>
+<td>Delinquent (Bucket 1)</td>
+<td>Paused</td>
 </tr>
 <tr>
 <td>Jan 12</td>
-<td>Yes</td>
-<td>11</td>
-<td>7</td>
-<td>4</td>
-<td>D3</td>
-<td>Delinquent</td>
-</tr>
-<tr>
-<td>Jan 13</td>
-<td>No</td>
-<td>12</td>
-<td>7</td>
-<td>5</td>
-<td>D3</td>
-<td>Delinquent</td>
-</tr>
-<tr>
-<td>Jan 20</td>
-<td>No</td>
-<td>19</td>
-<td>7</td>
-<td>12</td>
-<td>D3</td>
-<td>Delinquent</td>
+<td>Payment of $250.00 posted in full</td>
+<td>$0.00</td>
+<td>Not delinquent</td>
+<td>Paused</td>
 </tr>
 </tbody></table>

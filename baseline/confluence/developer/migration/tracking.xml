@@ -1,0 +1,148 @@
+<h2>Migration tracking overview</h2>
+<p>Migration tracking records every Fineract activity during migration, including entities, transactions, journal entries and charges. External events are marked as migration events, and a migration flag differentiates migration activity from activity after migration. The loan creation API supports the migration flag so a loan can be marked as migrated without emitting a LoanCreatedBusinessEvent that lacks migration information.</p>
+<h2>Migration APIs</h2>
+<p>Use the migration APIs to start, track, and read the migration status of a loan. You can identify a loan by its internal ID or its external ID.</p>
+<p>Start migration with one of these POST requests:</p>
+<ul>
+<li>POST v1/loans/{loanId}/migration</li>
+<li>POST v1/loans/external-id/{loanExternalId}/migration</li>
+</ul>
+<p>The request body must include:</p>
+<ul>
+<li>action (mandatory): MIGRATION_IN_PROGRESS, MIGRATION_COMPLETED, or MIGRATION_FAILED</li>
+</ul>
+<p>The POST response returns:</p>
+<ul>
+<li>resourceId</li>
+</ul>
+<p>Read migration status with one of these GET requests:</p>
+<ul>
+<li>GET v1/loans/{loanId}/migration</li>
+<li>GET v1/loans/external-id/{loanExternalId}/migration</li>
+</ul>
+<p>The GET response returns:</p>
+<ul>
+<li>status (mandatory): MIGRATION_COMPLETED, MIGRATION_IN_PROGRESS, or MIGRATION_FAILED</li>
+<li>migrationStartDateTime (optional)</li>
+<li>migrationEndDateTime (optional)</li>
+<li>locale</li>
+<li>dateformat</li>
+</ul>
+<p>Create a loan application with migration tracking by adding:</p>
+<ul>
+<li>POST v1/loans with query param migration=true</li>
+</ul>
+<h2>Migration state and datatable</h2>
+<p>The dt_migration datatable records migration state as a status field of type varchar(100).</p>
+<p>The system sends an external business event when:</p>
+<ul>
+<li>The dt_migration datatable has no entry.</li>
+<li>The dt_migration datatable has an entry of MIGRATION_COMPLETED.</li>
+<li>The dt_migration datatable has an entry of MIGRATION_IN_PROGRESS, no MIGRATION_COMPLETED entry, and the business event type appears in custom.migration.loan.migration.events.</li>
+</ul>
+<p>Datatable changes trigger business events:</p>
+<ul>
+<li>A DatatableEntryCreatedBusinessEvent fires when a new datatable entry is added.</li>
+<li>A DatatableEntryUpdatedBusinessEvent fires when an existing datatable entry is updated.</li>
+<li>A DatatableEntryDeletedBusinessEvent fires when an existing datatable entry is removed.</li>
+</ul>
+<p>A custom module listener can react to datatable entry creation:</p>
+<ul>
+<li>By default there is no listener for DatatableEntryCreatedBusinessEvent.</li>
+<li>If a MIGRATION_COMPLETED datatable entry is created, the listener triggers a LoanAccountSnapshotBusinessEvent.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "dt_migration: no entry" as n1
+  state "dt_migration: MIGRATION_IN_PROGRESS" as n2
+  state "dt_migration: MIGRATION_COMPLETED" as n3
+  state "external business event" as n4
+  state "LoanAccountSnapshotBusinessEvent" as n5
+  n1 --> n4 : no entry
+  n2 --> n4 : event type in custom.migration.loan.migration.events
+  n3 --> n4 : entry MIGRATION_COMPLETED
+  n3 --> n5 : DatatableEntryCreatedBusinessEvent]]></ac:plain-text-body></ac:structured-macro>
+<h2>Business events during migration</h2>
+<p>Business events track loan migration. When migration of a loan is marked as completed, the system triggers a LoanAccountSnapshotBusinessEvent containing body account details as a snapshot. When migration is marked as FINISHED, the system triggers a LoanMigrationCompletedBusinessEvent containing loan details.</p>
+<p>Business events carry a migration flag. The flag is true while migration is ongoing and is no longer set after migration finishes.</p>
+<p>While a loan is under migration, the system creates and sends only external business events explicitly enabled for migration.</p>
+<p>A configuration can filter which external events are sent during migration, for example sending only loan transaction events and no account details.</p>
+<p>A configuration can run for the final day of migrations, covering every income up to the final run date in one run and producing aggregated accrual entries instead of individual accrual transactions for each day.</p>
+<p>During migration, accrual activity follows these rules:</p>
+<ul>
+<li>One Accrual Activity is created for each period on the due date of the period if the period is backdated, unless the period was early repaid.</li>
+<li>After migration finishes, COB runs daily for proper income recognition.</li>
+</ul>
+<h2>Custom data and serializers</h2>
+<p>Custom data carries migration details or a migration flag on loan and loan transaction business events. It is a Map&lt;String, byte[]&gt; field, and custom serializers can supply its values.</p>
+<table>
+<thead>
+<tr>
+<th>Event serializer</th>
+<th>Business event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>InvestorBusinessEventSerializer</td>
+<td>LoanOwnershipTransferDataV1</td>
+</tr>
+<tr>
+<td>LoanProductBusinessEventSerializer</td>
+<td>LoanProductDataV1</td>
+</tr>
+<tr>
+<td>LoanChargeBusinessEventSerializer</td>
+<td>LoanChargeDataV1</td>
+</tr>
+<tr>
+<td>LoanAdjustTransactionBusinessEventSerializer</td>
+<td>LoanTransactionAdjustmentDataV1</td>
+</tr>
+<tr>
+<td>LoanRepaymentBusinessEventSerializer</td>
+<td>LoanRepaymentDueDataV1</td>
+</tr>
+<tr>
+<td>LoanDelinquencyRangeChangeBusinessEventSerializer</td>
+<td>LoanAccountDelinquencyRangeDataV1</td>
+</tr>
+</tbody></table>
+<p>The custom serializer applies to every loan and loan transaction external business event and always puts the last entry of the dt_migration datatable for the loan into the customData field.</p>
+<h2>Migration flag and schema</h2>
+<p>A migration flag tells downstream systems whether an external business event concerns a loan where migration is ongoing. The flag is a boolean field on the MessageV1 Avro schema and an optional field on the ExternalEvent entity (m_external_event).</p>
+<h2>Event configuration</h2>
+<p>External business events can be sent during migration. The m_external_event_configuration table includes enabled_for_migration to select which events are sent. The custom.migration.loan.migration.events list in application.properties controls the events, and defaults to LoanCreatedBusinessEvent, LoanDisbursalBusinessEvent, and LoanTransactionMakeRepaymentPostBusinessEvent.</p>
+<p>DatatableBusinessEvent fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>entityType</td>
+<td>EntityTables</td>
+<td>Entity type of the datatable entry.</td>
+</tr>
+<tr>
+<td>entityId</td>
+<td>Long</td>
+<td>Primary key of the entity.</td>
+</tr>
+<tr>
+<td>datatableName</td>
+<td>String</td>
+<td>Name of the datatable table.</td>
+</tr>
+<tr>
+<td>appTableId</td>
+<td>Long</td>
+<td>Primary key of the datatable entry.</td>
+</tr>
+<tr>
+<td>data</td>
+<td>Map&lt;String, Object&gt;</td>
+<td>Key column name and value column value.</td>
+</tr>
+</tbody></table>

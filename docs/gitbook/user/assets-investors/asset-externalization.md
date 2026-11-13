@@ -1,293 +1,169 @@
 # Asset Externalization
 
-## Asset Externalization
+## About asset externalization
 
-### Scope and configuration
+Asset externalization lets you sell and buy back loan account assets from one owner to another. It applies to the GPL portfolio of products and supports Danube requirements for DE PayIn30 on the Fineract System. The Investor Module is also known as the asset Externalization module.
 
-Asset externalization covers loans only. The investor module for savings accounts, fixed deposits, recurring deposits and shares accounts is not included, and customisable asset owner data fields are not captured. A global configuration enables or disables the investor module, and automatic owner creation is enabled by default.
+The following activities happen outside the Fineract System:
 
-### Asset owner data and statuses
+- Determination of loan statuses and assignment of loans to an investor.
+- Buyback or reassignment of a loan.
 
-Asset owner data records who owns an externalised loan and tracks the transfer status through its lifecycle.
+## Transfer a loan to an investor
 
-The system stores the following ownership data:
+Use this screen to initiate a sale or buyback of a loan account asset from one owner to another.
 
-- Asset Owner (text field, user entered)
-- Transfer ID (text field, user entered, optional, generated if not provided)
-- Settlement date (date field, user entered)
-- Purchase price ratio (percentage field, user entered)
-- Status (system updated field)
-- Created time stamp (system updated field)
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Sell Loan** or **Buy Back Loan**.
+5. Enter the details described below, then select **Submit**.
 
-When a request arrives with an unrecognised owner external id, the system creates an entry in the owner table automatically.
-
-- Stored ownership data cannot be updated.
-
-| Status | Meaning |
-| --- | --- |
-| Active | Loan is sold to investor with settlement date same or later than current date |
-| Pending | Loan is selected to transfer with settlement date greater or same as current date |
-| Buyback | Buyback is initiated and ownership reverts |
-| Declined | Validations failed due to balance |
-| Cancelled | Asset ownership request was made but cancelled before execution |
-
-| Status | Meaning |
-| --- | --- |
-| Pending | Asset ownership transfer request has been made but not yet made active by COB end of day |
-| Active | Asset ownership transfer is active and all journal entries are made against the investor |
-| Buyback | Loan's ownership got bought back |
-| Declined | Asset ownership request has been made but it is still not end of day and the loan was paid back or overpaid so there is nothing the investor could buy |
-
-### Transfer initiation rules
-
-You can initiate an asset transfer as either a sale or a buyback only when the loan balance is positive, no transfer is already pending or active, and the settlement date is not earlier than the business date. The system rejects transfers for loans in any status other than ACTIVE, and declines sales on closed, overpaid, submitted, or approved loan account stages.
-
-A sales or buyback event requires the following parameters:
-
-- From Owner identifies the current owner of the loan.
-- To Owner identifies the party receiving the transfer.
-- Asset Owner ID is an externally provided string identifying the owner of a particular loan and is required for a sale.
-- Sales Transaction ID is an external transaction ID; the system generates it when you do not provide one.
-- Purchase Price Ratio is a percentage from 0% to 100% representing the investor ownership fraction.
-- Settlement Date is the last date the previous owner holds the asset; new ownership starts the next day and the date cannot be in the past.
-
-A successful transfer returns the following information:
-
-- resource id
-- owner id
-- status PENDING
-- sales transaction id
-
-Technical information associated with a transfer includes:
-
-- transfer timestamp
-- effective date range from the submitted on date to 9999-12-31
-- transfer status with the value PENDING
-
-Buyback transfers use a transfer ID different from the sale transfer ID.
-
-> **Note:** Transfer API calls are restricted until COB has run up to the settlement date, under the same restrictions as monetary activities.
-
-### Transfer lifecycle and COB processing
-
-Close of Business (COB) processing settles asset ownership transfers whose settlement date equals the business date and whose valid_to remains 9999.12.31. The CoB step completes the actual transfer. Buyback is accepted when the loan has ACTIVE transfer status or when the loan has PENDING transfer status with the same effective date. Account ownership transfer can only happen after (or at the end of) Close of Business.
-
-COB applies the following outcomes to pending transfers:
-
-- A pending sale becomes ACTIVE when the account balance is greater than 0.
-- A pending sale becomes DECLINED when the account balance is less than or equal to 0.
-- A pending buyback becomes BUYBACK when the account balance is greater than 0.
-- A pending buyback becomes [none] when the account balance is less than or equal to 0.
-- Pending transfers become ACTIVE transfers only if balance is greater than or equal to 0.
-
-Other COB behaviour includes:
-
-- A pending sale is declined if the loan is closed before the settlement date.
-- A pending buyback is cancelled with a new substatus when the loan is closed before the settlement date.
-- When a pending sale and pending buyback exist and the loan is paid fully before the settlement date with different settlement dates, the pending sale is declined and the buyback is cancelled.
-- When asset externalisation is pending and the loan gets paid, COB does nothing because COB does not catch up closed loans.
-- A closed loan can be selected for sale or buyback even though COB will not catch them up.
-- A sales request can be made for a loan that is not approved or disbursed, but if the settlement date was before approval or disbursement, COB will not pick up the loan and the sale will not become ACTIVE.
-
-Cancellation rules are:
-
-- A cancel action exists for a pending sale or an incomplete buyback, applicable only before those transfers are settled.
-- At cancellation, the valid_to of the cancelled record is set to NOW.
-- Sale transactions can be followed by buyback; in that case both get CANCELLED.
-- Sale and buyback on the same settlement date result in no owner transfer and no journal entries, with both pending sale and buyback cancelled.
-
-Listener behaviour on loan closure or overpayment is:
-
-- When a sales transaction is pending and the loan gets closed or overpaid, the system declines those pending sales transactions through business listeners.
-- When a buyback transaction is pending and the loan gets closed or overpaid, the system accepts those pending buyback transactions through business listeners.
-
-> **Note:** An internal server error occurs from Inline COB when asset externalisation sales and buyback settlement dates are the same.
-
-```mermaid
-stateDiagram-v2
-  state "PENDING" as n1
-  state "ACTIVE" as n2
-  state "DECLINED" as n3
-  state "BUYBACK" as n4
-  state "CANCELLED" as n5
-  n1 --> n2 : balance > 0
-  n1 --> n3 : balance <= 0
-  n2 --> n4 : balance > 0
-  n2 --> n4 : balance <= 0
-  n1 --> n5 : same day sale & buyback
-  n1 --> n3 : loan closed before settlement
-  n1 --> n5 : loan paid before settlement
-```
-
-### Same-day sale and buyback
-
-When a sale and its buyback settle on the same day, the system creates GL entries for both transfers, with the sale entry first and the buyback entry last. The investor does not change the GL entries; it appears only as a comment or tag, while the same entries are used.
-
-### Buyback specifics
-
-A business manager can buy back loans with active ownership transfer from investors when the loan account becomes fraud or for any other reason. The buyback is another activity with an external Buyback Transfer ID.
-
-The buyback API request requires the following fields:
-
-- Settlement date is mandatory.
-- Transfer ID must be present.
-- Owner ID can be null.
-
-Cancelling a buyback works as follows:
-
-- Cancel does not require a settlement date on the API request.
-- Cancel always refers to the current PENDING transfer.
-- Cancelling buyback is not supported at the moment.
-
-### Journal entries and GL mapping
-
-The system posts journal entries for asset owner changes and buybacks as part of the COB jobstep on the settlement date. If the loan account balance is zero or negative before COB on that date, the asset transaction is declined and no journal entries post.
-
-Monetary transactions include an asset owner column that identifies the investor linked to the loan account.
-
-- The column stores the current asset owner ID of the loan account.
-- Transactions with a business date on or before the settlement date carry the old investor; transactions after the settlement date carry the new investor.
-- The column is null when no active investor exists for the loan account.
-- The column is always null for loan products where the investor module is disabled.
-- The value is derived from the active asset owner as of the business date, regardless of transaction type, backdated transactions, reversals, charge additions, or accruals.
-
-GL mapping for asset transfer is available when the investor module is enabled.
-
-- You can map a new GL account for asset transfer in the loan product.
-- You can also use the asset transfer option from the financial activity mappings section.
-
-The default GL account used for asset transfer is defined as follows.
-
-| GL code | GL name | Type |
+| Field | Required | Description |
 | --- | --- | --- |
-| 146000 | receivable /clearing account | Asset Account |
+| Settlement Date | Yes | Enter the settlement date for the transfer. |
+| Purchase Price Ratio | Yes | Enter the purchase price ratio for the transfer. |
+| Owner External Id | Yes | Enter the external ID of the owner receiving the loan. |
+| Transfer External Id | No | Enter a transfer external ID if needed; it is not unique and can be generated by you. |
 
-### Reporting
+The system stores the aggregated balance items along with the external owner they relate to.
 
-Create a new report named Transaction summary with investor. The transaction summary report includes asset owner detail, asset transfer transactions, and asset buyback transactions, and it groups and totals sums based on those transactions.
+## Sell a loan to an investor
 
-Only the investor side of a transaction is posted, so there is no Asset Transfer or Asset Buyback summary line when Asset Owner ID is null (PayPal). Balances reported equal the journal entry created where principal is the investor side of the 112601 entry and fees are the investor side of the 112603 entry.
+Use the external asset owner tab to transfer ownership of a loan to an investor through a sale or buyback.
 
-The Trial Balance report includes asset owner detail in transaction summary reports and groups and totals sums based on the transaction summary report.
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Select **External Asset Owner**.
 
-### Ownership impact and business rules
+The transfer is initiated and stored with the external owner it relates to, and ownership changes at Close of Business.
 
-Changing the asset owner of a loan account does not affect loan account portfolio behaviour, accounting, or actual ownership; actual ownership changes at close of business. An asset transfer request on a closed or overpaid loan is unsuccessful and returns a proper error message instead of an internal server error.
+## Enabling and configuring the investor module
 
-Date handling rules for sales requests:
+The Investor module has two global settings: one turns the module on or off, and the other controls whether owners are created automatically. Automatic owner creation is enabled by default.
 
-- Date handling logic is unified, and buyback and pending are similar statuses.
-- Effective from and settlement date have the same meaning for buyback and pending.
-- For a buyback transaction, the effective date equals the settlement date.
-- When a non-existent date is provided in a sales request, no error message is provided and the system chooses the nearest valid date.
+## Asset owners
 
-### Personas and permissions
+An asset owner is the external party that holds a loan after it is externalized. When a request arrives with an owner external id the system does not recognize, it automatically creates an entry in the owner table.
 
-Asset externalization involves three personas: the investor, who is a legal entity referred to as the external owner; the business manager, who is an employee of the organisation offering the loan to its customer and either decides on an asset sale or uses data related to it; and the auditor, who can see the history of a loan's ownership changes. The asset externalization goal is described on Asset Externalization requirements.
+## Transfer statuses
 
-Permissions and API capture work as follows:
+A transfer status shows where a loan sale or buyback stands and whether ownership has moved to an investor. The status depends on the settlement date and whether validations pass.
 
-- Only users with the external investor module permission and super users can perform actions in that module.
-- Only transfer initiation is captured by API.
-- Initiation followed by buyback followed by initiation followed by buyback in the same day prior to COB is not allowed; a pending request can be followed by buyback but a second pending request will fail on the API.
-
-### User interface and workflow
-
-Asset externalization moves a loan portfolio from one owner to another. You can view asset owner details at the loan account level when the investor module is enabled in the environment configuration file, and the UI highlights the current owner of the loan account.
-
-Transfers are available only on active, closed and overpaid loan accounts.
-
-- Sale and buyback on active loans are available for the whole lifecycle of the loan.
-
-1. Open the loan account and choose "Sell Loan" or "Buy Back Loan" from the actions to open the asset transfer loan screen.
-2. Enter Settlement Date, Purchase Price Ratio and Owner External Id, optionally enter Transfer External Id, then choose Submit.
-3. Open the loan account and choose "External Asset Owner" from the tab to open the external asset owner tab screen.
-4. On the external asset owner tab screen, choose Sell Loan, Cancel Sell Loan, Buy Back Loan or View Journal Entries.
-
-The asset transfer loan screen requires Settlement Date, Purchase Price Ratio and Owner External Id.
-
-- The asset transfer loan screen offers Cancel and Submit buttons.
-
-You can cancel an asset transfer when its status is PENDING.
-
-- You can view the status of each transfer on the loan account view screen once updated in the COB.
-- You can view the history of all previous transfer requests and their status.
-
-No changes are made on accounting screens.
-
-- Accounting entries are handled on reporting.
-
-| Screen | Fields |
+| Status | Meaning |
 | --- | --- |
-| External asset owner tab | Active Asset Transfer, Status, Owner External Id, Settlement Date, Effective Date, Details, Principal Outstanding, Interest Outstanding, Fees Outstanding, Penalties Outstanding, Outstanding, Overpaid, External Asset Owner, Effective From, Transfer External Id, Purchase Price Ratio, Actions |
-| External asset transfer section | Status, Owner External Id, Settlement Date, Effective Date, Details, Principal Outstanding, Interest Outstanding, Fees Outstanding, Penalties Outstanding, Outstanding, Overpaid |
+| Active | The loan is sold to an investor and the settlement date is today or later. |
+| Pending | The loan is selected to transfer and the settlement date is today or later. |
+| Buyback | A buyback is initiated, similar to Pending, but ownership reverts. |
+| Declined | Validations fail, such as a balance check. |
 
-```mermaid
-flowchart TD
-  n1["Open loan account"]
-  n2["Choose Sell Loan or Buy Back Loan"]
-  n3["Asset transfer loan screen"]
-  n4["Enter required fields"]
-  n5["Choose Submit"]
-  n6["Transfer status PENDING"]
-  n7["Cancel transfer"]
-  n8["Status updated in COB"]
-  n9["View transfer status on loan account"]
-  n10["View transfer history"]
-  n1 --> n2
-  n2 --> n3
-  n3 --> n4
-  n4 --> n5
-  n5 --> n6
-  n6 --> n7
-  n6 --> n8
-  n8 --> n9
-  n9 --> n10
-```
+## Eligibility and timing for transfers
 
-### Worked examples
+You can start a sale or buyback transfer of asset ownership on a loan account with active, closed, or overpaid status. Sale and buyback on active loans are available for the whole lifecycle of the loan. The system refuses initiation when the balance is zero or negative, when a transfer is already pending or active, or when the settlement date is earlier than the business date. Asset ownership transfer can only happen after or at the end of Close of Business.
 
-A loan officer submits a request to sell a loan asset to an external investor. The figures in this example are illustrative. The loan has an outstanding balance of 1,000.00. The officer enters the asset owner as Investor A, sets the purchase price ratio to 100 percent, and chooses a settlement date ten days ahead. No sales transaction ID is entered, so the system generates one. The request is accepted because the loan is active and the settlement date is not in the past. The system stores the request with status PENDING and assigns a transfer ID. This example shows that a sale request is stored as PENDING with a generated transfer ID when none is supplied.
+Pending transfers change status at Close of Business as follows:
 
-| Step | Field or check | Value entered or result | Status after step |
-| --- | --- | --- | --- |
-| 1 | Asset owner | Investor A | Request received |
-| 2 | Purchase price ratio | 100 percent | Request received |
-| 3 | Settlement date | Ten days from today | Request received |
-| 4 | Sales transaction ID | Not entered; system generates one | Request received |
-| 5 | Validation | Loan active, balance above zero | PENDING |
-| 6 | Stored record | Transfer ID, owner, dates | Saved |
+- For a SALE, PENDING becomes ACTIVE when the account balance is greater than 0.
+- For a SALE, PENDING becomes DECLINED when the account balance is less than or equal to 0.
+- For a BUYBACK, ACTIVE becomes BUYBACK when the account balance is greater than 0.
+- For a BUYBACK, ACTIVE becomes none when the account balance is less than or equal to 0.
+- Pending transfers become ACTIVE only when the account balance is greater than or equal to 0.
 
-A pending sale reaches its settlement date at the close of business. The loan balance is 1,000.00, which is greater than zero, so the ownership transfers to the investor. The system posts journal entries using the closing balance. The receivable clearing account is cleared for the old owner and the loan receivable and interest fee receivable accounts are updated for the investor. If the balance were zero or negative, the status would become DECLINED instead of ACTIVE. This example shows that a pending sale becomes ACTIVE at close of business only when the balance is above zero.
+> **Note:** The system declines API sales transactions initiated on closed, overpaid, submitted, or approved stages of the loan account.
 
-| Step | Account | Asset owner tag | Debit | Credit | Effect |
+## Starting a sale or buyback
+
+You can start a sale or buyback of an externalized asset. A buyback is accepted when the loan has ACTIVE transfer status, or when it has PENDING transfer status with the same effective date. A sale or buyback on the same settlement date results in no owner transfer and no journal entries.
+
+Rules for starting a sale or buyback:
+
+- You can cancel a PENDING sale or an incomplete BUYBACK only before the transfer settles.
+- For a BUYBACK transaction, set the effective date to the same date as the buyback settlement date.
+- Every sales or buyback event must include a From Owner parameter representing the current owner.
+- Every sales or buyback event must include a To Owner parameter representing the party receiving the transfer.
+
+## Canceling a transfer
+
+You can cancel a pending buyback transfer. When a loan is fully paid before settlement and the sale and buyback settlement dates differ, the pending sale transfer is declined and the pending buyback is cancelled with a new substatus. If the loan is closed or overpaid before settlement, validation stops the transfer request and shows an error message instead of an internal server error.
+
+## What happens at settlement and Close of Business
+
+Close of Business (COB) is the nightly job that posts interest and fees. It picks up only transfers whose effective date equals the business date and whose valid_to date is 9999.12.31.
+
+What happens at settlement:
+
+- If the loan account balance becomes zero or negative before COB on the settlement date, the Asset transaction is marked as declined and posts no journal entries.
+- A pending Sales transaction is declined when the loan is closed or overpaid.
+- A pending Buyback transaction is accepted when the loan is closed or overpaid.
+
+## Accounting and reporting impact
+
+Adding or changing the asset owner of a loan account does not change loan account portfolio behaviour or create accounting entries. Accounting screens stay the same, and asset transfer activity appears only in reporting.
+
+When the investor module configuration is enabled, you can map a new GL account for asset transfer in a loan product, or use the asset transfer option from financial activity mappings.
+
+The Trial Balance Summary Report includes these columns:
+
+| Column |
+| --- |
+| postingdate |
+| product |
+| glacct |
+| description |
+| Asset Owner ID |
+| beginningbalance |
+| debitmovement |
+| creditmovement |
+| endingbalance |
+
+You can sort the Trial Balance Summary Report by:
+
+- Date
+- Product
+- GL Account
+- Investory (Asset Owner)
+
+## Transaction summary report
+
+The Transaction summary with investor report shows asset owner detail and groups and totals transactions like the transaction summary report. It also includes asset transfer and asset buyback transaction details.
+
+## Events and API
+
+The system records asset externalization events only when a transfer is initiated. It does not send events for canceled transfers.
+
+The system uses these events for asset externalization:
+
+- LoanBalanceChangedBusinessEvent
+- LoanDisbursalBusinessEvent
+- LoanRescheduledDueAdjustScheduleBusinessEvent
+- LoanStatusChangedBusinessEvent
+
+Event triggers include asset owner information and settlement date so clients can decide on the new asset owner and settlement date.
+
+## User interface and screens
+
+When asset externalization is turned on, the manual journal entry screen shows an "asset Owners" drop-down field, and you can select the asset owner for a manual journal entry you pass. With the investor module enabled, you can view asset owner details at the loan account level, see the current owner highlighted on the loan account, and view each transfer's status on the loan account view screen once updated at Close of Business (COB), the nightly job that posts interest and fees. You can also view the history of all previous transfer requests and their status for the loan account.
+
+## Worked examples
+
+The transaction summary report lists every movement on a loan and now shows which investor owns each part of it. The figures in this example are illustrative: a loan on product GPL_DE_PI30 is sold to Investor A, external ID 123456789, for 1,000.00 of principal and 100.00 of fees on 1 June 2024. Later the same day, Investor B, external ID 987654321, buys back 500.00 of principal and 50.00 of fees, returning those amounts to the original owner. Transfer amounts increase the investor's position while buyback amounts reduce it, so the report shows both the sale and the reversal in one view.
+
+| Date | Product | Transaction type | Asset owner ID | Allocation type | Amount |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Receivable clearing account | null | 1,000.00 | - | Old owner exposure removed |
-| 2 | Loan receivables | null | - | 1,000.00 | Old owner balance cleared |
-| 3 | Receivable clearing account | Investor A | - | 1,000.00 | Investor exposure recorded |
-| 4 | Loan receivables | Investor A | 1,000.00 | - | Investor balance recorded |
-| 5 | Transfer status | PENDING to ACTIVE | - | - | Ownership active from next day |
+| 01-06-2024 | GPL_DE_PI30 | Asset Transfer | 123456789 | Principal | 1,000.00 |
+| 01-06-2024 | GPL_DE_PI30 | Asset Transfer | 123456789 | Fees | 100.00 |
+| 01-06-2024 | GPL_DE_PI30 | Asset Buyback | 987654321 | Principal | -500.00 |
+| 01-06-2024 | GPL_DE_PI30 | Asset Buyback | 987654321 | Fees | -50.00 |
+| Total |  |  |  |  | 550.00 |
 
-A business manager buys back a loan that is actively owned by an investor. The loan balance is 1,000.00. The manager enters a buyback transfer ID, for example BB-100, and sets the settlement date to today. The owner field can be left blank because the ownership reverts to the organization. Since the balance is above zero, the status changes from ACTIVE to BUYBACK. The system posts buyback journal entries that reverse the investor exposure. If the balance were zero or negative, the buyback would not be accepted. This example shows that a buyback reverses active ownership and posts reversing journal entries.
+The trial balance summary report shows general ledger movements for the same sale, split by asset owner so each investor's balance is visible separately. The figures are illustrative: on 1 June 2024, Loans Receivable account 112601 is credited 1,000.00 for the loan portfolio and debited 1,000.00 for Investor A, external ID 123456789. Interest/Fee Receivable account 112603 is credited 100.00 for the portfolio and debited 100.00 for the same investor. The receivable/clearing account 146000 debits and credits 1,100.00 with no asset owner. The asset owner ID column separates the investor's holdings from the general loan portfolio, so each owner can be reported on independently.
 
-| Step | Field or check | Value | Result |
-| --- | --- | --- | --- |
-| 1 | Transfer type | Buyback | Request accepted |
-| 2 | Buyback transfer ID | BB-100 | Stored as external reference |
-| 3 | Settlement date | Today | Ownership reverts tomorrow |
-| 4 | Owner ID | Left blank | Reverts to organization |
-| 5 | Balance check | 1,000.00 greater than zero | Status changes to BUYBACK |
-| 6 | Journal entries | Posted on settlement date | Investor exposure reversed |
+| GL account | Account name | Asset owner ID | Beginning balance | Debit movement | Credit movement | Ending balance |
+| --- | --- | --- | --- | --- | --- | --- |
+| 112601 | Loans Receivable |  | 0.00 | 0.00 | 1,000.00 | -1,000.00 |
+| 112601 | Loans Receivable | 123456789 | 0.00 | 1,000.00 | 0.00 | 1,000.00 |
+| 112603 | Interest/Fee Receivable |  | 0.00 | 0.00 | 100.00 | -100.00 |
+| 112603 | Interest/Fee Receivable | 123456789 | 0.00 | 100.00 | 0.00 | 100.00 |
+| 146000 | Receivable/Clearing |  | 0.00 | 1,100.00 | 1,100.00 | 0.00 |
 
-Reports now show the asset owner for each transaction. An asset transfer of 1,000.00 principal and 10.00 fees is made to Investor A, identified by owner ID 123456789. The transaction summary lists principal and fees separately under the investor ID. The trial balance shows the loan receivable and interest fee receivable balances split between no owner and the investor. This example shows that reports split balances by asset owner ID so each investor position is visible.
-
-| Report | Account or allocation | Asset owner ID | Debit movement | Credit movement | Ending balance |
-| --- | --- | --- | --- | --- | --- |
-| Transaction summary | Principal | 123456789 | 1,000.00 | - | - |
-| Transaction summary | Fees | 123456789 | 10.00 | - | - |
-| Trial balance | Loan receivables | blank | - | 1,000.00 | -1,000.00 |
-| Trial balance | Loan receivables | 123456789 | 1,000.00 | - | 1,000.00 |
-| Trial balance | Interest fee receivable | blank | - | 10.00 | -10.00 |
-| Trial balance | Interest fee receivable | 123456789 | 10.00 | - | 10.00 |
-
-See also: [BNPL Products: Pay in 3 and Pay in 4](../loan-products/bnpl.md#pay-in-3-and-pay-in-4).
+See also: [Investor Module](investor-module.md).

@@ -1,0 +1,251 @@
+<p>Delinquency restrictions apply to Working Capital loans, which use minimum payment ranges instead of installments. Delinquency tracking can be paused, reset, disabled, or rescheduled, and each action changes how the system evaluates the loan. Some actions are blocked while delinquency is disabled, and backdated changes are not permitted for several actions.</p>
+<p>Configure delinquency at the loan account level with these parameters:</p>
+<ul>
+<li>Name of the delinquency configuration.</li>
+<li>Frequency, a positive integer representing the range interval.</li>
+<li>Frequency Type, the time unit of the range interval such as days, weeks, or months.</li>
+<li>Minimum payment amount type, either Percentage of loan amount or Flat amount.</li>
+<li>Minimum payment amount, which must be greater than zero.</li>
+<li>Minimum payment period and rule.</li>
+<li>Numeric value representing the range interval.</li>
+</ul>
+<p>The following rules apply to delinquency pauses:</p>
+<ul>
+<li>A pause is created with a start date and an end date.</li>
+<li>The start date must be before the end date and cannot be before the first disbursement date.</li>
+<li>The pause is applied as of the current business date at initiation.</li>
+<li>Backdated pauses for delinquency evaluation are available from the UI.</li>
+<li>During the pause, the active and all future range periods are shifted forward by the pause duration.</li>
+<li>Resume is permitted only during an active pause period, between the configured pause start date and end date.</li>
+<li>Upon resume, the pause effective end date is updated to the resume date and the pause is considered terminated as of that date.</li>
+<li>After resumption, the system recalculates delinquency based on the revised shortened pause duration.</li>
+</ul>
+<p>The following rules apply to delinquency reschedule:</p>
+<ul>
+<li>A delinquency range schedule must already be generated for the loan.</li>
+<li>The action changes the minimum payment amount and/or the frequency of the delinquency range schedule.</li>
+<li>Minimum payment can be a percentage amount calculated based on principal plus discount, or a flat amount provided by the user.</li>
+<li>All future periods not yet evaluated are deleted and regenerated with the new frequency and expected amount.</li>
+<li>Already evaluated periods where minimum payment criteria met is not null are not affected, and historical data is preserved.</li>
+<li>Evaluated periods are unchanged before and after reschedule and are preserved as-is.</li>
+<li>Changes affect only the future schedule from the current date.</li>
+</ul>
+<p>The following rules apply to delinquency reset:</p>
+<ul>
+<li>A reset marks a delinquent Working Capital account as regularized once compliance is restored.</li>
+<li>The reset restarts delinquency monitoring cycles and stops further penal actions if applicable.</li>
+<li>Multiple resets are allowed over time, but only one reset per period is permitted.</li>
+<li>A validation message is shown if a user tries to reset a second time on the same delinquency period.</li>
+<li>All reset history is maintained and shown to help with undo or delete of the latest reset.</li>
+<li>Delinquency evaluation is reset effective only from the current system date; backdated resets are not permitted.</li>
+<li>A user can choose the optional option to start a new period from the reset date.</li>
+</ul>
+<p>The following rules apply to delinquency disable:</p>
+<ul>
+<li>Delinquency disable is applied only as of the current date; backdated disable is not permitted.</li>
+<li>Once applied, delinquency evaluation is stopped for the account from the disable date onward.</li>
+<li>Delinquency disable is allowed only once until the current disable is reversed.</li>
+<li>Once delinquency is disabled, delinquency reschedule, reset, and pause are not allowed.</li>
+<li>Delinquency disable can be reversed or undone, and can be applied again as of the current date.</li>
+<li>When reversed, delinquency evaluation is re-triggered and recomputed as of the undo date.</li>
+</ul>
+<p>The following restrictions apply to delinquency actions:</p>
+<ul>
+<li>Only a user with the specific delinquency reset permission, or a super user with all functions access, can perform a delinquency reset.</li>
+<li>Only a user with the specific permission &quot;disable Delinquency&quot; or with &quot;all functions&quot; can perform delinquency disable.</li>
+<li>Delinquency and breach evaluation are automatically disabled upon write-off.</li>
+<li>Only recovery payments are allowed on a written-off account.</li>
+<li>All actions must be auditable with proper user or system traceability.</li>
+</ul>
+<p>The following rules apply to minimum payment evaluation:</p>
+<ul>
+<li>When the loan&#39;s remaining principal balance is lower than the computed minimum payment, the delinquency period&#39;s expected amount equals the remaining balance.</li>
+<li>A delinquency period where the expected amount equals the remaining balance is evaluated as minimum payment criteria met once the remaining balance is fully paid.</li>
+<li>The remaining balance as minimum payment rule applies both to product-configuration-based amounts and to reschedule-based amounts.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Delinquency grace days are used only at read time to compute a cosmetic delinquency start date; they are not applied in the delinquency evaluation path, so a loan is tagged delinquent as soon as the business date passes the period end date by even one day.</p>
+</blockquote>
+<p>A working capital loan is disbursed on 1 April. The delinquency configuration adds five grace days to the first start date, uses monthly periods of thirty days, and sets a flat minimum payment of 100.00 for each of three periods. The figures are illustrative. The first period starts on the disbursement date plus the grace days, and each period ends thirty days later. Expected Amount is the flat minimum payment for the period, Paid Amount is the total received in that period, and Outstanding Amount is Expected Amount minus Paid Amount. The example shows that grace days shift only the first start date, each To Date is the period end, and Outstanding Amount falls as payments are recorded.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Expected</th>
+<th>Paid</th>
+<th>Outstanding</th>
+<th>Delinquent days</th>
+<th>Delinquent amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>6 Apr</td>
+<td>5 May</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>100.00</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>6 May</td>
+<td>4 Jun</td>
+<td>100.00</td>
+<td>40.00</td>
+<td>60.00</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5 Jun</td>
+<td>4 Jul</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>0.00</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>300.00</td>
+<td>140.00</td>
+<td>160.00</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A delinquency pause suspends delinquency tracking for a working capital loan. Suppose a pause of thirty days is applied while the current period runs from 1 April to 30 April with an expected amount of 120.00 and nothing paid yet. The pause is applied as of the current business date, and the To Date of the active period and of every future non-evaluated period that overlaps or follows the pause start is shifted forward by the pause duration; From Dates stay as scheduled. A second pause whose window overlaps an active pause is rejected with an overlap error. When the pause is resumed, the pause end date is set to the resume date, the pause ends, and delinquency is recalculated over the shortened pause.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To before pause</th>
+<th>Pause days</th>
+<th>To after pause</th>
+<th>Expected</th>
+<th>Paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Apr</td>
+<td>30 Apr</td>
+<td>30</td>
+<td>30 May</td>
+<td>120.00</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 May</td>
+<td>30 May</td>
+<td>30</td>
+<td>29 Jun</td>
+<td>120.00</td>
+<td>0.00</td>
+<td>120.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>240.00</td>
+<td>0.00</td>
+<td>240.00</td>
+</tr>
+</tbody></table>
+<p>A delinquency period&#39;s Expected Amount cannot exceed what is still owed. If the remaining principal balance is 60.00 but the computed minimum payment for the period is 100.00, the Expected Amount is capped at the remaining balance, 60.00. This cap applies whether the amount comes from the product configuration or from a reschedule. Once the full 60.00 is paid, the period is evaluated as meeting the minimum-payment criteria. The example shows the remaining-balance cap and that paying the capped amount in full meets the minimum-payment criteria.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Remaining balance</th>
+<th>Computed minimum</th>
+<th>Expected</th>
+<th>Paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>60.00</td>
+<td>100.00</td>
+<td>60.00</td>
+<td>60.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>60.00</td>
+<td>60.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A reschedule changes the minimum payment amount or frequency for future periods only. Suppose a loan already has a generated range schedule and periods 1 and 2 are evaluated, so their history is preserved. On 1 July the minimum payment changes from a flat 100.00 to 5.00 percent of the approved principal of 1,000.00, which is 50.00 per period, keeping the monthly frequency. All future non-evaluated periods are deleted and regenerated with the new expected amount; evaluated periods keep their values. Evaluated periods are preserved unchanged, while future non-evaluated periods are regenerated with the new amount and frequency.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Status</th>
+<th>Expected before</th>
+<th>Expected after</th>
+<th>Paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Evaluated</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Evaluated</td>
+<td>100.00</td>
+<td>100.00</td>
+<td>40.00</td>
+<td>60.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Future</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>0.00</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Future</td>
+<td>100.00</td>
+<td>50.00</td>
+<td>0.00</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>400.00</td>
+<td>300.00</td>
+<td>140.00</td>
+<td>160.00</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Breach Management"/><ac:plain-text-link-body><![CDATA[Breach Management]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Projected Balances"/><ac:plain-text-link-body><![CDATA[Projected Balances]]></ac:plain-text-link-body></ac:link>.</p>

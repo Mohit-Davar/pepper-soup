@@ -1,0 +1,143 @@
+<h2>What pay-off is and when to use it</h2>
+<p>Pay-off is a repayment done as of the current date, with interest calculated as of that date.</p>
+<h2>Pay-off amount and calculation</h2>
+<p>The pay-off amount is the exact amount required to close the loan. It includes total outstanding principal, fees, and penalties as of the transaction date.</p>
+<p>The calculation includes:</p>
+<ul>
+<li>All outstanding balances calculated up to the pay-off date or the end of the pay-off period due date, based on configuration.</li>
+<li>Outstanding balances of all past due installments, not only the current period&#39;s payable details.</li>
+</ul>
+<p>Special cases:</p>
+<ul>
+<li>If the transaction date is on or before the first disbursement date, all principal is due but no interest for an interest-bearing loan product.</li>
+<li>If the transaction date is on or after the maturity date, all outstanding balances are due.</li>
+</ul>
+<h2>Interest recalculation for pay-off</h2>
+<p>Interest recalculation decides how much interest you pay when you pay off a loan. When it is disabled, you pay the full principal, calculated interest, and fees, and payable interest is the same whether pay-off happens mid-lifecycle or on the maturity date. When it is enabled, you pay the full principal and interest recognized only until the pay-off date.</p>
+<p>For progressive loans:</p>
+<ul>
+<li>With interest recalculation enabled, payable interest until the pay-off date is calculated, the current installment is modified, and interest from upcoming installments is lifted if the transaction amount covers the outstanding principal on that installment.</li>
+<li>With interest recalculation disabled, the pay-off amount is allocated across each installment instead of modifying the current period to reflect the full amount paid.</li>
+</ul>
+<h2>Pay-off status and accounting</h2>
+<p>When a loan is marked Pay-off, its status changes to closed. The accounting entry for a pay-off transaction is the same as for a repayment transaction.</p>
+<h2>Transactions on a paid-off loan</h2>
+<p>You can disburse funds on a pay-off loan account. Chargeback is not allowed yet.</p>
+<h2>Backdated pay-off and reverse replay</h2>
+<p>A backdated pay-off or the reversal of an older transaction triggers reverse replay of the loan account, and the system updates the loan status accordingly. When backdated pay-off happens, the system reverts accrual transactions that occurred after that date.</p>
+<h2>Pay-off timing and editability</h2>
+<p>You can request a pay-off as of any date from the last repayment date up to the current date. The system calculates and collects interest as of the pay-off date you enter. You cannot edit the calculated pay-off values.</p>
+<h2>Prepayment</h2>
+<p>You can prepay a Working Capital loan by repaying the full outstanding balance. After successful prepayment processing, the outstanding balance becomes zero and the loan is closed (fully paid).</p>
+<p>Prepayment rules:</p>
+<ul>
+<li>Reversal of prepayments is supported.</li>
+<li>Backdated prepayments are supported.</li>
+<li>The prepayment date cannot be earlier than the latest payment transaction date.</li>
+<li>The prepayment date cannot be in the future.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Pay-off of the complete amount including interest till the pay-off date is marked TEST.</p>
+</blockquote>
+<h2>Repayment rules</h2>
+<p>Repayment calculates interest using the current amortization schedule plus the full repayment amount. Backdated repayment does not apply to Repayment. Repayment on a closed loan is treated as an overpayment and moves the loan to overpaid status.</p>
+<h2>Working capital N+1 installments</h2>
+<p>When you add a charge after the maturity date, the system creates an N+1 installment if one does not already exist. Only a repayment made after the due date pays this installment. The maturity date stays unchanged. This applies to working capital loans in CLOSED or OVERPAID status.</p>
+<h2>Rounding and product-specific behavior</h2>
+<p>Rounding up according to the installmentAmountInMultipleOf setting applies to equal installments with flat interest and equal installments with declining balance interest.</p>
+<p>For loans with the PIN4_DOWNPAYMENT_AUTO_ADVANCED_PAYMENT_ALLOCATION product, after a charge back of the last transaction, another repayment does not throw an NPE and the repayment transaction is created successfully.</p>
+<h2>Rate factor accrual</h2>
+<p>Rate factor accrual is an alternative to accruing interest based on interest due divided by the number of days.</p>
+<h2>UI prepayment flow</h2>
+<p>You can trigger a full repayment (prepayment) transaction from the UI on an active loan account.</p>
+<h2>Worked examples</h2>
+<p>A customer requests a payoff on day 30 of a 1,000.00 principal loan at 12.00% per annum with 3 monthly installments and 30-day months; the figures are illustrative. Interest recalculation may be disabled or enabled, and the payoff amount is the outstanding principal plus applicable interest. With recalculation disabled the borrower pays the full 30.00 term interest even though only one month has elapsed; with it enabled the borrower pays only the 10.00 interest recognized until the payoff date.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Recalculation disabled</th>
+<th>Recalculation enabled</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Outstanding principal</td>
+<td>1,000.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Interest for full term (3 months)</td>
+<td>30.00</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Interest till payoff date (1 month)</td>
+<td>—</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>Fees and penalties</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Payoff amount</td>
+<td>1,030.00</td>
+<td>1,010.00</td>
+</tr>
+<tr>
+<td>Principal after payoff</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Loan status</td>
+<td>Closed</td>
+<td>Closed</td>
+</tr>
+</tbody></table>
+<p>The same loan is now past due: installment 1, due on day 30, remains unpaid when the payoff is requested on day 60. Interest recalculation is enabled, and the payoff amount is allocated across each installment. The payoff amount includes the unpaid balances of installments 1 and 2 rather than only the current period, so the loan closes with zero outstanding principal and interest.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Status</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Installment 1</td>
+<td>Day 30</td>
+<td>Past due</td>
+<td>300.00</td>
+<td>9.00</td>
+<td>309.00</td>
+</tr>
+<tr>
+<td>Installment 2</td>
+<td>Day 60</td>
+<td>Due</td>
+<td>300.00</td>
+<td>9.00</td>
+<td>309.00</td>
+</tr>
+<tr>
+<td>Installment 3</td>
+<td>Day 90</td>
+<td>Upcoming</td>
+<td>300.00</td>
+<td>0.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>Payoff total</td>
+<td></td>
+<td></td>
+<td>900.00</td>
+<td>18.00</td>
+<td>918.00</td>
+</tr>
+</tbody></table>

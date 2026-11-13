@@ -1,0 +1,883 @@
+<h2>Charge-off overview</h2>
+<p>Charge-off provides an accounting write-off option for delinquent loans while the loan portfolio remains active. The loan stays active and due for collection at the portfolio level, but is considered frozen, meaning no further transactions are expected though they can still occur and the loan does not close.</p>
+<h2>Charge-off accounting entries</h2>
+<p>A charge-off transaction posts accounting entries when a loan is marked as charge-off.</p>
+<p>Charge-off transaction entries:</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>744007</td>
+<td>112601</td>
+<td>Expense / Asset</td>
+<td>Credit loss-bad dept / Loan Portfolio</td>
+</tr>
+<tr>
+<td>404008</td>
+<td>112603</td>
+<td>Income / Asset</td>
+<td>Income from ChargeOff Fees / Penalty Receivable</td>
+</tr>
+</tbody></table>
+<p>UNDO charge-off transaction entries:</p>
+<table>
+<thead>
+<tr>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Type</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112603</td>
+<td>404008</td>
+<td>Asset / Income</td>
+<td>Fees Receivable / Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>112603</td>
+<td>404008</td>
+<td>Asset / Income</td>
+<td>Penalty Receivable / Income from ChargeOff Penalties</td>
+</tr>
+<tr>
+<td>112601</td>
+<td>404008</td>
+<td>Asset / Income</td>
+<td>Loan Portfolio / Income from ChargeOff Fees</td>
+</tr>
+</tbody></table>
+<h2>Charge-off GL mapping</h2>
+<p>Charge-off accounting entries use new GL mapping fields in the loan product. Each field maps a charge-off amount to a general ledger account and type. Mapping is optional.</p>
+<table>
+<thead>
+<tr>
+<th>Charge-off field</th>
+<th>Maps to</th>
+<th>GL type</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off expense - fraud</td>
+<td>Credit Loss/Bad Debt Fraud</td>
+<td>Expense</td>
+</tr>
+<tr>
+<td>Charge-off interest income</td>
+<td>Interest income charge off</td>
+<td>Income</td>
+</tr>
+<tr>
+<td>Charge-off fees income</td>
+<td>Fee Charge off</td>
+<td>Income</td>
+</tr>
+<tr>
+<td>Charge-off expense</td>
+<td>Credit Loss/Bad Debt</td>
+<td>Expense</td>
+</tr>
+<tr>
+<td>Charge-off penalty income</td>
+<td>Fee Charge off</td>
+<td>Income</td>
+</tr>
+</tbody></table>
+<h2>Charge-off transaction</h2>
+<p>A charge-off transaction records the loan balance as a charge-off amount without changing the loan balance. Charge-off is triggered by non-payment of the remaining balance and is an accounting treatment, so it does not change data returned by existing APIs.</p>
+<p>Charge-off amount rules:</p>
+<ul>
+<li>The charge-off amount equals the loan balance as of the charge-off date.</li>
+<li>The charge-off amount is non-editable and auto-calculated.</li>
+<li>A new dummy charge-off transaction is created for the charge-off amount.</li>
+</ul>
+<h2>Charge-off date and timing</h2>
+<p>You can backdate a charge-off transaction, but not before the last transaction date. You cannot set a charge-off date in the future.</p>
+<p>Charge-off reason code rules:</p>
+<ul>
+<li>You can configure multiple charge-off rules.</li>
+<li>You cannot configure the same reason code twice.</li>
+</ul>
+<h2>Charge-off status and loan state</h2>
+<p>All actions, calculations, and transactions work normally as for a non-charge-off loan account. CHARGED_OFF status is never removed, even if the loan is PAID_OFF.</p>
+<h2>Interest and discount after charge-off</h2>
+<p>Interest accrual stops on a charge-off loan account, and no further discount amortization happens after charge-off. Every process that recalculates interest checks the charge-off date and performs no interest calculation beyond it. If the charge-off status is reversed, accrual resumes from the date it was previously stopped, and the final amortization transaction and its accounting entries are undone.</p>
+<h2>Transactions after charge-off</h2>
+<p>You can post all transaction types on a charge-off marked loan, and the accounting entries differ from those before charge-off. Chargeback, refunds, and other special case transactions are allowed, and the system does not restrict any transactions against the loan.</p>
+<p>You cannot add charges after charge-off.</p>
+<ul>
+<li>Adding charges after charge-off is not allowed.</li>
+</ul>
+<h2>Transactions before charge-off</h2>
+<p>You can add or reverse a transaction dated before the charge-off date. The system applies standard accounting JE rules, then reverses and replays the charge-off transaction so the charge-off amount increases or decreases based on the reversal or new posting. If a backdated transaction fully pays the loan, the system reverses the charge-off transaction and lifts the charge-off flag.</p>
+<p>Restrictions:</p>
+<ul>
+<li>Reversing a transaction that happened before or on the charge-off date is not allowed.</li>
+<li>A backdated transaction dated before the charge-off is not allowed.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Timing of transaction change</th>
+<th>Accounting rule applied</th>
+<th>Effect on charge-off</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before the charge-off date</td>
+<td>Standard accounting JE rules</td>
+<td>Charge-off transaction is reversed and replayed; charge-off amount increases or decreases</td>
+</tr>
+<tr>
+<td>After the charge-off date</td>
+<td>Charge-off accounting JE rules</td>
+<td>Charge-off transaction is reprocessed with balances changing</td>
+</tr>
+</tbody></table>
+<h2>Charge-off reversal</h2>
+<p>You can reverse a charge-off only when the charge-off was applied in error. The reversal removes the charge-off tag from the loan. It is a remediation or exception process, not standard business activity.</p>
+<p>Reversal is not supported when:</p>
+<ul>
+<li>Any transaction exists after the charge-off transaction.</li>
+<li>The loan was charged off correctly and the customer later cures or settles the balance.</li>
+</ul>
+<h2>Undo charge-off</h2>
+<p>Undoing a charge-off restores the loan to its state before charge-off. You can provide a reverse external id, which is stored on the transaction. The transaction can then be fetched by external id, but not by the reverse external id.</p>
+<p>Undo charge-off rules:</p>
+<ul>
+<li>Undo charge-off does not require any parameter.</li>
+<li>Undo charge-off behaves as undo write-off and uses the undo-charge-off command.</li>
+</ul>
+<h2>Reverse-replay of charge-off</h2>
+<p>You can reverse-replay a charge-off transaction to increase or decrease the charge-off amount when a reversal is backdated or a new transaction posts. Reverse-replay for charge-off must be implemented. The charge-off flag is lifted and reapplied only when the charge-off transaction is reprocessed.</p>
+<p>Journal entry creation happens immediately when:</p>
+<ul>
+<li>a new loan transaction is reverse-replayed</li>
+</ul>
+<h2>Charge-off restrictions</h2>
+<p>You cannot reschedule, restructure installments, or add a new charge on a loan account marked as a charge-off. A second charge-off on an already charged-off account returns a validation error, and the same applies to undo charge-off.</p>
+<h2>Charge-off event</h2>
+<p>The system raises a charge-off event whenever a charge-off happens for a loan account. The event carries an unpaidCharges array listing each unpaid charge group by charge name, with one object per charge name.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Source</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>chargeId</td>
+<td>Long</td>
+<td>transaction.loan.loanCharges.charge.id</td>
+<td>1</td>
+</tr>
+<tr>
+<td>chargeName</td>
+<td>String</td>
+<td>transaction.loan.loanCharges.charge.name</td>
+<td>SNOOZEFEE</td>
+</tr>
+<tr>
+<td>outstandingAmount</td>
+<td>BigDecimal</td>
+<td>Sum of transaction.loan.loanCharges.amountOutstanding where the loan charge is unpaid</td>
+<td>8</td>
+</tr>
+</tbody></table>
+<h2>Charge-off API</h2>
+<p>Use the Loan transaction API with the charge-off command to apply a charge-off to a loan. The Loan API also exposes a charged-off flag that indicates whether a loan is charged off.</p>
+<p>Charge-off input parameters are:</p>
+<ul>
+<li>Charge-off date (date field)</li>
+<li>Charge-off reason (drop down, optional)</li>
+<li>Note (string, optional)</li>
+<li>External ID (string, optional)</li>
+</ul>
+<h2>Charge-off UI</h2>
+<p>The Charge-off button appears on the Loan details page. The Undo charge-off button appears there only when the loan is already charged-off. Supported fields during charge-off are transactionDate, note, locale, dateFormat, chargeOffReasonId, and externalId. There are no fees or penalties for any charged-off loan, and no validations are added for this on Fineract side.</p>
+<h2>Accounting JE rules before and after charge-off</h2>
+<p>Transactions after the charge-off date follow charge-off accounting JE rules, while transactions before that date follow pre-charge-off rules.</p>
+<blockquote>
+<p><strong>Note:</strong> The current implementation creates journal entries in bulk at the end of reverse-replay and cannot distinguish pre and post charge-off entries at the moment.</p>
+</blockquote>
+<p>Possible strategies for creating journal entries based on the Charge off flag are:</p>
+<ul>
+<li>Create GL entries one by one per transaction.</li>
+<li>Create GL entries in bulk as PRE-Chargeoff and POST-Chargeoff groups.</li>
+</ul>
+<h2>Charge-off accounting mappings by scenario</h2>
+<p>Charge-off accounting mappings depend on the scenario, the portion of the payment, and whether the loan is charged off.</p>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Portion</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge off Fraud</td>
+<td>Interest</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Fraud</td>
+<td>Interest</td>
+<td>charge-off interest income</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Charge off Fraud</td>
+<td>Fees</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Fraud</td>
+<td>Fees</td>
+<td>charge-off fees Income</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Charge off Fraud</td>
+<td>Penalty</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Fraud</td>
+<td>Penalty</td>
+<td>charge-off Penalty Income</td>
+<td>Penalty Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Interest</td>
+<td>Interest income charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Interest</td>
+<td>charge-off interest income</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Fees</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Fees</td>
+<td>charge-off fees Income</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Penalty</td>
+<td>Fee Charge off</td>
+<td>Fee Receivable</td>
+</tr>
+<tr>
+<td>Charge off Non Fraud</td>
+<td>Penalty</td>
+<td>charge-off Penalty Income</td>
+<td>Penalty Receivable</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Fees</td>
+<td>Fee Income</td>
+<td>Fee Charge off</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Fees</td>
+<td>income from fees</td>
+<td>charge-off fees Income</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Fee Income</td>
+<td>Other Credit liability</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Unallocated Credit (UNC)</td>
+<td>income from fees</td>
+<td>Overpayment Liability</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Penalty</td>
+<td>Fee Income</td>
+<td>Fee Charge off</td>
+</tr>
+<tr>
+<td>Charge adjustment</td>
+<td>Penalty</td>
+<td>income from penalties</td>
+<td>charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Interest</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Interest</td>
+<td>fund source /advance accounting</td>
+<td>Income from Recovery payment</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Fees</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Fees</td>
+<td>fund source /advance accounting</td>
+<td>Income from Recovery payment</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Other receivables</td>
+<td>Other Credit liability</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Unallocated Credit (UNC)</td>
+<td>fund source /advance accounting</td>
+<td>Overpayment Liability</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Penalty</td>
+<td>Other receivables</td>
+<td>recoveries</td>
+</tr>
+<tr>
+<td>OCA Repayment</td>
+<td>Penalty</td>
+<td>fund source /advance accounting</td>
+<td>Income from Recovery payment</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Status</th>
+<th>Portion</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan Disbursement</td>
+<td>Cash Out</td>
+<td>Principal</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>Interest - Repayment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>Interest - Repayment</td>
+<td>145023</td>
+<td>404001</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>Late Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>NSF Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>Snooze Fee Payment</td>
+<td>145023</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>Principal Payment</td>
+<td>145023</td>
+<td>744007/740037</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash in, Charged off Flag Y</td>
+<td>Unallocated Credit (UNC)</td>
+<td>145023</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>Interest - Repayment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>Late Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>NSF Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>Snooze Fee Payment</td>
+<td>112603</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>Principal Payment</td>
+<td>112601</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Interest - Repayment</td>
+<td>404001</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Late Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>NSF Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Snooze Fee Payment</td>
+<td>404008</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Principal Payment</td>
+<td>744007/740037</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Transaction Refund/Provisional Credit</td>
+<td>Cash Out, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Unallocated Credit (UNC)</td>
+<td>245000</td>
+<td>145023</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>Interest - Repayment</td>
+<td>404001</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>Late Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>NSF Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>Snooze Fee Payment</td>
+<td>744003</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>Principal Payment</td>
+<td>744003</td>
+<td>112601</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash</td>
+<td>Unallocated Credit (UNC)</td>
+<td>744003</td>
+<td>245000</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>Interest - Repayment</td>
+<td>404001</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>Late Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>NSF Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Good Will</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>Snooze Fee Payment</td>
+<td>744003</td>
+<td>744008</td>
+</tr>
+<tr>
+<td>Late Fee Waiver</td>
+<td>No Cash</td>
+<td>Late Fee Payment</td>
+<td>404007</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>Late Fee Waiver</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>Late Fee Payment</td>
+<td>404007</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>Late Fee Waiver</td>
+<td>No Cash, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Late Fee Payment</td>
+<td>112603</td>
+<td>404007</td>
+</tr>
+<tr>
+<td>Late Fee Waiver</td>
+<td>No Cash, Charged off Flag Y, Reversal Indicator Y</td>
+<td>Late Fee Payment</td>
+<td>404008</td>
+<td>404007</td>
+</tr>
+<tr>
+<td>NSF Fee Waiver</td>
+<td>No Cash</td>
+<td>NSF Fee Payment</td>
+<td>404007</td>
+<td>112603</td>
+</tr>
+<tr>
+<td>NSF Fee Waiver</td>
+<td>No Cash, Charged off Flag Y</td>
+<td>NSF Fee Payment</td>
+<td>404007</td>
+<td>404008</td>
+</tr>
+<tr>
+<td>NSF Fee Waiver</td>
+<td>No Cash, Charged off Flag Y, Reversal Indicator Y</td>
+<td>NSF Fee Payment</td>
+<td>112603</td>
+<td>404007</td>
+</tr>
+<tr>
+<td>NSF Fee Waiver</td>
+<td>No Cash, Charged off Flag Y, Reversal Indicator Y</td>
+<td>NSF Fee Payment</td>
+<td>404008</td>
+<td>404007</td>
+</tr>
+<tr>
+<td>Apply Fee Return</td>
+<td>No Cash</td>
+<td>Late Fee Payment</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+<tr>
+<td>Apply Fee Return</td>
+<td>No Cash, Reversal Indicator Y</td>
+<td>Late Fee Payment</td>
+<td>N/A</td>
+<td>N/A</td>
+</tr>
+</tbody></table>
+<h2>Repayment strategy order</h2>
+<p>The repayment strategy order decides the sequence in which payments are applied to charge types on a loan. It applies when a payment is allocated after charge-off.</p>
+<p>Payments are applied in this order:</p>
+<ul>
+<li>Due charges</li>
+<li>In advanced principal</li>
+<li>Penalty</li>
+<li>Fee</li>
+<li>Interest</li>
+<li>Principal</li>
+</ul>
+<h2>Deferred charge-off options</h2>
+<p>Deferred charge-off options are available for non-interest bearing, progressive loan products.</p>
+<h2>Worked examples</h2>
+<p>A delinquent loan has a principal balance of 2,000.00 in loans receivable principal (112601) and a fee receivable of 100.00 (112603), giving a total balance of 2,100.00. When the loan is marked as charge-off, the system posts a dummy charge-off transaction for the full balance. The charge-off amount is 2,100.00, is non-editable, and is auto-calculated as the loan balance as of the charge-off date. The loan remains ACTIVE and the portfolio balance does not change; the write-off happens only at the accounting level. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Debit amount</th>
+<th>Credit amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off expense</td>
+<td>744007</td>
+<td></td>
+<td>2,000.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Fee charge-off income</td>
+<td>404008</td>
+<td></td>
+<td>100.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Loans receivable principal</td>
+<td></td>
+<td>112601</td>
+<td></td>
+<td>2,000.00</td>
+</tr>
+<tr>
+<td>Fee receivable</td>
+<td></td>
+<td>112603</td>
+<td></td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>2,100.00</td>
+<td>2,100.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that charge-off writes off the receivable through accounting entries while the loan stays active and the portfolio balance is unchanged.</p>
+<p>If the charge-off was posted in error and no transaction exists after it, the charge-off can be undone. Undoing restores the loan receivable (112601) and fee receivable (112603) and reverses the fee charge-off income. The loan remains ACTIVE throughout and is again treated as a normal active loan for collection. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Debit amount</th>
+<th>Credit amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Restore loans receivable principal</td>
+<td>112601</td>
+<td></td>
+<td>2,000.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Restore fee receivable</td>
+<td>112603</td>
+<td></td>
+<td>100.00</td>
+<td></td>
+</tr>
+<tr>
+<td>Reverse fee charge-off income</td>
+<td></td>
+<td>404008</td>
+<td></td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Reverse charge-off expense</td>
+<td></td>
+<td>744007</td>
+<td></td>
+<td>2,000.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>2,100.00</td>
+<td>2,100.00</td>
+</tr>
+</tbody></table>
+<p>Undo reverses the accounting write-off and restores the receivables, while the loan remains active and eligible for normal collection.</p>
+<p>A payment of 400.00 dated before the charge-off date is posted after the loan has been charged off. Because the transaction date precedes the charge-off, the system reverse-replays the charge-off: it reverses the original charge-off transaction and reposts it using the lower balance as of the charge-off date. The new charge-off amount is 1,700.00, consisting of 1,600.00 principal and 100.00 fee. Interest accrual remains stopped at the charge-off date and does not calculate interest for periods before it.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Debit GL</th>
+<th>Credit GL</th>
+<th>Debit amount</th>
+<th>Credit amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original charge-off (principal)</td>
+<td>744007</td>
+<td>112601</td>
+<td>2,000.00</td>
+<td>2,000.00</td>
+</tr>
+<tr>
+<td>Original charge-off (fee)</td>
+<td>404008</td>
+<td>112603</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Reverse original (principal)</td>
+<td>112601</td>
+<td>744007</td>
+<td>2,000.00</td>
+<td>2,000.00</td>
+</tr>
+<tr>
+<td>Reverse original (fee)</td>
+<td>112603</td>
+<td>404008</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Repost charge-off (principal)</td>
+<td>744007</td>
+<td>112601</td>
+<td>1,600.00</td>
+<td>1,600.00</td>
+</tr>
+<tr>
+<td>Repost charge-off (fee)</td>
+<td>404008</td>
+<td>112603</td>
+<td>100.00</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Net adjustment</td>
+<td>112601</td>
+<td>744007</td>
+<td>400.00</td>
+<td>400.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that a backdated payment reduces the charge-off amount through reverse-replay, and the loan remains active with accrual stopped at the charge-off date. If the backdated payment fully pays the loan, the charge-off transaction is reversed and the charge-off flag is lifted instead of merely reducing the amount.</p>
+<p>See also: <ac:link><ri:page ri:content-title="Payment Allocation Strategies"/><ac:plain-text-link-body><![CDATA[Payment Allocation Strategies]]></ac:plain-text-link-body></ac:link>.</p>

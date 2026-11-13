@@ -1,0 +1,210 @@
+<h2>Contract termination and loan withdrawal</h2>
+<p>Contract termination lets you set a transaction date, including a future date before the loan’s current maturity date. Loan withdrawal is a separate transaction type with comparable early termination behavior, so the system can distinguish loan withdrawal from contract termination while sharing date validation, interest calculation, and transaction processing. Loan withdrawal means early termination of an existing loan and remains distinct from withdrawal of a loan application.</p>
+<h2>Withdraw a loan</h2>
+<p>Use this screen to record an early termination of an existing loan as a loan withdrawal, distinct from withdrawing a loan application or contract termination.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Withdrawn by Client</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Withdrawn On</td>
+<td>Yes</td>
+<td>Enter the effective transaction date for the loan withdrawal. It is required and defaults to the current tenant business date if omitted; a malformed date fails validation.</td>
+</tr>
+<tr>
+<td>Note</td>
+<td>No</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The system records the loan withdrawal as a distinct transaction type, updates the loan substatus, calculates interest up to the selected date, recalculates the schedule where applicable, and processes the transaction immediately rather than waiting for the selected date.</p>
+<h2>Transaction date rules</h2>
+<p>The transaction date is the effective date for contract termination or loan withdrawal. If you omit it, the system uses the current tenant business date. A malformed date fails validation and does not fall back to the business date.</p>
+<p>Accepted and rejected dates:</p>
+<table>
+<thead>
+<tr>
+<th>Requested date</th>
+<th>Contract termination</th>
+<th>Loan withdrawal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Past date</td>
+<td>Rejected</td>
+<td>Accepted only when it is not earlier than the latest relevant transaction or charge submission</td>
+</tr>
+<tr>
+<td>Current business date</td>
+<td>Accepted when eligible</td>
+<td>Accepted when eligible</td>
+</tr>
+<tr>
+<td>Future date before maturity</td>
+<td>Accepted when eligible</td>
+<td>Accepted when eligible</td>
+</tr>
+<tr>
+<td>Future date on or after maturity</td>
+<td>Rejected</td>
+<td>Rejected</td>
+</tr>
+</tbody></table>
+<h2>Eligibility and permissions</h2>
+<p>You can request future-dated termination or loan withdrawal only for an open loan belonging to an active client or group with a progressive repayment schedule. Existing eligibility, permission, and transaction processing restrictions still apply, along with any configured permission and maker-checker mechanisms.</p>
+<blockquote>
+<p><strong>Note:</strong> The validator skips the maturity comparison when maturity is absent, so whether a loan without a maturity date can be terminated in the future remains a business-rule decision.</p>
+</blockquote>
+<h2>Transaction types and substatuses</h2>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Transaction type ID</th>
+<th>Loan substatus</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>CONTRACT_TERMINATION</td>
+<td>38</td>
+<td>CONTRACT_TERMINATION — 900</td>
+</tr>
+<tr>
+<td>LOAN_WITHDRAWAL</td>
+<td>48</td>
+<td>LOAN_WITHDRAWAL — 901</td>
+</tr>
+</tbody></table>
+<h2>Processing and schedule effects</h2>
+<p>When you submit a future-dated termination or withdrawal request, the system records the transaction with its future effective date and updates the loan substatus immediately. Transaction processing runs at submission time, not on the selected date, and no scheduled job waits for that date.</p>
+<p>Schedule and transaction processing calculate interest, principal, fees, penalties, and transaction allocation using the selected effective date and the loan’s configured calculation conventions. Interest accrues only up to that date.</p>
+<p>For interest-bearing loans with interest recalculation enabled, the system regenerates the repayment schedule and reprocesses transactions with the new transaction so that the revised schedule and outstanding balances reflect early termination.</p>
+<p>Subsequent business-date processing does not add interest beyond the effective termination date contrary to the revised schedule.</p>
+<p>The shared early termination service reuses existing interest, rounding, allocation, and schedule calculation logic. Each operation supplies its own transaction type, loan substatus, validation rules, and business events.</p>
+<h2>Undoing termination or withdrawal</h2>
+<p>You can undo a future-dated termination or loan withdrawal when the termination transaction is the last user transaction. Undoing reverses the transaction, clears the early termination substatus, regenerates the schedule where applicable, reprocesses transactions, and emits the corresponding events.</p>
+<h2>Validation and error handling</h2>
+<p>The system rejects malformed dates and unsupported parameters with meaningful errors. The user interface and API apply the same business rules, and server validation is authoritative. Client-side validation improves feedback, but the API repeats all required checks.</p>
+<h2>User interface</h2>
+<p>You select and submit a transaction date for contract termination or loan withdrawal. For contract termination, you can choose a future date strictly before maturity, but not a past date. For loan withdrawal, the agreed historical-date rule applies. The selected effective date appears before submission.</p>
+<p>The user interface shows:</p>
+<ul>
+<li>The date selector.</li>
+<li>The operation label.</li>
+<li>Validation feedback.</li>
+<li>Server validation errors against the date field where applicable.</li>
+<li>The correct transaction label and effective date in transaction history.</li>
+</ul>
+<h2>Request processing flow</h2>
+<p>When you submit a future-dated termination or loan withdrawal request, the system resolves the operation and transaction date, validates loan eligibility and date rules, creates the termination transaction, recalculates the schedule, processes the transaction, persists the transaction and loan changes, publishes existing business events, and returns the transaction identifier and changes.</p>
+<p>The system validates request parameters as follows:</p>
+<ul>
+<li>For a past date, the system rejects contract termination.</li>
+<li>For loan withdrawal, the system rejects a date earlier than the last user transaction date, excluding amortization.</li>
+<li>For loan withdrawal, the system rejects a withdrawal date earlier than the submission date of any active charge.</li>
+<li>For a future date, the system rejects a date equal to or later than the current maturity date.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>Future-dated contract termination before maturity. A loan officer opens a loan with a principal of 1,000, an annual interest rate of 12 percent, three monthly installments, 30-day months, and a 360-day year. The figures are illustrative. The tenant business date is 1 January, installments fall due on 1 February, 1 March, and 1 April, and maturity is 1 April. The officer selects 1 March as the termination date, which is a future date before maturity. One repayment of 340.02 has already been posted on 1 February.</p>
+<p>The termination payment clears the balance because interest is calculated only up to the selected date.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Payment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Opening balance</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment</td>
+<td>340.02</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Contract termination</td>
+<td>676.68</td>
+<td>6.70</td>
+<td>669.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,016.70</td>
+<td>16.70</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Loan withdrawal with the same early payoff. The setup is identical: principal of 1,000, annual interest rate of 12 percent, three monthly installments, 30-day months, business date 1 January, one repayment of 340.02 on 1 February, and a selected effective date of 1 March. The officer processes the payoff as a loan withdrawal rather than a contract termination. The calculation and the money movement are the same; only the transaction type label and the loan substatus recorded in the history differ.</p>
+<p>The amounts are identical to contract termination; the record differs only in the transaction type label and loan substatus.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Payment</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Opening balance</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1 February</td>
+<td>Repayment</td>
+<td>340.02</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>1 March</td>
+<td>Loan withdrawal</td>
+<td>676.68</td>
+<td>6.70</td>
+<td>669.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,016.70</td>
+<td>16.70</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

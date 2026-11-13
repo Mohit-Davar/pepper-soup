@@ -1,54 +1,81 @@
 # Fixed-Length Loans
 
-## Fixed-Length Loans
+## Fixed length feature
 
-Fixed-length loans let you set a fixed tenure for a loan account. The feature applies only to zero-interest bearing loan accounts that use the advance payment allocation strategy. Fixed length and fixed length frequency appear under the term section of the loan product configuration, and values stored at the product level are inherited by the loan account. You can also change the fixed length value at the loan account creation level.
+Fixed length sets the loan tenure in days. You can enter it at loan product level, where it is inherited by each loan account, or change it when you create an individual loan account. A separate optional field sets the maximum loan length in days at product level.
 
-The following rules govern fixed-length loans:
+## Fixed length fields
 
-- Fixed length frequency always matches the frequency set at the product level or the loan account level.
-- Frequency stays the same for loan term, repay every, and fixed length.
-- All installments honor the repayment frequency, and fixed length tenure days adjust to the last installment only.
-- Already paid installments remain intact when you extend the repayment schedule.
-- Unpaid installments before the reschedule from installment date remain intact.
-- Extending the repayment period can change the fixed length as configured for the loan.
-- Changing the repayment date, introducing a midterm grace period, or adjusting the interest rate for the remainder of the loan does not affect the duration of the last installment adjusted due to fixed length configuration.
-- Payment holiday, skip payment, or reschedule keeps the length in days of the last installment the same as before and honors the fixed length defined.
-- Post maturity scenarios, N+1, chargeback, and CBR functionalities work as designed and are not affected by fixed length configuration.
-- Extending the schedule by changing the repayment schedule is fine.
+The fixed length field always uses the same frequency as the repay every field, which inherits its value from the loan's regular frequency.
 
-Validation and configuration behaviour:
+## Eligibility
 
-- The system does not approve a fixed length configuration when it cannot derive the number of repayments entered.
-- Fixed length is a user-entered field at both loan product and loan account level.
-- The repay every frequency field value appears next to the fixed length field in the UI because the frequency field is not introduced and inherits from the loan regular frequency.
+You can use fixed length configuration only on zero interest bearing loan accounts and only with the advance payment allocation strategy.
 
-A loan officer creates a zero-interest fixed-length loan with a principal of 900.00, three repayments every 15 days, and a fixed length of 40 days. The figures are illustrative. The normal term would be 45 days, so the system keeps the first two installments at 15 days each and shortens only the last installment to 10 days so the schedule ends on day 40. If the fixed length were 50 days instead, the last installment would run 20 days rather than 10.
+## Creating a fixed length loan
 
-| Event | Day | Days | Principal paid | Balance |
+The system validates that a fixed length loan can derive the number of repayments you enter and does not approve the configuration when it cannot.
+
+## Repayment schedule
+
+Every installment honors the repayment frequency, and the fixed length tenure is adjusted to the last installment only. The other installments can vary in length, so the last installment might be much shorter than the rest. When the maximum length field is provided, repayment schedule generation adjusts the last installment to fit the configured maximum length.
+
+## Maximum loan length
+
+The maximum loan length limits how long the initial repayment schedule can run. Activities after maturity can extend beyond this period.
+
+Maximum loan length applies only when the loan term uses the same unit:
+
+- Days apply to loans with terms in days.
+- Weeks apply to loans with terms in weeks.
+- Months apply to loans with terms in months.
+
+> **Note:** For loans subject to French regulatory requirements, the loan cannot exceed 89 days, and the maximum loan length defines the last installment, which is shorter than the first two installments.
+
+## Reschedule and payment changes
+
+Rescheduling a fixed-length loan can change the repayment date, add a midterm grace period, or adjust the interest rate without changing the length of the last installment. Extending the repayment period can change the fixed length set by the loan configuration. A payment holiday, skipped payment, or reschedule keeps the last installment the same length in days as before and honors the fixed length defined for the loan.
+
+You can extend the schedule by changing the repayment schedule.
+
+- You can extend the schedule by changing the repayment schedule.
+
+## Post maturity and additional installments
+
+Post maturity and additional installments work as designed and are not affected by fixed-length loans.
+
+The following situations are excluded and require no changes:
+
+- N+1 situations.
+- Reschedule situations.
+
+## Worked examples
+
+A loan officer creates a zero-interest loan with a principal of 600 and three installments of 200 each. The repayment frequency is every 15 days, and the fixed length is set to 40 days. The figures in this example are illustrative. Without fixed length, the three installments would each cover 15 days. With fixed length at 40 days, the first two installments keep the 15-day frequency and the final installment covers the remaining 10 days. If the fixed length is set to 50 days instead, the first two installments stay at 15 days and the last installment becomes 20 days.
+
+| Installment | Due date | Length (days) | Principal paid | Balance remaining |
 | --- | --- | --- | --- | --- |
-| Disbursement | 0 | — | 900.00 | 900.00 |
-| Installment 1 | 15 | 15 | 300.00 | 600.00 |
-| Installment 2 | 30 | 15 | 300.00 | 300.00 |
-| Installment 3 | 40 | 10 | 300.00 | 0.00 |
-| Total | — | 40 | 900.00 | — |
+| 1 | Jan 16 | 15 | 200.00 | 400.00 |
+| 2 | Jan 31 | 15 | 200.00 | 200.00 |
+| 3 | Feb 10 | 10 | 200.00 | 0.00 |
+| Total |  | 40 | 600.00 |  |
 
-A product administrator enters a fixed length of five months for a zero-interest loan that requires six monthly repayments with one month between repayments. The system does not approve the setup because the fixed length cannot derive six repayments: five monthly intervals already require six months, leaving no days for the final installment. This shows the validation that blocks a fixed length too short to produce the requested number of repayments.
+A loan officer creates a zero-interest loan with a principal of 1,200 and six installments of 200 each. The repayment frequency is every 1 month. The system works out the shortest fixed length that can hold six installments as (6 minus 1) times 1 month plus 1 month, which equals 6 months. A fixed length of 5 months is therefore rejected. A fixed length of 7 months is accepted: the first five installments run one month apart and the final installment covers the remaining 2 months.
 
-| Setting | Value |
-| --- | --- |
-| Number of repayments | 6 |
-| Repay every | 1 month |
-| Minimum fixed length | 6 months |
-| Entered fixed length | 5 months |
-| System decision | Not approved |
-
-A loan officer reschedules a zero-interest loan with three repayments every 15 days and a fixed length of 40 days. The second installment is moved from day 30 to day 35, and the third installment moves to day 45. The system keeps the last installment at 10 days, so the fixed-length adjustment on the final installment is unchanged even though the middle gap widens. A normal reschedule shifts dates but leaves the last installment’s day count untouched; only an extend-term reschedule may alter the fixed length itself.
-
-| Event | Day | Days | Principal paid | Balance |
+| Installment | Due date | Length (months) | Principal paid | Balance remaining |
 | --- | --- | --- | --- | --- |
-| Disbursement | 0 | — | 900.00 | 900.00 |
-| Installment 1 | 15 | 15 | 300.00 | 600.00 |
-| Installment 2 (rescheduled) | 35 | 20 | 300.00 | 300.00 |
-| Installment 3 | 45 | 10 | 300.00 | 0.00 |
-| Total | — | 45 | 900.00 | — |
+| 1 | Feb 1 | 1 | 200.00 | 1,000.00 |
+| 2 | Mar 1 | 1 | 200.00 | 800.00 |
+| 3 | Apr 1 | 1 | 200.00 | 600.00 |
+| 4 | May 1 | 1 | 200.00 | 400.00 |
+| 5 | Jun 1 | 1 | 200.00 | 200.00 |
+| 6 | Aug 1 | 2 | 200.00 | 0.00 |
+| Total |  | 7 | 1,200.00 |  |
+
+On the same 600 loan with fixed length of 40 days, the original installments fall on January 16, January 31, and February 10, with lengths of 15, 15, and 10 days. If an officer reschedules the second installment from January 31 to February 5, the third installment moves to February 15. The length of the last installment stays at 10 days, so the fixed length tenure is still honored.
+
+| Installment | Due date | Length (days) | Principal paid | Balance remaining |
+| --- | --- | --- | --- | --- |
+| 1 | Jan 16 | 15 | 200.00 | 400.00 |
+| 2 | Feb 5 | 20 | 200.00 | 200.00 |
+| 3 | Feb 15 | 10 | 200.00 | 0.00 |

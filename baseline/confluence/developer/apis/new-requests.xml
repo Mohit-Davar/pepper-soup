@@ -1,0 +1,357 @@
+<h2>Loan schedule generation library</h2>
+<p>A separate library generates the loan repayment schedule without database dependency. It is packaged as a separate jar that you can add as a dependency, with a YAML file as input providing loan term, interest rate, and other details.</p>
+<p>The LoanRepaymentScheduleModelData input model requires these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>schedule generation start date</td>
+<td>required</td>
+</tr>
+<tr>
+<td>currency</td>
+<td>required</td>
+</tr>
+<tr>
+<td>disbursement amount</td>
+<td>required</td>
+</tr>
+<tr>
+<td>disbursement date</td>
+<td>required</td>
+</tr>
+<tr>
+<td>number of repayments</td>
+<td>required</td>
+</tr>
+<tr>
+<td>repayment frequency</td>
+<td>required</td>
+</tr>
+<tr>
+<td>repayment frequency type</td>
+<td>required</td>
+</tr>
+<tr>
+<td>nominal interest rate</td>
+<td>required</td>
+</tr>
+<tr>
+<td>downpayment enabled</td>
+<td>required</td>
+</tr>
+<tr>
+<td>daysInMonth</td>
+<td>required</td>
+</tr>
+<tr>
+<td>daysInYear</td>
+<td>required</td>
+</tr>
+<tr>
+<td>downpayment percentage</td>
+<td>optional</td>
+</tr>
+<tr>
+<td>installmentAmountInMultiplesOf</td>
+<td>optional</td>
+</tr>
+<tr>
+<td>fixed_length</td>
+<td>optional</td>
+</tr>
+</tbody></table>
+<p>The ProgressiveLoanScheduleGenerator is invoked with MathContext and LoanRepaymentScheduleModelData as input parameters and returns a LoanScheduleModel. The LoanScheduleModel output contains a list of LoanSchedulePeriodData periods.</p>
+<p>DefaultScheduledDateGenerator uses net.fortuna.ical4j.model.Recur.</p>
+<p>The hard dependencies forced on library consumers are org.eclipse.persistence.core version 4.0.2, ical4j version 3.2.19, and spring-data-commons version 2.5.7.</p>
+<blockquote>
+<p><strong>Note:</strong> The separate loan schedule library does not support loan term variations, charges, holidays, working days, multiple disbursements, or interest rate changes.</p>
+</blockquote>
+<h2>Downpayment loans</h2>
+<p>A downpayment loan lets you set the number of repayments and the down payment as a percentage dynamically under the same product constraints. The enableDownpayment field decides whether the loan is a downpayment loan.</p>
+<p>Additional fields for downpayment loans:</p>
+<ul>
+<li>numberOfRepayments (terms)</li>
+<li>downPaymentAmountPercentage</li>
+</ul>
+<h2>Loan creation API</h2>
+<p>Use the POST create loan API to create a loan. The endpoint is /fineract-provider/api/v1/loans. The request supports a nominal interest rate field and a downpayment or not field.</p>
+<h2>Get loan by ID API</h2>
+<p>Use the Get Loan by ID API to retrieve a loan by its internal ID or external ID. The API returns additional fields.</p>
+<p>Endpoints:</p>
+<ul>
+<li>/fineract-provider/api/v1/loans/{loanId}</li>
+<li>/fineract-provider/api/v1/loans/external-id/{externalloanId}</li>
+</ul>
+<h2>Interest management API</h2>
+<p>The POST manage interest API lets you stop interest calculations, restart interest calculations, and reduce interest calculations.</p>
+<blockquote>
+<p><strong>Note:</strong> Stopping interest calculations is a brand new API and differs from what the estimation documentation described.</p>
+</blockquote>
+<h2>Interest payment waiver API</h2>
+<p>Use the Interest Payment Waiver API to waive interest on a loan transaction. You can also reverse a previously created interest payment waiver.</p>
+<p>Endpoints</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Endpoint</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Create interest payment waiver</td>
+<td>/fineract-provider/api/v1/loans/{loanId}/transactions?command=interestpaymentwaiver</td>
+</tr>
+<tr>
+<td>Create interest payment waiver</td>
+<td>/fineract-provider/api/v1/loans/external-id/{externalloanId}/transactions?command=interestpaymentwaiver</td>
+</tr>
+<tr>
+<td>Reverse interest payment waiver</td>
+<td>/fineract-provider/api/v1/loans/{loanId}/transactions/{transactionId}</td>
+</tr>
+<tr>
+<td>Reverse interest payment waiver</td>
+<td>/fineract-provider/api/v1/loans/external-id/{externalLoanId}/transactions/external-id/{transactionExternalId}</td>
+</tr>
+</tbody></table>
+<p>Events</p>
+<ul>
+<li>The system publishes a transaction changed event with type PAYMENT_WAIVER when you create an interest payment waiver.</li>
+<li>The system publishes a transaction changed event with type PAYMENT_WAIVER_REVERSAL when you reverse an interest payment waiver.</li>
+</ul>
+<h2>Interest refund API</h2>
+<p>The interest refund API posts an interest refund together with a merchant-issued or payout refund in a single API call. The system publishes a transaction changed event for each refund type as part of the real-time call.</p>
+<p>The system publishes these events during a disbursement refund:</p>
+<ul>
+<li>MERCHANT_ISSUED_REFUND or PAYOUT_REFUND</li>
+<li>INTEREST_REFUND</li>
+</ul>
+<p>The interest refund reversal endpoint reverses an interest refund together with a merchant-issued or payout refund reversal in a single API call.</p>
+<p>The system publishes these events during a disbursement refund reversal:</p>
+<ul>
+<li>MERCHANT_ISSUED_REFUND_REVERSAL or PAYOUT_REFUND_REVERSAL</li>
+<li>INTEREST_REFUND_REVERSAL</li>
+</ul>
+<h2>Prepayment API</h2>
+<p>The prepayment API fetches prepayment amounts and processes prepayments using the existing repayment endpoint. Prepayments apply to progressive loans.</p>
+<p>The prepayment response includes:</p>
+<ul>
+<li>Principal</li>
+<li>Fee</li>
+<li>Penalty</li>
+<li>Total</li>
+</ul>
+<p>Prepayment processing:</p>
+<ul>
+<li>Applies the repayment allocation strategy.</li>
+</ul>
+<h2>Web client batch and templates</h2>
+<p>The web client batch API lets you mix web client and term commands in a single batch request using feign or fineract-client. The template API supports web client action templates.</p>
+<h2>Worked examples</h2>
+<p>The separate schedule library builds a repayment schedule from the loan inputs alone, with no database dependency. This example uses illustrative figures: a disbursement amount of 1,200.00, a nominal annual interest rate of 12%, four monthly installments, and 30-day months. Interest is calculated on the opening balance of each period, and the principal is repaid in equal amounts.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal paid</th>
+<th>Installment amount</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,200.00</td>
+<td>12.00</td>
+<td>300.00</td>
+<td>312.00</td>
+<td>900.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>900.00</td>
+<td>9.00</td>
+<td>300.00</td>
+<td>309.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>600.00</td>
+<td>6.00</td>
+<td>300.00</td>
+<td>306.00</td>
+<td>300.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>300.00</td>
+<td>3.00</td>
+<td>300.00</td>
+<td>303.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>30.00</td>
+<td>1,200.00</td>
+<td>1,230.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The example shows that the library returns one period per installment, that balances decrease by the principal paid, and that totals equal the sum of the period rows.</p>
+<p>The Get Loan by Id response adds interest-bearing summary fields to the loan resource. This example uses illustrative figures for a loan with a nominal interest rate of 12.000000 percent, posted but unpaid interest of 12.50, accrued but not yet posted interest of 2.00, total interest of 45.00, delinquent interest of 0.50, and no interest refunds or waivers.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>nominalInterestRate</td>
+<td>String</td>
+<td>12.000000</td>
+<td>Nominal annual rate as text, used to keep total interest within APR.</td>
+</tr>
+<tr>
+<td>totalUnpaidAccruedDueInterest</td>
+<td>BigDecimal</td>
+<td>12.50</td>
+<td>Posted interest that remains unpaid.</td>
+</tr>
+<tr>
+<td>totalUnpaidAccruedNotDueInterest</td>
+<td>BigDecimal</td>
+<td>2.00</td>
+<td>Interest accrued since the last monetary posting and not yet posted.</td>
+</tr>
+<tr>
+<td>totalInterest</td>
+<td>BigDecimal</td>
+<td>45.00</td>
+<td>Total interest across paid, unpaid and projected amounts.</td>
+</tr>
+<tr>
+<td>delinquentInterest</td>
+<td>BigDecimal</td>
+<td>0.50</td>
+<td>Interest portion of the delinquent amount.</td>
+</tr>
+<tr>
+<td>totalInterestRefund</td>
+<td>BigDecimal</td>
+<td>0.00</td>
+<td>Interest refunded through a disbursement refund, not reversed.</td>
+</tr>
+<tr>
+<td>totalInterestPaymentWaiver</td>
+<td>BigDecimal</td>
+<td>0.00</td>
+<td>Interest waived through a payment waiver, not reversed.</td>
+</tr>
+</tbody></table>
+<p>The example shows how the new fields map to their model names and what each interest category represents.</p>
+<p>The interest payment waiver and reversal endpoints accept the same request shape: a monetary amount and a date string. A waiver posts a new interest payment waiver transaction; a reversal posts a reversing transaction for an earlier waiver. This example uses illustrative figures.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Field</th>
+<th>Type</th>
+<th>Example value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Create interest payment waiver</td>
+<td>transactionAmount</td>
+<td>BigDecimal</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>Create interest payment waiver</td>
+<td>transactionDate</td>
+<td>String</td>
+<td>10 March 2024</td>
+</tr>
+<tr>
+<td>Create interest payment waiver reversal</td>
+<td>transactionAmount</td>
+<td>BigDecimal</td>
+<td>5.00</td>
+</tr>
+<tr>
+<td>Create interest payment waiver reversal</td>
+<td>transactionDate</td>
+<td>String</td>
+<td>12 March 2024</td>
+</tr>
+</tbody></table>
+<p>The example shows that both requests carry transactionAmount and transactionDate, while the reversal targets an existing waiver transaction rather than creating a new one.</p>
+<p>A merchant-issued disbursement refund returns a changes map that identifies the interest refund transaction. This example uses illustrative figures for the map entries.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>officeId</td>
+<td>2</td>
+</tr>
+<tr>
+<td>clientId</td>
+<td>8</td>
+</tr>
+<tr>
+<td>loanId</td>
+<td>8</td>
+</tr>
+<tr>
+<td>resourceId</td>
+<td>3001</td>
+</tr>
+<tr>
+<td>interestRefundTransactionId</td>
+<td>3002</td>
+</tr>
+<tr>
+<td>transactionDate</td>
+<td>10 March 2024</td>
+</tr>
+<tr>
+<td>transactionAmount</td>
+<td>50.00</td>
+</tr>
+<tr>
+<td>locale</td>
+<td>en</td>
+</tr>
+<tr>
+<td>dateFormat</td>
+<td>dd MMMM yyyy</td>
+</tr>
+<tr>
+<td>paymentTypeId</td>
+<td>1</td>
+</tr>
+<tr>
+<td>externalId</td>
+<td>a1b2c3d4-e5f6-7890-abcd-ef1234567890</td>
+</tr>
+<tr>
+<td>resourceExternalId</td>
+<td>a1b2c3d4-e5f6-7890-abcd-ef1234567890</td>
+</tr>
+</tbody></table>
+<p>The example shows that the changes map carries the new interest refund transaction identifier alongside the standard refund details.</p>

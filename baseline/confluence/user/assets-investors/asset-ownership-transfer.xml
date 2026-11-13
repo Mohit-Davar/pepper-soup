@@ -1,0 +1,122 @@
+<h2>Asset ownership transfer overview</h2>
+<p>You can assign ownership of a loan at any point in its life cycle. Ownership is submitted in real time and updates during close of business (COB), the nightly job that posts interest and fees. Fineract publishes events for all ownership-related activities and provides POST and GET APIs to support them.</p>
+<h2>Transfer asset ownership on a loan</h2>
+<p>Use this screen to submit a loan ownership transfer so the asset can move to an external investor.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Sell Loan</strong> or <strong>Buy Back Loan</strong>.</li>
+<li>Enter the details described below, then select <strong>Submit</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Settlement Date</td>
+<td>Yes</td>
+<td>Enter the settlement date for the ownership transfer.</td>
+</tr>
+<tr>
+<td>Purchase Price Ratio</td>
+<td>Yes</td>
+<td>Enter the purchase price ratio for the asset sale.</td>
+</tr>
+<tr>
+<td>Owner External Id</td>
+<td>Yes</td>
+<td>Enter the external ID of the new asset owner.</td>
+</tr>
+<tr>
+<td>Transfer External Id</td>
+<td>No</td>
+<td>Enter the transfer external ID, if applicable.</td>
+</tr>
+</tbody></table>
+<p>The transfer is submitted in real time and starts as PENDING, with the actual ownership update occurring during close of business.</p>
+<h2>Sell a loan to an external asset owner</h2>
+<p>Use the external asset owner tab to sell a loan to an external investor and start an ownership transfer.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Select <strong>External Asset Owner</strong>.</li>
+</ol>
+<p>The transfer starts as PENDING and moves to ACTIVE at close of business if the loan balance is greater than zero, otherwise it is declined.</p>
+<h2>Ownership transfer lifecycle and states</h2>
+<p>An asset ownership transfer starts in the PENDING state. At close of business (COB), the nightly job that posts interest and fees, the transfer moves to ACTIVE if the loan balance is greater than 0, or to DECLINED if the balance is less than or equal to 0. A transfer can also move from PENDING to BUYBACK when buyback occurs because the asset ownership settlement date is in the future but the account is fraud in the meantime, or to CANCELLED. The final states are ACTIVE, BUYBACK, DECLINED, and CANCELLED.</p>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "PENDING" as n1
+  state "ACTIVE" as n2
+  state "DECLINED" as n3
+  state "BUYBACK" as n4
+  state "CANCELLED" as n5
+  n1 --> n2 : COB: loan balance greater than 0
+  n1 --> n3 : COB: loan balance less than or equal to 0
+  n1 --> n4 : Buyback occurs
+  n1 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Selling loan ownership</h2>
+<p>Selling loan ownership transfers ownership of the loan to an investor. You can sell ownership only on an active loan that has no active ownership record and a positive balance at close of business (COB), the nightly job that posts interest and fees. On success, the system records the asset owner ID, sale transaction ID, purchase price ratio, and date and time of the ownership change, marks ownership active, and publishes an event.</p>
+<p>The system declines the sale and records no ownership change when:</p>
+<ul>
+<li>The loan is closed.</li>
+<li>The loan balance is 0.00 at COB.</li>
+<li>The loan balance is less than 0.00 at COB.</li>
+<li>The loan account cannot be found.</li>
+<li>An active ownership record already exists on the loan account.</li>
+</ul>
+<h2>Buying back loan ownership</h2>
+<p>Buying back loan ownership ends an active ownership record on a loan account. The system records the buyback transaction ID and buyback amount memo, records the date and time of the ownership change, marks ownership inactive, changes the active Asset Owner ID to inactive, and publishes an event.</p>
+<p>The buyback succeeds when:</p>
+<ul>
+<li>The loan is active and has an active ownership record.</li>
+<li>The loan is a FRAUD loan with no active ownership record.</li>
+</ul>
+<p>The buyback is declined when:</p>
+<ul>
+<li>The loan is closed and has an active ownership record.</li>
+<li>The loan account has no active ownership record.</li>
+<li>The invalid loan account is not found by the RT API call to Fineract SOR.</li>
+</ul>
+<h2>Journal entries and external ownership records</h2>
+<p>The system posts journal entries for an asset owner change or buy back as part of the close of business (COB) jobstep on the settlement date.</p>
+<p>The asset owner column of a monetary transaction follows the settlement date plus one rule:</p>
+<ul>
+<li>Any monetary transaction with a business date on or before the settlement date keeps the old investor tagged.</li>
+<li>Any monetary transaction with a business date after the settlement date has the new investor tagged.</li>
+</ul>
+<p>The asset owner column is null when:</p>
+<ul>
+<li>There is no active investor for the loan account.</li>
+<li>The loan account belongs to a product where the investor module is disabled.</li>
+</ul>
+<p>The system always derives the asset owner column from the current active asset owner as of that business date, regardless of transaction type, backdated transactions, reversals, charge additions or accruals.</p>
+<p>External ownership records store the following:</p>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>Stored details</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Externalization status</td>
+<td>Loan id, status, and effective date range with from and to dates</td>
+</tr>
+<tr>
+<td>Externalisation request and history</td>
+<td>Incoming externalisation requests and executed externalisation request outcomes</td>
+</tr>
+<tr>
+<td>Journal entry to external investor mapping</td>
+<td>Relationship between journal entries and external investors</td>
+</tr>
+</tbody></table>
+<h2>Transfer timing and balance conditions</h2>
+<p>Asset ownership transfer entries are created at close of business using the balance at close of business day. The transfer is effective at close of business on the day of request for active loans with a balance greater than 0.00.</p>
+<h2>Loan behavior after ownership transfer</h2>
+<p>After ownership transfers to an investor, the loan keeps the same payment allocation, past due and delinquency tracking, and charge-off rules as before the sale. Fees applied after the sale belong to the investor rather than PayPal.</p>

@@ -1,0 +1,257 @@
+<h2>Accounting options for Working Capital loans</h2>
+<p>Working Capital loans have two accounting options: None (default) and Cash based. The accounting rule is mandatory when you create a Working Capital product and must be NONE or CASH_BASED.</p>
+<p>None accounting:</p>
+<ul>
+<li>No accounting configuration is needed.</li>
+<li>No journal entries are created during the loan lifecycle.</li>
+</ul>
+<p>Cash based accounting:</p>
+<ul>
+<li>Recognizes interest only when a monetary event such as a repayment occurs, and calculates income based on the transaction amount.</li>
+<li>Creating or editing the product fails unless receivable fee account id is set, showing the error &#39;[receivable fee account id] The parameter receivable fee account id is mandatory.&#39;</li>
+</ul>
+<p>You can view the journal entry created for any transaction, similar to the progressive loan feature.</p>
+<h2>Configuring GL mapping on a loan product</h2>
+<p>GL mapping on a loan product links accounting entries to general ledger accounts based on income type, such as fees or interest. You can configure it when you create a loan product and on the modify screen.</p>
+<p>Cash Based accounting supports GL mapping for Working Capital loan products, including advance accounting rules mapping. Advance accounting rules mapping for Working Capital is similar to term loan products except for capitalized income and buydown fees mapping.</p>
+<p>You can update or delete GL accounting mapping on the loan product. Backend validations are adapted to the UI, so each parameter must be mapped to a GL before you submit.</p>
+<p>Charge-off mapping parameters are optional.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Charge-off GL mapping parameters</td>
+<td>No</td>
+</tr>
+</tbody></table>
+<h2>Journal entries by transaction</h2>
+<p>Each transaction posts debit and credit entries to general ledger accounts. The accounts and allocation types depend on the transaction type and whether the loan account is active, closed, or charged off.</p>
+<p>Transaction entries</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debit entry</th>
+<th>Credit entry</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Repayment</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin, Fees, Penalty, excess)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty); Fee Receivable GL 112603 (Fees Receivable, Asset, fees)</td>
+</tr>
+<tr>
+<td>Repayment Reversal</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess); Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty)</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin, Fees, Penalty, excess)</td>
+</tr>
+<tr>
+<td>Repayment on closed loan account</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Liability, Allocation Type Prin, Fees, Penalty and excess)</td>
+<td>Fee Receivable GL 112603 (Fees Receivable, Asset, fees)</td>
+</tr>
+<tr>
+<td>Repayment after charge-off</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin, Fees, Penalty, excess)</td>
+<td>Recoveries GL 744008 (Income from Recovery Repayment, Income, Prin); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess); Recoveries GL 744008 (Income from Recovery Repayment, Income, Penalty); Recoveries GL 744008 (Income from Recovery Repayment, Income, fees)</td>
+</tr>
+<tr>
+<td>Repayment Reversal after charge-off</td>
+<td>Recoveries GL 744008 (Income from Recovery Repayment, Income, Prin); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess); Recoveries GL 744008 (Income from Recovery Repayment, Income, Penalty); Recoveries GL 744008 (Income from Recovery Repayment, Income, fees)</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin, Fees, Penalty, excess)</td>
+</tr>
+<tr>
+<td>Disbursement</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin)</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin)</td>
+</tr>
+<tr>
+<td>Disbursement Reversal</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, Prin)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin)</td>
+</tr>
+<tr>
+<td>Amortization</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Int)</td>
+<td>Interest income GL 404000 (Income from Amortization, Income, Int)</td>
+</tr>
+<tr>
+<td>Amortization after charge-off</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Int)</td>
+<td>Interest income GL 404000 (Income from Amortization, Income, Int)</td>
+</tr>
+<tr>
+<td>CBR</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+</tr>
+<tr>
+<td>CBR Reversal</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>CBR after charge-off</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+</tr>
+<tr>
+<td>CBR Reversal after charge-off</td>
+<td>Suspence/clearing account GL 145023 (Fund source, Asset/Liability, excess)</td>
+<td>Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>Charge addition</td>
+<td>Fee Receivable GL 112603 (Fees Receivable, Asset, fees)</td>
+<td>Fee Income GL 404007 (Income from Fees, Income, fees)</td>
+</tr>
+<tr>
+<td>Charge waive</td>
+<td>Fee Income GL 404007 (Income from Fees, Income, fees)</td>
+<td>Fee Receivable GL 112603 (Fees Receivable, Asset, fees)</td>
+</tr>
+<tr>
+<td>Charge Adjustment</td>
+<td>Fee Income / Penalty Income GL 404007 (Income from charges, Income, prin, fees, excess)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, prin); Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>Charge Adjustment on charge-off loan account</td>
+<td>Fee Income GL 404007 (Income from fees/Penalty, Income, prin, fees, excess)</td>
+<td>Fee Charge off GL 404008 (Income from ChargeOff Fees, Asset, fees); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>Charge-off</td>
+<td>Credit loss-bad dept/credit loss-bad dept- fraud GL 744007/744037 (Charge off expense/charge-off fraud expense, Expense, Prin); Fee Charge off GL 404008 (Income from ChargeOff Fees, Income, fees); Fee Charge off GL 404008 (Income from ChargeOff Penalties, Income, Penalty)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin); Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty)</td>
+</tr>
+<tr>
+<td>Charge-off Reversal</td>
+<td>Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin); Fee Charge off GL 404008 (Income from ChargeOff Fees, Income, fees); Fee Charge off GL 404008 (Income from ChargeOff Penalties, Income, Penalty)</td>
+</tr>
+<tr>
+<td>Write-off</td>
+<td>Recoveries GL 744008 (Losses Written-off, Expense, Prin, fees, Penalty)</td>
+<td>Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty); Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin)</td>
+</tr>
+<tr>
+<td>Write-off Reversal</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin); Fee Receivable GL 112603 (Fees Receivable, Asset, fees); Fee Receivable GL 112603 (Penalty Receivable, Asset, Penalty)</td>
+<td>Recoveries GL 744008 (Losses Written-off, Expense, Prin, fees, Penalty)</td>
+</tr>
+<tr>
+<td>Goodwill Credit</td>
+<td>Principal bal adjustment GL 744003 (Expense, Prin, excess); Fee Charge off GL 404008 (Income, fees); Fee Charge off GL 404008 (Income, Penalty)</td>
+<td>Loans Receivable Principal GL 112601 (Asset, prin); Fee Receivable GL 112603 (Asset, fees); Fee Receivable GL 112603 (Asset, Penalty); Other Credit liability GL 245000 (Liability, excess)</td>
+</tr>
+<tr>
+<td>Goodwill Credit on closed loan account</td>
+<td>Principal bal adjustment GL 744003 (Expense from Goodwill Credit, Expense, Prin, excess)</td>
+<td></td>
+</tr>
+<tr>
+<td>Goodwill Credit after charge-off</td>
+<td>Principal bal adjustment GL 744003 (Expense from Goodwill Credit, Expense, Prin, excess); Fee Charge off GL 404008 (Income from Goodwill Credit Fees, Income, fees); Fee Charge off GL 404008 (Income from Goodwill Credit Penalty, Income, Penalty)</td>
+<td>Recoveries GL 744008 (Income from Recovery Repayment, Income, prin); Recoveries GL 744008 (Income from Recovery Repayment, Income, fees); Recoveries GL 744008 (Income from Recovery Repayment, Income, Penalty); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+</tr>
+<tr>
+<td>Goodwill Credit Reversal after charge-off</td>
+<td>Recoveries GL 744008 (Income from Recovery Repayment, Income, prin); Recoveries GL 744008 (Income from Recovery Repayment, Income, fees); Recoveries GL 744008 (Income from Recovery Repayment, Income, Penalty); Other Credit liability GL 245000 (Overpayment Liability, Liability, excess)</td>
+<td>Fee Charge off GL 404008 (Income from Goodwill Credit Fees, Income, fees); Fee Charge off GL 404008 (Income from Goodwill Credit Penalty, Income, Penalty)</td>
+</tr>
+<tr>
+<td>Discount fees</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin, Fees, Penalty)</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Prin, Fees, Penalty)</td>
+</tr>
+<tr>
+<td>Discount fees Adjustment</td>
+<td>Deferred Interest GL 240005 (Deferred Income, Liability, Prin, Fees, Penalty)</td>
+<td>Loans Receivable Principal GL 112601 (Loan Portfolio, Asset, Prin, Fees, Penalty)</td>
+</tr>
+<tr>
+<td>Payout refund payment on active loan account - Penalty</td>
+<td>Fund source GL 145023</td>
+<td>Penalties Receivable GL 112603</td>
+</tr>
+<tr>
+<td>Payout refund payment on active loan account - Fees</td>
+<td>Fund source GL 145023</td>
+<td>Fees Receivable GL 112603</td>
+</tr>
+<tr>
+<td>Payout refund payment on active loan account - Principal</td>
+<td>Fund source GL 145023</td>
+<td>Loan portfolio GL 112601</td>
+</tr>
+<tr>
+<td>Payout refund payment on active loan account - Unallocated Credit (UNC)</td>
+<td>Fund source GL 145023</td>
+<td>Over payment liability GL 245000</td>
+</tr>
+<tr>
+<td>Payout refund payment on charge-off loan account - Penalty</td>
+<td>Fund source GL 145023</td>
+<td>Income from ChargeOff Penalty GL 404008</td>
+</tr>
+<tr>
+<td>Payout refund payment on charge-off loan account - Fees</td>
+<td>Fund source GL 145023</td>
+<td>Income from ChargeOff Fees GL 404008</td>
+</tr>
+<tr>
+<td>Payout refund payment on charge-off loan account - Principal</td>
+<td>Fund source GL 145023</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense GL 744007/740037</td>
+</tr>
+<tr>
+<td>Payout refund payment on charge-off loan account - Unallocated Credit (UNC)</td>
+<td>Fund source GL 145023</td>
+<td>Over payment liability GL 245000</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on active loan account - Penalty</td>
+<td>Penalties Receivable GL 112603</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on active loan account - Fees</td>
+<td>Fees Receivable GL 112603</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on active loan account - Principal</td>
+<td>Loan portfolio GL 112601</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on active loan account - Unallocated Credit (UNC)</td>
+<td>Over payment liability GL 245000</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on charge-off loan account - Penalty</td>
+<td>Income from ChargeOff Penalty GL 404008</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on charge-off loan account - Fees</td>
+<td>Income from ChargeOff Fees GL 404008</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on charge-off loan account - Principal</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense GL 744007/740037</td>
+<td>Fund source GL 145023</td>
+</tr>
+<tr>
+<td>Payout refund reversal payment on charge-off loan account - Unallocated Credit (UNC)</td>
+<td>Over payment liability GL 245000</td>
+<td>Fund source GL 145023</td>
+</tr>
+</tbody></table>

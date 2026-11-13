@@ -1,0 +1,3 @@
+# Repayment Summary API
+
+The Repayment Summary API creates a repayment summary before a client or loan exists, so you can present the repayment plan to a customer before they apply for a GPL loan. Its parameters work like those for term loans.

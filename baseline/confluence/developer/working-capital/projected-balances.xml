@@ -1,0 +1,73 @@
+<h2>Projected amortization schedule</h2>
+<p>When a working capital loan is created, the system calculates and creates a projected amortization schedule for the whole loan life cycle. The schedule is recalculated based on the approved amount at approval and the disbursement amount at disbursement. The schedule is a current state schedule that updates based on payments made, missed, or overpaid.</p>
+<p>The projected amortization schedule includes the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Amortization Installment No</td>
+</tr>
+<tr>
+<td>Amortization Installment Date</td>
+</tr>
+<tr>
+<td>Expected Payment Amount</td>
+</tr>
+<tr>
+<td>Discount Factor</td>
+</tr>
+<tr>
+<td>NPV Value</td>
+</tr>
+<tr>
+<td>Balance</td>
+</tr>
+<tr>
+<td>Net Amortization Amount</td>
+</tr>
+<tr>
+<td>Actual Payment Amount</td>
+</tr>
+<tr>
+<td>Actual Amortization Amount</td>
+</tr>
+<tr>
+<td>Income Modification</td>
+</tr>
+<tr>
+<td>Deferred Balance</td>
+</tr>
+</tbody></table>
+<p>The loan account view screen shows the Projected Amortization Schedule with the serial number of the installment, installment date, amortization installment date, expected payment as the calculated period payment amount value, and expected amortization amount as the calculated value.</p>
+<h2>Schedule recalculation after payments</h2>
+<p>When an actual payment lands that differs from the expected payment, the system recalculates future expected payment periods using the actual payment as the baseline. Past rows are never recalculated; only payment periods after the date the payment landed are recalculated.</p>
+<h2>Zero-filled days</h2>
+<p>At close of business (COB), the nightly job that posts interest and fees, zero-filled days appear on Working Capital (WC) loans for elapsed days. These rows do not create an actual transaction; they are cosmetic changes on the schedule. The expected payment schedule treats zero-filled rows as actual payments, recalculating expectations as if a zero-amount repayment transaction landed.</p>
+<h2>Repayment on disbursement date</h2>
+<h2>Amortization calculations and stored values</h2>
+<p>The system calculates amortization values from Principal Amount, Total Payment Value, Discount Amount, NPV Day count, and Period Payment Rate. Annual EIR at the loan account level. Actual repayments calculate and post Actual Amortization(Income) on the payment date.</p>
+<p>When Flat amortization is configured:</p>
+<ul>
+<li>Payable Discount fee equals Discount Fee minus Discount Fee adjustment.</li>
+<li>Initial Loan balance equals Disbursed amount plus Discount Fee minus Discount Fee adjustment.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> If input field values become too low for calculated values, the system throws a valid error message referencing the issue, such as unable to calculate a valid EIR.</p>
+</blockquote>
+<h2>Period Payment Rate modification</h2>
+<p>A Period Payment Rate modification can be undone by reversing the operation or by allowing multiple values on the same date.</p>
+<h2>Working Capital transaction balances</h2>
+<p>Working Capital loan products use DUE and IN ADVANCE transaction allocation balances; PAST DUE does not apply.</p>
+<p>Origination fees use one of these amortization methods:</p>
+<ul>
+<li>Straight line amortization.</li>
+</ul>
+<h2>Amortization schedule API</h2>
+<p>Use GET /working-capital-loans/&lt;loanId&gt;/amortization-schedule to fetch the current amortization schedule as a JSON model with all relevant details.</p>
+<p>The response includes:</p>
+<ul>
+<li>Expected payment and balances.</li>
+</ul>

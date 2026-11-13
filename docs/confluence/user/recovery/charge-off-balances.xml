@@ -1,89 +1,67 @@
-<h2>Charge-Off Balances</h2>
-<h3>Charge-off behavior options</h3>
-<p>Charge-off behavior options are Regular, Zero interest after charge-off, and Accelerate maturity to charge-off date. The setting is stored with the product definition and appears as a selector on the Setting &gt;&gt; Loan schedule page.</p>
-<h3>Product eligibility and validation</h3>
-<p>Charge-off behaviour applies only to Progressive loan products where interest is not zero; interest recalculation is not relevant and repayment interest is irrelevant, with all methods working the same way and interest calculated till the charge-off date. Whether charge-off behaviour is supported for the loan product is validated. If a loan product is not progressive, only REGULAR charge-off behaviour is supported. If a loan product does not have interest or interest recalculation is not enabled, only REGULAR charge-off behaviour is supported. The Accelerate maturity option is available for interest bearing, progressive loan products.</p>
-<p>When the charge-off reason is FRAUD and Credit Loss/Bad Debt Fraud is configured, the following applies:</p>
+<h2>Charge-off behavior</h2>
+<p>On the day of charge off, the full loan balance becomes due and collectible. Interest is calculated only to the day of charge off and stops from the next day.</p>
+<p>Charge-off behavior depends on timing:</p>
 <ul>
-<li>The configured GL account is used for charge-off journal entries.</li>
+<li>After the maturity date, the full balance does not become due immediately.</li>
+<li>Before the maturity date, all future installments are removed and the actual installment is amended with the due date of the charge-off transaction date, containing the total principal and charges amount of the removed future installments.</li>
+<li>The N+1 balance still goes to the recalculated installment when charge-off happens before the maturity date.</li>
+<li>N+1 installments are not affected by charge-off activity.</li>
 </ul>
-<h3>Charge-off timing and date rules</h3>
-<p>You can charge off a loan account only on or before today&#39;s date, and the charge-off date must be the latest transaction date on the account. Charge-off cannot occur before the last transaction date, so backdated transactions must be supported.</p>
-<h3>Loan balance and installment changes</h3>
-<p>On charge-off before the maturity date, the full loan balance becomes due on the day of charge-off and interest is calculated only to that date. After the maturity date, the full balance does not become due on charge-off.</p>
-<p>Before the maturity date, the system removes all future installments and amends the actual installment with the charge-off transaction date so it contains the total principal and charges from the removed future installments.</p>
+<p>Interest and repayments:</p>
 <ul>
-<li>If accelerate maturity to charge-off date is set, the system creates a new final installment due on the charge-off date containing all future balance, removes installments after the charge-off date, adds interest pending until the charge-off date to the new final installment, and calculates no interest for that final installment.</li>
-<li>If charge-off occurs before the maturity date under edge case N+1, the N+1 balance still goes to the recalculated installment.</li>
+<li>Backdated repayments and reversals trigger the reverse-replay of all transactions and the charge-off transaction.</li>
 </ul>
-<h3>Interest calculation at charge-off</h3>
-<p>Interest is calculated up to and including the charge-off date, and interest calculation and accrual stop from the day after charge-off.</p>
-<p>The calculation depends on the loan product settings:</p>
+<h2>Eligible loan products</h2>
+<p>If the loan product is not progressive, does not have interest, or does not have interest recalculation enabled, only REGULAR charge-off behavior is supported.</p>
+<h2>Charge-off timing and criteria</h2>
+<p>You can charge off a loan account only on or before the latest transaction date on that account. Backdated transactions are supported. Charge-off cannot be done on a future date.</p>
+<p>If Credit Loss/Bad Debt Fraud is configured for charge-off and the charge-off reason is FRAUD, the configured GL account is used for the journal entries of the charge-off transactions.</p>
+<h2>Charge-off behavior options</h2>
+<p>Charge-off behavior controls what happens to a loan when it is charged off. Choose one of three options on the Settings &gt;&gt; Loan schedule page: Regular, Zero interest after charge-off, or Accelerate maturity to charge-off date. When Accelerate maturity to charge-off date is set and the loan is charged off, the system creates a new final installment due on the charge-off date that contains all future balance, removes installments after the charge-off date, adds interest pending until the charge-off date to the new final installment, and does not calculate interest on that final installment.</p>
+<h2>Undoing a charge-off</h2>
+<p>Undoing a charge-off reestablishes the loan schedule that existed before the charge-off.</p>
+<h2>Future charges</h2>
+<p>Future charges are handled as part of the charge-off amount and remain unpaid to be collected with coming payments.</p>
+<p>The following rules apply to future charges:</p>
 <ul>
-<li>For a progressive loan product with interest recalculation not enabled, interest is calculated as (total interest of the period) / (number of days of the period) * (number of days till charge-off date), with the period from date exclusive and the charge-off date inclusive.</li>
-<li>For loans with interest recalculation enabled, transactions are reprocessed to obtain the progressive loan interest schedule model, then the due interest for the current period is calculated.</li>
-</ul>
-<p>Charge-off also changes the schedule as follows:</p>
-<ul>
-<li>The charge-off date decides which period the charge-off belongs to; the period from date is exclusive and the period due date is inclusive.</li>
-<li>The due date of the current period is changed to the charge-off date and all future periods are removed.</li>
-<li>Principal due on the period is increased with the difference between the original interest of the period and the new interest of the period after charge-off.</li>
-</ul>
-<h3>Future fees and charges</h3>
-<p>Future fees are waived rather than dropped or moved to the newly created final installment. Charges already paid or waived are not affected by charge-off.</p>
-<p>Unpaid charges added after, before, or on the charge-off date remain part of the charge-off amount and stay unpaid to be collected as part of coming payments.</p>
-<ul>
-<li>Unpaid charges added after, before, or on the charge-off date remain part of the charge-off amount and stay unpaid to be collected as part of coming payments.</li>
-</ul>
-<p>Charge handling behavior remains the same for all charge-off behaviors and for both interest recalculation settings.</p>
-<ul>
-<li>Charge handling behavior remains the same for all charge-off behaviors (regular, zero future interest, accelerate) and for both interest recalculation enabled and disabled.</li>
-</ul>
-<p>If any unpaid charge associated with the charge-off is waived, the charge-off transaction is reverse-replayed.</p>
-<ul>
+<li>Future fees are waived rather than dropped or moved to the newly created final installment.</li>
+<li>Charges that are already paid or waived are not affected by the charge-off.</li>
 <li>If any unpaid charge associated with the charge-off is waived, the charge-off transaction is reverse-replayed.</li>
+<li>Charge handling behavior remains the same for all charge-off behaviours (regular, zero future interest, accelerate) and for both interest recalculation enabled and disabled.</li>
+<li>For a progressive, interest bearing loan with interest recalculation enabled and charge-off behaviour accelerate maturity date, if a charge with a due date after the charge-off date exists, the charge due date becomes the N+1 installment.</li>
 </ul>
-<p>For a progressive, interest-bearing loan with interest recalculation enabled and charge-off behaviour accelerate maturity date, if a charge with a due date after the charge-off date exists, the charge&#39;s due date becomes the N+1 installment due date.</p>
+<h2>Interest calculation and accrual</h2>
+<p>When a loan is charged off, interest accrual stops and the system posts any missing accrual on the charge-off date. Interest accrual uses a day count of 30 days per period and a 360-day year.</p>
+<p>Interest calculation differs by loan type:</p>
 <ul>
-<li>For a progressive, interest-bearing loan with interest recalculation enabled and charge-off behaviour accelerate maturity date, if a charge with a due date after the charge-off date exists, the charge&#39;s due date becomes the N+1 installment due date.</li>
+<li>For a progressive loan with interest recalculation not enabled, interest is calculated till the charge-off date using (total interest of the period) / (number of days of the period) * (number of days till charge-off date), where the period from date is exclusive and the charge-off date is inclusive.</li>
+<li>For interest recalculation enabled loans, transactions are reprocessed to get the interest schedule, then the due interest for the current period is calculated.</li>
+<li>For a cumulative loan, the daily accrual amount for any not yet accrued payable interest is calculated and an accrual transaction is posted real-time on the charge-off date.</li>
 </ul>
-<p>Charge-off reversal reestablishes the previous loan schedule.</p>
+<p>The system applies these changes at charge-off:</p>
 <ul>
-<li>Charge-off reversal reestablishes the previous loan schedule.</li>
+<li>Calculated interest is set on the current period; the charge-off date decides which period it belongs to, with the period from date exclusive and the period due date inclusive.</li>
+<li>Principal due on the period is increased with the difference between the original interest of the period and the new interest of the period after charge-off.</li>
+<li>The due date of the current period is changed to the charge-off date and all future periods are removed.</li>
 </ul>
-<h3>N+1 installment handling</h3>
-<p>The system handles N+1 installments correctly during charge-off activity. If a chargeback comes, an N+1 installment is created, and N+1 installments are not affected by charge-off activity.</p>
-<p>Accounting follows the rules defined with charge-off, and relevant account changed events are sent. GL entry columns include Interest portion, Interest income charge off, Fee Receivable, charge-off interest income, and Interest Receivable.</p>
-<h3>Accrual processing after charge-off</h3>
-<p>The Apply periodic accrual business step does not work on charged-off loans. When interest recognition from disbursement date is TRUE and this is the first time the charge-off transaction is created, no accrual transaction is generated immediately because there is no difference between accrued interest and payable interest. When accrual recalculation is triggered after charge-off, the accrual or accrual adjustment transaction date is the charge-off transaction date.</p>
-<p>When a charge-off is backdated, accrual entries are reversed as follows:</p>
+<p>Accrual transactions on the charge-off date:</p>
 <ul>
-<li>When interest recognition from disbursement date is TRUE and the charge-off transaction date is 13th Jan, accrual entries with transaction dates 13th Jan and 14th Jan must be reversed.</li>
-<li>When interest recognition from disbursement date is FALSE and the charge-off transaction date is 13th Jan, accrual entries with transaction date 14th Jan must be reversed.</li>
+<li>For a charged-off progressive loan where interest recognition from disbursement date is TRUE and this is the first time the charge-off transaction is created, no accrual transaction needs to be generated immediately because there is no difference between accrued interest and payable interest.</li>
+<li>For a charged-off progressive loan where interest recognition from disbursement date is FALSE, the missing daily interest accrual must be calculated and created because no further accruals will be done after charge-off.</li>
+<li>A new accrual or accrual adjustment transaction must be created on the charge-off date before the charge-off transaction itself timestamp-wise if the charge-off amounts changed.</li>
 </ul>
-<p>When a loan is charged off, accrual processing depends on the loan type and interest recognition setting:</p>
+<p>Backdated charge-offs and reversed repayments:</p>
 <ul>
-<li>When a progressive loan is charged off, the actual not yet accrued daily interest must be immediately recognized and an accrual transaction posted if there is any payable non-recognized interest.</li>
-<li>When a cumulative loan is charged off, the actual not yet accrued daily interest must be immediately recognized and an accrual transaction posted if there is any payable non-recognized interest.</li>
-<li>When interest recognition from disbursement date is FALSE, the missing daily interest accrual must be calculated and created because accrual will not be done anymore after charge-off.</li>
+<li>For a progressive loan with a backdated charge-off transaction, all accrual entries with a transaction date after the charge-off transaction date must be reversed real-time.</li>
+<li>For a backdated charge-off where interest recognition from disbursement date is TRUE, accrual entries with transaction dates of 13th of Jan and 14th of Jan must be reversed.</li>
+<li>For a backdated charge-off where interest recognition from disbursement date is FALSE, accrual entries with transaction date of 14th of Jan must be reversed.</li>
+<li>For a charged-off progressive loan with interest recalculation enabled, when a backdated repayment or an earlier transaction is reverted after charge-off, accruals must be recalculated real-time and an accrual or accrual adjustment transaction must be posted if applicable.</li>
+<li>For a charged-off progressive loan where interest recognition from disbursement date is TRUE, the accrual or accrual adjustment transaction created after reversing a backdated repayment must have a transaction date of 31st of Jan (the charge-off transaction date).</li>
 </ul>
-<p>When a charged-off progressive loan has a backdated repayment or an earlier repayment reverted, accruals are recalculated real-time and an accrual or accrual adjustment transaction is posted if applicable. If charge-off amounts changed, the new accrual or accrual adjustment transaction is created on the charge-off date before the charge-off transaction itself timestamp-wise.</p>
-<h3>Backdated transactions and reverse-replay</h3>
-<p>Backdated repayment or other monetary activity triggers reverse-replay of all transactions and the charge-off transaction. Monetary activity after charge-off is not reprocessed; the system uses existing repayment periods and processes the transaction as if the loan does not do interest recalculation.</p>
-<p>When an overpaid loan receives a charge:</p>
-<ul>
-<li>If the overpaid amount matches the charge amount, the loan gets closed.</li>
-<li>If the overpaid amount is lower than the charge amount, the loan gets active (reopened).</li>
-<li>The new maturity date is the date of the charge due date.</li>
-<li>Delinquency period and breach period are created if any outstanding balance appears on the loan after adding a charge.</li>
-</ul>
-<p>Charge-off scenarios:</p>
-<ul>
-<li>S1 charge-off on due date scenario covers charge-off on the due date.</li>
-<li>S5 charge-off after one installment is overdue scenario is listed.</li>
-</ul>
-<h3>Worked examples</h3>
-<p>Regular charge-off before maturity. A user of a progressive loan product sees a principal of 1,000.00, an annual interest rate of 12 percent, 30-day months, and three monthly installments due on 1 February, 1 March and 1 April. The first installment of 340.00, made of principal 330.00 and interest 10.00, is paid on 1 February, leaving 670.00 outstanding. Before the next installment is due, the user posts a charge-off on 15 February. Because the charge-off happens before maturity, the full outstanding balance becomes collectible on the charge-off date, interest is calculated only to 15 February, and the remaining installments are removed. The figures are illustrative. This example shows that a pre-maturity charge-off collects the whole remaining balance plus interest to the charge-off date and drops future installments.</p>
+<h2>Product settings</h2>
+<p>Charge-off behavior is stored with the product definition. Interest recognition from disbursement date is set to FALSE.</p>
+<h2>Worked examples</h2>
+<p>A loan officer charges off a progressive, interest-bearing loan before its maturity date. The figures are illustrative: a principal of 1,000, an annual interest rate of 12 percent, three monthly installments, and 30-day months. The first installment is paid on 1 February. The charge-off is posted on 1 March, before the final installment is due on 1 April. On charge-off, the full remaining balance becomes due, future installments are removed, and interest is calculated only to the charge-off date. The example shows that charge-off before maturity collects the outstanding balance plus interest to the charge-off date, while future interest is removed.</p>
 <table>
 <thead>
 <tr>
@@ -91,122 +69,44 @@
 <th>Event</th>
 <th>Principal</th>
 <th>Interest</th>
-<th>Total</th>
-<th>Balance</th>
+<th>Total due</th>
+<th>Balance after</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>1 Feb</td>
-<td>Installment paid</td>
-<td>330.00</td>
-<td>10.00</td>
-<td>340.00</td>
-<td>670.00</td>
-</tr>
-<tr>
-<td>15 Feb</td>
-<td>Charge-off</td>
-<td>670.00</td>
-<td>3.13</td>
-<td>673.13</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>—</td>
-<td>Future installments removed</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>Total</td>
-<td></td>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
 <td>1,000.00</td>
-<td>13.13</td>
-<td>1,013.13</td>
-<td></td>
-</tr>
-</tbody></table>
-<p>Charge-off with interest recalculation. A progressive loan with interest recalculation turned on uses a principal of 1,000.00, an annual interest rate of 12 percent, and 30-day months. The current period runs from 1 February to 1 March with 670.00 outstanding and full-period interest of 6.00. The user posts a charge-off on 11 February. Interest is calculated as the period interest divided by the days in the period, multiplied by the days from the period start, exclusive, to the charge-off date, inclusive: 6.00 divided by 30 multiplied by 10 equals 2.00. The difference between the original interest and the new interest, 4.00, is added to the principal due, the current period&#39;s due date becomes 11 February, and all future periods are removed. This example shows how a partial-period charge-off reprices interest and shifts the uncharged interest into the principal due.</p>
-<table>
-<thead>
-<tr>
-<th>Step</th>
-<th>Amount</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Full-period interest</td>
-<td>6.00</td>
 </tr>
 <tr>
-<td>Days in period</td>
-<td>30</td>
-</tr>
-<tr>
-<td>Days to charge-off date</td>
-<td>10</td>
-</tr>
-<tr>
-<td>Interest till charge-off</td>
-<td>2.00</td>
-</tr>
-<tr>
-<td>Charge-off amount (principal 670.00 plus interest 2.00)</td>
-<td>672.00</td>
-</tr>
-<tr>
-<td>Balance after charge-off</td>
-<td>0.00</td>
-</tr>
-</tbody></table>
-<p>Accelerate maturity at charge-off. A progressive, interest-bearing loan uses the accelerate maturity date charge-off behavior, with a principal of 1,000.00, an annual interest rate of 12 percent, 30-day months, and monthly installments. The first installment of 340.00, made of principal 330.00 and interest 10.00, is paid on 1 February, leaving 670.00 outstanding. The next installment is due on 1 March, but the user posts a charge-off on 1 March, so that installment&#39;s due date is pulled forward to the charge-off date. The full balance becomes due: principal 670.00 plus interest of 6.70 for the period, a total of 676.70, bringing the balance to 0.00 and removing later installments. With regular charge-off instead, future installments would simply be removed without pulling the next installment&#39;s due date to the charge-off date. This example shows that accelerate maturity pulls the next installment&#39;s due date to the charge-off date and collects it as part of the charge-off.</p>
-<table>
-<thead>
-<tr>
-<th>Date</th>
-<th>Event</th>
-<th>Principal</th>
-<th>Interest</th>
-<th>Total</th>
-<th>Balance</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>1 Feb</td>
-<td>Installment paid</td>
+<td>1 February</td>
+<td>Installment 1</td>
 <td>330.00</td>
 <td>10.00</td>
 <td>340.00</td>
 <td>670.00</td>
 </tr>
 <tr>
-<td>1 Mar</td>
-<td>Charge-off, maturity accelerated</td>
+<td>1 March</td>
+<td>Charge-off (final installment)</td>
 <td>670.00</td>
 <td>6.70</td>
 <td>676.70</td>
 <td>0.00</td>
 </tr>
 <tr>
-<td>—</td>
-<td>Later installments removed</td>
-<td>—</td>
-<td>—</td>
-<td>—</td>
-<td>0.00</td>
-</tr>
-<tr>
-<td>Total</td>
-<td></td>
-<td>1,000.00</td>
-<td>16.70</td>
-<td>1,016.70</td>
-<td></td>
+<td>1 April</td>
+<td>Installment 3 removed (not collected)</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>340.07</td>
+<td>–</td>
 </tr>
 </tbody></table>
-<p>Charge-off reversal and backdated activity. A loan of 1,000.00 is charged off on 20 January, with interest of 6.33 calculated to the charge-off date, leaving a balance of 0.00 and the charge-off flag on. A user can reverse or add transactions dated before the charge-off date; the system reverse-replays the charge-off transaction and re-establishes the previous schedule. If a backdated repayment on 15 January fully pays the loan, the charge-off transaction is reversed and the charge-off flag is lifted. The outcome depends on the interest recognition setting: when recognition from the disbursement date is true, no immediate accrual transaction is posted on the first charge-off because accrued and payable interest match; when it is false, the missing daily interest accrual is calculated and posted immediately because accrual stops after charge-off. This example shows that reversing a charge-off restores the original schedule and that backdated repayment can lift the charge-off flag.</p>
+<p>When interest recalculation is not enabled, interest to the charge-off date is prorated by day. The setup is the same: principal of 1,000, annual interest of 12 percent, three monthly installments, and 30-day months. The first installment is paid on 1 February, leaving a balance of 670.00. The charge-off is posted on 15 March, halfway through the period that ends on 1 April. Interest for the full period would be 6.70, so interest for 15 of the 30 days is 3.35. The remaining principal is due in full, and the future installment on 1 April is removed. With recalculation enabled instead, the same charge-off date would use the recalculated schedule interest rather than the day-based proration.</p>
 <table>
 <thead>
 <tr>
@@ -214,42 +114,85 @@
 <th>Event</th>
 <th>Principal</th>
 <th>Interest</th>
-<th>Balance after event</th>
+<th>Total due</th>
+<th>Balance after</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>1 Jan</td>
+<td>1 January</td>
 <td>Disbursement</td>
-<td>—</td>
-<td>—</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
 <td>1,000.00</td>
 </tr>
 <tr>
-<td>20 Jan</td>
-<td>Charge-off posted</td>
-<td>1,000.00</td>
-<td>6.33</td>
+<td>1 February</td>
+<td>Installment 1</td>
+<td>330.00</td>
+<td>10.00</td>
+<td>340.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>15 March</td>
+<td>Charge-off (final installment)</td>
+<td>670.00</td>
+<td>3.35</td>
+<td>673.35</td>
 <td>0.00</td>
 </tr>
 <tr>
-<td>3 Mar</td>
-<td>Charge-off reversed</td>
-<td>—</td>
-<td>—</td>
+<td>1 April</td>
+<td>Installment 3 removed (not collected)</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>340.07</td>
+<td>–</td>
+</tr>
+</tbody></table>
+<p>A charge-off reversal reinstates the loan schedule that existed before the charge-off. Using the same loan of 1,000 with three monthly installments, if the charge-off on 1 March is reversed on 3 March, the original installments on 1 March and 1 April are restored and the balance returns to 670.00 after the 1 February payment. The reversal produces exactly the same schedule as before the charge-off, so no payment history is lost.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Total due</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 January</td>
+<td>Disbursement</td>
+<td>–</td>
+<td>–</td>
+<td>–</td>
 <td>1,000.00</td>
 </tr>
 <tr>
-<td>1 Feb</td>
-<td>Original installment reinstated</td>
-<td>500.00</td>
+<td>1 February</td>
+<td>Installment 1</td>
+<td>330.00</td>
 <td>10.00</td>
-<td>500.00</td>
+<td>340.00</td>
+<td>670.00</td>
 </tr>
 <tr>
-<td>1 Mar</td>
-<td>Original installment reinstated</td>
-<td>500.00</td>
-<td>5.00</td>
+<td>1 March</td>
+<td>Installment 2 (restored after reversal)</td>
+<td>333.30</td>
+<td>6.70</td>
+<td>340.00</td>
+<td>336.70</td>
+</tr>
+<tr>
+<td>1 April</td>
+<td>Installment 3 (restored after reversal)</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>340.07</td>
 <td>0.00</td>
 </tr>
 </tbody></table>

@@ -1,0 +1,285 @@
+<h2>Loan API overview</h2>
+<p>The GET Loan by ID/external-id API returns loan details based on business events. Field names in the response are camelCase.</p>
+<p>The API returns these additional fields:</p>
+<ul>
+<li>norminal_interest_rate</li>
+<li>total_unpaid_posted_interest</li>
+<li>total_unpaid_accrued_interest</li>
+<li>total_interest</li>
+<li>delinquent_interest</li>
+<li>total_interest_refunds</li>
+<li>total_interest_payment_waiver</li>
+<li>totalUnpaidAccruedDueInterest</li>
+<li>totalUnpaidAccruedNotDueInterest</li>
+<li>delinquentInterest</li>
+<li>delinquentFee</li>
+<li>totalInterestRefund</li>
+<li>totalInterestPaymentWaiver</li>
+<li>totalUnpaidPayableDueInterest</li>
+<li>totalUnpaidPayableNotDueInterest</li>
+</ul>
+<p>totalInterestRefund is the total refund amount of interest refund transactions that are not reversed.</p>
+<blockquote>
+<p><strong>Note:</strong> The right value is calculated for the new fields in the GET Loan API response.</p>
+</blockquote>
+<h2>Creating loans</h2>
+<p>You can create loans through the POST create loan API. The API supports additional fields including nominal interest rate, enableDownPayment, enableAutoRepaymentForDownPayment, and disbursedAmountPercentageForDownPayment.</p>
+<blockquote>
+<p><strong>Note:</strong> Disbursement is rejected on this API; use the dedicated undo disbursal API instead.</p>
+</blockquote>
+<h2>Down payment configuration</h2>
+<p>Down payment configuration lets you enable or disable down payment on a loan account at loan creation or modification, even when the loan product already has down payment configured. You can also override the down payment settings inherited from the loan product.</p>
+<p>Rules for down payment configuration:</p>
+<ul>
+<li>enableDownPayment decides dynamically whether the loan is a down payment loan under the same product constraints.</li>
+<li>You can use enableDownPayment override only when down payment was configured on the loan product but should be disabled during loan submission.</li>
+<li>If down payment was not set and enabled on the loan product, you cannot set and configure it at the loan level.</li>
+<li>If enableAutoRepaymentForDownPayment or disbursedAmountPercentageForDownPayment is provided, those values override the values fetched from the loan product.</li>
+<li>If enableAutoRepaymentForDownPayment or disbursedAmountPercentageForDownPayment is not provided, whatever was set on the loan product is used.</li>
+</ul>
+<h2>Loan lifecycle actions</h2>
+<p>You can undo an approved loan, disburse an approved loan account, and undo a disbursed loan account. Undoing approval returns the loan to the created state. Undoing disbursement returns the loan account to the approval state.</p>
+<h2>Undoing transactions and charges</h2>
+<p>Undoing a transaction applies only to transactions belonging to the loan. If the transactionId does not belong to the loan, PUT /loans/{loanId}/transactions/{transactionId}?command=undo returns HTTP 404.</p>
+<p>The same behaviour applies to:</p>
+<ul>
+<li>Fetching loan details.</li>
+<li>Transaction reversal.</li>
+<li>Chargeback.</li>
+<li>Undoing a loan charge transaction.</li>
+</ul>
+<p>Loan charges support:</p>
+<ul>
+<li>Fetching a loan charge.</li>
+<li>Updating a loan charge.</li>
+<li>Paying, waiving or adjusting a loan charge.</li>
+<li>Deleting a loan charge.</li>
+</ul>
+<h2>Loan charges</h2>
+<p>You can create, pay, update, adjust and delete charges on a loan. Each call returns resourceId as the chargeId, except an adjustment, which returns resourceId as the transactionId.</p>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Endpoint</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Create loan charge</td>
+<td>POST /loans/&lt;loanId&gt;/charges</td>
+<td>resourceId as the chargeId</td>
+</tr>
+<tr>
+<td>Pay loan charge</td>
+<td>POST /loans/&lt;loanId&gt;/charges?command=pay</td>
+<td>resourceId as the chargeId</td>
+</tr>
+<tr>
+<td>Pay loan charge</td>
+<td>POST /loans/&lt;loanId&gt;/charges/&lt;chargeId&gt;?command=pay</td>
+<td>resourceId as the chargeId</td>
+</tr>
+<tr>
+<td>Update loan charge</td>
+<td>PUT /loans/&lt;loanId&gt;/charges/&lt;chargeId&gt;</td>
+<td>resourceId as the chargeId</td>
+</tr>
+<tr>
+<td>Adjustment for loan charge</td>
+<td>POST /loans/&lt;loanId&gt;/charges/&lt;chargeId&gt;?command=adjustment</td>
+<td>resourceId as the transactionId</td>
+</tr>
+<tr>
+<td>Delete loan charge</td>
+<td>DELETE /loans/&lt;loanId&gt;/charges/&lt;chargeId&gt;</td>
+<td>resourceId as the chargeId</td>
+</tr>
+</tbody></table>
+<p>Paying a loan charge uses subEntity for Loan Transaction.</p>
+<ul>
+<li>Paying a loan charge uses subEntity for Loan Transaction.</li>
+</ul>
+<h2>Payable interest fields</h2>
+<p>Payable interest fields show the interest a borrower owes on a loan. totalUnpaidPayableDueInterest covers interest due as of the installment date plus past due interest as of the installment date, including outstanding interest on past due installments. totalUnpaidPayableNotDueInterest covers accumulated daily interest of the current installment period, and the accumulation restarts for every installment period. Both fields are based on the actual balances of the repayment schedules. Payable interest calculation for loan details uses the EMICalculator to calculate daily interest instead of the prior formula based on interest due divided by number of days.</p>
+<h2>Term fields</h2>
+<p>The get loan API returns updated_term, which holds the new extended term caused by multiple tranche disbursements. It also returns actual_no_term, an integer showing the actual number of term. The system calculates actual_no_term on the fly for all repayment periods except disbursement, downpayment, and the installment after the last one, and adds it to loan related events.</p>
+<h2>Loan product API</h2>
+<p>Use the loan product API to create and configure loan products. Call the template endpoint to get all available configuration options, or fetch a specific loan product with or without template details.</p>
+<p>Endpoints:</p>
+<ul>
+<li>GET /v1/loanproducts/template returns all available configuration options needed to create and configure a new loan product on the UI.</li>
+<li>GET /v1/loanproducts/{loanProductId}?template=false returns the loan product details of a specific loan product without template details.</li>
+<li>GET /v1/loanproducts/{loanProductId}?template=true returns the loan product details of a specific loan product and all available configuration options needed to update a loan product.</li>
+</ul>
+<p>Response contents:</p>
+<ul>
+<li>The loan product fetch details response returns the same field and containing mapping as the template response.</li>
+<li>The loan product template API call and the specific loan product details with template details API call return all available write-off reason code values as List&lt;CodeValueData&gt; writeOffReasonOptions.</li>
+</ul>
+<h2>Template API</h2>
+<p>The Template API returns all outstanding balances up to the current date, the same as prepaying a loan. Without a query parameter, it returns everything.</p>
+<p>The Merchant Issued Refund / Payout Refund API endpoint accepts this optional field:</p>
+<ul>
+<li>interestRefundCalculation is an optional boolean field.</li>
+</ul>
+<h2>Working capital loans</h2>
+<p>Working capital loans support external IDs. When automatic external ID generation is enabled and you do not supply one, Fineract generates an external ID for each working capital loan transaction. Loan transactions are fetched through a separate API and are not included in working capital loan details. The loan read endpoint GET /loans/{loanId} and GET /loans/external-id/{loanExternalId} includes the delinquency calculation pause flag.</p>
+<h2>Worked examples</h2>
+<p>A loan of 1,000.00 is disbursed on Day 1. The annual interest rate is 12% and interest accrues at 3.00 per day; these figures are illustrative. No installment is due during the period shown, so totalUnpaidPayableDueInterest remains zero while totalUnpaidPayableNotDueInterest accumulates daily. On Day 5 a payment of 2.00 is applied to interest. With or without a repayment scheduled for 1-Feb, the values through Day 5 are identical because the repayment has not yet occurred.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Daily interest</th>
+<th>totalUnpaidPayableDueInterest</th>
+<th>totalUnpaidPayableNotDueInterest</th>
+<th>currentInstallmentPayableInterest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 1</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>3.00</td>
+<td>0.00</td>
+<td>3.00</td>
+<td>3.00</td>
+</tr>
+<tr>
+<td>Day 3</td>
+<td>3.00</td>
+<td>0.00</td>
+<td>6.00</td>
+<td>6.00</td>
+</tr>
+<tr>
+<td>Day 4</td>
+<td>3.00</td>
+<td>0.00</td>
+<td>9.00</td>
+<td>9.00</td>
+</tr>
+<tr>
+<td>Day 5 before payment</td>
+<td>3.00</td>
+<td>0.00</td>
+<td>12.00</td>
+<td>12.00</td>
+</tr>
+<tr>
+<td>Day 5 after payment of 2.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>10.00</td>
+</tr>
+</tbody></table>
+<p>The example shows that due interest stays at zero until an installment is past due, while not-due interest builds each day and drops when interest is paid.</p>
+<p>A loan of 1,000.00 with an annual interest rate of 12% is repaid in three monthly installments of 340.00 over 30-day months; these figures are illustrative. Interest for the first month is 10.00. The table shows each installment&#39;s interest, principal, closing balance, and amount due. If the first installment is paid on time, the first row is marked paid and later interest accrues on the reduced balance. A second table shows full prepayment two days after disbursement: two days of interest total 0.67, so the amount due is 1,000.67 instead of 1,020.07.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Days</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+<th>Due</th>
+<th>Paid</th>
+<th>Outstanding</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-Feb</td>
+<td>30</td>
+<td>1000.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+<td>340.00</td>
+<td>340.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1-Mar</td>
+<td>30</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>333.30</td>
+<td>336.70</td>
+<td>340.00</td>
+<td></td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1-Apr</td>
+<td>30</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>336.70</td>
+<td>0.00</td>
+<td>340.07</td>
+<td></td>
+<td>340.07</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td>20.07</td>
+<td>1000.00</td>
+<td></td>
+<td>1020.07</td>
+<td>340.00</td>
+<td>680.07</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Total</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 1</td>
+<td>Disbursement</td>
+<td>1000.00</td>
+<td></td>
+<td></td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>Interest accrual</td>
+<td></td>
+<td>0.67</td>
+<td></td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>Full prepayment</td>
+<td>1000.00</td>
+<td>0.67</td>
+<td>1000.67</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The example shows how the amortization schedule reduces the balance by principal paid and how early repayment cuts total interest to only the days elapsed.</p>

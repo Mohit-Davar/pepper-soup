@@ -1,0 +1,312 @@
+<p>Capitalized income is an amount added to a loan account at disbursement level on the disbursement date only through the API. It is supported for progressive loans only. Once disbursed, a separate transaction type records the capitalized income amount as a normal, monetary transaction. The system treats capitalized income as part of principal, so schedule calculation and interest calculation both use the disbursement amount plus capitalized income. Validation changes so that disbursement amount plus capitalized income must be less than or equal to the applied amount. Any date can be used for capitalized income, and validation matches with the disbursement date.</p>
+<p>When you create a loan, the capitalized income configuration is copied from the loan product. Income of capitalized income is recognized on a daily basis periodically. Amortization is based on the configured amortization strategy of the capitalized income, and equal amount amortization is the default and only amortization strategy option. The amortization portion is based on the configuration (Fee vs Interest), and the same configuration decides which GL mapping is used. Fineract tracks the amount of amortized and not yet amortized balances.</p>
+<p>If capitalized income is enabled on a loan product, you must configure a new Liability account named Deferred income for periodical accounting. This account is available only for progressive loans if income capitalization is enabled. Configuring Deferred income liability and Income Capitalization income GL mappings on a loan product is allowed if it is a progressive loan and income capitalization is enabled. The GL mapping field is mandatory if income capitalization is enabled, and you can update the GL mapping during a loan product update.</p>
+<p>Capitalized Income Adjustment is a new loan transaction type. It works as a Credit Transaction that reduces the Capitalized income balance and reduces loan balances as per the allocation set. The adjustment transaction can have its own Allocation Strategy set, and its accounting entries work like a mirror of Capitalized income entries. Adjustment can be invoked on existing Capitalized Income transactions only, can be done backdated, and the total adjustment amount cannot exceed the original transaction amount.</p>
+<p>Charge-off charges off the Capitalized income and no amortization is done after the charge-off date. If a loan is rescheduled and the maturity date changes, the amortization schedule changes with the new maturity date. The system does not support reversal of Capitalized income or Capitalized income adjustment.</p>
+<h2>Set up capitalized income on a loan product</h2>
+<p>Use this screen to turn on capitalized income for a loan product so the income is added to the loan account at disbursement and treated as principal for schedule and interest calculations.</p>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>DEFERRED INCOME RECOGNITION</strong>.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Enable income capitalization</td>
+<td>No</td>
+<td>Turn on income capitalization for the loan product.</td>
+</tr>
+<tr>
+<td>Income capitalization calculation type</td>
+<td>Yes</td>
+<td>Select how the capitalized income amount is calculated.</td>
+</tr>
+<tr>
+<td>Income capitalization strategy</td>
+<td>Yes</td>
+<td>Choose the strategy used to amortize the capitalized income.</td>
+</tr>
+<tr>
+<td>Income type</td>
+<td>Yes</td>
+<td>Pick the income type used for capitalized income.</td>
+</tr>
+<tr>
+<td>Enable Buy down fee</td>
+<td>No</td>
+<td>Turn on the buy down fee option.</td>
+</tr>
+<tr>
+<td>Buy down fee calculation type</td>
+<td>Yes</td>
+<td>Select how the buy down fee amount is calculated.</td>
+</tr>
+<tr>
+<td>Buy down fee strategy</td>
+<td>Yes</td>
+<td>Choose the strategy used for the buy down fee.</td>
+</tr>
+<tr>
+<td>Buy down fee income type</td>
+<td>Yes</td>
+<td>Pick the income type used for the buy down fee.</td>
+</tr>
+<tr>
+<td>Merchant Buy down fee</td>
+<td>No</td>
+<td>Enter the merchant buy down fee amount.</td>
+</tr>
+</tbody></table>
+<p>Capitalized income is copied from the loan product to any loan created from it, and the capitalized income amount is added to the loan at disbursement as a principal portion.</p>
+<h2>View capitalized income</h2>
+<p>The loan deferred income tab shows the capitalized income amount, amortized amount, unrecognized amount, and adjustment amount so you can track how capitalized income is recognized over time.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Buy Down Fees</strong> tab.</li>
+</ol>
+<p>You can review the capitalized income balances and see how much has been amortized, how much remains unrecognized, and what adjustments have been applied.</p>
+<p>You can add capitalized income after disbursement once the loan is active, and the transaction date can be any date on or after the first disbursement date. Payment type, note, and external ID are supported, and whatever amount you give is the transaction amount.</p>
+<p>The following limits apply to capitalized income transactions:</p>
+<ul>
+<li>The transaction date cannot be in the future.</li>
+<li>The adjustment transaction date cannot be earlier than the original transaction date.</li>
+<li>The adjustment transaction date cannot be in the future.</li>
+<li>Adding capitalized income does not change allocation or working for other monetary transactions.</li>
+</ul>
+<p>The system tracks capitalized income balances as follows:</p>
+<ul>
+<li>Balances are tracked on a loan and capitalized income transaction basis, with one entry per transaction per loan.</li>
+<li>Balances are stored in the database and maintained over capitalized income events such as adding capitalized income and daily amortization.</li>
+<li>The adjustment amount is deducted from the remaining not yet recognized amount.</li>
+<li>The remaining not yet recognized amount cannot be negative; if it goes negative, the balance is set to zero.</li>
+</ul>
+<p>When a loan ends early, capitalized income is handled as follows:</p>
+<ul>
+<li>If the loan is preclosed on the same day, final amortization is done for the balance amount.</li>
+<li>In one shot, all of the remaining not yet recognized amount is recognized as income upon preclose.</li>
+<li>Any not yet recognized balance is moved to charge-off.</li>
+<li>Undoing charge-off undoes this behavior and adjusts these accounting entries.</li>
+<li>Once a loan is paid off, there is no reversal or anything that undoes the realized income.</li>
+</ul>
+<p>You can reverse capitalized income transactions under these conditions:</p>
+<ul>
+<li>A not yet reversed Capitalized Income transaction can be reversed if there is no not yet reversed Capitalized Income Adjustment that belongs to this transaction.</li>
+<li>When a Capitalized Income transaction is reversed, all already amortized amounts are corrected in a Capitalized income amortization adjustment transaction with mirror journal entries of Capitalized income amortization.</li>
+</ul>
+<p>Capitalized Income records income as principal on a loan and recalculates the repayment schedule with the increased principal.</p>
+<p>Each adjustment transaction links to its original Capitalized Income transaction:</p>
+<ul>
+<li>The adjustment transaction lists relations between the original Capitalized Income transaction and the Capitalized Income Adjustment transaction with relation type ADJUSTMENT.</li>
+<li>A Capitalized Income Adjustment transaction that has not yet been reversed can be reversed.</li>
+<li>Mirror journal entries are based on the reversal entry of a Capitalized Income Adjustment transaction.</li>
+</ul>
+<p>Accounting entries depend on whether the adjustment amount is lower than or equal to, or higher than, the remaining not yet recognized amount of LoanCapitalizedIncomeBalance.</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Adjustment amount is lower than or equal to the remaining not yet recognized amount</td>
+<td>Capitalized income adjustment</td>
+<td>Deferred Income mapping (Liability) and Loan Portfolio (Asset)</td>
+</tr>
+<tr>
+<td>Adjustment amount is higher than the remaining not yet recognized amount</td>
+<td>Capitalized income adjustment and Deferred Income mapping (Liability)</td>
+<td>Income from capitalization mapping (Income) and Loan Portfolio (Asset)</td>
+</tr>
+</tbody></table>
+<p>For Capitalized Income Adjustment transactions on closed or overpaid loans:</p>
+<ul>
+<li>The transaction follows the payment allocation strategy set, and the overpaid amount credits the overpaid portion.</li>
+<li>No changes are made to the overpaid portion on the repayment schedule side.</li>
+<li>Accounting for the overpaid portion debits Income from amortization (GL: Interest/fees Income) and credits Overpayment Liability (GL: Overpaid GL).</li>
+</ul>
+<p>When Capitalized Income is applied on closed or overpaid loans:</p>
+<ul>
+<li>Future installments from the Capitalized Income posting date are recalculated accordingly.</li>
+<li>The accounting entry remains the same as before, debiting Loan Portfolio (GL: Loan Receivable) and crediting Deferred income mapping (GL: Deferred Income GL).</li>
+</ul>
+<p>Reverse-replay handling:</p>
+<ul>
+<li>The Capitalized Income reverse-replay situation applies when the loan was in an overpaid state or goes into an overpaid state.</li>
+<li>Capitalized Income reverse-replay handling is the same as Disbursement transaction handling.</li>
+<li>Capitalized Income Adjustment reverse-replay handling is the same as Repayment transaction handling.</li>
+</ul>
+<p>You can make multiple adjustments against the same original transaction.</p>
+<p>Configuration options:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Calculation mode</td>
+<td>FLAT</td>
+<td>FLAT</td>
+</tr>
+<tr>
+<td>Amortization strategy</td>
+<td>Equal amortization</td>
+<td>Equal amortization</td>
+</tr>
+<tr>
+<td>Income type</td>
+<td>FEE, INTEREST</td>
+<td>FEE</td>
+</tr>
+<tr>
+<td>Capitalized income status</td>
+<td>Enable</td>
+<td>Enable</td>
+</tr>
+</tbody></table>
+<p>Accounting entries:</p>
+<table>
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Debits</th>
+<th>Credits</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Capitalized Income transaction</td>
+<td>Loan Portfolio (Asset)</td>
+<td>Deferred Income (Liability)</td>
+</tr>
+<tr>
+<td>Capitalized Income Amortization transaction</td>
+<td>Deferred Income (Liability)</td>
+<td>Income from Capitalization (Income)</td>
+</tr>
+<tr>
+<td>Capitalized Income Adjustment transaction</td>
+<td>Deferred Income (Liability) / Income from Capitalization (Income)</td>
+<td>Loan Portfolio (Asset)</td>
+</tr>
+<tr>
+<td>Capitalized Income Amortization Adjustment transaction</td>
+<td>Income from Capitalization (Income)</td>
+<td>Deferred Income (Liability)</td>
+</tr>
+</tbody></table>
+<p>Capitalized Income amounts are limited as follows:</p>
+<ul>
+<li>Capitalized Income transaction: <code>maximum = approved loan amount − total disbursed amount − total capitalized income</code></li>
+<li>Capitalized Income adjustment: <code>maximum = Capitalized Income transaction amount − adjustments already made for that transaction</code></li>
+<li>The daily amortization amount equals the not yet amortized capitalized income divided by the number of days between the current date and the loan maturity date.</li>
+<li>The system rounds the calculated amortization amount according to the rounding mode configuration.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Add Capitalized Income"]
+  n2["Adjust Capitalized Income"]
+  n3["Daily Amortization"]
+  n4["Close or Overpay Loan"]
+  n5["Realtime Amortization Adjustment"]
+  n6["Journal Entry Created"]
+  n7["External Business Event Triggered"]
+  n1 --> n7
+  n2 --> n7
+  n3 --> n7
+  n3 --> n6
+  n4 --> n5
+  n5 --> n7]]></ac:plain-text-body></ac:structured-macro>
+<h2>Worked examples</h2>
+<p>A loan officer disburses a progressive loan and adds capitalized income on the same day. The capitalized income is added to the loan principal, so the repayment schedule is calculated on the combined amount. Interest is charged on that higher balance, and the deferred income is amortized daily over the term. The figures below are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Opening balance</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,200.00</td>
+<td>408.03</td>
+<td>12.00</td>
+<td>396.03</td>
+<td>803.97</td>
+</tr>
+<tr>
+<td>2</td>
+<td>803.97</td>
+<td>408.03</td>
+<td>8.04</td>
+<td>399.99</td>
+<td>403.98</td>
+</tr>
+<tr>
+<td>3</td>
+<td>403.98</td>
+<td>408.02</td>
+<td>4.04</td>
+<td>403.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,224.08</td>
+<td>24.08</td>
+<td>1,200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>If a 50.00 capitalized income adjustment is posted after the first repayment, the balance drops to 753.97 instead of 803.97, and later interest is calculated on the lower amount.</p>
+<p>A customer precloses the same loan on the second month date. The outstanding balance plus the interest accrued for that month is due in full. Any capitalized income that has not yet been recognized is recognized in full on the preclose date, and no further amortization is posted.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Description</th>
+<th>Amount</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Balance after first repayment</td>
+<td></td>
+<td>803.97</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Interest accrued for second month</td>
+<td>8.04</td>
+<td>812.01</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Preclosure payment received</td>
+<td>-812.01</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Remaining deferred income recognized</td>
+<td>200.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>If the loan is charged off on that date instead, amortization stops and the remaining deferred income is charged off rather than recognized as income.</p>

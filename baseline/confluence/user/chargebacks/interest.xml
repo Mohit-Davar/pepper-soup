@@ -1,0 +1,241 @@
+<h2>Feature scope and availability</h2>
+<p>Interest on chargeback applies only to progressive loan types.</p>
+<p>Chargeback is allowed for progressive, interest-bearing loans when:</p>
+<ul>
+<li>Interest recalculation is enabled.</li>
+<li>Interest recalculation is not enabled and no chargeback transaction allocation rule is set.</li>
+</ul>
+<h2>Charge back a transaction</h2>
+<p>Use the View Transaction screen to reverse a linked transaction by creating a chargeback transaction dated the current date.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>View Transaction</strong> screen.</li>
+</ol>
+<p>The system creates a chargeback transaction for the selected linked transaction, crediting back the paid balances according to the chargeback allocation rule or increasing due principal only when no rule applies.</p>
+<h2>Chargeback amount and target transaction</h2>
+<p>A chargeback transaction is dated the current date. Its amount can be equal to or lower than the target transaction, but cannot exceed the amount of the related payment transaction.</p>
+<h2>Allocation rules and options</h2>
+<p>For non-progressive loans, a chargeback increases the due principal only. For interest-bearing loans with a custom chargeback allocation rule, the chargeback amount is credited back to principal, interest, fee and penalty balances in the order of the allocation rule, and only for each balance as it was paid on the target transactions. Chargeback includes the interest portion if the payment being charged back has any interest. Chargeback amount allocation priority is configurable, and the chargeback transaction allocation follows the defined allocation rules.</p>
+<p>Four allocation options are available:</p>
+<ul>
+<li>PRINCIPAL</li>
+<li>INTEREST</li>
+<li>FEE</li>
+<li>PENALTY</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Effect of allocation rule order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Chargeback is a partial amount of the target transaction</td>
+<td>The order defines how the chargeback amount is credited back to each balance</td>
+</tr>
+<tr>
+<td>Chargeback equals the full target transaction amount</td>
+<td>The same amounts are credited back to the same balances regardless of order</td>
+</tr>
+</tbody></table>
+<p>You can configure the chargeback transaction allocation rule on the loan product for progressive loans.</p>
+<h2>Interest handling and recalculation</h2>
+<p>Charged back interest is paid as a fixed amount as part of the period it belongs to. The interest portion from the target transaction is credited back as principal as part of the chargeback transaction. Credited interest on a period increases the EMI of that period.</p>
+<p>Interest recalculation depends on when the chargeback happens:</p>
+<ul>
+<li>If chargeback happens before maturity date, it increases the outstanding principal and interest is calculated on the increased amount.</li>
+<li>If chargeback happens on maturity date or after, no interest is calculated and no interest recalculation is needed.</li>
+</ul>
+<p>Chargeback interest does not:</p>
+<ul>
+<li>Go through interest recalculation again.</li>
+<li>Have new accrual transactions or income recognition.</li>
+<li>Have extra interest calculated after maturity date.</li>
+</ul>
+<h2>Repayment schedule and EMI</h2>
+<p>The chargeback amount is added to the next unpaid installment in the repayment schedule. Credited principal on a period increases the EMI of that period.</p>
+<p>The next installment depends on the current date:</p>
+<ul>
+<li>If the current date is before the current installment due date, the next installment is the current installment.</li>
+<li>If the current date is on the current period due date, the next installment is the period just after the current period.</li>
+</ul>
+<h2>Processing and reprocessing</h2>
+<p>For non-interest bearing loans, or loans where interest recalculation is not enabled, the system applies the chargeback without reprocessing every transaction. For progressive loans where interest recalculation is enabled, the system reprocesses all transactions including the chargeback to recalculate interest when the principal due amount changed. Reprocessing is still needed even when the chargeback amount cannot be changed and all of it was already allocated to principal, and the repayment schedule might change.</p>
+<h2>Eligibility and restrictions</h2>
+<p>Chargeback behaviour depends on whether the loan is progressive, whether interest recalculation is enabled, and whether a chargeback allocation rule is configured.</p>
+<table>
+<thead>
+<tr>
+<th>Loan type</th>
+<th>Interest recalculation</th>
+<th>Chargeback allocation rule</th>
+<th>Chargeback behaviour</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Non-progressive</td>
+<td>Any</td>
+<td>Any</td>
+<td>Full chargeback behaviour applies.</td>
+</tr>
+<tr>
+<td>Progressive</td>
+<td>Any</td>
+<td>Not configured</td>
+<td>Full chargeback behaviour applies.</td>
+</tr>
+<tr>
+<td>Progressive</td>
+<td>Enabled</td>
+<td>Not configured</td>
+<td>Chargeback is allowed.</td>
+</tr>
+<tr>
+<td>Progressive</td>
+<td>Enabled</td>
+<td>Configured</td>
+<td>Behaviour #2 applies.</td>
+</tr>
+<tr>
+<td>Progressive</td>
+<td>Not enabled</td>
+<td>Not configured</td>
+<td>Behaviour #1 applies.</td>
+</tr>
+<tr>
+<td>Progressive</td>
+<td>Not enabled</td>
+<td>Configured</td>
+<td>Behaviour #2 applies.</td>
+</tr>
+</tbody></table>
+<h2>Accrual and income recognition</h2>
+<p>The system does not create accrual transactions for charged back amounts, including charged back penalty, fee, and interest. Principal is not income, so it never gets an accrual.</p>
+<h2>Model and implementation options</h2>
+<p>Two model options control how credited amounts affect interest. One applies credited principal as a static, additional value alongside calculated due principal, and both amounts are used to calculate due interest for the period. The other applies credited interest as a static, additional value alongside calculated due interest where applicable. For progressive, interest bearing loans with interest recalculation enabled and no chargeback allocation set, the system handles chargebacks through the advanced payment schedule transaction processor.</p>
+<h2>Worked examples</h2>
+<p>A full chargeback before maturity with no chargeback allocation rule and interest recalculation disabled. The figures are illustrative. A loan of principal 1,000 charges 12% a year (1% a month) and is repaid in 3 monthly installments over 30-day months. Two installments have been paid. On the next due date the officer charges back the most recent repayment in full. Because no allocation rule is configured, the whole chargeback amount is credited back to due principal, including the interest portion returned as principal. The outstanding principal rises and the remaining installment is recalculated on the higher balance. It shows that a full chargeback before maturity reinstates principal and that interest on the remaining period is calculated on the increased balance.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before</td>
+<td>2/1</td>
+<td>1000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>340.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>Before</td>
+<td>3/1</td>
+<td>669.98</td>
+<td>6.70</td>
+<td>333.32</td>
+<td>340.02</td>
+<td>336.66</td>
+</tr>
+<tr>
+<td>Chargeback</td>
+<td>3/1</td>
+<td>336.66</td>
+<td>0.00</td>
+<td>340.02</td>
+<td>340.02</td>
+<td>676.68</td>
+</tr>
+<tr>
+<td>After</td>
+<td>4/1</td>
+<td>676.68</td>
+<td>6.77</td>
+<td>676.68</td>
+<td>683.45</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A partial chargeback before maturity with a chargeback allocation rule and interest recalculation disabled. Same loan: principal 1,000, 12% a year (1% a month), 3 monthly installments, 30-day months. Two installments have been paid, leaving 336.66. The repayment due on 3/1 consists of principal 333.32 and interest 6.70. The officer charges back 100.00 of that repayment with the allocation rule Interest, then Principal. Because the chargeback is partial, the allocation order matters: the first 6.70 goes to interest and the remaining 93.30 goes to principal. The outstanding principal rises by 93.30 and the final installment is recalculated on the higher balance. If the rule were Principal first, the full 100.00 would go to principal and the balance after would be 436.66 instead. It shows that with a partial chargeback the allocation rule splits the amount across balances, while a full chargeback credits the same balances whatever the order.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Before</td>
+<td>2/1</td>
+<td>1000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>340.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>Before</td>
+<td>3/1</td>
+<td>669.98</td>
+<td>6.70</td>
+<td>333.32</td>
+<td>340.02</td>
+<td>336.66</td>
+</tr>
+<tr>
+<td>Chargeback</td>
+<td>3/1</td>
+<td>336.66</td>
+<td>6.70</td>
+<td>93.30</td>
+<td>100.00</td>
+<td>429.96</td>
+</tr>
+<tr>
+<td>After</td>
+<td>4/1</td>
+<td>429.96</td>
+<td>4.30</td>
+<td>429.96</td>
+<td>434.26</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A chargeback on or after the maturity date. Same loan: principal 1,000, 12% a year (1% a month), 3 monthly installments, 30-day months, maturing on 4/1. After the first two installments the outstanding principal is 336.66. On the maturity date the officer charges back the 3/1 repayment of 340.02. Because the chargeback falls on or after maturity, no interest is calculated on the credited principal and no extra interest arises; the amount is due as principal only. It shows that on or after maturity no interest is calculated on the charged-back principal.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Date</th>
+<th>Balance before</th>
+<th>Interest</th>
+<th>Principal credited</th>
+<th>Payment</th>
+<th>Balance after</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Chargeback</td>
+<td>4/1</td>
+<td>336.66</td>
+<td>0.00</td>
+<td>340.02</td>
+<td>340.02</td>
+<td>676.68</td>
+</tr>
+</tbody></table>

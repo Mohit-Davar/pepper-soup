@@ -1,0 +1,125 @@
+<h2>Backdated interest modification</h2>
+<p>You can modify a loan&#39;s interest rate from any date starting on the first disbursement date. The change takes effect from the applied date itself, including on installments that have already been paid. Backdated interest modification is supported for progressive loans only.</p>
+<h2>Schedule recalculation and EMI</h2>
+<p>The system recalculates the repayment schedule with a new EMI and interest from the interest applied schedule date.</p>
+<p>Backdated paid installments and unpaid or partially paid installment EMIs change as follows:</p>
+<ul>
+<li>Paid installments are changed to the new calculated EMI.</li>
+</ul>
+<h2>Reverse replay and accrual</h2>
+<p>Reverse replay recalculates interest on installments already paid using the new interest rate from the date the rate change was applied. The system reverses and replays transactions whenever their allocations change. Accrual adjustments happen during reverse replay as part of the close of business (COB) process, the nightly job that posts interest and fees. When a repayment pays off a penalty five or more days later, the system creates the backdated accrual together with that repayment.</p>
+<h2>Charged-off loans</h2>
+<p>You can backdate interest modification on a loan that is charged off. This applies whether the charge-off configuration is set to regular, accelerate maturity to charge-off date, or zero interest after charge-off.</p>
+<p>If a repayment made before charge-off is reversed and replayed because of backdated interest modification:</p>
+<ul>
+<li>The accounting entry of the reversed transaction follows standard accounting rules.</li>
+<li>The accounting entry of the replayed transaction follows standard accounting rules.</li>
+</ul>
+<h2>Closed loans</h2>
+<p>You can change backdated interest on a closed loan. The system replays the loan chronologically and allocates the schedule and transactions accordingly.</p>
+<h2>Overpaid and CBR loans</h2>
+<p>You can apply a backdated interest modification to an overpaid loan once CBR is complete. Any action that triggers recalculation on a CBR loan treats CBR as a credit transaction during reverse replay.</p>
+<h2>Asset owner changes</h2>
+<p>A backdated interest modification can apply to a loan account even after its asset owner changes. If a repayment made before the asset owner change is reversed and replayed because of the modification, the accounting entries for both the reversed transaction and the replayed transaction carry the tag of the current asset owner.</p>
+<h2>Progressive loans and zero interest</h2>
+<p>You can change a progressive loan&#39;s interest rate from zero to a positive rate, or from a positive rate to zero. Every progressive loan uses the EmiCalculator and model to calculate its repayment schedule, even when the interest rate is zero.</p>
+<h2>Business events</h2>
+<p>Backdated interest modification fires business events when it changes a loan balance or loan status. A status change can move a loan between ACTIVE, CLOSED and OVERPAID.</p>
+<p>The system fires the following business events:</p>
+<ul>
+<li>The loan balance changed business event fires for backdated interest modification.</li>
+<li>The loan status changed business event fires if backdated interest modification changes the loan status.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A progressive loan is disbursed on 1/1/2024 for a principal of 1,000.00 at an annual interest rate of 12%, repayable in 3 monthly installments on the first day of each month, using 30-day months and a 360-day year. On 1/15/2024 the interest rate is changed to 6% per annum, effective from that date, before any installment has been paid. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/2024</td>
+<td>1,000.00</td>
+<td>336.67</td>
+<td>5.00</td>
+<td>331.67</td>
+<td>668.33</td>
+</tr>
+<tr>
+<td>3/1/2024</td>
+<td>668.33</td>
+<td>336.67</td>
+<td>3.34</td>
+<td>333.33</td>
+<td>335.00</td>
+</tr>
+<tr>
+<td>4/1/2024</td>
+<td>335.00</td>
+<td>336.68</td>
+<td>1.68</td>
+<td>335.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td>1,010.02</td>
+<td>10.02</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The original EMI at 12% would have been 340.02; the new EMI at 6% is 336.67, and the number of installments stays at three.</p>
+<p>A progressive loan is disbursed on 1/1/2024 for a principal of 1,000.00 at an annual interest rate of 12%, repayable in 3 monthly installments on the first day of each month, using 30-day months and a 360-day year. Unlike the case where the rate changes before any payment, the first installment is paid on 2/1/2024 at the old rate. On the same day the interest rate is changed to 6% per annum, effective from 2/1/2024, so the paid installment is reverse replayed at the new rate and the remaining schedule is recalculated. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Due date</th>
+<th>Opening balance</th>
+<th>EMI</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1/2024</td>
+<td>1,000.00</td>
+<td>336.67</td>
+<td>5.00</td>
+<td>331.67</td>
+<td>668.33</td>
+</tr>
+<tr>
+<td>3/1/2024</td>
+<td>668.33</td>
+<td>336.67</td>
+<td>3.34</td>
+<td>333.33</td>
+<td>335.00</td>
+</tr>
+<tr>
+<td>4/1/2024</td>
+<td>335.00</td>
+<td>336.68</td>
+<td>1.68</td>
+<td>335.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td>1,010.02</td>
+<td>10.02</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Because the installment count is unchanged, the new EMI applies to all three installments; only the interest and principal split changes.</p>

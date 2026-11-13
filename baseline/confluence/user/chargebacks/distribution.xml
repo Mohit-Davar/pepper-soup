@@ -1,0 +1,362 @@
+<h2>Chargeback overview</h2>
+<p>A Chargeback transaction initiates a chargeback on a previous repayment or refund. It effectively undoes the repayment without reverting it. Chargeback creates a credit amount for a previous repayment and adds it to the current installment without touching previous repayments or accounting, so the missed payment is collected as of the current date. To perform a chargeback, select the repayment to reverse and click chargeback on that repayment.</p>
+<h2>Charge back a transaction</h2>
+<p>Use this screen to initiate a chargeback on a previous repayment or refund, which creates a credit amount for that transaction and adds it to the current installment without touching previous repayments or accounting.</p>
+<ol>
+<li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
+<li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>View Transaction</strong> screen.</li>
+</ol>
+<p>The chargeback amount is added to the next installment in the repayment schedule, and the loan balances and repayment schedule are updated accordingly.</p>
+<h2>Supported transaction types</h2>
+<p>You can create a chargeback for goodwill credit, payout refund, merchant refund, and down-payment transactions using the UI.</p>
+<p>Chargeback is available for these transaction types:</p>
+<ul>
+<li>Goodwill credit</li>
+<li>Payout refund</li>
+<li>Merchant refund</li>
+<li>Down-payment</li>
+</ul>
+<h2>Eligibility and restrictions</h2>
+<p>You can charge back a repayment transaction or a payment transaction only if the transaction has not been reversed. The charged back amount cannot exceed the amount of the related transaction.</p>
+<h2>Amount limits and multiple chargebacks</h2>
+<p>It can be lower, so you can create multiple chargeback transactions for the same target transaction. The cumulative amount of all chargeback transactions for one target transaction cannot exceed the target transaction amount.</p>
+<p>You can view the transaction relation to a chargeback transaction in transaction details.</p>
+<ul>
+<li>A user can view the transaction relation to a chargeback transaction in transaction details.</li>
+</ul>
+<h2>Chargeback date and backdating</h2>
+<p>The Chargeback transaction date is always the actual business date; you cannot set it to another date. Backdated transactions are allowed after a Chargeback.</p>
+<h2>Amount allocation</h2>
+<p>A chargeback amount is allocated between principal, fee, and penalty buckets based on the transaction allocation from which the chargeback is raised. Chargeback supports all amount allocations: Charge, Interest, Penalty, and Principal.</p>
+<p>Allocation rules apply as follows:</p>
+<ul>
+<li>The priority order for allocating the chargeback amount between principal, fee, and penalty matters only when the chargeback is partial.</li>
+<li>When the target transaction repaid fee and/or penalty alongside principal, the same type of fee and/or penalty is created during chargeback.</li>
+<li>Chargeback includes the interest portion if the payment being charged back has any interest.</li>
+</ul>
+<h2>Allocation priority configuration</h2>
+<p>You can configure the order in which chargeback amounts are allocated to penalties, fees, interest and principal at the loan product level. This configuration applies when the repayment strategy is Advanced payment allocation.</p>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Allocation target</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Fees</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Penalty</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Interest</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Principal</td>
+</tr>
+</tbody></table>
+<h2>Payment allocation order</h2>
+<p>The system portions the chargeback amount from the repayment being chargebacked. Payment allocation follows the priority set at the Advance payment allocation strategy, and the latest payment takes priority under the same amount portion. If two fees exist for the repayment and a partial payment comes in, the system allocates the latest fees first and then the oldest.</p>
+<h2>Fees and penalties on chargeback</h2>
+<p>When you allocate a fee or penalty amount during a chargeback, the system creates a new fee or penalty on the chargeback date for that amount. If the chargeback creates a new charge, its due date and delinquency evaluation period begin on the chargeback date. The same fee or penalty is added back on the chargeback submitted date for the repayment that the chargeback came from.</p>
+<h2>Schedule and interest impact</h2>
+<p>A chargeback adds the charged-back principal to the repayment schedule. Interest is recalculated only when the chargeback happens before the maturity date; on or after the maturity date, no interest recalculation occurs.</p>
+<p>The chargeback affects the schedule as follows:</p>
+<ul>
+<li>Before maturity, the actual installment increases by the full chargeback amount and delinquency calculation starts immediately from that date until the amount is fully paid.</li>
+<li>After maturity, a new installment is created if it did not already exist, with the full chargeback amount.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A customer repays two installments on a 1,000 loan. A loan officer then initiates a full chargeback of those repayments for 500. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Due 1/1</th>
+<th>Due 1/16</th>
+<th>Due 1/31</th>
+<th>Due 2/15</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Loan disbursed</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>4-Jan</td>
+<td>Payment 250</td>
+<td>750.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>16-Jan</td>
+<td>Payment 250</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>20-Jan</td>
+<td>Chargeback 500</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>750.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>31-Jan</td>
+<td>Payment 750</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Payment 250</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The chargeback restores the principal balance and adds the credited amount to the next installment.</p>
+<p>A customer repays one installment of 250 on a 1,000 loan. A loan officer initiates two partial chargebacks on the same repayment, first for 100 and then for 150. The cumulative chargeback cannot exceed the original repayment amount.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Due 1/1</th>
+<th>Due 1/16</th>
+<th>Due 1/31</th>
+<th>Due 2/15</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Loan disbursed</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>4-Jan</td>
+<td>Payment 250</td>
+<td>750.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>20-Jan</td>
+<td>Chargeback 100</td>
+<td>850.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>350.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>25-Jan</td>
+<td>Chargeback 150</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>500.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>31-Jan</td>
+<td>Payment 500</td>
+<td>500.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Payment 250</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A third chargeback on the same repayment would be rejected because the cumulative 500 already equals the original repayment.</p>
+<p>A loan of 750 carries a 20 fee and a 10 penalty. The customer pays 280, clearing the fee and penalty and paying 250 toward principal. A loan officer chargebacks the full 280. The fee and penalty are restored as due, and the principal portion is added to the next installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Due fee</th>
+<th>Due penalty</th>
+<th>Due 1/1</th>
+<th>Due 1/16</th>
+<th>Due 1/31</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Fee assessed</td>
+<td>750.00</td>
+<td>20.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>1-Jan</td>
+<td>Loan disbursed</td>
+<td>750.00</td>
+<td>20.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>2-Jan</td>
+<td>Penalty assessed</td>
+<td>750.00</td>
+<td>20.00</td>
+<td>10.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>4-Jan</td>
+<td>Payment 280</td>
+<td>470.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>20-Jan</td>
+<td>Chargeback 280</td>
+<td>750.00</td>
+<td>20.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>500.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>31-Jan</td>
+<td>Payment 500</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Payment 250</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>New fee and penalty records are created with the chargeback date, matching the types that were originally paid.</p>
+<p>A repayment of 100 includes 10 fee and 90 principal. The product administrator sets the chargeback allocation priority to Principal first, then Fee. A loan officer chargebacks 95. The system allocates 90 to principal and 5 to fee, and creates a new fee of 5 as of the chargeback date. If the priority were Fee first, the same 95 would allocate 10 to fee and 85 to principal.</p>
+<table>
+<thead>
+<tr>
+<th>Allocation priority</th>
+<th>Chargeback amount</th>
+<th>Principal</th>
+<th>Fee</th>
+<th>New fee date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Principal first</td>
+<td>95.00</td>
+<td>90.00</td>
+<td>5.00</td>
+<td>Chargeback date</td>
+</tr>
+<tr>
+<td>Fee first</td>
+<td>95.00</td>
+<td>85.00</td>
+<td>10.00</td>
+<td>Chargeback date</td>
+</tr>
+</tbody></table>
+<p>The configured priority only matters when the chargeback is partial; a full chargeback restores every portion of the original repayment.</p>
+<p>A customer repays the final installment of 125 on 15-Feb, bringing the balance to zero. On 20-Feb, after the last due date, a loan officer chargebacks that repayment for 125. Because no future installment exists, the system creates a new installment due on the chargeback date.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Principal balance</th>
+<th>Next installment due</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>Loan disbursed</td>
+<td>500.00</td>
+<td>125.00 due 1/1, 1/16, 1/31, 2/15</td>
+</tr>
+<tr>
+<td>15-Feb</td>
+<td>Final payment 125</td>
+<td>0.00</td>
+<td>None</td>
+</tr>
+<tr>
+<td>20-Feb</td>
+<td>Chargeback 125</td>
+<td>125.00</td>
+<td>125.00 due 2/20</td>
+</tr>
+<tr>
+<td>28-Feb</td>
+<td>Payment 125</td>
+<td>0.00</td>
+<td>None</td>
+</tr>
+</tbody></table>
+<p>If the chargeback had occurred before the last due date, the amount would have been added to that upcoming installment instead of creating a new one.</p>

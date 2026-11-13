@@ -1,398 +1,762 @@
-<h2>Journal Entry Aggregation</h2>
-<h3>Job execution and report readiness</h3>
-<p>Before a journal entry aggregation job runs, reports that read aggregated tables require a null check because those tables contain no data yet.</p>
-<h3>Undo Charge Adjustment Transaction postings</h3>
+<h2>About Journal Entry Aggregation</h2>
+<p>Journal Entry Aggregation prepares summary data so the Trial Balance Report uses pre-baked data instead of aggregating every day.</p>
+<h2>Aggregation job and report data</h2>
+<p>The aggregation job populates the tables that reports read from. Before the job runs, reports must check for null values in those tables.</p>
+<p>The post snapshot delta data query includes journal entries where:</p>
+<ul>
+<li>entity_type_enum equals 1</li>
+<li>manual_entry equals false</li>
+<li>the latest aggregated date is null or submitted_on_date is later than the latest aggregated date</li>
+<li>submitted_on_date is earlier than the end date</li>
+<li>office_id matches the office parameter</li>
+</ul>
+<p>The summary snapshot baseline data query includes aggregated journal entries where:</p>
+<ul>
+<li>aggregated_on_date is on or before the latest aggregated date</li>
+</ul>
+<h2>Charge off journal entries</h2>
+<p>Charge off journal entries record how the interest, fees, and penalty portions of a charged-off loan map to income and receivable accounts. The mapping depends on whether the charge off is classified as Fraud or Non Fraud.</p>
 <table>
 <thead>
 <tr>
-<th>Debit GL code</th>
-<th>Credit GL code</th>
+<th>Charge off type</th>
+<th>Portion</th>
+<th>Accounts</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>112601 Loans Receivable Principal</td>
-<td>404007 Fee Income / Penalty Income</td>
+<td>Fraud</td>
+<td>Interest</td>
+<td>Interest income charge off, Interest Receivable</td>
 </tr>
 <tr>
-<td>245000 Other Credit liability</td>
-<td>404007 Fee Income / Penalty Income</td>
+<td>Fraud</td>
+<td>Fees</td>
+<td>Fee Charge off, Fee Receivable, charge-off fees Income</td>
 </tr>
 <tr>
-<td>112603 Fee Receivable</td>
-<td>404007 Fee Income / Penalty Income</td>
+<td>Fraud</td>
+<td>Penalty</td>
+<td>Fee Charge off, Fee Receivable, charge-off Penalty Income</td>
+</tr>
+<tr>
+<td>Non Fraud</td>
+<td>Interest</td>
+<td>Interest income charge off</td>
+</tr>
+<tr>
+<td>Non Fraud</td>
+<td>Fees</td>
+<td>charge-off fees Income</td>
+</tr>
+<tr>
+<td>Non Fraud</td>
+<td>Penalty</td>
+<td>charge-off Penalty Income</td>
 </tr>
 </tbody></table>
-<h3>Refund and Provisional Credit postings</h3>
-<p>Refund and Provisional Credit postings record cash-out transactions against specific accounts and credit the same suspense account. The debit account depends on the transaction type and the number of Y flags.</p>
+<h2>Charge adjustment journal entries</h2>
+<p>Charge adjustment journal entries map each charge portion to income and liability accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Charge portion</th>
+<th>Accounts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Fees</td>
+<td>Fee Income, Fee Charge off, income from fees, charge-off fees Income</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Fee Income, Other Credit liability, income from fees, Overpayment Liability</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>Fee Income, Fee Charge off, income from penalties, charge-off Penalty Income</td>
+</tr>
+</tbody></table>
+<h2>OCA Repayment journal entries</h2>
+<p>OCA Repayment journal entries post the interest, fees, penalty, and Unallocated Credit portions of a repayment to their respective accounts.</p>
+<table>
+<thead>
+<tr>
+<th>Portion</th>
+<th>Accounts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Fees</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Penalty</td>
+<td>Other receivables, recoveries, fund source /advance accounting, Income from Recovery payment</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Other receivables, Other Credit liability, fund source /advance accounting, Overpayment Liability</td>
+</tr>
+</tbody></table>
+<h2>Ownership sale and buyback journal entries</h2>
+<p>Ownership sale and buyback journal entries record the movement of a loan balance between the investor and PayPal accounts at the close of business on the settlement date.</p>
 <table>
 <thead>
 <tr>
 <th>Transaction type</th>
-<th>Cash-out flags</th>
-<th>Debit account</th>
-<th>Credit account</th>
+<th>Close of business entries</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Principal Payment</td>
-<td>Y</td>
-<td>112601</td>
-<td>145023</td>
+<td>Sale of ownership</td>
+<td>CR 112601 /112603 - DR 146000 - PayPal CR 146000 - DR 112601 /112603 - Investor</td>
 </tr>
 <tr>
-<td>Unallocated Credit (UNC)</td>
-<td>Y</td>
-<td>245000</td>
-<td>145023</td>
-</tr>
-<tr>
-<td>Late Fee Payment</td>
-<td>Y Y</td>
-<td>404008</td>
-<td>145023</td>
-</tr>
-<tr>
-<td>NSF Fee Payment</td>
-<td>Y Y</td>
-<td>404008</td>
-<td>145023</td>
-</tr>
-<tr>
-<td>Snooze Fee Payment</td>
-<td>Y Y</td>
-<td>404008</td>
-<td>145023</td>
-</tr>
-<tr>
-<td>Principal Payment</td>
-<td>Y Y</td>
-<td>744007/740037</td>
-<td>145023</td>
-</tr>
-<tr>
-<td>Unallocated Credit (UNC)</td>
-<td>Y Y</td>
-<td>245000</td>
-<td>145023</td>
+<td>Buyback</td>
+<td>DR 112601 /112603 - CR 146000 - PayPal DR 146000 - CR 112601 /112603 - Investor</td>
 </tr>
 </tbody></table>
-<h3>Good Will postings</h3>
-<p>Good Will postings record fee and principal adjustments without moving cash. The debit account depends on the charge type, while the credit account depends on whether the posting includes the Y indicator.</p>
+<p>The system passes general ledger entries for the loan balance amount at the close of business of the settlement date:</p>
+<ul>
+<li>For a sale of ownership: DR Loan/Fee Rec-Investor CR Loan/Fee Rec-PayPal.</li>
+</ul>
+<h2>Asset sale and buyback journal entries</h2>
+<p>At close of business (COB), the system posts asset sale and asset buyback transactions using the closing balance of the loan account. Each transaction creates two journal entries: DR 145600, CR 112601/112603 and DR 112601/112603, CR 145600. The system publishes events for both journal entries.</p>
 <table>
 <thead>
 <tr>
-<th>Posting type</th>
+<th>Transaction</th>
+<th>Loan condition</th>
+<th>Ownership condition</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Asset sale</td>
+<td>Active loan</td>
+<td>No active ownership record</td>
+</tr>
+<tr>
+<td>Asset sale</td>
+<td>Active loan</td>
+<td>Previous inactive ownership records and no active ownership record</td>
+</tr>
+<tr>
+<td>Asset buyback</td>
+<td>Active loan</td>
+<td>Active ownership record</td>
+</tr>
+<tr>
+<td>Asset buyback</td>
+<td>FRAUD loan</td>
+<td>No active ownership record</td>
+</tr>
+</tbody></table>
+<h2>Transaction refund and provisional credit cash in</h2>
+<p>Transaction refund and provisional credit cash in posts cash received for interest, late fees, NSF fees, snooze fees, principal or unallocated credit to the fund source account and credits the matching receivable or liability account.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
 <th>Debit account</th>
 <th>Credit account</th>
+<th>Status</th>
+<th>Debit label</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest repayment cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Interest Receivable</td>
+</tr>
+<tr>
+<td>Late fee payment cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>NSF fee payment cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Snooze fee payment cash in</td>
+<td>145023</td>
+<td>112603</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Principal payment cash in</td>
+<td>145023</td>
+<td>112601</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Loan portfolio</td>
+</tr>
+<tr>
+<td>Unallocated credit cash in</td>
+<td>145023</td>
+<td>245000</td>
+<td>pass</td>
+<td>Fund source</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h2>Transaction refund and provisional credit cash in with Y flag</h2>
+<p>Transaction Refund/Provisional Credit Cash in with Y flag posts repayment journal entries for interest, late fees, NSF fees, snooze fees, principal and unallocated credit. Each entry debits account 145023 (Fund source) and credits the account shown below.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest repayment</td>
+<td>404001</td>
+<td>Income from ChargeOff Interest</td>
+</tr>
+<tr>
+<td>Late fee payment</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+</tr>
+<tr>
+<td>NSF fee payment</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Snooze fee payment</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Principal payment</td>
+<td>744007/740037</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense</td>
+</tr>
+<tr>
+<td>Unallocated credit (UNC)</td>
+<td>245000</td>
+<td>Over payment liability</td>
+</tr>
+</tbody></table>
+<h2>Transaction refund and provisional credit cash out with Y flag</h2>
+<p>Transaction Refund/Provisional Credit Cash Out with Y flag posts a cash-out journal entry for interest, late fees, NSF fees, snooze fees, principal or unallocated credit. The debit account and label depend on the payment type; the credit account and label are always Fund source.</p>
+<table>
+<thead>
+<tr>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest</td>
+<td>112603</td>
+<td>Interest Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Late fee</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>NSF fee</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Snooze fee</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Principal</td>
+<td>112601</td>
+<td>Loan portfolio</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+<tr>
+<td>Unallocated credit</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>145023</td>
+<td>Fund source</td>
+<td>pass</td>
+</tr>
+</tbody></table>
+<h2>Transaction refund and provisional credit cash out with Y and Y flags</h2>
+<p>Transaction Refund/Provisional Credit Cash Out with Y and Y flags posts a debit to an income or expense account and a credit to Fund source account 145023.</p>
+<table>
+<thead>
+<tr>
+<th>Transaction type</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Interest repayment cash out</td>
+<td>404001</td>
+<td>Income from ChargeOff Interest</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Late fee payment cash out</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>NSF fee payment cash out</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Snooze fee payment cash out</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Principal payment cash out</td>
+<td>744007/740037</td>
+<td>ChargeOff Expense/Charge Off Fraud Expense</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC) cash out</td>
+<td>245000</td>
+<td>Over payment liability</td>
+<td>145023</td>
+<td>Fund source</td>
+</tr>
+</tbody></table>
+<h2>Good will no cash journal entries</h2>
+<p>Good will no cash journal entries record goodwill credit postings that do not move cash. Each entry debits an income or expense account and credits a receivable, liability or loan portfolio account, with status pass. The debit and credit labels depend on the fee type or principal payment.</p>
+<table>
+<thead>
+<tr>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+<th>Debit label</th>
+<th>Credit label</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>Good Will Late Fee Payment No Cash</td>
-<td>744003</td>
+<td>404008</td>
 <td>112603</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>Penalties Receivable</td>
 </tr>
 <tr>
 <td>Good Will NSF Fee Payment No Cash</td>
-<td>744003</td>
+<td>404008</td>
 <td>112603</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Fees Receivable</td>
 </tr>
 <tr>
 <td>Good Will Snooze Fee Payment No Cash</td>
-<td>744003</td>
+<td>404008</td>
 <td>112603</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>Fees Receivable</td>
 </tr>
 <tr>
 <td>Good Will Principal Payment No Cash</td>
 <td>744003</td>
 <td>112601</td>
+<td>Expense from Goodwill Credit</td>
+<td>Loan portfolio</td>
 </tr>
 <tr>
 <td>Good Will Unallocated Credit (UNC) No Cash</td>
 <td>744003</td>
 <td>245000</td>
-</tr>
-<tr>
-<td>Good Will Late Fee Payment No Cash with Y</td>
-<td>744003</td>
-<td>744008</td>
-</tr>
-<tr>
-<td>Good Will NSF Fee Payment No Cash with Y</td>
-<td>744003</td>
-<td>744008</td>
-</tr>
-<tr>
-<td>Good Will Snooze Fee Payment No Cash with Y</td>
-<td>744003</td>
-<td>744008</td>
+<td>Expense from Goodwill Credit</td>
+<td>Over payment liability</td>
 </tr>
 </tbody></table>
-<h3>Late Fee Waiver postings</h3>
+<h2>Good will no cash journal entries with Y flag</h2>
+<p>Good will no cash journal entries with a Y flag record goodwill credit income without moving cash. Each entry debits one goodwill income account and credits the recovery repayment account.</p>
 <table>
 <thead>
 <tr>
-<th>Posting type</th>
+<th>Entry type</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Good Will Interest - Repayment No Cash with Y flag</td>
+<td>404001</td>
+<td>Income from Goodwill Credit Interest</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Late Fee Payment No Cash with Y flag</td>
+<td>404008</td>
+<td>Income from Goodwill Credit Penalty</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will NSF Fee Payment No Cash with Y flag</td>
+<td>404008</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Snooze Fee Payment No Cash with Y flag</td>
+<td>404008</td>
+<td>Income from Goodwill Credit Fees</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+<tr>
+<td>Good Will Principal Payment No Cash with Y flag</td>
+<td>744003</td>
+<td>Expense from Goodwill Credit</td>
+<td>744008</td>
+<td>Income from Recovery Repayment</td>
+</tr>
+</tbody></table>
+<h2>Late fee waiver journal entries</h2>
+<p>Late fee waiver journal entries record how waived late fees move between penalty income and receivable accounts without cash changing hands. The entry depends on whether the Y flag and Y and Y flags are set.</p>
+<table>
+<thead>
+<tr>
+<th>Flag setting</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>No Y flag</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>112603</td>
+<td>Penalties Receivable</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+</tr>
+<tr>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Penalty</td>
+<td>404007</td>
+<td>Income from Penalties</td>
+</tr>
+</tbody></table>
+<h2>NSF fee waiver journal entries</h2>
+<p>NSF fee waiver journal entries post without cash and use four flag combinations.</p>
+<table>
+<thead>
+<tr>
+<th>Flag combination</th>
+<th>Debit account</th>
+<th>Debit label</th>
+<th>Credit account</th>
+<th>Credit label</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>No Y flag</td>
+<td>404007</td>
+<td>Income from Fees</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>404007</td>
+<td>Income from Fees</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+</tr>
+<tr>
+<td>Y flag</td>
+<td>112603</td>
+<td>Fees Receivable</td>
+<td>404007</td>
+<td>Income from Fees</td>
+</tr>
+<tr>
+<td>Y and Y flags</td>
+<td>404008</td>
+<td>Income from ChargeOff Fees</td>
+<td>404007</td>
+<td>Income from Fees</td>
+</tr>
+</tbody></table>
+<h2>Auto payment interest repayment cash in</h2>
+<p>Auto Payment Interest - Repayment Cash in posts each payment type to its own receivable or liability account, always debiting Fund source 145023.</p>
+<p>Each payment type credits the account shown:</p>
+<table>
+<thead>
+<tr>
+<th>Payment type</th>
 <th>Debit account</th>
 <th>Credit account</th>
-<th>Reference</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Late Fee Waiver Late Fee Payment No Cash</td>
-<td>404007</td>
-<td>112603</td>
-<td>R61</td>
-</tr>
-<tr>
-<td>Late Fee Waiver Late Fee Payment No Cash with Y</td>
-<td>404007</td>
-<td>404008</td>
-<td>R68</td>
-</tr>
-<tr>
-<td>Late Fee Waiver Late Fee Payment No Cash with Y Y</td>
-<td>404008</td>
-<td>404007</td>
-<td>R82</td>
-</tr>
-</tbody></table>
-<h3>NSF Fee Waiver postings</h3>
-<table>
-<thead>
-<tr>
-<th>Condition</th>
-<th>Debit account</th>
-<th>Credit account</th>
-<th>Reference</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>NSF Fee Waiver NSF Fee Payment No Cash</td>
-<td>404007</td>
-<td>112603</td>
-<td>R89</td>
-</tr>
-<tr>
-<td>NSF Fee Waiver NSF Fee Payment No Cash with Y</td>
-<td>404007</td>
-<td>404008</td>
-<td>R96</td>
-</tr>
-<tr>
-<td>NSF Fee Waiver NSF Fee payment No Cash with Y</td>
-<td>112603</td>
-<td>404007</td>
-<td>R103</td>
-</tr>
-<tr>
-<td>NSF Fee Waiver NSF Fee payment No Cash with Y Y</td>
-<td>404008</td>
-<td>404007</td>
-<td>R110</td>
-</tr>
-</tbody></table>
-<h3>Auto Payment postings</h3>
-<table>
-<thead>
-<tr>
-<th>Auto Payment posting</th>
-<th>GL accounts</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Auto Payment Late Fee Payment Cash in</td>
-<td>145023 and 744008</td>
-</tr>
-<tr>
-<td>Auto Payment NSF Fee Payment Cash in</td>
-<td>145023 and 744008</td>
-</tr>
-<tr>
-<td>Auto Payment Snooze Fee Payment Cash in</td>
-<td>145023 and 744008</td>
-</tr>
-<tr>
-<td>Auto Payment Principal Payment Cash in</td>
-<td>145023 and 744008</td>
-</tr>
-<tr>
-<td>Auto Payment Unallocated Credit (UNC) Cash in</td>
-<td>145023 and 245000</td>
-</tr>
-<tr>
-<td>Auto Payment Late Fee Payment Cash Out</td>
-<td>112603 and 145023</td>
-</tr>
-<tr>
-<td>Auto Payment NSF Fee Payment Cash Out</td>
-<td>112603 and 145023</td>
-</tr>
-<tr>
-<td>Auto Payment Snooze Fee Payment Cash in</td>
-<td>112603 and 145023</td>
-</tr>
-<tr>
-<td>Auto Payment Principal Payment Cash Out</td>
-<td>112601 and 145023</td>
-</tr>
-<tr>
-<td>Auto Payment Unallocated Credit (UNC) Cash Out</td>
-<td>245000 and 145023</td>
-</tr>
-</tbody></table>
-<h3>Scheduled Payment postings</h3>
-<p>Scheduled Payment postings record cash movements for principal, late fees, NSF fees, snooze fees and unallocated credit using fixed general ledger account pairs.</p>
-<table>
-<thead>
-<tr>
-<th>Scheduled Payment type</th>
-<th>Direction</th>
-<th>GL accounts</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>Late Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 112603</td>
+<td>Fund source 145023</td>
+<td>Penalties Receivable 112603</td>
 </tr>
 <tr>
 <td>NSF Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 112603</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
 </tr>
 <tr>
 <td>Snooze Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 112603</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
 </tr>
 <tr>
 <td>Principal Payment</td>
-<td>Cash in</td>
-<td>145023 and 112601</td>
+<td>Fund source 145023</td>
+<td>Loan portfolio 112601</td>
 </tr>
 <tr>
 <td>Unallocated Credit (UNC)</td>
-<td>Cash in</td>
-<td>145023 and 245000</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
 </tr>
+</tbody></table>
+<h2>Auto payment interest repayment cash in with Y flag</h2>
+<p>Late Fee Payment, NSF Fee Payment, Snooze Fee Payment and Principal Payment credit Income from Recovery Repayment 744008. Unallocated Credit (UNC) credits Over payment liability 245000.</p>
+<table>
+<thead>
 <tr>
+<th>Payment type</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
 <td>Late Fee Payment</td>
-<td>Cash Out</td>
-<td>112603 and 145023</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
 </tr>
 <tr>
 <td>NSF Fee Payment</td>
-<td>Cash Out</td>
-<td>112603 and 145023</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
 </tr>
 <tr>
 <td>Principal Payment</td>
-<td>Cash Out</td>
-<td>112601 and 145023</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
 </tr>
 <tr>
 <td>Unallocated Credit (UNC)</td>
-<td>Cash Out</td>
-<td>245000 and 145023</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
 </tr>
 </tbody></table>
+<h2>Auto payment interest repayment cash out with Y flag</h2>
+<p>For an Auto Payment Interest - Repayment Cash Out transaction with the Y flag, each payment type posts to its own receivable or liability account and credits Fund source 145023.</p>
 <table>
 <thead>
 <tr>
-<th>Scheduled Payment type</th>
-<th>Direction</th>
-<th>GL accounts</th>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Credit account</th>
 </tr>
 </thead>
 <tbody><tr>
 <td>Late Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 744008</td>
+<td>Penalties Receivable 112603</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
 <td>NSF Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 744008</td>
-</tr>
-<tr>
-<td>Snooze Fee Payment</td>
-<td>Cash in</td>
-<td>145023 and 744008</td>
+<td>Fees Receivable 112603</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
 <td>Principal Payment</td>
-<td>Cash in</td>
-<td>145023 and 744008</td>
+<td>Loan portfolio 112601</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
-<td>Late Fee Payment</td>
-<td>Cash Out</td>
-<td>112603 and 145023</td>
-</tr>
-<tr>
-<td>NSF Fee Payment</td>
-<td>Cash Out</td>
-<td>112603 and 145023</td>
-</tr>
-<tr>
-<td>Snooze Fee Payment</td>
-<td>Cash in</td>
-<td>112603 and 145023</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Over payment liability 245000</td>
+<td>Fund source 145023</td>
 </tr>
 </tbody></table>
-<p>Apply Fee Return Late Fee Payment No Cash uses N/A for all columns.</p>
-<ul>
-<li>Apply Fee Return Late Fee Payment No Cash uses N/A for all columns.</li>
-</ul>
-<h3>Charge Off Principal postings</h3>
-<p>Charge Off Principal postings map credit and debit rows to general ledger accounts under Separate GL Rule, depending on whether the charge off is classified as fraud or non fraud. All charge off rows use Batch Type Code 5 and Batch Alpha Code Blank.</p>
+<h2>Auto payment interest repayment cash out with both Y flags</h2>
+<p>For an Auto Payment Interest - Repayment Cash Out transaction with both Y flags, each payment type posts to Income from Recovery Repayment 744008 and Fund source 145023.</p>
 <table>
 <thead>
 <tr>
-<th>Charge off type</th>
-<th>Row type</th>
-<th>FDR GL</th>
-<th>PPWC GL</th>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Credit account</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>Fraud</td>
-<td>Credit</td>
-<td>744037 Fraud Loss Provision</td>
-<td>112601 Loans Receivable Principal</td>
+<td>Late Fee Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
-<td>Fraud</td>
-<td>Debit</td>
-<td>112601 Loans Receivable Principal</td>
-<td>744037 Fraud Loss Provision</td>
+<td>NSF Fee Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
-<td>Non Fraud</td>
-<td>Credit</td>
-<td>744007 Credit Loss/Bad Debt Charge-off</td>
-<td>112601 Loans Receivable Principal</td>
+<td>Principal Payment</td>
+<td>Income from Recovery Repayment 744008</td>
+<td>Fund source 145023</td>
 </tr>
 <tr>
-<td>Non Fraud</td>
-<td>Debit</td>
-<td>112601 Loans Receivable Principal</td>
-<td>744007 Credit Loss/Bad Debt Charge-off</td>
+<td>Unallocated Credit (UNC)</td>
+<td>Over payment liability 245000</td>
+<td>Fund source 145023</td>
 </tr>
 </tbody></table>
-<ol>
-<li>Create a Journal Entry Aggregation batch job so that the Journal Entry Aggregation summary is ready.</li>
-<li>Hook up the Journal Entry Aggregation Summary table into the Trial Balance Report so the report uses pre-baked Journal Entry Aggregation data instead of aggregating journal entries every day.</li>
-</ol>
-<h3>Charge-off loan account transaction postings</h3>
-<p>A repayment transaction on a charge-off loan account posts a credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type fees).</p>
-<p>A goodwill credit transaction on a charge-off loan account posts the following entries:</p>
-<ul>
-<li>A debit to GLCode 744003 Principal bal adjustment (Expense from Goodwill Credit, Expense, Allocation Type Prin,excess).</li>
-<li>A debit to GLCode 404008 Fee Charge off (Income from Goodwill Credit Fees, Income, Allocation Type fees).</li>
-<li>A debit to GLCode 404008 Fee Charge off (Income from Goodwill Credit Penalty, Income, Allocation Type Penatly).</li>
-<li>A credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type prin).</li>
-<li>A credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type fees).</li>
-<li>A credit to GLCode 744008 recoveries (Income from Recovery Repayment, Income, Allocation Type Penalty).</li>
-<li>A credit to GLCode 245000 Other Credit liability (Overpayment Liability, Liability, Allocation Type excess).</li>
-</ul>
+<h2>Scheduled payment interest repayment cash in</h2>
+<p>A Scheduled Payment Interest - Repayment Cash in transaction without the Y flag posts each payment type to its own debit and credit accounts. The debit always comes from Fund source 145023.</p>
+<table>
+<thead>
+<tr>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Late Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Penalties Receivable 112603</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Fees Receivable 112603</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>Fund source 145023</td>
+<td>Loan portfolio 112601</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+</tr>
+</tbody></table>
+<h2>Scheduled payment interest repayment cash in with Y flag</h2>
+<table>
+<thead>
+<tr>
+<th>Payment type</th>
+<th>Debit account</th>
+<th>Credit account</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Late Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>NSF Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Snooze Fee Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Principal Payment</td>
+<td>Fund source 145023</td>
+<td>Income from Recovery Repayment 744008</td>
+</tr>
+<tr>
+<td>Unallocated Credit (UNC)</td>
+<td>Fund source 145023</td>
+<td>Over payment liability 245000</td>
+</tr>
+</tbody></table>

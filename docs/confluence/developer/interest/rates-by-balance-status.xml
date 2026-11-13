@@ -1,0 +1,68 @@
+<p>Interest rates by balance status let you calculate interest on current principal balance only, excluding past due principal. Current principal balance is total principal balance minus past due principal balance. You can configure a separate interest rate for past due principal balance at the loan product level. The option to not calculate interest on past due principal balances defaults to off and is available only for progressive loans when interest recalculation is enabled.</p>
+<p>Configuration storage:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Table</th>
+<th>Field</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Loan product</td>
+<td>m_product_loan_recalculation_details</td>
+<td>LoanProductInterestRecalculationDetails</td>
+</tr>
+<tr>
+<td>Loan</td>
+<td>m_loan_recalculation_details</td>
+<td>LoanInterestRecalculationDetails</td>
+</tr>
+</tbody></table>
+<p>Limits:</p>
+<ul>
+<li>The option to not calculate interest on past due principal balances is limited to advance repayment strategy type.</li>
+<li>Floating rate is not supported; interest modification can be used as a workaround.</li>
+</ul>
+<p>When a loan has &quot;Do not calculate interest on past due principal balances&quot; enabled under the advance repayment strategy, interest accrues only on the current principal balance, which is the total principal balance minus the past due principal balance. The figures are illustrative: a loan of 1,000.00 at 12% per year (1% per 30-day month) with three monthly installments; the customer misses the first installment, so 400.00 of principal becomes past due while the total principal balance remains 1,000.00.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Open total principal</th>
+<th>Past due principal</th>
+<th>Current principal</th>
+<th>Interest due</th>
+<th>Principal paid</th>
+<th>Close total principal</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 (missed)</td>
+<td>1,000.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1,000.00</td>
+<td>400.00</td>
+<td>600.00</td>
+<td>6.00</td>
+<td>400.00</td>
+<td>600.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>600.00</td>
+<td>400.00</td>
+<td>200.00</td>
+<td>2.00</td>
+<td>200.00</td>
+<td>400.00</td>
+</tr>
+</tbody></table>
+<p>Interest for installment 2 is 6.00 on the 600.00 current principal, not 10.00 on the 1,000.00 total principal, so the missed first installment does not change the second installment&#39;s interest.</p>

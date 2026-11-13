@@ -4,12 +4,17 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import compression from "compression";
+import { diffLines } from "diff";
 import "dotenv/config";
 import express from "express";
 import yazl from "yazl";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DOCS = path.join(ROOT, "docs");
+/** The docs exactly as the pipeline generated them; every change is measured against this. */
+const BASELINE = path.join(ROOT, "baseline");
+const EDIT_LOG = path.join(DOCS, "edit-log.json");
+const EDIT_LOG_REPO_PATH = "docs/edit-log.json";
 const FRONTEND = path.join(ROOT, "frontend");
 const MAX_REQUEST_SIZE = "5mb";
 const logger = console;
@@ -282,6 +287,57 @@ function applyStatus(state, body, author) {
   return { summary: `${body.status} ${id}` };
 }
 
+// ---------------------------------------------------------------- change record
+
+const lf = (text) => text.replace(/^﻿/, "").replace(/\r\n/g, "\n");
+
+/** Lines added and removed going from `before` to `after`. */
+export function lineCounts(before, after) {
+  let added = 0;
+  let removed = 0;
+  for (const part of diffLines(before, after)) {
+    if (part.added) added += part.count;
+    else if (part.removed) removed += part.count;
+  }
+  return { added, removed };
+}
+
+async function publishedFiles(base) {
+  const files = new Map();
+  for (const name of PUBLISHED) {
+    const folder = path.join(base, name);
+    let list = [];
+    try {
+      list = await listFiles(folder);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    for (const filePath of list) {
+      files.set(path.relative(base, filePath).split(path.sep).join("/"), filePath);
+    }
+  }
+  return files;
+}
+
+/** Every published file that differs from the baseline: edited, added or deleted. */
+export async function listChanges() {
+  const [before, after] = await Promise.all([publishedFiles(BASELINE), publishedFiles(DOCS)]);
+  const changes = [];
+  for (const rel of new Set([...before.keys(), ...after.keys()])) {
+    const old = before.has(rel) ? lf(await readText(before.get(rel))) : null;
+    const now = after.has(rel) ? lf(await readText(after.get(rel))) : null;
+    if (old === now) continue;
+    const status = old == null ? "added" : now == null ? "deleted" : "edited";
+    changes.push({ path: `docs/${rel}`, status, ...lineCounts(old ?? "", now ?? "") });
+  }
+  return changes.sort((left, right) => left.path.localeCompare(right.path));
+}
+
+async function readEditLog() {
+  const text = await readOptional(EDIT_LOG);
+  return text ? JSON.parse(text) : [];
+}
+
 // ---------------------------------------------------------------- files
 
 function resolveDocPath(relativePath) {
@@ -468,6 +524,30 @@ export function createApp(config) {
     }
   });
 
+  app.get("/api/changes", async (request, response, next) => {
+    try {
+      const [files, log] = await Promise.all([listChanges(), readEditLog()]);
+      response.json({ files, log });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  /** The page as the pipeline generated it (null when the page was added later). */
+  app.get("/api/baseline", async (request, response, next) => {
+    const relativePath = String(request.query.path ?? "");
+    if (!/^docs\/(?:gitbook|confluence)\/[\w./-]+\.(?:md|xml)$/.test(relativePath) || relativePath.includes("..")) {
+      response.status(400).json({ error: "Bad path" });
+      return;
+    }
+    try {
+      const content = await readOptional(path.join(BASELINE, relativePath.replace(/^docs\//, "")));
+      response.json({ content: content == null ? null : lf(content) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post("/api/login", requireReviewer, (request, response) => {
     response.json({ ok: true });
   });
@@ -584,7 +664,10 @@ export function createApp(config) {
 
           const saved = {};
           const hashes = {};
+          const logged = [];
           for (const { file, filePath, current } of targets) {
+            const counts = lineCounts(lf(current.toString("utf8")), lf(file.content));
+            if (counts.added || counts.removed) logged.push({ path: file.path, ...counts });
             const bom = current.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]));
             const content = file.content.replace(/\r\n/g, "\n");
             const data = Buffer.concat([
@@ -598,6 +681,14 @@ export function createApp(config) {
           manifestCache = null;
 
           const author = authorOf(request);
+          if (logged.length) {
+            // the edit record travels in the same commit as the edit
+            const log = await readEditLog();
+            log.push({ at: new Date().toISOString(), by: author, source: "Site editor", files: logged });
+            const text = `${JSON.stringify(log, null, 2)}\n`;
+            await fs.writeFile(EDIT_LOG, text);
+            saved[EDIT_LOG_REPO_PATH] = text;
+          }
           const { commit, warning } = await commitOrWarn(
             config,
             saved,

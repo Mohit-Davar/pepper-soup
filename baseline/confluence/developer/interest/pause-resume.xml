@@ -1,0 +1,385 @@
+<h2>About interest pause</h2>
+<p>Interest pause stops interest from accruing for a configured number of days and works like an interest-free period. It applies only to progressive loans with recalculate interest set to true. Interest pause is not the same as grace interest, where interest accrues even though it is not collected and accumulates for future installments.</p>
+<h2>Eligibility and timing</h2>
+<p>You can pause interest accrual on an active loan between any dates in the loan life cycle using a start date and an end date. The start date cannot be on or after the maturity date.</p>
+<p>Conditions for pausing interest:</p>
+<ul>
+<li>The loan must be active.</li>
+</ul>
+<h2>Pause period dates</h2>
+<p>An interest pause period needs both a start date and an end date. The start date is inclusive and the end date is inclusive for interest pause calculation. If the start date equals the end date, interest is paused for only that day. The end date cannot be earlier than the start date or later than the actual maturity date.</p>
+<h2>How interest pause works</h2>
+<p>While an interest pause is active, no interest is calculated for the days the pause covers.</p>
+<p>The pause is modeled as two interest rate changes:</p>
+<ul>
+<li>Interest rate changes to 0 from the pause start date, inclusive.</li>
+<li>Interest rate changes back to the original rate from the pause end date, inclusive.</li>
+</ul>
+<h2>Multiple pauses and overlap</h2>
+<p>You can pause interest multiple times during a loan life cycle, but pause periods cannot overlap.</p>
+<h2>Backdated pauses and recalculation</h2>
+<p>You can set a backdated start date for an interest pause. If repayments fall between the backdated start date and the pause date, those repayments are reversed and replayed, and any difference in interest recognition is adjusted at the next close of business (COB), the nightly job that posts interest and fees.</p>
+<h2>Resume behavior</h2>
+<p>When you resume an interest pause, interest accrual restarts at the loan&#39;s defined interest rate with the next close of business (COB) processing.</p>
+<h2>Installments and charges</h2>
+<p>During an interest pause, the EMI amount stays the same. Charges based on interest are recalculated with 0 interest, while charges independent of interest remain unchanged. Penalties based on late payment of interest become 0. Charges calculated as a percentage of amount, percentage of principal amount, or flat charges are not affected by an interest pause.</p>
+<p>The last unpaid installment amount might be lower because of lower interest from the interest pause.</p>
+<ul>
+<li>The last unpaid installment amount might be lower due to lower interest from the interest pause.</li>
+</ul>
+<p>Updating or deleting an interest pause resets interest-based charges.</p>
+<ul>
+<li>Update and delete of an interest pause reset interest based charges.</li>
+</ul>
+<p>Charge and penalty reversal rules:</p>
+<ul>
+<li>Charge/penalties added do not have any impact from interest pause.</li>
+<li>Only charge/penalties created based on % interest will be reversed and replayed based on new interest.</li>
+<li>The charge calculated based on interest should be recalculated based on new interest when a pause is applied.</li>
+</ul>
+<h2>Accrual transactions</h2>
+<p>The system posts no accrual transaction for interest during the pause period.</p>
+<h2>Pay-off, charge-off, and reschedule</h2>
+<p>The interest pause calculation stays the same for pay-off, charge-off, and reschedule calculations.</p>
+<h2>Database model</h2>
+<p>The database stores interest pauses in the m_loan_term_variations table, reusing the existing loan term model with the term type INTEREST_PAUSE. Audit fields record who created or updated each row and when.</p>
+<p>Each interest pause row has these fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>loan_id</td>
+<td>ID of the loan</td>
+<td>not null</td>
+</tr>
+<tr>
+<td>term_type</td>
+<td>INTEREST_PAUSE</td>
+<td>not null</td>
+</tr>
+<tr>
+<td>applicable_date</td>
+<td>Start date of the pause</td>
+<td>not null</td>
+</tr>
+<tr>
+<td>date_value</td>
+<td>End date of the pause</td>
+<td>not null</td>
+</tr>
+<tr>
+<td>decimal_value</td>
+<td>NULL</td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>is_specific_to_installment</td>
+<td>FALSE</td>
+<td>FALSE</td>
+</tr>
+<tr>
+<td>is_active</td>
+<td>Boolean</td>
+<td>not null, indexed</td>
+</tr>
+<tr>
+<td>applied_on_loan_status</td>
+<td>300 (ACTIVE)</td>
+<td>not null</td>
+</tr>
+<tr>
+<td>parent_id</td>
+<td>NULL</td>
+<td>NULL</td>
+</tr>
+<tr>
+<td>created by</td>
+<td>User who created the row</td>
+<td>audit field</td>
+</tr>
+<tr>
+<td>created on date</td>
+<td>Date the row was created</td>
+<td>audit field</td>
+</tr>
+<tr>
+<td>updated by</td>
+<td>User who last updated the row</td>
+<td>audit field</td>
+</tr>
+<tr>
+<td>updated on date</td>
+<td>Date the row was last updated</td>
+<td>audit field</td>
+</tr>
+</tbody></table>
+<h2>UI display</h2>
+<p>Interest pauses appear under the Term variations tab in a new group named Interest pauses. Term variations are grouped by term type, such as Interest pauses and Due date.</p>
+<p>Each interest pause entry shows:</p>
+<ul>
+<li>The start date of the pause period.</li>
+<li>The end date of the pause period.</li>
+<li>The number of days, calculated as end date minus start date plus one.</li>
+</ul>
+<h2>UI actions</h2>
+<p>You add an interest pause from the action menu in the top right corner under the More submenu. On the Term variations tab, you can modify and delete existing interest pause periods. Deleting an interest pause requires confirmation.</p>
+<h2>Event processing</h2>
+<p>The system processes interest pauses as events on the start date, and the interest pause is the first event processed on that date.</p>
+<p>The system reprocesses transactions to reflect changes when you:</p>
+<ul>
+<li>delete an interest pause</li>
+<li>update an interest pause</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Interest pause start date"]
+  n2["Process interest pause first"]
+  n3["Delete interest pause"]
+  n4["Update interest pause"]
+  n5["Reprocess transactions"]
+  n1 --> n2
+  n3 --> n5
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Create interest pause</h2>
+<p>Use POST /v1/loans/{loanId}/interest-pauses or POST /v1/loans/external-id/{loanExternalId}/interest-pauses. The response returns HTTP 200 with a resourceId representing the loan term variations id.</p>
+<p>The request body contains these mandatory fields:</p>
+<ul>
+<li>startDate</li>
+<li>endDate</li>
+<li>dateFormat</li>
+<li>locale</li>
+</ul>
+<p>The system rejects invalid dates as follows:</p>
+<ul>
+<li>A date that does not match the dateFormat and locale returns HTTP 400 indicating the parameter is invalid.</li>
+<li>A start date earlier than the loan start date returns HTTP 403 with the message Interest pause start date cannot be earlier than loan start date.</li>
+<li>An end date later than the loan maturity date returns HTTP 403 with the message Interest pause end date cannot be later than loan maturity date.</li>
+<li>An end date not later than the start date returns HTTP 403 with the message Interest pause end date must be later than the interest pause start date.</li>
+</ul>
+<h2>List interest pauses</h2>
+<p>List interest pauses for a loan using either its internal ID or its external ID. Results are ordered by start date, oldest first.</p>
+<p>Endpoints:</p>
+<ul>
+<li>GET /v1/loans/{loanId}/interest-pauses</li>
+<li>GET /v1/loans/external-id/{loanExternalId}/interest-pauses</li>
+</ul>
+<p>Each pause returns:</p>
+<ul>
+<li>id</li>
+<li>startDate</li>
+<li>endDate</li>
+<li>dateFormat</li>
+<li>locale</li>
+</ul>
+<p>Interest pause periods also appear in the loan details response GET /v1/loans/{loanId} when association=all and in the loan details business event.</p>
+<h2>Update interest pause</h2>
+<p>Use PUT /v1/loans/{loanId}/interest-pauses/{loan-term-variation-id} to update an existing interest pause. The request body includes startDate, endDate, dateFormat, and locale. The response body includes resourceId and changes, where changes may include endDate if the end date changed.</p>
+<h2>Delete interest pause</h2>
+<p>Deleting an interest pause is a logical deletion. Use DELETE /v1/loans/{loanId}/interest-pauses/{loan-term-variation-id} with no request body.</p>
+<p>The API returns:</p>
+<ul>
+<li>A successful deletion returns HTTP 204 with no response body.</li>
+<li>Deleting a non-existent interest pause returns HTTP 404.</li>
+<li>Deleting an interest pause on a closed loan returns HTTP 403 with the message Loan is not active.</li>
+</ul>
+<h2>Pause formula conditions</h2>
+<table>
+<thead>
+<tr>
+<th>Condition 1</th>
+<th>Condition 2</th>
+<th>Condition 3</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>TRUE</td>
+<td>TRUE</td>
+<td>FALSE</td>
+<td>TRUE</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>FALSE</td>
+<td>TRUE</td>
+<td>TRUE</td>
+</tr>
+<tr>
+<td>FALSE</td>
+<td>FALSE</td>
+<td>FALSE</td>
+<td>FALSE</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>This example shows an interest pause inside a single accrual period. The figures are illustrative: a progressive loan with recalculate interest set to true has a principal of 1,000, an annual interest rate of 12 percent, three monthly installments, 30-day months, and a 360-day year. The loan is disbursed on the first day of month one and installments fall due on the first day of months two, three, and four. A pause runs from the sixth to the tenth day of month two, so five days are paused and interest accrues on the remaining twenty-five days of that period. The pause start date is inclusive, the end date is inclusive, and interest resumes on the day after the end date. The EMI does not change during the pause.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Paused days</th>
+<th>Eligible days</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Principal repaid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 1</td>
+<td>1,000.00</td>
+<td>0</td>
+<td>30</td>
+<td>10.00</td>
+<td>340.03</td>
+<td>330.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>Month 2 (pause)</td>
+<td>669.97</td>
+<td>5</td>
+<td>25</td>
+<td>5.58</td>
+<td>340.03</td>
+<td>334.45</td>
+<td>335.52</td>
+</tr>
+<tr>
+<td>Month 3</td>
+<td>335.52</td>
+<td>0</td>
+<td>30</td>
+<td>3.36</td>
+<td>338.88</td>
+<td>335.52</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td>18.94</td>
+<td>1,018.94</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The pause lowers the interest charged in month two, leaves the EMI unchanged, and makes the final installment smaller because less interest is due.</p>
+<p>This example shows a backdated interest pause after a repayment has already been made. The same illustrative loan is used: principal 1,000, annual interest 12 percent, three monthly installments, 30-day months, and a 360-day year. The first installment is paid on the first day of month two. A backdated pause is then applied from the sixth to the tenth day of month one, pausing five days. Because a repayment exists between the backdated start date and the pause request, the repayment is reversed, month-one interest is recomputed with twenty-five eligible days, and the repayment is replayed. An accrual adjustment is posted at the next COB if the interest recognition changes.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>EMI</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance after event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original repayment, month 2 day 1</td>
+<td>340.03</td>
+<td>330.03</td>
+<td>10.00</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>Reversal of that repayment</td>
+<td>-340.03</td>
+<td>-330.03</td>
+<td>-10.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Replayed repayment with pause</td>
+<td>340.03</td>
+<td>331.70</td>
+<td>8.33</td>
+<td>668.30</td>
+</tr>
+<tr>
+<td>Month 2 installment, month 3 day 1</td>
+<td>340.03</td>
+<td>333.35</td>
+<td>6.68</td>
+<td>334.95</td>
+</tr>
+<tr>
+<td>Final installment, month 4 day 1</td>
+<td>338.30</td>
+<td>334.95</td>
+<td>3.35</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>1,018.36</td>
+<td>1,000.00</td>
+<td>18.36</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>A backdated pause reverses later repayments, replays them with the reduced interest, and posts any accrual adjustment at the next COB.</p>
+<p>This example shows multiple non-overlapping interest pauses. The same illustrative loan is used: principal 1,000, annual interest 12 percent, three monthly installments, 30-day months, and a 360-day year. One pause runs from the sixth to the tenth day of month two, and a second pause runs from the sixth to the tenth day of month three. The periods do not overlap, so each pause is honored separately and interest is suspended for five days in each affected period. Overlapping pauses are not allowed.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Paused days</th>
+<th>Eligible days</th>
+<th>Interest</th>
+<th>EMI</th>
+<th>Principal repaid</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Month 1</td>
+<td>1,000.00</td>
+<td>0</td>
+<td>30</td>
+<td>10.00</td>
+<td>340.03</td>
+<td>330.03</td>
+<td>669.97</td>
+</tr>
+<tr>
+<td>Month 2 (first pause)</td>
+<td>669.97</td>
+<td>5</td>
+<td>25</td>
+<td>5.58</td>
+<td>340.03</td>
+<td>334.45</td>
+<td>335.52</td>
+</tr>
+<tr>
+<td>Month 3 (second pause)</td>
+<td>335.52</td>
+<td>5</td>
+<td>25</td>
+<td>2.80</td>
+<td>338.32</td>
+<td>335.52</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>10</td>
+<td>18.38</td>
+<td>1,018.38</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>Multiple non-overlapping pauses reduce interest in each affected period, while the EMI stays fixed until the final installment absorbs the lower balance.</p>

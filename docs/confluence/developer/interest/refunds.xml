@@ -1,0 +1,462 @@
+<h2>Interest Refund overview</h2>
+<p>Fineract creates an Interest Refund transaction whenever a configured refund-type transaction posts on a progressive, interest-bearing loan. The system calculates the credit for interest charged to the loan and posts it as a credit adjustment of type “Interest Refund”. Payment allocation rules can be defined for the Interest Refund transaction type.</p>
+<h2>Configuration</h2>
+<p>Interest Refund configuration is optional for a progressive, interest bearing loan product. It instructs Fineract to calculate an interest refund amount and create an “Interest Refund” transaction when a selected refund transaction posts. You set it up on the loan product using the “Interest refund” tab, and a loan account inherits the configuration when submitted, though you may override it at the loan account level.</p>
+<p>The backend supports these refund transaction types for the Interest Refund mapping:</p>
+<table>
+<thead>
+<tr>
+<th>Refund transaction type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Payout refund</td>
+<td>Backend template call for loan product</td>
+</tr>
+<tr>
+<td>Merchant issued refund</td>
+<td>Backend template call for loan product</td>
+</tr>
+</tbody></table>
+<p>Configuration rules:</p>
+<ul>
+<li>You can select multiple transaction types for Interest Refund configuration.</li>
+<li>The mapping controls when Interest Refund transactions occur and their balance.</li>
+<li>The backend supports Interest Refund transaction creation triggering configuration with mappings which transactions shall trigger Interest refund transaction creation when loan product was created or modified.</li>
+</ul>
+<h2>Transaction creation</h2>
+<p>The system creates an Interest Refund transaction when a configured refund transaction occurs and the target transaction exists, is a payout refund or merchant issued refund type, and is not reversed.</p>
+<p>Interest Refund transaction creation depends on the interestRefundCalculation setting:</p>
+<ul>
+<li>When interestRefundCalculation=false, the system skips Interest Refund transaction creation for that refund transaction.</li>
+<li>When interestRefundCalculation=true, the system calculates and generates the Interest Refund.</li>
+<li>When interestRefundCalculation is not provided, the system falls back to the loan product configuration.</li>
+</ul>
+<p>If an Interest Refund transaction was created, the system raises a business event.</p>
+<h2>Journal entries</h2>
+<p>The journal entries for an interest refund depend on whether the loan account is charge-off. For non charge-off accounts, the entry debits Income from Interest and credits Loan portfolio, Interest Receivable, Fees Receivable, Penalties Receivable and Overpayment. For charge-off accounts, the entry debits Income from Interest and credits Income from charge-off Interest and Overpayment. A reversal posts the opposite entries.</p>
+<p>Interest Refund journal entries for non charge-off loan accounts:</p>
+<table>
+<thead>
+<tr>
+<th>Debit/Credit</th>
+<th>Account (GL-Code)</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>Income from Interest (404000)</td>
+<td>Total amount calculated to be refunded</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Loan portfolio (112601)</td>
+<td>Total principal portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Interest Receivable (112603)</td>
+<td>Total interest portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Fees Receivable (112603)</td>
+<td>Total fees portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Penalties Receivable (112603)</td>
+<td>Total penalties portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Overpayment (245000)</td>
+<td>Total overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<p>Reversal entries for non charge-off loan accounts:</p>
+<table>
+<thead>
+<tr>
+<th>Debit/Credit</th>
+<th>Account (GL-Code)</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Credit</td>
+<td>Income from Interest (404000)</td>
+<td>Total amount calculated to be refunded</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Loan portfolio (112601)</td>
+<td>Total principal portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Interest Receivable (112603)</td>
+<td>Total interest portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Fees Receivable (112603)</td>
+<td>Total fees portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Penalties Receivable (112603)</td>
+<td>Total penalties portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Overpayment (245000)</td>
+<td>Total overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<p>Interest Refund journal entries for charge-off loan accounts:</p>
+<table>
+<thead>
+<tr>
+<th>Debit/Credit</th>
+<th>Account (GL-Code)</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Debit</td>
+<td>Income from Interest (404000)</td>
+<td>Total amount entered for &#39;Payment Waiver&#39; transaction</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total principal portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total interest portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total fees portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total penalties portion allocated</td>
+</tr>
+<tr>
+<td>Credit</td>
+<td>Overpayment (245000)</td>
+<td>Total overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<p>Reversal entries for charge-off loan accounts:</p>
+<table>
+<thead>
+<tr>
+<th>Debit/Credit</th>
+<th>Account (GL-Code)</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Credit</td>
+<td>Income from Interest (404000)</td>
+<td>Total amount entered for &#39;Payment Waiver&#39; transaction</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total principal portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total interest portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total fees portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Income from charge-off Interest (404001)</td>
+<td>Total penalties portion allocated</td>
+</tr>
+<tr>
+<td>Debit</td>
+<td>Overpayment (245000)</td>
+<td>Total overpayment portion allocated</td>
+</tr>
+</tbody></table>
+<h2>Payment allocation</h2>
+<p>An interest refund is applied to interest accrual first, and any overpayment is treated as a refund to principal. Payment allocation rules control this allocation.</p>
+<p>Allocation behaviour:</p>
+<ul>
+<li>The Advanced payment allocation processor (AdvancedPaymentScheduleTransactionProcessor) handles transaction allocations for interest refund transactions.</li>
+</ul>
+<h2>Calculation method</h2>
+<p>The interest refund calculation determines the interest to be refunded, applies the refund to the oldest disbursement first and works forward in time when the refund exceeds that disbursement record, then recalculates total interest to date for the loan.</p>
+<p>For each day after the refund:</p>
+<ul>
+<li>New outstanding principal equals disbursements minus the applicable refund.</li>
+<li>New interest accrual equals new principal times the daily periodic interest rate.</li>
+<li>Interest refund equals original interest accrual minus new interest accrual.</li>
+<li>Adjusted principal balance cannot be less than 0.00.</li>
+</ul>
+<h2>Reversal and reprocessing</h2>
+<p>You can refund multiple partial interest amounts. When a Merchant Issued Refund or Payout Refund transaction is reverted, its related Interest Refund transaction must also be reverted, and LoanAdjustTransactionBusinessEvent is triggered for both transactions. A RELATED transaction relation connects each Merchant Issued Refund or Payout Refund transaction to its Interest Refund transaction; if the Interest Refund transaction was created first, the Merchant Issued Refund points to it. The REPLAYED relationship is created automatically.</p>
+<p>Backdated transactions or reversals can change the interest due amounts, so the Interest Refund transaction amount may need recalculation and reverse-replaying. During loan transaction reprocessing, if the originally calculated Interest Refund amount differs from the previous amount, it is reverse-replayed. When a Merchant Issued Refund is reverse-replayed, its related Interest Refund transaction is marked reverse-replayed automatically to preserve the original transaction order, and the RELATED relationship between them is reestablished.</p>
+<h2>Worked examples</h2>
+<p>A progressive, interest-bearing loan receives a single disbursement of 1,000.00 on 1-Jan. The annual interest rate is 10%, giving a daily periodic rate of 0.000274 and daily interest of 0.27 on the full balance. On 10-Jan a merchant issued refund of 500.00 posts and interestRefundCalculation is true, so Fineract creates an Interest Refund transaction. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Original principal</th>
+<th>Original daily interest</th>
+<th>Original interest PTD</th>
+<th>Adjusted principal</th>
+<th>Adjusted daily interest</th>
+<th>Adjusted interest PTD</th>
+<th>Daily interest refund</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>0.27</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.14</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>2-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>0.54</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.28</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>3-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>0.81</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.42</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>4-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>1.08</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.56</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>5-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>1.35</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.70</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>6-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>1.62</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.84</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>7-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>1.89</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>0.98</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>8-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>2.16</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>1.12</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>9-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>2.43</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>1.26</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>10-Jan</td>
+<td>1,000.00</td>
+<td>0.27</td>
+<td>2.70</td>
+<td>500.00</td>
+<td>0.14</td>
+<td>1.40</td>
+<td>0.13</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>2.70</td>
+<td></td>
+<td></td>
+<td>1.40</td>
+<td>1.30</td>
+</tr>
+</tbody></table>
+<p>The interest refund is 1.30, calculated as original interest accrued of 2.70 minus new interest accrued of 1.40.</p>
+<table>
+<thead>
+<tr>
+<th>Account</th>
+<th>GL code</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Income from Interest</td>
+<td>404000</td>
+<td>1.30</td>
+<td></td>
+</tr>
+<tr>
+<td>Interest Receivable</td>
+<td>112603</td>
+<td></td>
+<td>1.30</td>
+</tr>
+<tr>
+<td>Loan portfolio</td>
+<td>112601</td>
+<td></td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Fees Receivable</td>
+<td>112603</td>
+<td></td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Penalties Receivable</td>
+<td>112603</td>
+<td></td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Overpayment</td>
+<td>245000</td>
+<td></td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Fineract links the Interest Refund transaction to the merchant refund with a RELATED relationship and raises LoanAdjustTransactionBusinessEvent.</p>
+<p>The same loan and refund as Example 1 are used, but the value of interestRefundCalculation changes. When it is false, Fineract skips Interest Refund transaction creation for that refund transaction. When it is not provided, Fineract falls back to the loan product configuration; if the product enables calculation, the result is identical to Example 1, otherwise no Interest Refund transaction is created.</p>
+<table>
+<thead>
+<tr>
+<th>interestRefundCalculation</th>
+<th>Loan product calculation enabled</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>true</td>
+<td>—</td>
+<td>Interest Refund transaction created for 1.30</td>
+</tr>
+<tr>
+<td>false</td>
+<td>—</td>
+<td>No Interest Refund transaction created</td>
+</tr>
+<tr>
+<td>not provided</td>
+<td>enabled</td>
+<td>Interest Refund transaction created for 1.30</td>
+</tr>
+<tr>
+<td>not provided</td>
+<td>disabled</td>
+<td>No Interest Refund transaction created</td>
+</tr>
+</tbody></table>
+<p>Only the flag setting changes; the underlying calculation and amounts stay the same when creation occurs.</p>
+<p>The loan is now a charge-off account. A merchant issued refund of 500.00 posts on 10-Jan and interestRefundCalculation is true, so Fineract calculates an interest refund of 1.30 and posts it to charge-off income accounts. When the merchant refund is later reverted, the related Interest Refund transaction is reverted as well, and LoanAdjustTransactionBusinessEvent is raised for both transactions.</p>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Account</th>
+<th>GL code</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original</td>
+<td>Income from Interest</td>
+<td>404000</td>
+<td>1.30</td>
+<td></td>
+</tr>
+<tr>
+<td>Original</td>
+<td>Income from charge-off Interest</td>
+<td>404001</td>
+<td></td>
+<td>1.30</td>
+</tr>
+<tr>
+<td>Reversal</td>
+<td>Income from Interest</td>
+<td>404000</td>
+<td></td>
+<td>1.30</td>
+</tr>
+<tr>
+<td>Reversal</td>
+<td>Income from charge-off Interest</td>
+<td>404001</td>
+<td>1.30</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The RELATED relationship between the merchant refund and the Interest Refund transaction is reestablished after reverse-replay.</p>

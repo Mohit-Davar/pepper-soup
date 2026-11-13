@@ -1,0 +1,315 @@
+<h2>Loan origination overview</h2>
+<p>Loan originator metadata attributes loan income and revenue to a loan originator, such as a merchant, broker, affiliate, platform or channel, for revenue share and reporting. The loan origination function is optional and not all Fineract users use it. The module is implemented as an optional module with optional schema and optional event and report extensions.</p>
+<p>Basic properties of loan origination are stored.</p>
+<ul>
+<li>A loan can have multiple originators.</li>
+<li>Originator External ID is the Originator ID or revenue share ID used for reporting and sharing.</li>
+<li>Event changes are backward compatible through optional fields.</li>
+</ul>
+<h2>Originator ID and originator details</h2>
+<p>The Originator ID identifies the merchant or channel that originated a loan. The field may be null or absent for loans that are not originated by large merchants.</p>
+<p>Rules for the Originator ID:</p>
+<ul>
+<li>The system accepts and stores an Originator ID during loan creation.</li>
+<li>No additional logic, validation, or transformations are applied to the field.</li>
+<li>No automatic revenue-share calculations are performed.</li>
+<li>The Retrieve a Loan API includes the Originator ID in its response payload.</li>
+</ul>
+<h2>Originator registry</h2>
+<p>The Originator Registry stores canonical partner records for loan origination, including the partner name, external ID, type, channel type, and status. Each record has a unique external ID.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Values</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>originator_external_id</td>
+<td>Yes</td>
+<td>Unique string</td>
+</tr>
+<tr>
+<td>originator_name</td>
+<td>No</td>
+<td>String</td>
+</tr>
+<tr>
+<td>originator_type_cv_id</td>
+<td>No</td>
+<td>MERCHANT, BROKER, AFFILIATE, PLATFORM</td>
+</tr>
+<tr>
+<td>origination_channel_type_cv_id</td>
+<td>No</td>
+<td>ONLINE, IN_STORE, API, AGGREGATOR</td>
+</tr>
+<tr>
+<td>status</td>
+<td>Yes</td>
+<td>ACTIVE, PENDING, INACTIVE</td>
+</tr>
+<tr>
+<td>created_on, created_by, last_modified_on, last_modified_by</td>
+<td>Yes</td>
+<td>Auto filled</td>
+</tr>
+</tbody></table>
+<p>Validation rules:</p>
+<ul>
+<li>The originator external ID must be unique.</li>
+<li>Code values must exist for originator type and channel type when provided.</li>
+</ul>
+<h2>Originator lifecycle management</h2>
+<p>You can create, view, update, and delete loan originators through the API and UI. Status defaults to ACTIVE when not provided, and any provided code or status values must be valid.</p>
+<p>Create an originator:</p>
+<ul>
+<li>POST /loan-originators creates an originator.</li>
+<li>The response returns both resourceId and resourceExternalId.</li>
+<li>POST /loan-originators returns HTTP 404 if originator type or channel type does not exist.</li>
+<li>HTTP 400 is returned if a required parameter is missing or the data format is incorrect.</li>
+</ul>
+<p>Update an originator:</p>
+<ul>
+<li>PUT /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} update status and fields.</li>
+<li>PUT update returns HTTP 200 with resourceId and resourceExternalId.</li>
+<li>PUT update returns HTTP 400 if a required parameter is missing or the data format is incorrect.</li>
+<li>PUT update returns HTTP 403 if a duplication-related error occurs.</li>
+<li>PUT update returns HTTP 404 if originator type or channel type does not exist.</li>
+</ul>
+<p>Delete an originator:</p>
+<ul>
+<li>DELETE /loan-originators/{originatorId} and /loan-originators/external-id/{originatorExternalId} delete an originator.</li>
+<li>DELETE originator has no request body.</li>
+<li>DELETE originator returns HTTP 404 if the targeted originator does not exist.</li>
+</ul>
+<p>Fetch originators:</p>
+<ul>
+<li>GET /loan-originators and /loan-originators/external-id/{originatorExternalId} fetch existing originators.</li>
+<li>GET fetch originators has no request body.</li>
+<li>GET fetch originators returns HTTP 200 with a list of originators including id, name, status, originatorTypeId, externalId, and channelTypeId.</li>
+<li>HTTP 404 is returned if provided value(s) do not exist.</li>
+</ul>
+<h2>Attaching and detaching originators on a loan</h2>
+<p>You can attach an originator to a loan or detach one from a loan while the loan is created but not yet approved. After approval, attach and detach operations are blocked. Multiple originators can be attached to a single loan.</p>
+<p>Rules for attaching or detaching an originator:</p>
+<ul>
+<li>Loan id is mandatory.</li>
+<li>Originator id is mandatory.</li>
+<li>Only ACTIVE status originators can be attached to a loan.</li>
+<li>An originator cannot be added twice to the same loan.</li>
+<li>An originator cannot be removed twice from the same loan.</li>
+</ul>
+<p>API calls:</p>
+<ul>
+<li>POST /loans/{loanId}/originators/{originatorId} attaches an originator to a loan and has no request body.</li>
+<li>DELETE /loans/{loanId}/originators/{originatorId} detaches an originator from a loan and has no request body.</li>
+<li>GET /loans/{loanId}/originators retrieves originators for a loan.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Success response</th>
+<th>Failure response</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Attach originator</td>
+<td>No response body specified</td>
+<td>HTTP 404 if the loan or originator does not exist</td>
+</tr>
+<tr>
+<td>Detach originator</td>
+<td>HTTP 200 with loan id, loan external id, originator id, originator external id</td>
+<td>HTTP 404 if the loan or originator does not exist</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> Attach and detach endpoints require ATTACH_LOAN_ORIGINATOR and DETACH_LOAN_ORIGINATOR permissions respectively.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Loan created"]
+  n2["Attach originator"]
+  n3["Detach originator"]
+  n4["Loan approved"]
+  n5["Attach/detach blocked"]
+  n1 -->|"POST /loans/{loanId}/originators/{originatorId}"| n2
+  n1 -->|"DELETE /loans/{loanId}/originators/{originatorId}"| n3
+  n2 --> n1
+  n3 --> n1
+  n1 -->|"Loan approved"| n4
+  n4 --> n5]]></ac:plain-text-body></ac:structured-macro>
+<h2>Fetching originator details</h2>
+<p>Use GET /loans/{loanId}/originators or GET /loans/external-id/{loanExternalId}/originators to fetch originator details for a loan. The request has no body.</p>
+<p>The response includes an originators list with these fields:</p>
+<ul>
+<li>id</li>
+<li>name</li>
+<li>status</li>
+<li>typeId</li>
+<li>externalId</li>
+<li>channelTypeId</li>
+<li>partnerTypeId</li>
+</ul>
+<p>Rules:</p>
+<ul>
+<li>If the loan does not exist, the API returns HTTP 404.</li>
+<li>If no originator entries exist for the loan, the originators list is empty.</li>
+</ul>
+<h2>Inline originator creation during loan application</h2>
+<p>You can create an originator and attach it to a loan application at the same time when the configuration is enabled. The system matches an existing originator by external ID to avoid duplicates.</p>
+<p>Configuration:</p>
+<ul>
+<li>The setting enable_originator_creation_during_loan_application controls whether an originator can be created during loan application.</li>
+<li>The default value is false.</li>
+</ul>
+<h2>Loan creation with originators</h2>
+<p>You can provide originator details when you create a loan. POST /loans creates and attaches originators immediately as part of the loan creation flow.</p>
+<h2>Permissions and security</h2>
+<p>Originator endpoints are secured under four permissions: CREATE_LOAN_ORIGINATOR, UPDATE_LOAN_ORIGINATOR, DELETE_LOAN_ORIGINATOR, and READ_LOAN_ORIGINATOR.</p>
+<h2>Module enablement and configuration</h2>
+<p>When enabled, originator repository services are created conditionally. The module is packaged as the separate fineract-loan-origination module. The originators field is optional and defaults to null to preserve backward compatibility for consumers.</p>
+<h2>Database schema and mapping</h2>
+<p>The Loan entity is not modified with originator fields; only the loan id is used for mapping. Originator mapping is stored in the m_loan_originator_mapping table.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>id</td>
+<td>PK</td>
+<td>Yes</td>
+<td>Primary key</td>
+</tr>
+<tr>
+<td>loan_id</td>
+<td>FK to m_loan</td>
+<td>Yes</td>
+<td>Links the mapping to a loan</td>
+</tr>
+<tr>
+<td>originator_id</td>
+<td>FK to m_loan_originator</td>
+<td>Yes</td>
+<td>Links the mapping to an originator</td>
+</tr>
+<tr>
+<td>created_on</td>
+<td>Auto filled</td>
+<td>Yes</td>
+<td>Record creation timestamp</td>
+</tr>
+<tr>
+<td>created_by</td>
+<td>Auto filled</td>
+<td>Yes</td>
+<td>User who created the record</td>
+</tr>
+<tr>
+<td>last_modified_on</td>
+<td>Auto filled</td>
+<td>Yes</td>
+<td>Last modification timestamp</td>
+</tr>
+<tr>
+<td>last_modified_by</td>
+<td>Auto filled</td>
+<td>Yes</td>
+<td>User who last modified the record</td>
+</tr>
+</tbody></table>
+<h2>Business events</h2>
+<p>Originator details appear in loan lifecycle business events, loan transaction business events, and optionally in LoanCharge business events. The system fetches loan mappings, joins them with originator details from the registry to build the originators list, and attaches that list to the event payload.</p>
+<p>External business events (Avro) include the following optional originators fields:</p>
+<ul>
+<li>LoanAccountDataV1.avsc includes an optional originators field as a list of attached originators to the loan.</li>
+<li>LoanTransactionDataV1.avsc includes an optional originators field as a list.</li>
+<li>The originators field defaults to null to preserve backward compatibility.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[sequenceDiagram
+  participant n1 as Loan/Transaction event
+  participant n2 as Loan mappings
+  participant n3 as Registry
+  participant n4 as Event payload
+  n1->>n2: fetch mappings
+  n2->>n3: join with registry
+  n3->>n4: attach originators list]]></ac:plain-text-body></ac:structured-macro>
+<h2>Reporting</h2>
+<p>Reporting includes the Trial Summary Report and the Trial Balance Report. Attaching the originator external id updates these target reports.</p>
+<h2>WCP loan module support</h2>
+<p>Loan origination is supported on the WCP loan module. All loan origination features available for term loans are available on WCP loans. You can map an originator to a WCP loan and fetch the originators assigned to a WCP loan. Originator linking, unlinking, the originators tab, and listing by originator across term and WCP loans are supported.</p>
+<h2>API endpoints and responses</h2>
+<h2>Changed terms flag</h2>
+<p>The changedTerms flag shows whether disbursement or re-age changes the number of terms on a loan. The system calculates the number of terms before and after the action runs.</p>
+<h2>Worked examples</h2>
+<p>A merchant originates a loan through the optional loan origination feature. The figures below are illustrative. The originator is Acme Merchants, identified by external ID MERCH-100, with status ACTIVE, originator type id 10 and channel type id 20. The loan amount is 1,000 with 3 monthly installments. The client creates the originator, then creates a loan that carries the same originator in its originators list so the merchant is linked at loan level.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Input</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Create originator</td>
+<td>POST /loan-originators {name: &quot;Acme Merchants&quot;, externalId: &quot;MERCH-100&quot;, status: &quot;ACTIVE&quot;, originatorTypeId: 10, channelTypeId: 20}</td>
+<td>200; originator id 50, externalId MERCH-100</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Create loan with originator</td>
+<td>POST /loans {principal: 1000, termMonths: 3, originators: [{externalId: &quot;MERCH-100&quot;, name: &quot;Acme Merchants&quot;, typeId: 10, channelTypeId: 20}]}</td>
+<td>200; loan id 1001, originators list contains id 50, externalId MERCH-100</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Retrieve loan with associations</td>
+<td>GET /loans/1001?associations=originators</td>
+<td>200; loan id 1001, originators list includes id 50, name Acme Merchants, status ACTIVE, externalId MERCH-100, typeId 10, channelTypeId 20</td>
+</tr>
+</tbody></table>
+<p>This example shows that the originator external id is persisted at loan level and returned by the Retrieve a Loan API when originator associations are requested.</p>
+<p>An originator can be attached to and detached from a loan while the loan is created but not yet approved. Loan 1002 is not yet approved. Originator id 51, external ID MERCH-200, name Beta Brokers, status ACTIVE, originator type id 10, channel type id 20 exists. Attaching links the originator to the loan; detaching removes the link. If the originator status were PENDING instead of ACTIVE, the attach request would be rejected because only ACTIVE originators may be attached to a loan.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Input</th>
+<th>Result</th>
+<th>Originators on loan after step</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Attach originator</td>
+<td>POST /loans/1002/originators {originatorId: 51}</td>
+<td>200; loan id 1002, loan external id LOAN-1002, originator id 51, externalId MERCH-200</td>
+<td>[51 MERCH-200]</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Fetch originators for loan</td>
+<td>GET /loans/1002/originators</td>
+<td>200; list with id 51, name Beta Brokers, status ACTIVE, externalId MERCH-200, typeId 10, channelTypeId 20</td>
+<td>[51 MERCH-200]</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Detach originator</td>
+<td>DELETE /loans/1002/originators/51</td>
+<td>200; loan id 1002, loan external id LOAN-1002, originator id 51, externalId MERCH-200</td>
+<td>[]</td>
+</tr>
+</tbody></table>
+<p>Detaching removes the association so a subsequent fetch returns an empty list; attaching the same originator twice is not allowed, and attach or detach is blocked after the loan is approved.</p>

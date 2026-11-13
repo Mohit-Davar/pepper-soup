@@ -1,0 +1,281 @@
+<p>A payment holiday pauses repayments for a set period and moves future installments forward. The system updates the repayment next due date, remaining schedule payment due dates, and maturity date. Delinquency and pause calculations are handled automatically because future installments move with the holiday period.</p>
+<p>Rules for applying a payment holiday:</p>
+<ul>
+<li>Apply a payment holiday on an installment due date.</li>
+<li>Do not apply a payment holiday after the maturity date.</li>
+<li>Do not apply a payment holiday on a backdated date; if the date has passed, the system returns an error.</li>
+<li>The down-payment installment is not affected.</li>
+<li>Installments already due are not extended; only future installments are extended.</li>
+<li>Fee and penalty due dates in the future move forward to the next payment due date.</li>
+<li>For multi-disbursement loans where the first down payment is past due and the second down payment is received, apply the payment holiday on the date of the second down payment.</li>
+<li>Account changed events are triggered when payment holidays are applied.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Holiday length</th>
+<th>What the API can update</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1-month payment holiday</td>
+<td>Repayment next due date, remaining schedule payment due dates, maturity date</td>
+</tr>
+<tr>
+<td>2-month payment holiday</td>
+<td>Repayment next due date, remaining schedule payment due dates, maturity date</td>
+</tr>
+<tr>
+<td>2-month payment holiday with past-due installments</td>
+<td>Repayment next due date, remaining schedule payment due dates, maturity date</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> The N+1 installment is treated as a regular installment while applying the holiday and is rescheduled as per the holiday set.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Normal repayment" as n1
+  state "Payment holiday" as n2
+  state "Rescheduled installments & maturity" as n3
+  n1 --> n2 : Apply holiday on installment due date
+  n2 --> n3 : Move future installments update next due date, remaining due dates, maturity date
+  n3 --> n1 : Resume (shortens only)]]></ac:plain-text-body></ac:structured-macro>
+<p>A four-installment loan is created and disbursed on 1 August with a principal of 1,000.00 and a maturity date of 1 November. Installments of 250.00 are due on 8/1, 9/1, 10/1, and 11/1. A 25% down payment of 250.00 is made on 8/1, so that installment is 0.00 and the remaining principal is 750.00. On 5 August a one-month payment holiday is approved. The figures in this example are illustrative. The down-payment installment stays at 0.00, the remaining installments shift forward by one month, and the maturity date moves to 1 December.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Event</th>
+<th>Installment due</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-Aug</td>
+<td>Loan disbursed</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>8/1</td>
+<td>Down payment of 250.00</td>
+<td>0.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5-Aug</td>
+<td>One-month holiday approved; maturity 1-Nov to 1-Dec</td>
+<td>—</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>10/1</td>
+<td>Installment shifted from 9/1</td>
+<td>250.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>11/1</td>
+<td>Installment shifted from 10/1</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>12/1</td>
+<td>Installment shifted from 11/1</td>
+<td>250.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The same four-installment loan with a principal of 1,000.00, a 25% down payment of 250.00 on 8/1, and remaining installments of 250.00 due on 9/1, 10/1, and 11/1. On 5 August a two-month payment holiday is approved instead of one month. With a two-month holiday the remaining installments and the maturity date shift forward by two months instead of one.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Event</th>
+<th>Installment due</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-Aug</td>
+<td>Loan disbursed</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>8/1</td>
+<td>Down payment of 250.00</td>
+<td>0.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5-Aug</td>
+<td>Two-month holiday approved; maturity 1-Nov to 1-Jan</td>
+<td>—</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>11/1</td>
+<td>Installment shifted from 9/1</td>
+<td>250.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>12/1</td>
+<td>Installment shifted from 10/1</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1-Jan</td>
+<td>Installment shifted from 11/1</td>
+<td>250.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>A four-installment loan with a principal of 1,000.00 has installments of 250.00 due on 8/1, 9/1, 10/1, and 11/1. The down payment on 8/1 fails, so the principal stays at 1,000.00 and the 8/1 installment remains 250.00. On 5 August a two-month payment holiday is approved while 8/1 is already past due. Installments already due are not extended; only future installments move forward, and the maturity date moves to 1 January.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Event</th>
+<th>Installment due</th>
+<th>Principal balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-Aug</td>
+<td>Loan disbursed</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>8/1</td>
+<td>Down payment fails; installment remains due</td>
+<td>250.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5-Aug</td>
+<td>Two-month holiday approved; maturity 1-Nov to 1-Jan</td>
+<td>—</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>11/1</td>
+<td>Installment shifted from 9/1</td>
+<td>250.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>12/1</td>
+<td>Installment shifted from 10/1</td>
+<td>250.00</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>1-Jan</td>
+<td>Installment shifted from 11/1</td>
+<td>250.00</td>
+<td>1,000.00</td>
+</tr>
+</tbody></table>
+<p>A four-installment loan with a principal of 1,000.00 has installments of 250.00 due on 8/1, 9/1, 10/1, and 11/1. The down payment is reversed on 2 August, returning the principal to 1,000.00. An NSF fee of 15.00 is added to the penalty balance, making the 9/1 installment 265.00. A payment of 250.00 on 8/1 brings the principal to 750.00 while the penalty balance stays at 15.00. On 5 August a one-month payment holiday is approved. Future fee and penalty due dates move forward with the installments they attach to, so the 265.00 installment moves from 9/1 to 10/1.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Event</th>
+<th>Installment due</th>
+<th>Principal balance</th>
+<th>Penalty balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1-Aug</td>
+<td>Loan disbursed</td>
+<td>—</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2-Aug</td>
+<td>Down payment reversed</td>
+<td>—</td>
+<td>1,000.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2-Aug</td>
+<td>NSF fee of 15.00 applied; 9/1 becomes 265.00</td>
+<td>—</td>
+<td>1,000.00</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>3-Aug</td>
+<td>Payment of 250.00 on 8/1</td>
+<td>0.00</td>
+<td>750.00</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>5-Aug</td>
+<td>One-month holiday approved; maturity 1-Nov to 1-Dec</td>
+<td>—</td>
+<td>750.00</td>
+<td>15.00</td>
+</tr>
+<tr>
+<td>6</td>
+<td>10/1</td>
+<td>Installment shifted from 9/1</td>
+<td>265.00</td>
+<td>500.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>7</td>
+<td>11/1</td>
+<td>Installment shifted from 10/1</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>8</td>
+<td>12/1</td>
+<td>Installment shifted from 11/1</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

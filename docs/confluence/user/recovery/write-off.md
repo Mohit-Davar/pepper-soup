@@ -1,71 +1,108 @@
 # Write-Off
 
-## Write-Off
+## Write-off overview
 
-### Write-off accounting for charged-off loans
+A write-off marks a closed or overpaid loan as fraud. If the loan was not charged off before it was written off, no changes are required and everything works as expected. Write-off processing avoids double credit receivable accounts when both charge-off and write-off occur.
 
-When a loan has already been charged off and you trigger a write-off, the system does not credit the receivable GL account again. Instead, it posts principal, interest, fee and penalty amounts to separate charge-off income accounts. You cannot write off a loan that has not been charged off.
+## Write off a loan
 
-| Amount type | Account used |
+Use this screen to mark a loan as written-off and close it with that status.
+
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Write Off**.
+5. Enter the details described below, then select **Submit**.
+
+| Field | Required | Description |
+| --- | --- | --- |
+| Write off on | Yes | Enter the date the write-off takes effect. |
+| Amount | No | Enter the amount to write off. |
+| Reason for Write-Off | No | Select one of the available write-off reason code values. |
+| Note | No | Enter an optional note. |
+
+The loan is closed with status written-off, no further amortization occurs, and the selected write-off reason code value is set on the loan and shown in the loan details.
+
+## Write off a loan
+
+Use the write-off screen to close a loan with a written-off status and record the write-off details.
+
+1. Select **Institution** > **Clients** and open the client.
+2. Under **Loan Accounts**, select the loan account.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Write Off**.
+5. Enter the details described below, then select **Submit**.
+
+| Field | Required | Description |
+| --- | --- | --- |
+| Write off on | Yes | Enter the date on which the write-off takes effect. This field is required. |
+| Amount | No | Enter the amount to write off. |
+| Reason for Write-Off | No | Select one of the available write-off reason code values. |
+| Note | No | Add an optional note about the write-off. |
+| External Id | No | Enter an optional external identifier for the write-off. |
+
+The loan is closed with a written-off status, no further amortization occurs, and the selected write-off reason is stored on the loan details.
+
+## Write-off reason codes
+
+During write-off, you select one write-off reason code from all available values. The field is optional.
+
+## Write-off GL account mapping
+
+Map each write-off reason code to an expense GL account so the system knows which account to debit when a loan is written off using that reason.
+
+Rules for mapping write-off reason codes to GL accounts:
+
+- A write-off reason code can be mapped to any expense GL account from the dropdown.
+- Multiple write-off reason codes can share the same expense GL account.
+- The same write-off reason code cannot be mapped to more than one expense GL account.
+- Adding the same write-off reason twice to a loan product is forbidden.
+
+When a loan is written off:
+
+- If advance accounting is mapped for the write-off reason used, the mapped GL account is used instead of the default mapping.
+- If the loan product has no write-off reason configurations set, the default mapping is shown.
+
+## Overpayment handling
+
+When a loan is overpaid, the system compares the overpayment amount with the current balance required (CBR). The result decides whether the loan closes, stays overpaid, or returns to active status. If the CBR is greater than the overpaid amount, the system blocks the action.
+
+| Condition | Result |
 | --- | --- |
-| Principal | Charge-off Expense |
-| Interest | Income from Charge-off Expense |
-| Fee | Income from Charge-off Fee |
-| Penalty | Income from Charge-off Penalty |
+| Overpayment amount equals CBR | The loan moves from Overpaid to Closed (fully paid). |
+| Overpayment amount is greater than CBR | The loan remains Overpaid. The overpayment amount becomes the difference between CBR and the overpayment balance. |
+| Overpayment amount is lower than CBR | The loan moves from Overpaid to Active. The due principal amount becomes the difference between CBR and the overpayment balance. |
+| CBR amount is greater than the overpaid amount | The system does not allow this and handles it through validation. |
 
-### Write-off reason to GL account mapping
+## Write-off processing
 
-You can map each write-off reason to an expense GL account. When a loan product has no write-off reason configurations set and a loan is written off with a reason, the default mapping is shown.
+A write-off closes the loan with a written-off status and stops all further amortization. Any repayment posted after write-off is treated as recovery income and follows write-off-specific accounting rules. An accounting write-off happens whenever a charge-off is triggered.
 
-The following rules apply to write-off reason to GL account mappings:
+## Undoing a write-off
 
-- The write-off reason field is optional.
-- Multiple write-off reason to expense GL mappings can be configured, but the same reason code cannot be configured twice.
-- For one write-off reason code, only one GL account can be configured.
-- The same GL account can be configured for multiple write-off reasons.
-- Adding the same write-off reason twice with different expense accounts on a loan product is prohibited and shows an error on submit.
-- When advance accounting is mapped for a write-off reason and that reason is used, the mapped GL account is used instead of the default mapping.
+You can undo a write-off transaction from the customer’s transaction list.
 
-A mapping entry uses two identifiers:
+Undo write-off is available through:
 
-- The write-off reason code value id must be a valid, existing id of a write-off reason code value.
-- The expense GL account id must be a valid, existing Expense GL account id.
+- The upper-right corner list.
+- The customer-initiated Undo-writeoff action.
 
-A new Advance Accounting rule maps write-off reason code with accounting mapping.
+## Write-off in the UI
 
-The loan product request includes the write-off reasons to expense mappings list with write-off reason code value id and expense GL account id fields.
+You can trigger a write-off from the UI. The UI lists the available write-off reason codes, and the write-off uses the same capability and parameters as for progressive loans.
 
-Undoing a write-off works as follows:
+If a repayment or reversal is backdated to before the write-off date, the system replays the write-off transaction and its corresponding accounting entries accordingly.
 
-- When undoing a transaction of type WRITEOFF (Close as written-off), the UI calls command=undowriteoff instead of command=undo.
-- Undo write-off is listed as an available option in the upper, right corner menu alongside Recovery payment.
+## Worked examples
 
-### Write-off reason selection
+A loan officer writes off a loan of 1,000.00 that was already charged off, so its receivable accounts were credited earlier. The loan still has 120.00 of interest, 30.00 of fees and 20.00 of penalties outstanding. These figures are illustrative. Because the receivables were already credited at charge-off, the write-off does not credit them again; instead it posts the principal to Charge-off Expense and the interest, fee and penalty amounts to their respective charge-off income accounts.
 
-During write-off, the UI lists all available write-off reason code values and lets you select one. Loan details retrieve the selected write-off reason code value.
+| Component | Amount | Account posted |
+| --- | --- | --- |
+| Principal | 1,000.00 | Charge-off Expense |
+| Interest | 120.00 | Income from Charge-off Expense |
+| Fee | 30.00 | Income from Charge-off Fee |
+| Penalty | 20.00 | Income from Charge-off Penalty |
+| Total | 1,170.00 | - |
 
-### Write-off page fields and actions
-
-The write-off page marks Write off on as required and offers Cancel and Submit buttons.
-
-### Performing a write-off
-
-You write off a loan account from its actions page. The write-off applies when the loan was not charged off, and no changes are required for it to work as expected.
-
-1. Open the loan account actions page and choose "Write Off" from the actions to open the write-off screen.
-2. Enter Write off on, optionally enter Amount, Reason for Write-Off, Note and External Id, then choose Submit.
-
-```mermaid
-flowchart TD
-  n1["Open loan account actions page"]
-  n2["Choose Write Off"]
-  n3["Open write off page"]
-  n4["Enter Write off on"]
-  n5["Enter optional fields"]
-  n6["Choose Submit"]
-  n1 --> n2
-  n2 --> n3
-  n3 --> n4
-  n4 --> n5
-  n5 --> n6
-```
+This example shows that a write-off after charge-off avoids double-counting receivables and routes each component to its correct charge-off account.

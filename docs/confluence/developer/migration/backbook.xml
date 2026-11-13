@@ -1,0 +1,332 @@
+<h2>Backbook Migration overview</h2>
+<p>Backbook Migration supports migrating legacy loan portfolios with historical accuracy, including backdated transactions and audit trail preservation. Backdated actions such as interest pause and capitalized income calculate interest as of the backdated date.</p>
+<p>The migration flow moves data in two stages:</p>
+<ul>
+<li>Legacy System to Migration Engine via EXTRACT &amp; MAP.</li>
+<li>Migration Engine to MifosX via LOAD &amp; VALIDATE.</li>
+</ul>
+<h2>Migration COB and accrual processing</h2>
+<p>During migration, no daily COB runs. A single inline COB execution occurs before migration completes and creates one aggregated Accrual per loan, differentiated by loan status. For active loans it creates N Accrual Activities for active periods only; for closed loans it creates one aggregated Accrual ending at the closure date with no activities post-closure. The single COB execution results in an aggregated accrual entry for consolidated disbursements plus accrual activities for each overdue period, and generates aggregated accruals including charge components. After migration, daily COB runs normally on the consolidated loan schedule and generates incremental accruals. Future installments remain unprocessed until their due dates are reached, then process normally. Post-migration COB continues accurate charge processing. The service that retrieves the loan IDs for the COB job is org.apache.fineract.cob.loan.RetrieveAllNonClosedLoanIdServiceImpl#retrieveLoanCOBPartitions.</p>
+<p>Run COB or inline COB:</p>
+<ul>
+<li>Every day to create accruals.</li>
+<li>For each day after the repayment.</li>
+</ul>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[flowchart TD
+  n1["Migration start"]
+  n2["Create backdated multi-disbursement loans"]
+  n3["Update repayment schedule per disbursement"]
+  n4["Apply backdated charges and reversals"]
+  n5["Allocate backdated payments and reversals"]
+  n6["Single inline COB execution"]
+  n7["One aggregated Accrual per loan"]
+  n8["N Accrual Activities for applicable periods"]
+  n9["Post-migration daily COB"]
+  n10["Migration complete"]
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  n6 --> n8
+  n7 --> n9
+  n9 --> n10]]></ac:plain-text-body></ac:structured-macro>
+<h2>Accrual calculation rules</h2>
+<p>Accrual recognition depends on loan status: preclosed loans accrue until the closure date, active loans accrue until the current date, and overpaid loans receive no ongoing accrual during backdated processing.</p>
+<p>Backdated processing applies different accrual treatment by loan status:</p>
+<ul>
+<li>Active loans receive full accrual treatment.</li>
+<li>Closed loans receive final accrual treatment.</li>
+<li>Overpaid loans receive no ongoing accrual treatment.</li>
+</ul>
+<p>Pre-close interest calculation rules:</p>
+<table>
+<thead>
+<tr>
+<th>restFrequencyType</th>
+<th>preCloseInterestCalculationStrategy</th>
+<th>Effective settings</th>
+<th>Interest calculation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DAILY</td>
+<td>TILL_REST_FREQUENCY_DATE</td>
+<td>SAME_AS_REPAYMENT_PERIOD and TILL_REST_FREQUENCY_DATE</td>
+<td>Interest is calculated at the end of the actual period.</td>
+</tr>
+<tr>
+<td>SAME_AS_REPAYMENT_PERIOD</td>
+<td>TILL_PRE_CLOSURE_DATE</td>
+<td>SAME_AS_REPAYMENT_PERIOD and TILL_REST_FREQUENCY_DATE</td>
+<td>Interest is calculated at the end of the actual period.</td>
+</tr>
+</tbody></table>
+<h2>Accrual activity bugs</h2>
+<p>Accrual activity can be created on loans that are already closed or overpaid, including backdated loans, regular loans created on the current date, and loans that remain overpaid when the credit balance refund step is ignored. Accrual activity is excluded from the transaction summary report.</p>
+<p>When an accrual activity is reversed and replayed, manually_adjusted_or_reversed is marked as false in m_loan_transaction and in the LoanAdjustTransactionBusinessEvent, so downstream systems cannot determine if the transaction is an adjustment.</p>
+<p>totalUnpaidPayableNotDueInterest remains 0 even though accruals were created for the previous 4 days, although it should hold the cumulative unpaid interest amount once an accrual is created.</p>
+<p>For a progressive loan schedule with interest recalculation true and accounting None, fetching loan details fails with HTTP 500 when a charge-off occurs on the due date of the 2nd period after an on-time repayment for the 1st period because reverse-replay is not allowed.</p>
+<p>In AdvancedPaymentScheduleTransactionProcessor processAllocationsHorizontally IN_ADVANCE case, when transactionAmountUnprocessed is 0.06 and numberOfInstallments is 11, evenPortion is 0.01 and balanceAdjustment is -0.05, which can make evenPortion negative.</p>
+<h2>Interest calculation bugs</h2>
+<p>For progressive interest bearing loans with interest recalculation disabled, negative numbers appear on transactions when a Merchant Issued Refund is processed.</p>
+<p>The same condition causes these incorrect values:</p>
+<ul>
+<li>totalUnpaidPayableNotDueInterest can be negative.</li>
+<li>ProgressiveLoanSummaryDataProvider computeTotalUnpaidPayableNotDueInterestAmountOnActualPeriod calculates totalUnpaidPayableNotDueInterest incorrectly because it does not expect more interest paid than the actual due, but with interest recalculation false it is possible.</li>
+</ul>
+<h2>Rounding mode</h2>
+<p>The rounding mode decides how money amounts are rounded during calculations. It comes from the database and determines the MathContext used by MoneyHelper. By default, the rounding mode is HALF_EVEN (6) and cannot be changed in Fineract.</p>
+<blockquote>
+<p><strong>Note:</strong> A way to change the initial rounding mode shall be provided, either by setting the initial value from application.properties or by allowing changes to trap_door configuration if no loans, savings, or similar records were created.</p>
+</blockquote>
+<h2>Configuration lookup errors</h2>
+<p>Fineract raises an exception when a global configuration lookup fails.</p>
+<p>The lookup fails when:</p>
+<ul>
+<li>The global configuration does not exist with the name, and Fineract raises: Configuration property &quot; + propertyName + &quot; does not exist.</li>
+<li>The configuration identifier does not exist, and Fineract raises: Configuration identifier &quot; + configId + &quot; does not exist.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Fetching a global configuration entry by name that does not exist returns HTTP 500 instead of 404.</p>
+</blockquote>
+<blockquote>
+<p><strong>Note:</strong> Fetching a configuration by a nonexistent id returns HTTP 500 instead of 404.</p>
+</blockquote>
+<p>GET Loan details is the only available API that retrieves loan transactions, but it does not support filtering loan transactions based on type.</p>
+<h2>External event issues</h2>
+<p>External events use a bigint ID in the database but were sent as an int in external business events. Events publishing has an issue when the sequence ID goes beyond Integer.MAX_VALUE. Part of this issue was fixed, but a piece of code in MessageFactory was missed and still results in issues.</p>
+<h2>Fraud flag accounting</h2>
+<p>Fraud flag accounting controls how general ledger entries are created when transactions are replayed after a fraud tag is applied to a loan.</p>
+<p>Accounting entries depend on when the transaction occurred relative to the fraud tag:</p>
+<ul>
+<li>Transactions made before the fraud tag keep their non-fraud accounting entries during replay after the fraud tag is in place.</li>
+<li>Backdated transactions made after the fraud tag was applied receive fraud-related general ledger accounting entries.</li>
+</ul>
+<h2>Goodwill credit journal entries</h2>
+<p>Goodwill credit journal entries are not valid after reverse and replay; allocations go to the chargeoff GL account even though the account is not charged off.</p>
+<h2>Disbursement charge calculation</h2>
+<p>The disbursement charge is calculated from the disbursement amount.</p>
+<ul>
+<li>The disbursement charge amount should be calculated based on disbursement amount plus interest.</li>
+</ul>
+<h2>Multi-disbursal loans</h2>
+<p>You can request further disbursement on the UI for a multi-disbursal loan, including when the loan is closed or overpaid.</p>
+<h2>Interest Refund transactions</h2>
+<p>You can create an Interest Refund transaction manually for a Payout Refund or Merchant Issued Refund transaction only when no Interest Refund transaction already exists for that refund. The transaction date is optional; if you provide it, it must match the target refund transaction date. Fineract calculates the interest refund amount on the fly as it would if it created the transaction automatically. Fineract sets a transaction relationship between the target refund transaction and the Interest Refund transaction, and reverses the Interest Refund transaction automatically if you reverse the refund transaction.</p>
+<h2>Migration scenario details</h2>
+<p>Migration scenario details cover configuration combinations used during backbook migration, including MIR allocation, downpayment allocation, default allocation, disbursement charge calculation types, multidisbursal loans without expected tranches, and loans with a downpayment.</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MIR configured to use</td>
+<td>LAST_INSTALLMENT</td>
+</tr>
+<tr>
+<td>MIR allocation</td>
+<td>LAST_INSTALLMENT</td>
+</tr>
+<tr>
+<td>DP allocation</td>
+<td>NEXT_INSTALLMENT</td>
+</tr>
+<tr>
+<td>Default allocation</td>
+<td>REAMORTIZATION</td>
+</tr>
+<tr>
+<td>Disbursement charge calculation type</td>
+<td>% loan amount + interest, amount = 2.00</td>
+</tr>
+<tr>
+<td>Disbursement charge calculation type</td>
+<td>% amount, amount = 2.00</td>
+</tr>
+<tr>
+<td>Multidisbursal loan</td>
+<td>Doesn’t expect tranche with enabled ‘Disallow Expected Disbursements’ setting on loan level</td>
+</tr>
+<tr>
+<td>Multidisbursal loan</td>
+<td>Enabled 25% downpayment</td>
+</tr>
+</tbody></table>
+<h2>Approved amount API</h2>
+<p>You can change the approved loan amount using either the loan ID or the external loan ID. The request body contains the new amount and the locale. A successful response returns HTTP 200 with the old approved amount and the new approved amount changes, and triggers the LoanApprovedAmountChangedBusinessEvent.</p>
+<p>Error responses:</p>
+<ul>
+<li>HTTP 400 Bad Request when fields are missing or have an incorrect data type.</li>
+<li>HTTP 403 Domain rule exception when the new approved amount fails validation, such as being lower than total already disbursed or expected disbursement amounts.</li>
+</ul>
+<p>Request body fields:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>amount</td>
+<td>BigDecimal</td>
+<td>150.50</td>
+</tr>
+<tr>
+<td>locale</td>
+<td>String</td>
+<td>en</td>
+</tr>
+</tbody></table>
+<h2>Available disbursement amount API</h2>
+<p>Use the available disbursement amount API to update the available disbursement amount of a loan. You can call it by loan ID or by external ID. The available disbursement amount equals the approved loan amount minus the total disbursed amount minus total capitalized income when capitalized income functionality is enabled.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Updates</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PUT /loans/&lt;loan_id&gt;/available-disbursement-amount</td>
+<td>Available disbursement amount of a loan by loan ID</td>
+</tr>
+<tr>
+<td>PUT /loans/external-id/&lt;loan_external_id&gt;/available-disbursement-amount</td>
+<td>Available disbursement amount of a loan by external ID</td>
+</tr>
+</tbody></table>
+<p>Responses:</p>
+<ul>
+<li>A successful response returns HTTP 200 with CommandProcessingResult including old available disbursement amount, new available disbursement amount, old approved amount, and new approved amount.</li>
+<li>An error response returns HTTP 400 Bad Request when fields are missing or have an incorrect data type.</li>
+<li>An error response returns HTTP 403 Domain rule exception when the new available amount fails validation.</li>
+</ul>
+<h2>Interest Refund API</h2>
+<p>The Interest Refund API creates an Interest Refund transaction on a loan transaction. You can identify the loan by its internal ID or external ID, and the transaction by its internal ID or external ID.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Loan identifier</th>
+<th>Transaction identifier</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>/loans/&lt;loan_id&gt;/transactions/&lt;transaction_id&gt;?command=interest-refund</td>
+<td>Internal loan ID</td>
+<td>Internal transaction ID</td>
+</tr>
+<tr>
+<td>/loans/external-id/&lt;loan_external_id&gt;/transactions/&lt;transaction_id&gt;?command=interest-refund</td>
+<td>External loan ID</td>
+<td>Internal transaction ID</td>
+</tr>
+<tr>
+<td>/loans/&lt;loan_id&gt;/transactions/external-id/&lt;transaction_external_id&gt;?command=interest-refund</td>
+<td>Internal loan ID</td>
+<td>External transaction ID</td>
+</tr>
+<tr>
+<td>/loans/external-id/&lt;loan_external_id&gt;/transactions/external-id/&lt;transaction_external_id&gt;?command=interest-refund</td>
+<td>External loan ID</td>
+<td>External transaction ID</td>
+</tr>
+</tbody></table>
+<h2>Worked examples</h2>
+<p>A legacy installment loan is migrated with a backdated disbursement and a backdated repayment. The figures are illustrative: principal of 900, annual interest rate of 12 percent, a 360-day year with 30-day months, and a repayment of 300 on day 11. Close of business runs on day 30.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Event</th>
+<th>Balance at start</th>
+<th>Days</th>
+<th>Daily interest</th>
+<th>Interest posted</th>
+<th>Balance at end</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Disburse 900</td>
+<td>0</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>900</td>
+</tr>
+<tr>
+<td>1-10</td>
+<td>Accrue interest</td>
+<td>900</td>
+<td>10</td>
+<td>0.30</td>
+<td>3.00</td>
+<td>900</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Repay 300</td>
+<td>900</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>600</td>
+</tr>
+<tr>
+<td>11-30</td>
+<td>Accrue interest</td>
+<td>600</td>
+<td>20</td>
+<td>0.20</td>
+<td>4.00</td>
+<td>600</td>
+</tr>
+<tr>
+<td>30</td>
+<td>COB aggregated accrual</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>7.00</td>
+<td>600</td>
+</tr>
+</tbody></table>
+<p>A single COB execution creates one aggregated accrual entry of 7.00 for the active period and produces no accrual activities after the final day.</p>
+<p>A merchant issued refund is applied to a migrated loan after a late repayment. Interest is calculated on the gross disbursed amount, not on the amount net of the refund. Setup: disbursement of 900 on day 1, annual interest rate of 12 percent, 360-day year, repayment of 600 on day 31, and a merchant issued refund of 300 on day 32.</p>
+<table>
+<thead>
+<tr>
+<th>Treatment</th>
+<th>Disbursement base</th>
+<th>Interest days 1-30</th>
+<th>Interest day 31</th>
+<th>Interest day 32</th>
+<th>Total interest</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Correct: gross disbursement</td>
+<td>900</td>
+<td>9.00</td>
+<td>0.30</td>
+<td>0.10</td>
+<td>9.40</td>
+</tr>
+<tr>
+<td>Incorrect: net of refund</td>
+<td>600</td>
+<td>6.00</td>
+<td>0.20</td>
+<td>-</td>
+<td>6.20</td>
+</tr>
+</tbody></table>
+<p>The refundable interest is the difference between the two totals; netting the refund against the disbursement understates interest by 3.20.</p>

@@ -1,0 +1,292 @@
+<h2>Down payment overview</h2>
+<p>A down payment is an amount collected at disbursement. You can enable it at the loan product level, and it then applies to every loan account of that product and every disbursement of those accounts. Down payments behave like installments: amount allocations and repayment fulfillment work the same way. Multiple down payments can be collected for multiple disbursements of the same account. When a down-payment percentage is defined at the loan product, that same percentage applies to all disbursements of those accounts.</p>
+<h2>Enabling and configuring down payment</h2>
+<p>You enable it at the loan product level and set the percentage of the disbursed amount to collect. You can collect it automatically or manually. Changes affect only new loan accounts; existing accounts keep their current configuration.</p>
+<p>Configuration options:</p>
+<ul>
+<li>Enable or disable auto repayment of down payment at the loan product level.</li>
+<li>Enable or disable the &quot;do not extend loan schedule for multi disbursal&quot; checkbox at the loan product level.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Down payment</td>
+<td>Enable or disable collection of a percentage of the disbursement amount at the loan product level.</td>
+</tr>
+<tr>
+<td>Down payment percentage</td>
+<td>Percentage of the disbursed amount collected as down payment; applies to all disbursements of accounts using the product.</td>
+</tr>
+<tr>
+<td>Auto repayment for down payment</td>
+<td>Subtracts the down payment from the disbursed amount or from a created payment transaction.</td>
+</tr>
+<tr>
+<td>Do not extend loan schedule for multi disbursal</td>
+<td>Loan inherits this checkbox from the product-level Down payment configuration.</td>
+</tr>
+</tbody></table>
+<h2>Auto repayment of down payment</h2>
+<p>When auto repayment of down payment is enabled, disbursements trigger an auto downpayment transaction for the down payment amount. The system applies this to all new loan accounts and all disbursements belonging to that loan product.</p>
+<h2>Down payment installments and schedule</h2>
+<p>A down-payment installment is due on the disbursement date, and its amount is based on the down-payment percentage in the product configuration. The system creates one down-payment installment for each disbursement even if the disbursement falls on the same dates. The repayment schedule includes down-payment installments when down-payment is enabled, and the number of repayments excludes them. If a down-payment installment falls on an existing regular installment due-date, the schedule shows two installments on the same date. When a disbursement is reverted, only the related down-payment installment is deleted. With down payment enabled, re-scheduling the loan repayment schedule gives an error.</p>
+<p>Schedule state and down-payment installment inclusion</p>
+<table>
+<thead>
+<tr>
+<th>Loan state</th>
+<th>Down-payment installment in schedule</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Created</td>
+<td>Yes, using the default amount and default date as expected disbursement</td>
+</tr>
+<tr>
+<td>Approved</td>
+<td>Yes, using the default amount and default date as expected disbursement</td>
+</tr>
+</tbody></table>
+<p>Event handling for down-payment installments:</p>
+<ul>
+<li>When a down-payment installment is due, the system sends a payment due event.</li>
+</ul>
+<h2>Repayment priority and allocation</h2>
+<p>Repayment on down payments follows the payment allocation rules. You can make a repayment using the DownPayment payment type. When a regular installment and a downpayment installment fall due on the same date, the regular installment takes priority, and the downpayment installment is paid only after the regular installment is fully paid.</p>
+<p>Specified due-date charges and charge-back amounts are allocated as follows:</p>
+<ul>
+<li>Specified due-date charges are allocated to the next down-payment or installment.</li>
+</ul>
+<h2>Charges, interest, and delinquency</h2>
+<p>You cannot add charges, chargebacks, or interest to a downpayment installment. The system allocates any charge, chargeback, or interest to the next regular installment instead.</p>
+<h2>Disbursement reversal</h2>
+<p>Reversing a disbursement also reverses the down payment and its accounting entries. Without auto down-payment, reversal is allowed only when no payment has happened; in that case the installment is deleted. If payments have already been made, reversal is not allowed.</p>
+<h2>Multi-disbursement and schedule extension</h2>
+<p>A multi-disbursement loan can receive more than one disbursement. The &quot;do not extend loan schedule for multi disbursal&quot; checkbox controls whether a later disbursement extends the repayment schedule. Loan term frequency and number of repayments logic ignores down payment periods.</p>
+<p>Schedule behavior at disbursement:</p>
+<ul>
+<li>When the checkbox is enabled, a new disbursement does not extend the loan schedule.</li>
+<li>When the checkbox is disabled, the loan schedule extends to the exact number of repayments.</li>
+<li>At disbursement, Fineract distributes the amount amongst the existing installments without extending the schedule.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Loan product</th>
+<th>Repayments</th>
+<th>Balance</th>
+<th>Installments</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Example product</td>
+<td>3 (1 per month)</td>
+<td>1000</td>
+<td>333.33, 333.33, 333.34</td>
+</tr>
+</tbody></table>
+<p>A second disbursement added after the second period due date has no impact on earlier installments.</p>
+<h2>Repayment start date and loan term</h2>
+<p>The repayment start date option on a loan product decides whether the repayment schedule starts from the loan submitted date or the loan disbursed date. The default option is the loan disbursed date. With a down payment, the loan term is defined by the number of repayments minus one, and you must not count the down payment as an installment in the number of repayments field. The loan term field is read only at loan account creation and is calculated as <code>repay every * number of repayment</code>.</p>
+<h2>Backdated disbursement</h2>
+<p>A backdated disbursement sets the disbursement date to a date on or after loan submission.</p>
+<p>The effect on the loan schedule depends on how the schedule is based:</p>
+<ul>
+<li>If the schedule is based on the loan submission date, no reschedule happens when backdated disbursement occurs.</li>
+<li>If the schedule is based on the first disbursement date and a disbursement has already happened, the loan is rescheduled according to the new disbursement date.</li>
+</ul>
+<p>When backdated disbursement happens, the loan schedule is regenerated and the transactions are reprocessed.</p>
+<h2>Transaction processing and accounting</h2>
+<p>The down payment transaction type uses the same accounting as repayment. Disbursement and Undo Disbursement require disbursement amount, transaction date, classification, and payment type. EMI is calculated by deducting the down payment principal from the principal balance even when the down payment transaction is not paid. No multi-disbursement is supported.</p>
+<p>A disbursement transaction is processed as follows:</p>
+<ul>
+<li>The transaction is stored in the transaction table.</li>
+<li>Allocations are stored in the allocation table.</li>
+<li>Accounting entries are created based on the allocation.</li>
+<li>Balances are stored in the balances table and updated after the transaction.</li>
+<li>External business events are triggered.</li>
+</ul>
+<h2>Known issues</h2>
+<p>Known issues with down payments include incorrect installment amounts and interest calculations. The last installment of a Pay in 3 installment loan with down payment may include an extra amount instead of being 33.34. Interest on an interest bearing loan with down payment enabled is not always calculated correctly.</p>
+<h2>Worked examples</h2>
+<p>A loan product has down-payment enabled at 25 percent of the disbursement amount and auto repayment of down-payment enabled. The loan principal is 1,000, the number of repayments is 3, repayments are monthly, and months are 30 days. These figures are illustrative. On the disbursement date of January 1, the system creates a down-payment installment of 250 and, because auto repayment is enabled, posts a down-payment transaction of 250 for January 1. The number of repayments excludes the down-payment installment, so the loan term is 3 × 30 = 90 days and the schedule contains four installments: the down-payment due January 1 and three regular installments of 250 due February 1, March 1, and April 1. The example shows that auto repayment posts the down-payment on the disbursement date and that the loan term excludes the down-payment installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Type</th>
+<th>Principal</th>
+<th>Due</th>
+<th>Paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Jan 1</td>
+<td>Down-payment</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>Feb 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>Mar 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>Apr 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>750.00</td>
+</tr>
+</tbody></table>
+<p>The same loan has a principal of 1,000, a 25 percent down-payment, and three monthly repayments. Disbursement on January 1 creates a down-payment of 250 due January 1 and regular installments of 250 due February 1, March 1, and April 1. A repayment of 250 on January 1 settles the down-payment and leaves a balance of 750. A repayment of 250 on February 1 settles the first regular installment and leaves a balance of 500. A repayment of 400 on February 15 fully pays the March 1 installment and applies 150 early to the April 1 installment, leaving 100 due on April 1 and a balance of 100. The example shows how repayments reduce the balance by principal paid and how early payment covers a future installment in full before touching the next one.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Type</th>
+<th>Principal</th>
+<th>Due</th>
+<th>Paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Down-payment</td>
+<td>Jan 1</td>
+<td>Down-payment</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>750.00</td>
+</tr>
+<tr>
+<td>Regular 1</td>
+<td>Feb 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Regular 2</td>
+<td>Mar 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+</tr>
+<tr>
+<td>Regular 3</td>
+<td>Apr 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>100.00</td>
+<td>150.00</td>
+<td>100.00</td>
+</tr>
+</tbody></table>
+<p>The same loan has a principal of 1,000, a 25 percent down-payment, and three monthly repayments. A charge of 50 is added on January 1. No charge or interest can be added to a down-payment installment, so the charge is allocated to the next regular installment, due February 1. That installment becomes 300, consisting of 250 principal and 50 charge. A repayment of 250 on January 1 settles the down-payment and leaves a balance of 800. A repayment of 300 on February 1 settles the February 1 installment and leaves a balance of 500. The March 1 and April 1 installments remain 250 each. The example shows that charges move to the next regular installment, never to the down-payment installment.</p>
+<table>
+<thead>
+<tr>
+<th>Installment</th>
+<th>Due date</th>
+<th>Type</th>
+<th>Principal</th>
+<th>Charge</th>
+<th>Due</th>
+<th>Paid</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Down-payment</td>
+<td>Jan 1</td>
+<td>Down-payment</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>250.00</td>
+<td>800.00</td>
+</tr>
+<tr>
+<td>Regular 1</td>
+<td>Feb 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>50.00</td>
+<td>300.00</td>
+<td>300.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Regular 2</td>
+<td>Mar 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>500.00</td>
+</tr>
+<tr>
+<td>Regular 3</td>
+<td>Apr 1</td>
+<td>Regular</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>250.00</td>
+<td>0.00</td>
+<td>500.00</td>
+</tr>
+</tbody></table>
+<p>A loan has down-payment enabled at 25 percent and two disbursements of 1,000 each on the same day, January 1. The system creates one down-payment installment for each disbursement, so two down-payment installments of 250 each are due on January 1. If a loan had three disbursements on the same day, the schedule would show three down-payment installments of 250 each on that date. The example shows that each disbursement produces its own down-payment installment even when disbursement dates coincide.</p>
+<table>
+<thead>
+<tr>
+<th>Disbursement</th>
+<th>Date</th>
+<th>Amount</th>
+<th>Down-payment</th>
+<th>Due date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Jan 1</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>Jan 1</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Jan 1</td>
+<td>1,000.00</td>
+<td>250.00</td>
+<td>Jan 1</td>
+</tr>
+</tbody></table>

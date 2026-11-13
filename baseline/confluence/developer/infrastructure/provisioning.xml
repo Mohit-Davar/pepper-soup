@@ -1,0 +1,88 @@
+<h2>Identity and access management automation</h2>
+<p>Identity and access management automation pushes identity information from the mini IDM to AWS IAM and EKS. A Google Sheet provides the audit trail, and AWS lambdas apply changes automatically.</p>
+<p>Automation rules:</p>
+<ul>
+<li>Changes from the mini IDM to AWS IAM must not remove accounts until the automation behavior is proven, and every action must be logged.</li>
+<li>Automation from the mini IDM to EKS modifies aws-auth configmaps based on Google Sheet updates or IAM changes.</li>
+<li>A lambda can subscribe to IAM group membership changes to trigger Kubernetes updates.</li>
+</ul>
+<h2>Configurable ECR Docker repository</h2>
+<p>The Helm chart uses one ECR URL for all Docker images, independent of the environment. You can configure this URL so the partner can point images at a different repository.</p>
+<p>The configurable ECR Docker repository parameters meet these acceptance criteria:</p>
+<ul>
+<li>The parameter is available in the shared repository.</li>
+<li>The environment builds as before with no hard-coded ECR repository reference in Terraform.</li>
+</ul>
+<h2>Configurable load balancer placement</h2>
+<p>Load balancer placement is configurable as internal or internet-facing. The Helm chart supports only internet-facing load balancers. Configurable load-balancer network placement is available in the shared repo.</p>
+<h2>Cross-region availability</h2>
+<p>Cross-region availability applies to the RDS component and the ActiveMQ component, and both options are available in the shared repo.</p>
+<h2>EKS module requirements</h2>
+<p>The EKS module provisions an EKS cluster with Helm bridging, Kubernetes addons, and EKS addons. Its Terraform code must be cleaned up from secrets, customizable for specific partners, shared with the partner, and upgraded to a version supported beyond 2023-10-30.</p>
+<blockquote>
+<p><strong>Note:</strong> The partner needs a solution to synchronize secrets from AWS Secrets Manager to EKS Kubernetes secrets for sensitive configuration variables.</p>
+</blockquote>
+<h2>Resource naming and tagging</h2>
+<p>Every AWS resource created as part of the managed platform uses the name structure &lt;partner&gt;-&lt;business_name&gt;-&lt;environment&gt;. All resources also carry fixed tags for ownership, management, clients, cost allocation, project, environment type, and data type. These requirements apply to all Terraform code.</p>
+<p>Required tags on every resource:</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>owner</td>
+<td>alluvial</td>
+</tr>
+<tr>
+<td>manager</td>
+<td>alluvial</td>
+</tr>
+<tr>
+<td>clients</td>
+<td>[&quot;alluvial&quot;]</td>
+</tr>
+<tr>
+<td>cost_allocation_method</td>
+<td>owner</td>
+</tr>
+<tr>
+<td>project</td>
+<td>alluvial-managed-platform</td>
+</tr>
+<tr>
+<td>environment_type</td>
+<td>prod</td>
+</tr>
+<tr>
+<td>data_type</td>
+<td>prod</td>
+</tr>
+</tbody></table>
+<h2>Jumpbox key management</h2>
+<p>A Jenkins job removes all SSL keys from the jumpboxes and distributes an accessing user&#39;s key to all jumpboxes. Jenkins job access is limited.</p>
+<h2>Amazon MQ setup and usage</h2>
+<p>Amazon MQ is created and configured by a Terraform module and deployed on a managed platform. Spring Batch jobs, such as the close of business job, use the new MQ for partitioning. Events are transmitted successfully.</p>
+<p>The following setup steps apply:</p>
+<ul>
+<li>An admin user must be created for Amazon MQ.</li>
+<li>A read-only user must be created for Amazon MQ.</li>
+<li>The headless users must have groups.</li>
+<li>The admin port must be opened.</li>
+<li>Changes are added to Terraform in the shared repo.</li>
+<li>New AWS accounts are created by Terraform.</li>
+</ul>
+<h2>Independent schema and application deployment</h2>
+<p>You can deploy new Fineract database schema versions and new Fineract application versions independently of each other.</p>
+<p>To deploy independently, follow this order:</p>
+<ul>
+<li>Run an independent Fineract instance that performs the Liquibase migrations and then exits without starting Fineract itself.</li>
+<li>Run the actual deployment starting the new Fineract instances with the new software versions, but with Liquibase disabled.</li>
+</ul>
+<p>Set the configuration parameter spring.liquibase.exit-after-migration via an environment variable to stop the Fineract startup process after the Liquibase migration. The process exit code then reflects the success state of the Liquibase migration.</p>
+<h2>RDS read-only IAM user</h2>
+<p>Create an Aurora PostgreSQL RDS read-only user with IAM authentication and authorisation. The user can connect only with an IAM user, can access only the given database, and can run only SELECT statements.</p>
+<h2>Data source pool sizing</h2>
+<p>You can override the data source initial pool size and maximum pool size depending on the type of instance you are running. Pool size can be set via environment variable.</p>

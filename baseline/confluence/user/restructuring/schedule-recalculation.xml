@@ -1,0 +1,129 @@
+<h2>Schedule recalculation for overdue loans</h2>
+<p>For loan accounts with Interest Recalculation enabled, the system recalculates and regenerates the repayment schedule when an installment is not paid on its installment date. Interest is recalculated for all installments based on the number of overdue days, so repayment amounts stay correct for late repayments.</p>
+<h2>Interest recalculation strategies</h2>
+<p>The system supports two interest recalculation strategies for overdue installments: daily and same as repayment period.</p>
+<p>The following strategies are not covered:</p>
+<ul>
+<li>Weekly</li>
+<li>Monthly</li>
+<li>Mixed</li>
+<li>Last installment overdues (overdue loan)</li>
+</ul>
+<h2>Overdue interest handling</h2>
+<p>When interest recalculation is enabled, an overdue installment on an interest-bearing progressive loan carries additional interest on its overdue principal. The repayment schedule shows this interest, and payoff calculations include it. A non-interest-bearing loan has no interest to recalculate.</p>
+<h2>Repayment timing and new installments</h2>
+<p>The system does not create a new installment during the close of business (COB) job process, and it does not add, calculate or collect interest after the maturity date. A new installment is created only when a repayment happens. If a repayment arrives after maturity, the system creates a new installment as of the repayment date and calculates interest for the extra days from the last maturity date on the current reducing principal balance. A repayment made after maturity collects only the interest shown in the repayment schedule for the installment it fulfills.</p>
+<h2>Repayment schedule updates</h2>
+<p>The repayment schedule updates correctly after close of business (COB), the nightly job that posts interest and fees, for mixed repayment strategies. This applies when one installment is overdue, when two or more installments are overdue in a row, when repayment is late on the next installment due date, when repayment is late on a day between the start and due dates, when partial late repayments on the same day fully repay the overdue installment, and when partial late repayments occur on different business days during the same installment period.</p>
+<p>Repayment timing rules for the interval ]03/01, 04/01]:</p>
+<ul>
+<li>Partial or full repayments can happen anytime during this interval.</li>
+<li>A full repayment in the second period should not affect the repayment schedule.</li>
+</ul>
+<h2>Configuration and COB job setup</h2>
+<p>You can configure the loan close of business (COB) job to recalculate interest for overdue loans. The job runs at the start of the business day using the actual business date, after all end of business day steps finish. The recalculate interest step must be set as the last step in the COB job.</p>
+<h2>Worked examples</h2>
+<p>A customer takes a 1,000 loan with 12% annual interest, three monthly installments and 30-day months. The figures are illustrative. The first installment is paid on time. The second installment falls due at the end of the second month but is not paid. Ten days later the customer pays the full installment. Interest recalculation is enabled and the product uses the same-as-repayment-period strategy, so the system regenerates the schedule from the overdue installment onward and shows the additional interest on the repayment schedule. The recalculated schedule shows the extra interest for the ten overdue days and the revised closing balance that carries into the final installment. If the product is configured with the daily strategy instead, the interest figure for the overdue period changes because it is based on the actual number of overdue days rather than the full repayment period.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Installment</th>
+<th>Closing balance</th>
+<th>Overdue days</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>340.02</td>
+<td>669.98</td>
+<td>0</td>
+</tr>
+<tr>
+<td>2</td>
+<td>669.98</td>
+<td>7.83</td>
+<td>332.19</td>
+<td>340.02</td>
+<td>337.79</td>
+<td>10</td>
+</tr>
+<tr>
+<td>3</td>
+<td>337.79</td>
+<td>3.38</td>
+<td>337.79</td>
+<td>341.17</td>
+<td>0.00</td>
+<td>0</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>21.21</td>
+<td>1,000.00</td>
+<td>1,021.21</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>The same loan is now used to show a partial late repayment. The second installment of 340.02 is due at the end of the second month and remains unpaid. The customer pays 100.00 five days after the due date and the remaining 240.02 ten days after the due date. Interest recalculation is enabled, so the system splits the overdue period at each payment, charges interest on the reducing balance for the days each amount stays outstanding, and shows a new closing balance for the final installment. The table shows that partial payments on different days reduce the balance step by step and that interest is charged only for the days each portion remains overdue.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Payment date</th>
+<th>Amount paid</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Month 1</td>
+<td>340.02</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Day 5</td>
+<td>100.00</td>
+<td>1.12</td>
+<td>98.88</td>
+<td>571.10</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Day 10</td>
+<td>240.02</td>
+<td>0.95</td>
+<td>239.07</td>
+<td>332.03</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Month 3</td>
+<td>335.35</td>
+<td>3.32</td>
+<td>332.03</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>1,015.39</td>
+<td>15.39</td>
+<td>1,000.00</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link ac:anchor="early-and-late-repayment-interest"><ri:page ri:content-title="Interest Timing"/><ac:plain-text-link-body><![CDATA[Interest Timing: Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Loan Payoff"/><ac:plain-text-link-body><![CDATA[Loan Payoff]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="overview"><ri:page ri:content-title="Rate Changes"/><ac:plain-text-link-body><![CDATA[Rate Changes: Overview]]></ac:plain-text-link-body></ac:link>.</p>

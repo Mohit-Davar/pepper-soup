@@ -1,0 +1,535 @@
+<h2>Asset externalization overview</h2>
+<p>Asset externalization supports loan sales to investors for the GPL portfolio of products and meets Danube requirements for DE PayIn30 on the Fineract System. It provides securitization concepts within Fineract core functionality and supports real-time ownership and transactional changes related to asset sales through API and event publishing. It also meets all accounting requirements for reporting and tracking GL activity for PayPal and non-PayPal-owned loans, and meets all data reporting obligations related to externalization enhancements. Determination of loan statuses and assignment of loans to an investor happens externally, not on the Fineract System, as does buyback or reassignment of the loan. The credit platform partner router identifies which system of record (SOR) the loan is recorded on and directs traffic accordingly, so domains above the router do not need to know the SOR. The credit ETL domain manages any changes required for storing ownership details in Credit databases. GET APIs from Fineract return ownership information so you can see which GPL loans are PayPal versus investor owned, and a new GET API integration returns ownership information based on the sales transaction ID to get loan details for a loan assigned to an external investor.</p>
+<h2>Investor module configuration</h2>
+<p>The Investor module has two global configuration settings: one to enable or disable the module, and one to enable automatic owner creation, which defaults to true. Configuration can be set as an environment variable.</p>
+<h2>Asset owner creation and lookup</h2>
+<p>The system stores and retrieves ownership data for loan accounts. When a request arrives with an unrecognised owner external id, the system automatically creates an entry in the owner table. Stored ownership data cannot be updated.</p>
+<h2>Transfer statuses</h2>
+<p>A transfer status describes where a loan is in the externalization process and when the settlement takes effect. Each status uses the settlement date relative to the current date to decide whether the loan has been sold, selected for transfer, bought back, or declined. The statuses are Active, Pending, Buyback and Declined.</p>
+<table>
+<thead>
+<tr>
+<th>Status</th>
+<th>Meaning</th>
+<th>Settlement date condition</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Active</td>
+<td>Loan is sold to investor</td>
+<td>Same as or later than the current date</td>
+</tr>
+<tr>
+<td>Pending</td>
+<td>Loan is selected to transfer</td>
+<td>Same as or later than the current date</td>
+</tr>
+<tr>
+<td>Buyback</td>
+<td>Buyback is initiated; ownership reverts</td>
+<td>Same as or later than the current date</td>
+</tr>
+<tr>
+<td>Declined</td>
+<td>Validations failed (balance)</td>
+<td>Not specified</td>
+</tr>
+</tbody></table>
+<h2>Eligibility and validation</h2>
+<p>The system validates an asset transfer before it starts. It refuses a sale or buyback when the loan balance is zero or negative, when a transfer is already pending or active, or when the settlement date is earlier than the business date. It also declines sales on closed, overpaid, submitted, or approved loan accounts, and returns a proper error message instead of an internal server error for closed or overpaid loans.</p>
+<p>Transfer initiation is refused when:</p>
+<ul>
+<li>The loan balance is zero or negative (overpaid).</li>
+<li>A transfer is already pending or active.</li>
+<li>The settlement date is earlier than the business date.</li>
+<li>The loan account is closed, overpaid, submitted, or approved for a sale.</li>
+</ul>
+<p>Buyback and pending statuses share unified date handling: effective from and settlement date mean the same thing for both, with no functional change.</p>
+<h2>Initiating a transfer</h2>
+<p>You initiate an asset externalization transfer by calling the POST endpoint. The request stores the asset owner, transfer ID, settlement date, purchase price ratio, status, and created timestamp. The transfer ID is optional; if you do not provide one, the system generates it. The system sets the status and created timestamp. The response includes the transferExternalId field, which contains the ownerExternalId value.</p>
+<h2>Canceling a transfer</h2>
+<p>You can cancel a PENDING sale or an incomplete BUYBACK before it is settled. Cancellation copies the original transfer and sets its substatus to USER_REQUESTED. A transfer event is sent out upon cancellation, and the cancellation references the cancelled record using the transfer external id.</p>
+<p>Cancel a transfer using either endpoint:</p>
+<ul>
+<li>POST /transfers/{id}?command=cancel cancels a transfer by its id.</li>
+<li>POST /transfers/external-id/{transferExternalId}?command=cancel cancels a transfer by its transfer external id.</li>
+</ul>
+<p>Cancellation fails in these cases:</p>
+<ul>
+<li>The transfer is not PENDING or an incomplete BUYBACK.</li>
+<li>The transfer has already been settled.</li>
+<li>The request has improper parameters.</li>
+<li>A PENDING sale already has a BUYBACK; the error points to the existing BUYBACK.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> A cancel request for a PENDING or BUYBACK loan transfer not processed by Close of Business returns OK.</p>
+</blockquote>
+<h2>Close of Business processing</h2>
+<p>Close of Business processing validates pending asset ownership transfers whose settlement date equals the closed business date. Transfers can only happen after or at the end of Close of Business. The CoB asset ownership executor jobstep performs this validation.</p>
+<p>A pending transfer becomes ACTIVE only when the account balance is greater than or equal to 0.</p>
+<ul>
+<li>For a SALE, PENDING transitions to ACTIVE when the account balance is greater than 0.</li>
+<li>For a SALE, PENDING transitions to DECLINED when the account balance is less than or equal to 0.</li>
+<li>For a BUYBACK, ACTIVE transitions to BUYBACK when the account balance is greater than 0.</li>
+<li>For a BUYBACK, ACTIVE transitions to none when the account balance is less than or equal to 0.</li>
+</ul>
+<p>When a sale and buyback share the same settlement date, the following apply:</p>
+<ul>
+<li>Both PENDING SALE and PENDING BUYBACK are CANCELLED with no status changes and no journal entries.</li>
+<li>Inline COB does not produce an internal server error.</li>
+</ul>
+<h2>Ownership state transitions</h2>
+<p>Changing the asset owner of a loan account does not change the loan account, its portfolio behaviour, or its accounting. Ownership changes only take effect during Close of Business processing. A loan can be sold again to an investor after states such as DECLINED.</p>
+<p>Buyback is accepted when:</p>
+<ul>
+<li>The loan has ACTIVE transfer status.</li>
+<li>The loan has PENDING transfer status with the same effective date.</li>
+</ul>
+<h2>Journal entries and GL mapping</h2>
+<p>The system posts journal entries for asset owner changes and buy backs as part of the close of business jobstep on the settlement date. If the loan account balance is zero or negative before close of business on the settlement date, the asset transaction is declined and no journal entries post.</p>
+<p>Monetary transaction journal entries include an asset owner column that stores the current asset owner ID of the loan account. The column is null when there is no active investor, and always null for loan products where the investor module is disabled.</p>
+<p>The asset owner column is derived from the current active asset owner as of each business date, regardless of transaction type, backdated transactions, reversals, charge additions, or accruals. Any monetary transaction with a business date on or before the settlement date keeps the old investor; any transaction after the settlement date carries the new investor.</p>
+<blockquote>
+<p><strong>Note:</strong> If a repayment posted before the settlement date is reversed after it, the repayment accounting entries have a null asset owner column while the reversal entries carry the new investor.</p>
+</blockquote>
+<p>When the investor module configuration is enabled, you can map a new GL account for asset transfer in the loan product, or use the asset transfer option from financial activity mappings.</p>
+<p>GL entries for asset owner change are posted using the closing balance of the loan account.</p>
+<table>
+<thead>
+<tr>
+<th>GL code</th>
+<th>Account</th>
+<th>Asset owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>146000</td>
+<td>Receivable / clearing account</td>
+<td>Null</td>
+</tr>
+<tr>
+<td>112601/112603</td>
+<td>Loan receivables / interest fees receivables</td>
+<td>Investor</td>
+</tr>
+<tr>
+<td>112601/112603</td>
+<td>Loan receivables / interest fees receivables</td>
+<td>Null</td>
+</tr>
+<tr>
+<td>146000</td>
+<td>Receivable / clearing account</td>
+<td>Investor</td>
+</tr>
+</tbody></table>
+<p>GL entries for buy back are posted using the closing balance of the loan account.</p>
+<table>
+<thead>
+<tr>
+<th>GL code</th>
+<th>Account</th>
+<th>Asset owner</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112601/112603</td>
+<td>Loan receivables / interest fees receivables</td>
+<td>Null</td>
+</tr>
+<tr>
+<td>146000</td>
+<td>Receivable / clearing account</td>
+<td>Investor</td>
+</tr>
+<tr>
+<td>146000</td>
+<td>Receivable / clearing account</td>
+<td>Null</td>
+</tr>
+<tr>
+<td>112601/112603</td>
+<td>Loan receivables / interest fees receivables</td>
+<td>Investor</td>
+</tr>
+</tbody></table>
+<h2>Balance storage</h2>
+<p>When a transfer takes place, the system stores the aggregated balance items together with the external owner they relate to. At buyback, it stores the same balance values together with the previous external asset owner ID. Balances are stored during sales events and buyback events, including when interest, fee charges, or penalty charges apply.</p>
+<h2>Reports</h2>
+<p>The Transaction summary with investor report adds asset owner detail to the transaction summary report and groups and totals transactions by asset owner. It includes asset transfer and asset buyback transaction details. Balances equal the journal entry where principal equals the investor side of the 112601 entry and fees equal the investor side of the 112603 entry. The report shows no Asset Transfer or Asset Buyback summary line when Asset Owner ID is null (PayPal).</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>postingdate</td>
+</tr>
+<tr>
+<td>product</td>
+</tr>
+<tr>
+<td>glacct</td>
+</tr>
+<tr>
+<td>description</td>
+</tr>
+<tr>
+<td>Asset Owner ID</td>
+</tr>
+<tr>
+<td>beginningbalance</td>
+</tr>
+<tr>
+<td>debitmovement</td>
+</tr>
+<tr>
+<td>creditmovement</td>
+</tr>
+<tr>
+<td>endingbalance</td>
+</tr>
+</tbody></table>
+<h2>Events</h2>
+<p>The INVESTOR event category emits owner transfer and account snapshot events during close of business (COB) execution when an asset ownership state changes. Events are emitted whether the transfer status is EXECUTED or DECLINED / CANCELLED, and investor-related fields appear only when the investor module is turned on. Events are emitted as before but extended with relevant data.</p>
+<p>The following events are emitted for asset externalization:</p>
+<ul>
+<li>LoanOwnershipTransferBusinessEvent extends LoanBusinessEvent and is triggered by any asset ownership state transition; it contains transaction type, transaction date/time, loan account ID, buyback transaction ID, AssetOwnerID, and balance transaction amount.</li>
+<li>AccountChangedEvent carries a business date that matches the settlement date for accounting and is required in addition to the LoanOwnershipTransferBusinessEvent.</li>
+<li>LoanAccountSnapshotBusinessEvent carries loan account data in V1 schema and is sent only when actual ownership changes (Pending to Active, or Buyback to null).</li>
+</ul>
+<p>Sales and buyback events include:</p>
+<ul>
+<li>From Owner parameter representing the current owner.</li>
+<li>To Owner parameter representing the party to whom the transfer is done.</li>
+</ul>
+<p>Event timing rules:</p>
+<ul>
+<li>COB picks only transfers with effective date equal to the business date and valid_to equal to 9999.12.31.</li>
+<li>The account change event is emitted when ownership change takes place, done by COB when it turns to active or buyback completes.</li>
+<li>For a cancelled sale and buyback on the same day, two events are triggered, one for each transfer.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Assert externalization modifies events to include assert owner information so downstream systems can leverage that data for reporting and analytics.</p>
+</blockquote>
+<ac:structured-macro ac:name="code"><ac:parameter ac:name="title">Diagram (Mermaid)</ac:parameter><ac:plain-text-body><![CDATA[stateDiagram-v2
+  state "Pending" as n1
+  state "Active" as n2
+  state "Buyback" as n3
+  state "null" as n4
+  n1 --> n2 : ownership change
+  n3 --> n4 : buyback completes]]></ac:plain-text-body></ac:structured-macro>
+<h2>API endpoints</h2>
+<p>Use the following GET endpoints to retrieve ownership history and details of related transfers.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Retrieves ownership history and transfers for</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET /loans/{loanId}/external-asset-ownership-history</td>
+<td>A loan ID</td>
+</tr>
+<tr>
+<td>GET /loans/external-asset-ownership-history/{externalId}</td>
+<td>A loan external ID</td>
+</tr>
+<tr>
+<td>GET /external-asset-transfers/{transferId}</td>
+<td>An asset transfer ID</td>
+</tr>
+</tbody></table>
+<p>Search external asset owners at /external-asset-owners/search. You can search by a text field in the external ID fields such as owner or transaction ID, and by date ranges for the submitted date, settlement date, or effective date.</p>
+<h2>API response fields</h2>
+<p>The API response includes fields that identify the loan, the transfer, the asset owner, the currency and the outstanding balance. The balance fields show the current outstanding amount split into principal and fee portions.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Meaning</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>loanid</td>
+<td>Long</td>
+<td>The loan ID.</td>
+<td>123</td>
+</tr>
+<tr>
+<td>loanexternalId</td>
+<td>String</td>
+<td>The loan external ID.</td>
+<td>bd1adc6d-c5cb-47f2-a8fc-b398bf02091c</td>
+</tr>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>SALE or BUYBACK.</td>
+<td>SALE</td>
+</tr>
+<tr>
+<td>transferExternalId</td>
+<td>String</td>
+<td>The transfer ID or buyback transfer ID.</td>
+<td>234ffh3h-c5cb-f3f2-a8fc-bc2045dc234a</td>
+</tr>
+<tr>
+<td>submittedDate</td>
+<td>String</td>
+<td>The business date when journal entries are actually created; the same as the transfer or COB date.</td>
+<td>2023-05-03</td>
+</tr>
+<tr>
+<td>AssetOwnerExternalId</td>
+<td>String</td>
+<td>The asset owner ID.</td>
+<td>INV12</td>
+</tr>
+<tr>
+<td>currency</td>
+<td>String</td>
+<td>The currency, from Fineract source Loan.Currency.</td>
+<td>EUR</td>
+</tr>
+<tr>
+<td>totalOutstandingBalanceAmount</td>
+<td>BigDecimal</td>
+<td>The current outstanding balance amount.</td>
+<td>1025.00</td>
+</tr>
+<tr>
+<td>outstandingPrincipalPortion</td>
+<td>BigDecimal</td>
+<td>The principal portion of the current balance amount.</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>outstandingFeePortion</td>
+<td>BigDecimal</td>
+<td>The fee portion of the current balance amount.</td>
+<td>25.00</td>
+</tr>
+</tbody></table>
+<h2>Database schema and indexes</h2>
+<p>Asset externalization uses the m_external_asset_owner_transfer table to track transfer requests and the BATCH_JOB_EXECUTION_PARAMS table for batch job execution parameters.</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Index or constraint</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>m_external_asset_owner_transfer</td>
+<td>Index</td>
+<td>loan_id</td>
+</tr>
+<tr>
+<td>m_external_asset_owner_transfer</td>
+<td>Composite unique constraint</td>
+<td>Status + externalTransferId</td>
+</tr>
+<tr>
+<td>BATCH_JOB_EXECUTION_PARAMS</td>
+<td>Index</td>
+<td>JOB_EXECUTION_ID</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> The external_transafer_status_external_transfer_id_constraints.xml file specifies context=mysql and may need a context for postgres as well.</p>
+</blockquote>
+<h2>Business listener behavior</h2>
+<p>Business listeners decide what happens to pending transfers when a loan closes or is overpaid before settlement.</p>
+<p>When a loan is closed or overpaid:</p>
+<ul>
+<li>Pending sale transfers are declined.</li>
+<li>Pending buyback transfers are cancelled with a new substatus.</li>
+</ul>
+<p>When both a pending sale and a pending buyback exist and the loan is paid fully before settlement but the settlement dates differ:</p>
+<ul>
+<li>The pending sale transfer is declined.</li>
+<li>The pending buyback is cancelled.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A GPL loan with a principal balance of 1,000.00 and accrued fees of 10.00 is sold from PayPal, which has no asset owner, to the investor with external ID 123456789. The settlement date is 25-05-2023. The figures are illustrative. At Close of Business, the system posts the asset owner change using the closing balance and splits the entries between the null owner and the investor.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>GL account</th>
+<th>Asset Owner ID</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>146000 Receivable/clearing</td>
+<td>null</td>
+<td>1000.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>2</td>
+<td>112601 Loan receivables</td>
+<td>null</td>
+<td>-</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>3</td>
+<td>112603 Interest/fee receivables</td>
+<td>null</td>
+<td>-</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>4</td>
+<td>146000 Receivable/clearing</td>
+<td>123456789</td>
+<td>-</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>5</td>
+<td>112601 Loan receivables</td>
+<td>123456789</td>
+<td>1000.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>6</td>
+<td>112603 Interest/fee receivables</td>
+<td>123456789</td>
+<td>10.00</td>
+<td>-</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>2010.00</td>
+<td>2010.00</td>
+</tr>
+</tbody></table>
+<p>The sale credits the PayPal-side receivable and loan accounts, then debits the same accounts under the investor ID, isolating the investor position for reporting.</p>
+<p>Using the same sale of 1,000.00 principal and 10.00 fees to investor 123456789 on 25-05-2023, the trial balance summary on the settlement date splits each GL account by asset owner. Beginning balances are zero. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>GL account</th>
+<th>Asset Owner ID</th>
+<th>Beginning balance</th>
+<th>Debit movement</th>
+<th>Credit movement</th>
+<th>Ending balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>112601 Loans Receivable</td>
+<td>null</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1000.00</td>
+<td>-1000.00</td>
+</tr>
+<tr>
+<td>112601 Loans Receivable</td>
+<td>123456789</td>
+<td>0.00</td>
+<td>1000.00</td>
+<td>0.00</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>112603 Interest/Fee Receivable</td>
+<td>null</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>-10.00</td>
+</tr>
+<tr>
+<td>112603 Interest/Fee Receivable</td>
+<td>123456789</td>
+<td>0.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>146000 Receivable/clearing</td>
+<td>null</td>
+<td>0.00</td>
+<td>1000.00</td>
+<td>0.00</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>146000 Receivable/clearing</td>
+<td>123456789</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1000.00</td>
+<td>-1000.00</td>
+</tr>
+</tbody></table>
+<p>The trial balance carries an Asset Owner ID column, so the investor position appears separately from the PayPal position.</p>
+<p>The transaction summary report groups movements by transaction type, allocation, and asset owner. On a business date, the loan has an asset transfer of principal 1,000.00 and fees 10.00 to investor 123456789, and later an asset buyback of principal -1,000.00 and fees -10.00 from the same investor. A repayment with no investor is not shown because only investor-owned transfer lines are posted. The figures are illustrative. For a buyback, the signs are reversed and ownership moves back to null.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Product</th>
+<th>Transaction type</th>
+<th>Reversed</th>
+<th>Asset Owner ID</th>
+<th>Allocation</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>25-05-2023</td>
+<td>GPL_DE_PI30</td>
+<td>Asset Transfer</td>
+<td>FALSE</td>
+<td>123456789</td>
+<td>Principal</td>
+<td>1000.00</td>
+</tr>
+<tr>
+<td>25-05-2023</td>
+<td>GPL_DE_PI30</td>
+<td>Asset Transfer</td>
+<td>FALSE</td>
+<td>123456789</td>
+<td>Fees</td>
+<td>10.00</td>
+</tr>
+<tr>
+<td>30-05-2023</td>
+<td>GPL_DE_PI30</td>
+<td>Asset Buyback</td>
+<td>FALSE</td>
+<td>123456789</td>
+<td>Principal</td>
+<td>-1000.00</td>
+</tr>
+<tr>
+<td>30-05-2023</td>
+<td>GPL_DE_PI30</td>
+<td>Asset Buyback</td>
+<td>FALSE</td>
+<td>123456789</td>
+<td>Fees</td>
+<td>-10.00</td>
+</tr>
+</tbody></table>
+<p>Both transfer directions appear under the investor ID; lines with Asset Owner ID null are omitted from the investor summary.</p>
+<p>See also: <ac:link><ri:page ri:content-title="Investor Module"/><ac:plain-text-link-body><![CDATA[Investor Module]]></ac:plain-text-link-body></ac:link>.</p>

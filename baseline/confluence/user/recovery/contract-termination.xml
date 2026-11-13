@@ -1,0 +1,185 @@
+<h2>About Contract Termination</h2>
+<p>Contract Termination ends an active loan as of the current date. A user with permission can perform it through the API or the UI. Termination starts when the system records a Reschedule / Default or Admin Cancellation trigger event, captures the Reason Code, and begins the termination workflow. Backdated termination is not supported.</p>
+<p>You can start Contract Termination from the UI when:</p>
+<ul>
+<li>The loan is active.</li>
+<li>The loan is progressive.</li>
+<li>You use the Contract Termination option under the More item.</li>
+</ul>
+<h2>Eligibility and permissions</h2>
+<p>You can terminate a loan that is active, progressive, not already contract terminated, and not charged-off. You need contract termination permission.</p>
+<p>Validations for Contract Termination:</p>
+<ul>
+<li>The loan sub status must not be “CONTRACT_TERMINATED”.</li>
+</ul>
+<h2>How to perform Contract Termination</h2>
+<p>No transaction amount is displayed, and no payment type or payment details are required. You can enter an external ID and a note.</p>
+<p>The screen shows the following fields:</p>
+<ul>
+<li>The transaction date shows the current business date and cannot be edited.</li>
+</ul>
+<h2>Schedule and maturity changes</h2>
+<p>Contract termination recalculates the repayment schedule, removes all future installments, moves any outstanding balances to the current installment, and sets the maturity date to the contract terminated date. All installments accelerate and become due as of that date, and no further interest accrues after termination. Delinquency bucketing continues according to the new accelerated schedule.</p>
+<p>Termination before the maturity date:</p>
+<ul>
+<li>Charges with a due date after the new maturity date move to an additional installment.</li>
+<li>The N+1 installment is not impacted by termination.</li>
+</ul>
+<p>Termination after the maturity date:</p>
+<ul>
+<li>Existing installments and the maturity date remain unchanged.</li>
+<li>Interest is calculated only until the original maturity date, not until the contract termination date.</li>
+<li>Charges after maturity apply on the additional installment.</li>
+</ul>
+<p>Contract termination behaves like charge-off with the accelerate maturity date strategy.</p>
+<table>
+<thead>
+<tr>
+<th>Behaviour</th>
+<th>How it applies</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Schedule</td>
+<td>Recalculated; future installments removed; outstanding balances moved to the current installment</td>
+</tr>
+<tr>
+<td>Maturity date</td>
+<td>Set to the contract termination date when termination occurs before maturity; unchanged when termination occurs after maturity</td>
+</tr>
+<tr>
+<td>Interest</td>
+<td>Calculated only until the contract termination date before maturity, or until the original maturity date after maturity</td>
+</tr>
+<tr>
+<td>Charges</td>
+<td>Charges due after the new maturity date move to an additional installment</td>
+</tr>
+<tr>
+<td>Acceleration</td>
+<td>All installments become due as of the contract termination date</td>
+</tr>
+<tr>
+<td>Delinquency</td>
+<td>Bucketing continues per the new accelerated schedule</td>
+</tr>
+</tbody></table>
+<h2>Charges and settlement amount</h2>
+<p>The settlement amount is the total you pay to end the contract early. It combines principal, interest and charges as of the current date.</p>
+<p>The system calculates the settlement amount as follows:</p>
+<ul>
+<li>Principal outstanding counts at 100%.</li>
+<li>Add interest accrued.</li>
+<li>Add outstanding charges as of the current date.</li>
+<li>Subtract waivers applied.</li>
+<li>The result is the final total.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The system creates a non-monetary transaction as of the current date when contract termination is done.</p>
+</blockquote>
+<h2>Accrual and delinquency</h2>
+<p>Accrual and accrual activity stop after termination, and current date accrual is created similarly as it happens at charge-off. Days past due are calculated from the new due dates.</p>
+<h2>Loan status and sub-status</h2>
+<p>After contract termination, the loan status stays ACTIVE and the sub-status changes to CONTRACT_TERMINATED.</p>
+<h2>Charge-off and chargebacks</h2>
+<p>You can charge off a terminated loan account. Charge-off does not change the repayment schedule after termination.</p>
+<h2>N+1 installment and charges</h2>
+<h2>Reversing Contract Termination</h2>
+<p>You can reverse a contract termination. The system removes the loan sub-status, recalculates and reapplies the repayment schedule, and reapplies all transactions in order.</p>
+<p>When reversing contract termination:</p>
+<ul>
+<li>You can add notes and an external ID.</li>
+<li>Backdated payments and reversals are allowed, and the system reverse-replays and adjusts the termination accordingly.</li>
+</ul>
+<h2>Payments and transactions after termination</h2>
+<p>You can record backdated payments after contract termination, and you can reverse transactions before or after termination.</p>
+<h2>Events and accounting</h2>
+<p>Contract Termination triggers an Account Changed event. No accounting entry activity occurs for Contract Termination.</p>
+<h2>Worked examples</h2>
+<p>Contract termination on an installment due date. A customer takes a loan of 1,000 with an annual interest rate of 12%, repaid in 3 monthly installments using 30-day months. The first installment is paid on time. The loan officer processes contract termination on the second installment due date. The figures in this example are illustrative. All future installments are accelerated, so the termination amount is the principal outstanding plus the interest that has accrued since the last payment, and the balance becomes zero. If termination is processed later in the same month instead of on the due date, the interest portion is larger because interest accrues for the extra days.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Start</td>
+<td>Disbursement</td>
+<td></td>
+<td></td>
+<td></td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1st due date</td>
+<td>Installment paid</td>
+<td>340.00</td>
+<td>330.00</td>
+<td>10.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2nd due date</td>
+<td>Contract termination</td>
+<td>676.70</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Contract termination with an outstanding charge. The same loan of 1,000 with 12% annual interest and 3 monthly installments is used. A charge of 50.00 is added to the account before the second installment due date. The loan officer processes contract termination on that due date. The termination amount now includes the charge together with the principal outstanding and the accrued interest. If no charge had been added, the termination amount would be 676.70 instead.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Amount</th>
+<th>Principal</th>
+<th>Interest</th>
+<th>Charges</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Start</td>
+<td>Disbursement</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>1st due date</td>
+<td>Installment paid</td>
+<td>340.00</td>
+<td>330.00</td>
+<td>10.00</td>
+<td></td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>Mid-cycle</td>
+<td>Charge added</td>
+<td></td>
+<td></td>
+<td></td>
+<td>50.00</td>
+<td>670.00</td>
+</tr>
+<tr>
+<td>2nd due date</td>
+<td>Contract termination</td>
+<td>726.70</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>50.00</td>
+<td>0.00</td>
+</tr>
+</tbody></table>

@@ -1,11 +1,3 @@
 # Transaction Summary Report
 
-## Transaction Summary Report
-
-The transaction summary report reflects interest transactions, including interest accrual, interest posted, interest waiver, and interest refund.
-
-| Charge-off portion | Debit account | Credit account | Income account |
-| --- | --- | --- | --- |
-| Fraud Interest | Interest income charge off | Interest Receivable |  |
-| Fraud Fees | Fee Charge off | Fee Receivable | Fee Charge off |
-| Fraud Penalty | Fee Charge off | Penalty Receivable | Penalty Income |
+The Transaction Summary Report lists interest transactions such as interest accrual, interest posted, interest waiver, and interest refund. It shows the MerchantOriginator ID and the originator identifier. For an asset sale on an active loan with no active ownership record, all monetary transactions appear under the null (PayPal) ownership except the asset sale transaction, which appears under the new owner. For an asset buyback on an active loan with an active ownership record, all monetary transactions appear under the current ownership except the asset sale transaction, which appears under the null (PayPal) owner. For an asset buyback on a FRAUD loan with no active ownership record, all monetary transactions appear under the current ownership except the asset sale transaction, which appears under the null (PayPal) owner.

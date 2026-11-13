@@ -1,0 +1,63 @@
+<p>The loan lifecycle dates feature records extra dates when a loan changes status, such as when it matures or becomes overpaid. You choose which status changes to track. The system stores the actual business date each time a tracked status change occurs.</p>
+<p>Loan statuses:</p>
+<ul>
+<li>Created</li>
+<li>Approved</li>
+<li>Disbursed</li>
+<li>Active</li>
+<li>Closed (fully paid)</li>
+<li>Overpaid</li>
+</ul>
+<p>Configuration key custom.module.loan.lifecycle.allowed.status.codes accepts a list of statuses:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Tracks</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ALL</td>
+<td>Every status change (default)</td>
+</tr>
+<tr>
+<td>OVERPAID, CLOSED_OBLIGATIONS_MET</td>
+<td>When the loan is closed and fully paid, or when the loan is overpaid</td>
+</tr>
+</tbody></table>
+<p>A loan officer issues a loan of 1,000 at 12% annual interest with 3 monthly installments and 30-day months. The figures are illustrative. The loan starts as Created, moves to Approved, then to Disbursed and Active. When the borrower repays the full amount early, the status becomes Overpaid. The system records the overpaid date as the transaction date, not the date the repayment was submitted. If the overpayment is backdated, a correction request is required and no details are sent to other systems.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Date</th>
+<th>Status</th>
+<th>Extra date stored</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Created</td>
+<td>Day 0</td>
+<td>Created</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Approved</td>
+<td>Day 5</td>
+<td>Approved</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Disbursed</td>
+<td>Day 10</td>
+<td>Active</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Overpaid</td>
+<td>Day 20</td>
+<td>Overpaid</td>
+<td>Day 20</td>
+</tr>
+</tbody></table>
+<p>The example shows that the overpaid date comes from the transaction date and that the system keeps a dated history of each lifecycle status change.</p>

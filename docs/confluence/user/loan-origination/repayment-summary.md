@@ -1,5 +1,3 @@
 # Repayment Summary Before Origination
 
-## Repayment Summary Before Origination
-
-The loan account view screen shows a repayment summary before origination, including the number of repayments, calculated total days, matured on date, and disbursed amount after disbursement. The Transactions tab, Amortization schedule tab, Balances tab, Delinquency, and Breach are out of scope.
+You can create a repayment summary before a client or loan exists to show the customer the repayment plan before they apply for a GPL loan.

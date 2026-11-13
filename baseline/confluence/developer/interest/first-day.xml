@@ -1,0 +1,230 @@
+<h2>First-Day Interest overview</h2>
+<p>First-day interest decides whether interest accrues on the disbursement date (Day 0). When <strong>Interest recognition on disbursement date</strong> is off, interest is not calculated or accrued for Day 0. When it is on, interest is calculated and accrued for Day 0 at end of day. Both strategies calculate exactly the same total amount of interest.</p>
+<p>Current Fineract behaviour:</p>
+<ul>
+<li>Interest accrues from the first day of the repayment till the last repayment date.</li>
+</ul>
+<h2>When interestChargedFromDisbursementDate is FALSE or unset</h2>
+<p>With the flag FALSE or unset, interest accrues on the outstanding loan balance as the day started, so intra-day actions such as repayments do not change the daily interest amount. Payable interest is one day ahead of the daily periodic accrual calculation.</p>
+<p>Interest timing rules:</p>
+<ul>
+<li>Interest obligation starts on Day 1, the day after disbursement.</li>
+<li>If the customer fully repays on Day 0, no interest is payable.</li>
+<li>Interest accrual recognition happens at end of day as part of the close of business (COB) workflow, or when the loan is fully paid.</li>
+</ul>
+<p>Repayment period boundaries:</p>
+<ul>
+<li>The repayment period from date is exclusive for most actions and is Day 0 from the interest point of view.</li>
+<li>The due date is inclusive for most actions and is the last day of the period from the interest point of view.</li>
+<li>The repayment period due date and the following repayment period from date are the same, with no date gaps.</li>
+<li>On the due date, actions belong to the period that the due date falls on.</li>
+</ul>
+<h2>When interestChargedFromDisbursementDate is TRUE</h2>
+<p>With the flag TRUE, interest accrues on the outstanding loan balance at the end of each day, and payable interest stays in sync with the daily periodic accrual calculation. The disbursement date is Day 0, and interest is calculated on that day. The obligation to pay interest starts on the day after disbursement. Any intra-day action, such as a repayment, affects the daily interest calculated. The loan repayment period&#39;s 0th day is not excluded from interest.</p>
+<p>The repayment period boundaries work as follows:</p>
+<ul>
+<li>The disbursement date is Day 0 from the interest point of view and Day 1 of the repayment period.</li>
+<li>The repayment period from date is exclusive for most actions except Day 0; from the interest point of view it is Day 0 and inclusive.</li>
+<li>The due date is inclusive for most actions but from the interest point of view does not belong to the actual period and is exclusive.</li>
+<li>The repayment period due date and the following repayment period from date are the same, with no date gaps.</li>
+<li>On the due date, actions belong to the period the due date is on, except interest.</li>
+<li>The first day of interest is the from date and the last day of interest is the day before the due date.</li>
+</ul>
+<h2>Interest charged from date settings</h2>
+<p>The loan product flag interestChargedFromDisbursementDate decides whether interest starts on the disbursement date or the day after it. The flag works together with the setting interest-charged-from-date-same-as-disbursal-date.</p>
+<table>
+<thead>
+<tr>
+<th>interestChargedFromDisbursementDate</th>
+<th>interest-charged-from-date-same-as-disbursal-date</th>
+<th>Interest charged from date</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FALSE or NULL</td>
+<td>FALSE</td>
+<td>Disbursement date + 1 day</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>FALSE</td>
+<td>Disbursement date</td>
+</tr>
+<tr>
+<td>FALSE or NULL</td>
+<td>TRUE</td>
+<td>Disbursement date</td>
+</tr>
+<tr>
+<td>TRUE</td>
+<td>TRUE</td>
+<td>Disbursement date</td>
+</tr>
+</tbody></table>
+<h2>Progressive loan accrual processing</h2>
+<p>For progressive loans, each day at end of day the system compares the calculated interest accrual amount with the total interest already accrued. If the calculated amount is higher, it creates an Accrual transaction for the difference. If the amounts are equal, it creates nothing. If the calculated amount is lower, it creates an Accrual Adjustment transaction for the difference.</p>
+<p>The system allocates accrued amounts as follows:</p>
+<ul>
+<li>For an Accrual transaction, the system allocates as much as possible, up to the charged interest amount, on each repayment installment from oldest to newest.</li>
+<li>For an Accrual Adjustment transaction, the system lifts the accrued amount from installments from newest to oldest.</li>
+</ul>
+<p>Accrual transactions are not tied to repayment periods based on transaction dates, and relationships between accrual transactions and repayment schedule installments may be removed.</p>
+<p>The total of Accrual transaction balances and Accrual Adjustment amounts together cannot exceed the charged interest on the repayment schedule.</p>
+<h2>Interest period boundaries</h2>
+<p>With the flag FALSE or unset, Day 0 is excluded: interest is charged from Day 1 through the maturity date, becomes payable on Day X and accrues at end of Day X. With the flag TRUE, Day 0 is included: interest is charged from Day 0 through the day before the maturity date, accrues at end of Day X and becomes payable at the start of Day X+1. Both calculate exactly the same total interest.</p>
+<h2>Interest recognition on disbursement date</h2>
+<p>Interest recognition on disbursement date decides whether Fineract recognises interest on Day 0 (disbursement date) end of day or Day 1 (disbursement date plus one) end of day. It applies only to loans using the progressive loan schedule type.</p>
+<p>The behaviour depends on the interestRecognitionOnDisbursementDate setting:</p>
+<ul>
+<li>When TRUE, Fineract recognises interest on Day 0 end of day, interest charging starts from Day 0 end of day, and interest is calculated based on current date plus one.</li>
+<li>When not provided or FALSE, Fineract recognises interest on Day 1 end of day, interest charging starts from Day 1 end of day, and interest is calculated based on current date.</li>
+</ul>
+<p>The partial period rate factor logic changes as follows:</p>
+<ul>
+<li>When interestRecognitionFromDisbursementDate is true, the partial period rate factor logic includes the from date and excludes the due date.</li>
+<li>When interestRecognitionFromDisbursementDate is not true, no amendments are made to the partial period rate factor logic.</li>
+</ul>
+<p>You can set or change the field as follows:</p>
+<ul>
+<li>The field is stored on loan product level and can be overridden when the loan is created.</li>
+<li>You can update the field if the loan was created but not yet approved or disbursed.</li>
+</ul>
+<h2>Interest calculation parameters</h2>
+<p>Interest calculation uses a rate of 7%, a 360-day year and a 30-day month. The number of days in month and year follows the configuration for interest calculation from Day 0 (disbursement date).</p>
+<p>With <code>interestChargedFromDisbursementDate</code> FALSE or unset, interest recognition starts as follows:</p>
+<ul>
+<li>If interestChargedFromDate is provided during loan creation, interest starts from that date.</li>
+<li>Otherwise, interest starts according to the interest-charged-from-date-same-as-disbursal-date global configuration parameter.</li>
+<li>Otherwise, interest starts one day after the disbursement date.</li>
+</ul>
+<h2>Running accruals and service implementation</h2>
+<p>LoanAccrualsProcessingServiceImpl calculates accruals, and AddPeriodicAccrualEntriesBusinessStep applies periodic accrual entries.</p>
+<p>To run accruals:</p>
+<ul>
+<li>Move the current date to the due date of each period.</li>
+<li>Run close of business (COB) for each day.</li>
+<li>Use inline COB catch-up when convenient.</li>
+</ul>
+<h2>Worked examples</h2>
+<p>A loan is disbursed on 1 January with a principal of 3,600.00, an annual interest rate of 12%, a 360-day year, and 30-day months. No repayments are made. The daily interest on the full balance is 1.20. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Date</th>
+<th>FALSE: interest for day</th>
+<th>FALSE: accrued at EoD</th>
+<th>FALSE: payable at start</th>
+<th>TRUE: interest for day</th>
+<th>TRUE: accrued at EoD</th>
+<th>TRUE: payable at start</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Day 0</td>
+<td>1 Jan</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>1.20</td>
+<td>1.20</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Day 1</td>
+<td>2 Jan</td>
+<td>1.20</td>
+<td>1.20</td>
+<td>1.20</td>
+<td>1.20</td>
+<td>2.40</td>
+<td>1.20</td>
+</tr>
+<tr>
+<td>Day 2</td>
+<td>3 Jan</td>
+<td>1.20</td>
+<td>2.40</td>
+<td>2.40</td>
+<td>1.20</td>
+<td>3.60</td>
+<td>2.40</td>
+</tr>
+</tbody></table>
+<p>With interestChargedFromDisbursementDate set to TRUE, Day 0 earns interest and accrued and payable interest stay in sync; with FALSE or unset, Day 0 earns nothing and payable interest leads accrued interest by one day.</p>
+<p>A progressive loan is disbursed on 1 January with a principal of 360.00, an annual interest rate of 12%, a 360-day year, and 30-day months, so daily interest is 0.12. The repayment schedule charges Installment 1 (due 1 February) interest of 3.60 and Installment 2 (due 1 March) interest of 2.40, for a total charged interest of 6.00. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Day</th>
+<th>Balance at end of day</th>
+<th>Daily interest</th>
+<th>Cumulative interest calculated</th>
+<th>Total interest already accrued</th>
+<th>Difference</th>
+<th>Transaction</th>
+<th>Amount</th>
+<th>Allocated to</th>
+<th>Accrued on Installment 1</th>
+<th>Accrued on Installment 2</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2 Jan</td>
+<td>1</td>
+<td>360.00</td>
+<td>0.12</td>
+<td>0.12</td>
+<td>0.00</td>
+<td>+0.12</td>
+<td>Accrual</td>
+<td>0.12</td>
+<td>Installment 1</td>
+<td>0.12</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>3 Jan</td>
+<td>2</td>
+<td>360.00</td>
+<td>0.12</td>
+<td>0.24</td>
+<td>0.12</td>
+<td>+0.12</td>
+<td>Accrual</td>
+<td>0.12</td>
+<td>Installment 1</td>
+<td>0.24</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>4 Jan</td>
+<td>3</td>
+<td>360.00</td>
+<td>0.12</td>
+<td>0.36</td>
+<td>0.24</td>
+<td>+0.12</td>
+<td>Accrual</td>
+<td>0.12</td>
+<td>Installment 1</td>
+<td>0.36</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td>0.36</td>
+<td></td>
+<td></td>
+<td>+0.36</td>
+<td></td>
+<td>0.36</td>
+<td></td>
+<td>0.36</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>Each day at end of day the system posts an Accrual transaction for the positive difference and allocates it to the oldest installment first; if the calculated amount ever falls below the accrued amount, an Accrual Adjustment lifts interest from the newest installment first, and combined accrual balances and adjustments never exceed charged interest on the schedule.</p>

@@ -1,25 +1,46 @@
 # In-Advance Allocation Rules
 
-## In-Advance Allocation Rules
+The in advance allocation rules decide how an unprocessed repayment amount is distributed across upcoming installments for loans that use the New DueInAdvance payment strategy with in advance portions. On the Repayment schedule tab, the In Advance column shows principal only rather than principal plus fee.
 
-The in advance allocation rule allocates an unprocessed amount to the upcoming installment first, then to the last installment if any amount remains. The Future installment rule allocates to the upcoming installment first, then to the last installment, and then backward in order.
+Allocation order:
 
-If an early repayment amount exceeds both the first upcoming installment outstanding and the last installment outstanding:
+- The in advance allocation rule allocates the unprocessed amount to the upcoming installment first, then to the last installment if any amount remains.
+- If an early repayment amount exceeds both the first upcoming installment outstanding and the last installment outstanding, the remaining unprocessed amount is allocated to the last but one installment.
+- The Future installment rule allocates the unprocessed amount to the upcoming installment first, then to the last installment, and from that point allocates backward in order.
 
-- The remaining unprocessed amount is allocated to the last but one installment.
+Future installment allocation rule options:
 
-A new future allocation rule named "Next installment - Last installment" is added.
+| Option | Code |
+| --- | --- |
+| Next installment - Last installment | NEXT_INSTALLMENT |
+| Last installment | LAST_INSTALLMENT |
+| Reamortization | REAMORTIZATION |
 
-An operations officer applies an early repayment of 300.00 on 10 January to a loan with four monthly installments of 120.00 each, due on the first of February, March, April and May. The figures are illustrative. The product uses the in-advance allocation rule, so the unprocessed amount goes to the first upcoming installment, then to the last installment, and any remainder goes to the last-but-one installment. This determines which installments the system treats as paid and which remain overdue.
+Select the future installment allocation rule from the dropdown on the loan product configuration screen.
 
-| Step | Installment due | Outstanding before | Allocated | Outstanding after | Unprocessed remaining |
-| --- | --- | --- | --- | --- | --- |
-| Repayment received | — | — | — | — | 300.00 |
-| First upcoming | 1 February | 120.00 | 120.00 | 0.00 | 180.00 |
-| Last installment | 1 May | 120.00 | 120.00 | 0.00 | 60.00 |
-| Last but one | 1 April | 120.00 | 60.00 | 60.00 | 0.00 |
-| Not reached | 1 March | 120.00 | 0.00 | 120.00 | 0.00 |
+## Set the future installment allocation rule
 
-The example shows that the March installment is left unpaid even though it falls before April, because the rule moves from the first upcoming installment to the last and then to the last-but-one installment before stopping.
+Use this screen to choose how unprocessed amounts are allocated to upcoming installments for loans using the New DueInAdvance payment strategy.
 
-See also: [Payment Allocation Strategies: Payment Allocation Strategies](confluence-link:Payment%20Allocation%20Strategies#payment-allocation-strategies).
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+3. Open the **PAYMENT ALLOCATION** step.
+
+| Field | Required | Description |
+| --- | --- | --- |
+| Credit Allocation Strategy | No |  |
+| Future Installment Allocation Rule | No | Select how unprocessed amounts are allocated to upcoming installments. Options include NEXT_INSTALLMENT, LAST_INSTALLMENT, and REAMORTIZATION. |
+
+## Worked examples
+
+A borrower pays 500.00 early on 10 January toward a loan with four equal monthly installments of 200.00 due on 1 February, 1 March, 1 April and 1 May. The figures are illustrative. The in-advance allocation rule sends the unprocessed amount to the upcoming installment first, then to the last installment, and any remainder after both are covered goes to the last-but-one installment.
+
+| Installment | Due | Before | Allocated | After |
+| --- | --- | --- | --- | --- |
+| 1 | 1 February | 200.00 | 200.00 | 0.00 |
+| 2 | 1 March | 200.00 | 0.00 | 200.00 |
+| 3 | 1 April | 200.00 | 100.00 | 100.00 |
+| 4 | 1 May | 200.00 | 200.00 | 0.00 |
+| Total |  | 800.00 | 500.00 | 300.00 |
+
+This shows how an early repayment covers the first and last installments in full and reduces the last-but-one installment by the remainder.

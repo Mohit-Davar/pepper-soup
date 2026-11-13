@@ -1,36 +1,41 @@
 # Collections Programs
 
-## Collections Programs
+A recovery payment lets you collect money on a loan account that is written off. The loan balance stays at zero and the account remains written off after the payment. You can reverse a recovery payment, and its accounting entry is a mirror of the original recovery payment entry.
 
-You can initiate a recovery payment transaction on a loan account that is written off. The loan remains written off after the recovery payment, and recovery payments can be reversed.
+Recovery payment rules:
 
-Recovery payments follow these rules:
+- The total recovery payment cannot exceed the amount of the written-off transaction.
+- You can backdate a recovery payment, but not to a date before the write-off date.
 
-- Total recovery payment cannot exceed the amount of the written-off transaction.
-- A recovery payment can be backdated but not before the write-off date.
-- Written-off is a final state, so backdated monetary actions or undoing one should not really be allowed.
+Working capital loan settings:
 
-Recovery payment functionality works similar to term loan.
+- Payment type is optional for monetary transactions on working capital loans.
+- You can provide a payment type id, which is assigned to and stored with monetary transactions on working capital loans.
+- You can override delinquency bucket configuration during loan creation for working capital loans.
+- You can override breach bucket configuration during loan creation for working capital loans.
+- Loan level overrides for delinquency bucket and breach bucket take precedence over product level defaults.
+- Updating repayment percent affects delinquency and breach evaluation for working capital loans.
 
-For working capital loans, payment type is optional, but you can provide a payment type ID and assign it to the monetary transaction.
+Working capital loan account balance field:
 
-A working capital loan account shows a new balance field: total recovery payment.
+| Field | Description |
+| --- | --- |
+| Total recovery payment | The total amount recovered on the written-off loan account. |
 
-Delinquency and breach bucket configuration can be overridden during loan creation:
+A working capital loan with an original principal of 1,000 is written off. The write-off reduces the loan balance to 0 and sets the loan status to Written-off. The borrower later makes a recovery payment of 400; the payment type is optional for this transaction. The figures in this example are illustrative.
 
-- Delinquency bucket configuration can be overridden during loan creation.
-- Breach bucket configuration can be overridden during loan creation.
-- The loan level override for delinquency bucket is honoured instead of always using the product level default.
-- The loan level override for breach bucket is honoured instead of always using the product level default.
-- Updating repayment percent reflects in delinquency and breach evaluation.
+| Step | Action | Payment amount | Cumulative recovery | Loan balance | Loan status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Write-off | 0.00 | 0.00 | 0.00 | Written-off |
+| 2 | Recovery payment | 400.00 | 400.00 | 0.00 | Written-off |
 
-A working capital loan with a principal of 1,000, an annual interest rate of 12%, 3 monthly installments, and 30-day months is written off. The write-off records 1,000 as the written-off amount and leaves the account balance at 0. The borrower later pays 400 toward the written-off debt, and the officer records a recovery payment on the written-off account. The figures in this example are illustrative.
+The recovery payment stays within the written-off amount, so it is accepted. The loan balance remains 0 and the loan remains Written-off.
 
-A recovery payment reduces the amount still recoverable but does not change the balance or reopen the written-off account.
+The 400 recovery payment is reversed. The reversal posts a mirror accounting entry, and the payment type remains optional for the reversal.
 
-| Step | Transaction | Amount | Balance | Status |
-| --- | --- | --- | --- | --- |
-| Write-off | Write-off | 1,000.00 | 0.00 | Written-off |
-| Recovery payment | Recovery payment | 400.00 | 0.00 | Written-off |
-| Total recovered | — | 400.00 | — | — |
-| Remaining recoverable | — | 600.00 | — | — |
+| Step | Action | Payment amount | Cumulative recovery | Loan balance | Loan status |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Recovery payment | 400.00 | 400.00 | 0.00 | Written-off |
+| 2 | Reversal of recovery | -400.00 | 0.00 | 0.00 | Written-off |
+
+Reversing the payment mirrors the original entry and leaves the balance at 0 and the status at Written-off.

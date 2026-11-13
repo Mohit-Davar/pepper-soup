@@ -1,0 +1,3 @@
+# Trial Balance Report
+
+The Trial Balance Report shows balances and daily debit and credit activity, including interest accrual, interest posted, interest waiver, and interest refund. It separates interest-related activity and balances by asset owner, and it includes the MerchantOriginator ID and originator identifier. For asset sales and buybacks, monetary transactions report under the applicable ownership while detail lines 112601 reflect the ending balance sale, transfer, or buyback of ownership. You can fetch manual journal entry details with asset owner from the Trial Balance summary report.

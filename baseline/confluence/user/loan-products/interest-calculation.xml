@@ -1,0 +1,481 @@
+<h2>EMI Calculation</h2>
+<h3>EMI calculation overview</h3>
+<p>The system calculates the monthly payment (EMI) using the configured days in year (360, 364, 365 or Actual) and days in month (30 or Actual), and builds a repayment schedule showing each principal and interest payment.</p>
+<h3>Repayment period and day-count settings</h3>
+<p>Repayment period settings decide how often installments fall due, and day-count settings decide how many days count in a month and in a year.</p>
+<p>Repayment every can be set to:</p>
+<ul>
+<li>DAYS (for example, 30 DAYS)</li>
+<li>WEEKS (for example, 2 WEEKS)</li>
+<li>MONTHS (for example, 1 MONTHS)</li>
+</ul>
+<p>Period options include:</p>
+<ul>
+<li>Monthly</li>
+<li>Yearly</li>
+<li>Whole period</li>
+<li>Daily</li>
+<li>Weekly</li>
+</ul>
+<p>Days in year and days in month settings:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Days in year</td>
+<td>360, 364, 365, ACTUAL (365 or 366 in a leap year)</td>
+</tr>
+<tr>
+<td>Days in month</td>
+<td>30, ACTUAL</td>
+</tr>
+</tbody></table>
+<h3>Rate factor formulas</h3>
+<p>The rate factor adjusts interest for each term of the loan based on how many days the term covers.</p>
+<p>Rate factor formulas by repayment frequency:</p>
+<table>
+<thead>
+<tr>
+<th>Frequency</th>
+<th>Rate factor formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Monthly</td>
+<td>1 + (rate of interest × (repaid every × days in month / days in year) × actual days in period / calculated days in period)</td>
+</tr>
+<tr>
+<td>Weekly</td>
+<td>1 + (rate of interest × (7 × repaid every / days in year) × actual days in period / calculated days in period)</td>
+</tr>
+</tbody></table>
+<p>Rules:</p>
+<ul>
+<li>The same rule applies for additional periods where the period due date is after the loan maturity date.</li>
+</ul>
+<h3>EMI formula</h3>
+<p>The EMI formula calculates each equal monthly installment from the principal, the rate factor product over the repayment period, and the annuity divisor.</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ratefactor^n</td>
+<td>Rate factor product from i = 1 to n of Ri</td>
+</tr>
+<tr>
+<td>principal</td>
+<td>Loan principal</td>
+</tr>
+<tr>
+<td>fn</td>
+<td>Annuity divisor over n installments</td>
+</tr>
+</tbody></table>
+<h3>Installment interest calculation</h3>
+<p>Installment interest is calculated from the principal balance, the interest rate per year, and the days gap between installments.</p>
+<p>The system supports two calculation methods:</p>
+<ul>
+<li>Installment Interest = principal balance × (interest rate per year) × days gap</li>
+<li>Installment Interest = principal balance × (1 − rate factor)</li>
+</ul>
+<p>When downpayment is enabled, the principal component in the EMI calculation formula uses the principal balance excluding the downpayment amount, even if the downpayment installment is not paid.</p>
+<h3>EMI iteration and adjustment</h3>
+<p>The system tests whether to recalculate the EMI by comparing the difference between the final payment and the regular payment with half of the loan term. If the difference is large enough, it adjusts the EMI by spreading the difference between the last installment and the calculated EMI across the remaining periods. The adjustment happens only once. If the new difference is not smaller than the original difference, the system keeps the original EMI; otherwise it uses the adjusted EMI.</p>
+<h3>Last installment</h3>
+<p>The system calculates every monthly payment except the last one. The last payment is the remaining balance.</p>
+<h3>Rate factor rounding adjustment</h3>
+<p>The system adjusts the rate factor once per period to match the rounded interest amount for that period. Currency precision and rounding mode require this adjustment, and sub-interest periods can use the adjusted value.</p>
+<h3>Interest rate frequency</h3>
+<p>You can configure the interest rate frequency as per month or per whole term.</p>
+<h3>Worked examples</h3>
+<p>This example shows a simple monthly equated monthly installment (EMI) calculation. The figures are illustrative: a principal of 1,000, an annual interest rate of 12%, three monthly installments, a 360-day year and 30-day months. The user configures the interest rate, repayment frequency and day-count conventions; the system then produces the schedule below. The example shows how the EMI is split into interest and principal, with the final payment covering the remaining balance.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>162.55</td>
+<td>172.55</td>
+<td>837.45</td>
+</tr>
+<tr>
+<td>2</td>
+<td>837.45</td>
+<td>8.37</td>
+<td>164.18</td>
+<td>172.55</td>
+<td>673.27</td>
+</tr>
+<tr>
+<td>3</td>
+<td>673.27</td>
+<td>6.73</td>
+<td>165.82</td>
+<td>172.55</td>
+<td>507.45</td>
+</tr>
+<tr>
+<td>4</td>
+<td>507.45</td>
+<td>5.07</td>
+<td>167.48</td>
+<td>172.55</td>
+<td>339.97</td>
+</tr>
+<tr>
+<td>5</td>
+<td>339.97</td>
+<td>3.40</td>
+<td>169.15</td>
+<td>172.55</td>
+<td>170.82</td>
+</tr>
+<tr>
+<td>6</td>
+<td>170.82</td>
+<td>1.71</td>
+<td>170.82</td>
+<td>172.53</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>35.28</td>
+<td>1,000.00</td>
+<td>1,035.28</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This example shows how a downpayment changes the EMI. A principal of 1,000 is repaid monthly over three months at 12% annual interest with a 360-day year and 30-day months. A downpayment of 250 is collected at disbursement, so the EMI formula uses a principal of 750 even if the downpayment installment is not paid. The example shows that the downpayment reduces the principal used in the EMI formula, lowering each installment.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>750.00</td>
+<td>7.50</td>
+<td>247.52</td>
+<td>255.02</td>
+<td>502.48</td>
+</tr>
+<tr>
+<td>2</td>
+<td>502.48</td>
+<td>5.02</td>
+<td>250.00</td>
+<td>255.02</td>
+<td>252.48</td>
+</tr>
+<tr>
+<td>3</td>
+<td>252.48</td>
+<td>2.52</td>
+<td>252.48</td>
+<td>255.00</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>15.04</td>
+<td>750.00</td>
+<td>765.04</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This example shows the effect of changing only the repayment period. A principal of 1,000 is repaid every two months over three installments at 12% annual interest with a 360-day year. Because each period is 60 days, the rate factor is 1.02 instead of 1.01, so each installment is larger and fewer installments are needed. The example shows that lengthening the period raises the rate factor and reduces the number of installments.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>20.00</td>
+<td>326.75</td>
+<td>346.75</td>
+<td>673.25</td>
+</tr>
+<tr>
+<td>2</td>
+<td>673.25</td>
+<td>13.47</td>
+<td>333.28</td>
+<td>346.75</td>
+<td>339.97</td>
+</tr>
+<tr>
+<td>3</td>
+<td>339.97</td>
+<td>6.80</td>
+<td>339.97</td>
+<td>346.77</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>40.27</td>
+<td>1,000.00</td>
+<td>1,040.27</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This example shows how an early repayment changes the schedule. A principal of 1,000 is repaid monthly over three months at 12% annual interest with a 360-day year and 30-day months. After the first installment, the borrower repays 150 early; the payment is split into interest for the days elapsed and principal, and the remaining installments keep the same EMI with a smaller final payment. The example shows that an early repayment reduces the balance and leaves a smaller final payment while the regular EMI stays the same.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Opening balance</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Payment</th>
+<th>Closing balance</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.02</td>
+<td>340.02</td>
+<td>669.98</td>
+</tr>
+<tr>
+<td>Early repayment</td>
+<td>669.98</td>
+<td>3.35</td>
+<td>146.65</td>
+<td>150.00</td>
+<td>523.33</td>
+</tr>
+<tr>
+<td>2</td>
+<td>523.33</td>
+<td>5.23</td>
+<td>334.79</td>
+<td>340.02</td>
+<td>188.54</td>
+</tr>
+<tr>
+<td>3</td>
+<td>188.54</td>
+<td>1.89</td>
+<td>188.54</td>
+<td>190.43</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td>20.47</td>
+<td>1,000.00</td>
+<td>1,020.47</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link ac:anchor="early-and-late-repayment-interest"><ri:page ri:content-title="Interest Timing"/><ac:plain-text-link-body><![CDATA[Interest Timing: Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest Rates by Balance Status</h2>
+<p>Interest is calculated only on the current principal balance, which is the total principal balance minus the past due principal balance. Interest is not calculated on past due principal amounts. You can configure a separate interest rate for past due principal balance at the loan product level.</p>
+<p>The &quot;Do not calculate interest on past due principal balances&quot; checkbox is available under Settings → Interest Recalculation when:</p>
+<ul>
+<li>The loan product is a progressive loan.</li>
+<li>Interest recalculation is enabled.</li>
+</ul>
+<p>When this checkbox is set on a loan:</p>
+<ul>
+<li>The checkbox defaults to unchecked.</li>
+<li>If the customer does not pay the first installment on time, the interest balance of the second installment does not change because interest is not calculated on past due principal balances.</li>
+<li>Overdue loans do not change anything.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The configuration to not calculate interest on past due principal amounts is limited to the advance repayment strategy type.</p>
+</blockquote>
+<h2>366-Day Year Interest</h2>
+<p>366-day year interest lets you calculate daily interest using 366 days in a leap year and 365 days in a non-leap year. You can apply this to the whole loan year or only to installments that fall between February dates. For multi-year loans, each year uses its own day count: 365 for non-leap years and 366 for leap years. If rescheduling adds 29 February to an interest period that originally ended before that date, interest is recalculated from 1 January to today because the period is now a 366-day year.</p>
+<h2>Leap Year Interest Calculation</h2>
+<p>Leap year interest calculation applies when days in year is set to ACTUAL on a progressive loan product. It determines whether the system uses 366 days or 365 days in a year when calculating interest. The setting is available as a dropdown on the loan product and is inherited by loans created from that product. FULL_LEAP_YEAR is the default value.</p>
+<p>The dropdown has two values:</p>
+<table>
+<thead>
+<tr>
+<th>Dropdown value</th>
+<th>Days in year used</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FULL_LEAP_YEAR</td>
+<td>366 if the year is a leap year, otherwise 365</td>
+</tr>
+<tr>
+<td>FEB_29_PERIOD_ONLY</td>
+<td>366 for the period that contains 29 February, otherwise 365</td>
+</tr>
+</tbody></table>
+<p>Interest uses the simplified rate factor: <code>Interest rate * DAYS IN MONTH / DAYS IN YEAR</code>.</p>
+<p>Example 1: A progressive loan uses Actual days in a year with the February-29-period-only option. The figures are illustrative. A principal of 1,000 is lent at 6% a year and repaid in three equal monthly installments. The loan is disbursed on 1 January 2024, a leap year, so the first period runs from 1 January to 1 February (31 days), the second from 1 February to 1 March (29 days and it contains 29 February), and the third from 1 March to 1 April (31 days). Only the second period uses 366 days in the year; the other two use 365.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Year days</th>
+<th>Open</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Pay</th>
+<th>Close</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Jan 2024</td>
+<td>1 Feb 2024</td>
+<td>31</td>
+<td>365</td>
+<td>1,000.00</td>
+<td>5.10</td>
+<td>333.33</td>
+<td>338.43</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 Feb 2024</td>
+<td>1 Mar 2024</td>
+<td>29</td>
+<td>366</td>
+<td>666.67</td>
+<td>3.17</td>
+<td>333.33</td>
+<td>336.50</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 Mar 2024</td>
+<td>1 Apr 2024</td>
+<td>31</td>
+<td>365</td>
+<td>333.34</td>
+<td>1.70</td>
+<td>333.34</td>
+<td>335.04</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>9.97</td>
+<td>1,000.00</td>
+<td>1,009.97</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>If the full-leap-year option were chosen instead, all three periods would use 366 days because 2024 is a leap year, rather than only the February period.</p>
+<p>Example 2: A progressive loan is disbursed on 1 July 2024, a leap year, and repaid in three monthly installments. The principal is 1,000 and the annual rate is 6%. Because no installment period contains 29 February, the system uses 365 days in the year for every period, even though 2024 is a leap year.</p>
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>From</th>
+<th>To</th>
+<th>Days</th>
+<th>Year days</th>
+<th>Open</th>
+<th>Interest</th>
+<th>Principal</th>
+<th>Pay</th>
+<th>Close</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>1 Jul 2024</td>
+<td>1 Aug 2024</td>
+<td>31</td>
+<td>365</td>
+<td>1,000.00</td>
+<td>5.10</td>
+<td>333.33</td>
+<td>338.43</td>
+<td>666.67</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1 Aug 2024</td>
+<td>1 Sep 2024</td>
+<td>31</td>
+<td>365</td>
+<td>666.67</td>
+<td>3.40</td>
+<td>333.33</td>
+<td>336.73</td>
+<td>333.34</td>
+</tr>
+<tr>
+<td>3</td>
+<td>1 Sep 2024</td>
+<td>1 Oct 2024</td>
+<td>30</td>
+<td>365</td>
+<td>333.34</td>
+<td>1.64</td>
+<td>333.34</td>
+<td>334.98</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>10.14</td>
+<td>1,000.00</td>
+<td>1,010.14</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>This shows that a leap year alone does not switch every period to 366 days; only a period that contains 29 February can use 366 days.</p>

@@ -1,0 +1,131 @@
+<h2>EMI calculation overview</h2>
+<p>The system calculates the monthly repayment amount (EMI) for a loan using configured days-in-year and days-in-month settings, and builds a repayment schedule showing the principal and interest portions of each payment. It applies when the repayment period is monthly. The last payment is the remaining balance and may differ from earlier payments.</p>
+<p>The calculation works as follows:</p>
+<ul>
+<li>It loops through each loan term, calculating a rate factor for the term using the number of days in that month.</li>
+<li>It uses the rate factor from the previous iteration to calculate fi, the denominator of the monthly payment formula.</li>
+<li>It uses the product of all rate factors and fi to calculate the monthly payment.</li>
+<li>It iterates through each term again, using the monthly payment to calculate principal and interest for each term.</li>
+<li>Interest for a term is <code>(rate factor − 1) × remaining balance</code>.</li>
+<li>Principal for a term is <code>monthly payment − interest for that term</code>.</li>
+</ul>
+<p>Downpayment handling:</p>
+<ul>
+<li>When downpayment is enabled, the principal component of the EMI calculation uses the principal balance excluding the downpayment amount.</li>
+<li>This applies even if the downpayment installment is not paid.</li>
+</ul>
+<h2>Rate factor formulas</h2>
+<p>The rate factor formula depends on how often repayments are made.</p>
+<table>
+<thead>
+<tr>
+<th>Frequency</th>
+<th>Rate factor formula</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Per year</td>
+<td>1 + (rate of interest × (days / days in year))</td>
+</tr>
+<tr>
+<td>Monthly</td>
+<td>1 + (rate of interest × (repaid every × days in month / days in year) × (actual days in period / calculated days in period))</td>
+</tr>
+<tr>
+<td>Weekly</td>
+<td>1 + (rate of interest × (7 × repaid every / days in year) × (actual days in period / calculated days in period))</td>
+</tr>
+<tr>
+<td>Whole term</td>
+<td>1 + (rate of interest × (actual number of days of loan from start date to actual maturity / calculated number of days of loan from start date to expected maturity))</td>
+</tr>
+</tbody></table>
+<h2>EMI formula</h2>
+<p><code>EMI = Σ (i = 1..n) Ri × principal / fn</code></p>
+<h2>Installment interest</h2>
+<p><code>installment interest = principal balance × (rate factor − 1)</code></p>
+<h2>Days in year and month configurations</h2>
+<p>Two settings decide how interest accrues: days in the month and days in the year.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Options</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Days in month</td>
+<td>30 DAYS (one month is 30 days), ACTUAL (the actual number of days in the month)</td>
+</tr>
+<tr>
+<td>Days in year</td>
+<td>360, 364, 365, ACTUAL (365 or 366 in a leap year)</td>
+</tr>
+</tbody></table>
+<p>Supported configurations include 360/30, 365/ACTUAL, and 366/ACTUAL.</p>
+<h2>Repayment frequency</h2>
+<p>Repayment frequency sets how often you repay a loan. You can choose DAYS (for example, 30 DAYS), WEEKS (for example, 2 WEEKS), or MONTHS (for example, 1 MONTHS).</p>
+<p>Default period options:</p>
+<ul>
+<li>Monthly</li>
+<li>Yearly</li>
+<li>Whole period</li>
+</ul>
+<p>Unusual period options:</p>
+<ul>
+<li>Daily</li>
+<li>Weekly</li>
+</ul>
+<h2>EMI iteration and adjustment</h2>
+<p>The system decides whether to iterate the EMI by comparing the difference between the final payment and the regular payment against half the term. If iteration is needed, it adjusts the EMI once and keeps the adjusted EMI only when the new difference is smaller than the original difference; otherwise it uses the original EMI.</p>
+<p>Rules for EMI iteration and adjustment:</p>
+<ul>
+<li>The system iterates the EMI when <code>(|diff| * 100) &gt; floor(term / 2)</code>, where diff is the difference between the final payment and the regular payment.</li>
+<li>The EMI adjustment equals <code>(last installment EMI - calculated EMI) / number of remaining periods</code>.</li>
+<li>The system performs the EMI adjustment only once to avoid endless loops.</li>
+<li>After reiteration, if the new difference between the final payment and the regular payment is not smaller than the original difference, the system drops the reiteration and uses the original EMI.</li>
+</ul>
+<h2>Rate factor adjustment for rounding</h2>
+<p>The system adjusts the rate factor to match the rounded interest amount for the period so that daily interest or sub-period interest can be calculated with the adjusted value. Currency precision and rounding mode make this adjustment necessary, and one adjustment per period is enough for sub-interest periods to work with the adjusted value. The same rule applies to additional periods where the period due date falls after the loan maturity date.</p>
+<h2>Test scenario values</h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Should iterate</td>
+<td>FALSE</td>
+</tr>
+<tr>
+<td>Iterate with</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Days in year</td>
+<td>360</td>
+</tr>
+<tr>
+<td>Principal</td>
+<td>100</td>
+</tr>
+<tr>
+<td>Repay every</td>
+<td>1 month</td>
+</tr>
+<tr>
+<td>Repaid every</td>
+<td>1 month</td>
+</tr>
+<tr>
+<td>Loan start date</td>
+<td>1/1/23</td>
+</tr>
+<tr>
+<td>Transaction range</td>
+<td>0.01 - 98.99</td>
+</tr>
+</tbody></table>
+<p>See also: <ac:link><ri:page ri:content-title="Schedule Recalculation for Overdue Loans"/><ac:plain-text-link-body><![CDATA[Schedule Recalculation for Overdue Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Early and Late Repayment Interest"/><ac:plain-text-link-body><![CDATA[Early and Late Repayment Interest]]></ac:plain-text-link-body></ac:link>, <ac:link><ri:page ri:content-title="Interest Rate Changes"/><ac:plain-text-link-body><![CDATA[Interest Rate Changes]]></ac:plain-text-link-body></ac:link>.</p>

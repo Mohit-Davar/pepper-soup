@@ -1,0 +1,236 @@
+<h2>Loan Entity Design</h2>
+<p>The Loan entity keeps its core loan behaviour while several methods are moved to services, utilities, assembler classes, or the LoanCharge entity.</p>
+<ul>
+<li><p>Loan#addLoanCharge keeps adding a new loan charge, while charge amount calculations, reprocessing via SingleLoanChargeRepaymentScheduleProcessingWrapper, and loan status transition are handled by the caller.</p>
+</li>
+<li><p>Loan#reprocessTransactions is moved into ReprocessLoanTransactionsServiceImpl.</p>
+</li>
+<li><p>Loan#reprocessTransactionsWithPostTransactionChecks is moved into ReprocessLoanTransactionsServiceImpl.</p>
+</li>
+<li><p>Loan#handleChargeAppliedTransaction is split into smaller pieces and moved into a service or util/assembler class that fetches and calculates all necessary things.</p>
+</li>
+<li><p>Loan#handleChargePaidTransaction is split into smaller pieces and moved into a service or util/assembler class that fetches and calculates all necessary things.</p>
+</li>
+<li><p>Loan#removeLoanCharge keeps removing a loan charge, while all extra logic and calculations are handled by the caller service.</p>
+</li>
+<li><p>Loan#removeOrModifyTransactionAssociatedWithLoanChargeIfDueAtDisbursement keeps removing a transaction from the loan if needed, while calculation logic is handled by the caller.</p>
+</li>
+<li><p>Loan#updateLoanCharges is split into smaller pieces and moved into an assembler class.</p>
+</li>
+<li><p>Loan#updateLoanSchedule uses an assembler class prepared to update loan installment periods, with incoming parameters being already calculated and updated installment periods rather than a model.</p>
+</li>
+<li><p>Loan#updateLoanSchedule keeps updating periods, while updating dependent and summary derived fields is left to the caller.</p>
+</li>
+<li><p>Loan#updateLoanSummaryDerivedFields recalculates calculateTotalOverpayment, calculateTotalRecoveredPayments, and updateLoanOutstandingBalances only when it makes sense, not every time.</p>
+</li>
+<li><p>Loan#updateLoanSummaryAndStatus is split up so it is clear why and when it is called.</p>
+</li>
+<li><p>Loan#updateOverdueScheduleInstallment is moved to the LoanCharge entity.</p>
+</li>
+<li><p>Loan#clearLoanInstallmentChargesBeforeRegeneration is moved to the LoanCharge entity or into the caller service.</p>
+</li>
+<li><p>Loan#undoApproval keeps loan internal state changes and field value updates, while collecting changes into a map, loan status change, and triggering events are handled outside the Loan entity.</p>
+</li>
+<li><p>Loan#handlePayDisbursementTransaction is moved into the caller service or a utility class responsible for calculating and creating everything needed, including pay charge, paid by relation, and update transaction balances.</p>
+</li>
+<li><p>doPostLoanTransactionChecks is split into smaller pieces and extracted into caller services, which decide when to recalculate or handle full repayment or overpayment steps.</p>
+</li>
+<li><p>Loan#deriveDefaultInterestWaiverTransaction creates a new transaction and is moved out of the Loan entity.</p>
+</li>
+<li><p>Loan#updateLoanRepaymentScheduleDates is moved to the caller service.</p>
+</li>
+<li><p>Loan#generateInstallmentLoanCharges is moved to the LoanCharge entity or into a service.</p>
+</li>
+<li><p>Loan#processPostDisbursementTransactions is moved into ReprocessLoanTransactionsServiceImpl.</p>
+</li>
+<li><p>Loan#updateLoanOutstandingBalances is calculated by a utility class instead of the Loan entity.</p>
+</li>
+<li><p>The transient field accountNumberRequiresAutoGeneration is removed from the Loan entity.</p>
+</li>
+<li><p>The caller decides whether an account number needs to be generated and passes it to the loan entity if applicable.</p>
+</li>
+<li><p>The external dependency loanLifecycleStateMachine is removed from the Loan entity.</p>
+</li>
+<li><p>Checking whether a loan status change should occur is extracted from the Loan entity and called by the caller if applicable.</p>
+</li>
+<li><p>A new module fineract-progressive-loan is created, which depends on the existing fineract-loan module.</p>
+</li>
+<li><p>Loan schedule generation is moved into the fineract-progressive-loan module.</p>
+</li>
+<li><p>Advance payment allocation is moved into the fineract-progressive-loan module.</p>
+</li>
+<li><p>Transaction processor is moved into the fineract-progressive-loan module.</p>
+</li>
+<li><p>Allocation rules are moved into the fineract-progressive-loan module.</p>
+</li>
+<li><p>Allocation rules are set or updated in the fineract-progressive-loan module.</p>
+</li>
+<li><p>Validations which only apply for progressive loan configuration are moved into the fineract-progressive-loan module.</p>
+</li>
+<li><p>The Datatables infrastructure splits the Loan entity into two independent entities and extends the same functionality to the Working Capital side.</p>
+</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Loan Entity Design"/><ac:plain-text-link-body><![CDATA[Loan Entity Design]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest-Bearing Loan Products</h2>
+<ul>
+<li>Zero-interest bearing BNPL products are now supported.</li>
+<li>The progressive strategy now supports additional loan module features previously supported only by the cumulative strategy.</li>
+<li>Interest calculation and reverse-replay scenarios for progressive loans, re-aging and re-amortization, charge-backs, charge-off, reschedule, and asset externalization are now supported for interest-bearing loans.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Interest-Bearing Loan Products"/><ac:plain-text-link-body><![CDATA[Interest-Bearing Loan Products]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Progressive Loan Accruals</h2>
+<ul>
+<li>Accrual processing leaves out amortized charges.</li>
+<li>The progressive schedule supports additional excess payment handling scenarios and interest-bearing scenarios; earlier it supported only cumulative disbursement recalculation.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Progressive Loan Accruals"/><ac:plain-text-link-body><![CDATA[Progressive Loan Accruals]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Pausing and Resuming Accruals</h2>
+<ul>
+<li>Update and delete of an existing interest pause are supported.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Pausing and Resuming Accruals"/><ac:plain-text-link-body><![CDATA[Pausing and Resuming Accruals]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest Rate Changes</h2>
+<ul>
+<li>Interest modification now supports both cumulative and progressive schedule types and both flat and declining balance interest calculation types.</li>
+<li>Interest rate recalculation now supports flat-type interest calculations in addition to declining interest rate.</li>
+<li>Interest can be modified in the middle of the loan at the installment level without relying on configuring a floating or fixed interest rate at loan creation time.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Interest Rate Changes"/><ac:plain-text-link-body><![CDATA[Interest Rate Changes]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>First-Day Interest</h2>
+<ul>
+<li>Interest calculation can start from the disbursement date itself.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="First-Day Interest"/><ac:plain-text-link-body><![CDATA[First-Day Interest]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Payment Allocation Strategies</h2>
+<ul>
+<li>Advanced payment allocation now supports excess amount in payment handling and write-off, excess payment handling, interest handling, and the progressive type of strategy.</li>
+<li>Advanced payment allocation now lets a user select the allocation rule or priority of the amount to be allocated at each portion level, broadly classified as past due amount, due amount, and in-advance amount—right in that penalty, fees, principal, interest.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Payment Allocation Strategies"/><ac:plain-text-link-body><![CDATA[Payment Allocation Strategies]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Loan Payoff</h2>
+<ul>
+<li>OverpaidOnDate is now set as submittedOnDate instead of transactionDate.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Loan Payoff"/><ac:plain-text-link-body><![CDATA[Loan Payoff]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Chargeback Distribution</h2>
+<ul>
+<li>Chargeback Distribution now reprocesses all transactions including the Chargeback to recalculate interest for progressive loans where interest recalculation is enabled if the principal due amount changed.</li>
+<li>Chargeback Distribution now supports chargeback adjustment on the installment due date.</li>
+<li>Chargeback Distribution now supports chargeback of a partial fee.</li>
+<li>Chargeback Distribution now supports chargeback after CBR.</li>
+<li>Chargeback Distribution now supports fees and penalties portion after maturity.</li>
+<li>Chargeback Distribution now supports chargeback after chargeoff.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Chargeback Distribution"/><ac:plain-text-link-body><![CDATA[Chargeback Distribution]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Interest on Chargebacks</h2>
+<ul>
+<li>Chargeback now supports interest calculations and interest chargeback.</li>
+<li>The credited principal is applied as a static, additional value alongside the calculated due principal on the ProgressiveLoanInterestScheduleModel, and these amounts together are used to calculate the due interest of the period.</li>
+<li>The credited interest is applied as a static, additional value alongside the calculated due interest on the model.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Interest on Chargebacks"/><ac:plain-text-link-body><![CDATA[Interest on Chargebacks]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Down Payments</h2>
+<ul>
+<li>Origination fees can be added to multi disbursements, with each disbursement able to enable or disable them.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Down Payments"/><ac:plain-text-link-body><![CDATA[Down Payments]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Backdated Loans</h2>
+<ul>
+<li>Features now support backdated actions and EMI and interest fix.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Delayed Captures and Full-Term Tranches</h2>
+<ul>
+<li>The product supports flexible disbursement options on the same active loan account for complex scenarios or disbursement flows, replacing support for only fixed plan transactions.</li>
+<li>Disbursement changes support planned tranches in addition to progressive disbursements.</li>
+<li>The disbursement module supports multiple disbursements on a loan smoothly and provides capabilities for reschedule, as well as a few changes to the chart of accounts.</li>
+<li>Tranche disbursement supports disbursement without planning for buy-now-pay-later and enables the option to do a disbursement on a closed loan.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Delayed Captures and Full-Term Tranches"/><ac:plain-text-link-body><![CDATA[Delayed Captures and Full-Term Tranches]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Repayment Due Date Strategy</h2>
+<ul>
+<li>Loan products and loans now support a month-end due date strategy stored in the new nullable month_end_due_date_strategy column on m_product_loan and m_loan.</li>
+<li>Schedule generation now uses the month-end due date strategy from the loan configuration.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Repayment Due Date Strategy"/><ac:plain-text-link-body><![CDATA[Repayment Due Date Strategy]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Re-aging</h2>
+<ul>
+<li>Re-aging and re-amortization now support interest-bearing loans as well as non-interest-bearing loans.</li>
+<li>These now support interest.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Re-aging"/><ac:plain-text-link-body><![CDATA[Re-aging]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Buy-Down Fees</h2>
+<ul>
+<li>Maximum allowed amount equals Approved amount of the loan minus total disbursed amount minus total capitalized income; total buy down fees are removed from the calculation.</li>
+<li>Origination fees adjustments/fee credits are shared.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Buy-Down Fees"/><ac:plain-text-link-body><![CDATA[Buy-Down Fees]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Charge Amortization</h2>
+<ul>
+<li>The deferred charge service creates DEFERRED_CHARGE transactions and handles charge lifecycle changes.</li>
+<li>The amortization calculator provides FLAT and EFFECTIVE_RATE engines.</li>
+<li>The amortization processing service calculates amortization to a date, combines charges, writes allocation mappings, and handles closure, charge-off and sale releases.</li>
+<li>The event listener service reacts to close, balance-changed, charge-off (before and after) and undo charge-off events.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Charge Amortization"/><ac:plain-text-link-body><![CDATA[Charge Amortization]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Delinquency Restrictions</h2>
+<ul>
+<li>Delinquency grace days now applies to the schedule; delinquency grace days extends the first delinquency period by the configured grace days, resulting in an extended longer first period.</li>
+<li>The first delinquency period start date is the original start date (submitted on / disbursed on date) and its end date is shifted by the configured grace days.</li>
+<li>Breach grace days calculation is modified; the first breach period start date is the original start date (submitted on / disbursed on date) and its end date is shifted by the configured grace days.</li>
+<li>The first breach/delinquency period is now repayable when the customer pays it before the grace days.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Delinquency Restrictions"/><ac:plain-text-link-body><![CDATA[Delinquency Restrictions]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Transaction Types</h2>
+<ul>
+<li>BNPL-specific transactions such as refunds, goodwill, and credit are now incorporated into the loan system.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Transaction Types"/><ac:plain-text-link-body><![CDATA[Transaction Types]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Loan API</h2>
+<ul>
+<li>Write API responses now use resourceId and subresourceId for providing back the created or modified resource.</li>
+<li>Write API responses now include resourceType and subResourceType to increase readability and maintainability while keeping backward compatibility.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Loan API"/><ac:plain-text-link-body><![CDATA[Loan API]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Loan Originator Metadata</h2>
+<ul>
+<li>The Transaction Summary Report and Trial Balance Report now show originator external ids.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Loan Originator Metadata"/><ac:plain-text-link-body><![CDATA[Loan Originator Metadata]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Events and Notifications</h2>
+<ul>
+<li>Existing events now include owner.</li>
+<li>A new event is emitted for ownership change.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Events and Notifications"/><ac:plain-text-link-body><![CDATA[Events and Notifications]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Spring Batch Framework</h2>
+<ul>
+<li>Inline COB locked accounts are skipped from locking because all locked loans are removed from toBeProcessedLoanIds.</li>
+<li>The locking service logic moves to one of the processors in loanBusinessStep processor as a composite processor so that only a chunk of accounts are locked at once and lock failures are retried without ActiveMQ’s involvement.</li>
+<li>Inline-COB locked accounts are excluded from processing in FIND_ALL_NON_CLOSED_LOANS_BY_LAST_CLOSED_BUSINESS_DATE_AND_MIN_AND_MAX_LOAN_ID by joining the m_loan table with m_loan_account_locks table.</li>
+<li>The loanRepository.findAllNonClosedLoansBehindByLoanIds call updates to a service so it can be overridden.</li>
+<li>A new business step recalculates interest of loan.</li>
+<li>A new DeferredChargeAmortizationBusinessStep is added plus a Liquibase row in batch_business_steps.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Spring Batch Framework"/><ac:plain-text-link-body><![CDATA[Spring Batch Framework]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Migration Tracking</h2>
+<ul>
+<li>Migration tracking was introduced so migrated loans are tracked in separate tables with their own audit trail.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Migration Tracking"/><ac:plain-text-link-body><![CDATA[Migration Tracking]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Backbook Migration</h2>
+<ul>
+<li>Back-book migration now introduces a tracking activity where an audit trail is maintained for all migrated loans.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Backbook Migration"/><ac:plain-text-link-body><![CDATA[Backbook Migration]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Asset Externalization</h2>
+<ul>
+<li>Asset externalization now supports interest-bearing loans; previously it supported only non-interest-bearing loans.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Asset Externalization"/><ac:plain-text-link-body><![CDATA[Asset Externalization]]></ac:plain-text-link-body></ac:link>.</p>
+<h2>Accounting Entry Verification</h2>
+<ul>
+<li>Accounting mappings when charge-off happens are provided and clear.</li>
+<li>The accounting entries for Origination Fee Adjustment (DR Deferred Income, CR Loan Receivable) are correct.</li>
+</ul>
+<p>See also: <ac:link><ri:page ri:content-title="Accounting Entry Verification"/><ac:plain-text-link-body><![CDATA[Accounting Entry Verification]]></ac:plain-text-link-body></ac:link>.</p>

@@ -1,0 +1,234 @@
+<h2>Credit adjustment overview</h2>
+<p>Credit adjustments track amounts added to or removed from a loan account outside of normal repayments. They appear in the loan summary, the repayment schedule API, the retrieve loan API, and the accounts changed event.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>credit_adjustments</td>
+<td>Amount paid to the loan account through transaction types such as a refund, goodwill credit, or fees waiver.</td>
+</tr>
+<tr>
+<td>debit_adjustments</td>
+<td>Amount debited to the loan account through the reversal of transaction types such as a refund, goodwill credit, or fees waiver.</td>
+</tr>
+<tr>
+<td>Loan summary outstanding amount</td>
+<td>Original amount plus credit adjustments minus paid, waived, and written-off amounts.</td>
+</tr>
+<tr>
+<td>Credit adjustment column in the loan summary</td>
+<td>Sum of all chargeback credit on the loan account.</td>
+</tr>
+<tr>
+<td>GET repayment schedule API parameters</td>
+<td>Two parameters showing the sum of credit adjustments and debit adjustments.</td>
+</tr>
+<tr>
+<td>Retrieve loan API parameters</td>
+<td>Two parameters summing amounts.</td>
+</tr>
+<tr>
+<td>Accounts changed event</td>
+<td>Includes the same fields.</td>
+</tr>
+</tbody></table>
+<h2>Charge adjustment transactions</h2>
+<p>A charge adjustment transaction offsets or reverses charges that have already been paid on a loan.</p>
+<p>Use the charge adjustment transaction button to create one.</p>
+<ul>
+<li>The charge adjustment transaction row in the transaction tab has the undo button enabled, while the edit and charge-back buttons are disabled.</li>
+<li>A reversed charge adjustment transaction has the undo, edit, and charge-back buttons disabled.</li>
+<li>Clicking a charge adjustment transaction row shows the linked loan charge account.</li>
+</ul>
+<h2>Credit balance refunds</h2>
+<p>A Credit Balance Refund (CBR) transaction refunds a customer when a loan is overpaid. You can create a CBR only on a loan in OVERPAID status. The CBR amount matches the overpayment amount and cannot be higher than it. You may set the transaction date for the CBR.</p>
+<p>Rules for CBR transactions:</p>
+<ul>
+<li>The CBR amount can be lower than the overpayment amount, but doing so does not make sense.</li>
+<li>Backdated transactions are allowed after a CBR.</li>
+<li>If a backdated transaction follows a CBR and the CBR amount is higher than the overpayment amount after reprocessing, the outstanding principal of the actual installment increases by the full CBR amount and the overpayment amount is allocated as repayment for principal.</li>
+<li>On the repayment schedule, the full CBR amount appears as Credit Principal.</li>
+</ul>
+<h2>Discount adjustments</h2>
+<p>A discount adjustment reduces a discount fee. You can post it backdated, but the system creates the discount fees amortization adjustment as of the current date rather than the backdated transaction date. You can undo a discount adjustment transaction, and you can post multiple discount fee adjustments. A discount fee adjustment cannot exceed the Discount fee.</p>
+<h2>Backdated transactions</h2>
+<p>A backdated transaction is dated before the current date. The system checks whether any later non-reversed transaction exists on the loan before treating a transaction as backdated. If reprocessing does not affect charges or credit balance refunds, the system unwinds the transaction’s effects on the balance and its allocations, then fast forwards back to the present day with the backdated loan accounted for. If reprocessing affects charges or credit balance refunds, the system starts reprocessing immediately and lets the reprocessor calculate everything for the new transaction as well.</p>
+<p>When reprocessing a backdated transaction, the system:</p>
+<ul>
+<li>Queries only transactions dated on or after the backdated transaction.</li>
+<li>Processes the repayments in reverse order as undo transactions.</li>
+<li>Applies those repayments again.</li>
+</ul>
+<h2>GL postings for charge-off loans</h2>
+<p>A charge adjustment transaction on a charge-off loan account posts to three general ledger accounts: one debit and two credits.</p>
+<table>
+<thead>
+<tr>
+<th>GL account</th>
+<th>Type</th>
+<th>Posting</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>404007 Fee Income</td>
+<td>Income</td>
+<td>Debit</td>
+</tr>
+<tr>
+<td>404008 Fee Charge off</td>
+<td>Asset</td>
+<td>Credit</td>
+</tr>
+<tr>
+<td>245000 Other Credit liability</td>
+<td>Liability</td>
+<td>Credit</td>
+</tr>
+</tbody></table>
+<h2>Repayment schedule and interest calculation</h2>
+<p>Interest is calculated using the declining balance method with daily accrual and equal installments. For each normal repayment installment, interest is based on the outstanding balance. Interest is not allocated for the down-payment installment.</p>
+<h2>Pre-closure interest rules</h2>
+<p>Pre-closure interest rules decide how far interest is calculated when a loan closes early.</p>
+<p>Interest can be calculated up to either of these dates:</p>
+<ul>
+<li>Calculate till pre-closure date: interest is calculated up to the loan closing date. For example, if the loan closes on 20 February, interest is calculated up to 20 February.</li>
+<li>Calculate till rest frequency date: interest is calculated up to the end of the repayment period. For example, if the loan closes on 20 February, interest is calculated up to the repayment period due date.</li>
+</ul>
+<h2>Payment allocation rules</h2>
+<p>Payment allocation rules decide how monies are applied to amounts due. They cover interest and principal balances, future balances, early payoff, the number of future payments satisfied before re-amortization, and whether monies apply to the next or last installment due.</p>
+<p>Allocation rules:</p>
+<ul>
+<li>Monies apply to the interest balance of a single amount due first, from the oldest due amount to the most current due amount.</li>
+<li>For future balances, monies apply to principal balances only.</li>
+<li>Future interest accrued but not yet due can be satisfied through early payoff.</li>
+<li>You can define how many future payments are satisfied before the repayment schedule is re-amortized.</li>
+<li>You can define whether monies apply to the next installment due or the last installment due.</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Advance payment allocation to support the interest component is not available.</p>
+</blockquote>
+<h2>Goodwill credit allocation</h2>
+<p>Goodwill credit is allocated either to past due principal and then the last installment, or to the next installment, depending on the use case.</p>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Allocation order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UC15</td>
+<td>Past due principal, then last installment</td>
+</tr>
+<tr>
+<td>UC16</td>
+<td>Next installment</td>
+</tr>
+</tbody></table>
+<h2>Undoing and replaying transactions</h2>
+<p>Undoing a transaction reverses its effect and recalculates the delinquency and breach evaluation, the amortization schedule, and the delinquency schedule. Replaying a transaction reapplies it to installments starting from the first unpaid installment. Reversal can only be recalculated from the original transaction date.</p>
+<p>When a transaction is reversed:</p>
+<ul>
+<li>The system sets the reversed on date.</li>
+<li>The system updates the amortization schedule.</li>
+<li>The system updates the delinquency schedule by subtracting the unpaid amount from the last paid period; if the amount exceeds the last period paid amount, earlier periods become unpaid recursively.</li>
+<li>The system updates the breach schedule and does not modify the near breach flag.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Resulting installment amounts</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Reversal of a $400.00 payment</td>
+<td>$125.00, $125.00, $125.00, $125.00</td>
+</tr>
+<tr>
+<td>Replay of a 4 Jan payment</td>
+<td>$75.00, $125.00, $125.00, $125.00</td>
+</tr>
+<tr>
+<td>Replay of a 16 Jan payment</td>
+<td>$0.00, $75.00, $125.00, $125.00</td>
+</tr>
+<tr>
+<td>Reversal of a credit balance refund</td>
+<td>$25.00, $125.00, $125.00, $125.00</td>
+</tr>
+</tbody></table>
+<p>When nothing is past due or due, a refund applies to the final installments.</p>
+<h2>Worked examples</h2>
+<p>Example 1 — Goodwill credit posted to a loan account. A customer is disbursed a loan of 1,000.00 and repays 500.00. The bank then posts a goodwill credit of 100.00 to the loan account as a credit adjustment. No fees are waived and no amount is written off. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original principal</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Credit adjustment</td>
+<td>100.00</td>
+</tr>
+<tr>
+<td>Paid</td>
+<td>-500.00</td>
+</tr>
+<tr>
+<td>Waived</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Written-off</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Outstanding</td>
+<td>600.00</td>
+</tr>
+</tbody></table>
+<p>The outstanding amount equals the original principal plus credit adjustments, minus amounts paid, waived, and written off.</p>
+<p>Example 2 — Credit Balance Refund on an overpaid loan. A loan of 1,000.00 is overpaid by 200.00 when the customer pays 1,200.00, moving the account to OVERPAID status. The bank posts a Credit Balance Refund of 200.00 to return the excess to the customer. On the repayment schedule, the full CBR amount appears as Credit Principal.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Original principal</td>
+<td>1,000.00</td>
+</tr>
+<tr>
+<td>Credit adjustment (CBR)</td>
+<td>200.00</td>
+</tr>
+<tr>
+<td>Paid</td>
+<td>-1,200.00</td>
+</tr>
+<tr>
+<td>Waived</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Written-off</td>
+<td>0.00</td>
+</tr>
+<tr>
+<td>Outstanding</td>
+<td>0.00</td>
+</tr>
+</tbody></table>
+<p>The refund clears the overpayment and returns the outstanding balance to zero.</p>

@@ -1,0 +1,250 @@
+<h2>Early and late repayment interest behavior</h2>
+<p>Early repayment recalculates interest as of the payment date, so the interest for that installment period is collected early and the lower principal balance reduces interest over the remaining life of the loan. Because the schedule is not re-amortized, the reduced interest affects the final installment. Late repayment collects interest only until the installment date, matching the repayment schedule interest due balance, and the higher balance results in additional interest and a higher final payment.</p>
+<h2>Early repayment rules</h2>
+<p>Early repayment rules decide how interest is collected and how the repayment schedule changes when you repay before an installment is due. The outcome depends on whether the configuration allocates advance amounts to the next installment or the last installment.</p>
+<p>Advance amounts from early repayments are allocated as follows:</p>
+<ul>
+<li>Advance amounts go to the next installment or the last installment based on the configuration set.</li>
+</ul>
+<p>Interest collection depends on the configuration:</p>
+<ul>
+<li>Calculated interest is collected only for early payments with adjust to next installment configuration.</li>
+<li>No interest is collected when the early payment happens with adjust to last installment configuration; only principal is collected.</li>
+</ul>
+<p>Early partial payments:</p>
+<ul>
+<li>Early partial payments collect the recalculated interest of that installment period as of the payment date, and the collected interest becomes the interest portion of that installment period.</li>
+<li>Remaining installments are recalculated based on the principal balance as of that installment period, and the interest amount is adjusted accordingly.</li>
+</ul>
+<p>Early payment of EMI or a greater amount:</p>
+<ul>
+<li>Early payment of EMI or a greater amount closes the installment period with interest recalculated.</li>
+<li>Remaining installments are recalculated according to the new principal balance, and the interest amount is adjusted accordingly.</li>
+<li>Interest is recalculated and collected as of the transaction date where the early payment is happening.</li>
+</ul>
+<p>Adjust to last installment exception:</p>
+<ul>
+<li>For early repayment with adjust to last installment configuration, no interest is collected except when the only installment not yet paid is the current installment; in that case the payable interest must be calculated and paid.</li>
+</ul>
+<p>Payable interest for the current installment:</p>
+<ul>
+<li>Payable interest to be collected as of the early repayment date is the interest of that installment period.</li>
+<li>Calculated interest is collected only for early payments of the current installment.</li>
+<li>Payable interest of the current installment is the total interest for the past days of the current installment plus the daily interest of the current date.</li>
+<li>If the installment is a future installment but not the current one, there is no payable interest because there were no past days.</li>
+</ul>
+<p>Effect on final installments:</p>
+<ul>
+<li>Reduced interest due to early repayment impacts the final installment, and the final installment EMI is relatively lower than the other installments EMIs.</li>
+</ul>
+<h2>Late repayment rules</h2>
+<p>A late repayment can cover some periods late and other periods in advance. Late repayments do not create new installments unless they arrive after the maturity date.</p>
+<p>Late repayments behave as follows:</p>
+<ul>
+<li>Any advance amounts out of late repayments adjust to the next installment, the last installment, or the first next installment with any remaining amount to the last installment.</li>
+<li>The system recalculates the remaining installments based on the new principal balance and adjusts interest accordingly.</li>
+<li>The last not yet fully paid installment EMI becomes relatively higher than the other installments EMIs.</li>
+<li>Late repayments arriving after the maturity date collect the installment interest they are fulfilling.</li>
+<li>When a late repayment arrives after the maturity date, the system creates a new installment as of the repayment date and calculates its interest for the extra days from the last maturity date on the first overdue principal balance.</li>
+</ul>
+<h2>Progressive interest bearing loans</h2>
+<p>For a progressive interest bearing loan product with interest recalculation enabled, the system supports early and late payment situations. The only supported advance payments adjustment type is Adjust last, unpaid period. When you make an in advance payment, the system amends the EMI of the last unpaid period. If the last installment was fully paid, the system amends the last but one period instead.</p>
+<h2>Recalculation scope and maturity</h2>
+<p>Interest recalculation replays all transaction types, including accruals, in reverse order and applies only up to the maturity date. The system does not recalculate interest after the maturity date.</p>
+<h2>Interest calculation configuration</h2>
+<p>The daily rate factor is 1 + (rate of interest × (repaid every / days in year) × actual days in period / calculated days in period). Interest calculation runs daily, interest recalculation is enabled with a frequency interval of 1, and outstanding principal is recalculated daily.</p>
+<h2>Worked examples</h2>
+<p>A loan of 1,000 carries an annual interest rate of 12%, is repayable in 3 monthly installments, and uses 30-day months and a 360-day year. The level installment is 340.00, due on the first day of each month. The borrower pays the second installment, due on 3/1, late on 3/15. Interest for that installment is collected only to the installment date, and the unpaid balance attracts additional interest until the payment date, so the final installment rises. The figures are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest collected</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+<th>Installment total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>3/15</td>
+<td>Installment 2 paid late</td>
+<td>670.00</td>
+<td>10.05</td>
+<td>329.95</td>
+<td>340.05</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>4/1</td>
+<td>Final installment</td>
+<td>340.05</td>
+<td>1.81</td>
+<td>340.05</td>
+<td>0.00</td>
+<td>341.86</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>21.86</td>
+<td>1,000.00</td>
+<td></td>
+<td>1,021.86</td>
+</tr>
+</tbody></table>
+<p>The late payment keeps the balance higher for 15 extra days, so the final installment is 341.86 instead of 340.07.</p>
+<p>The same loan of 1,000 at 12% annually with 3 monthly installments and 30-day months matures on 4/1. The scheduled final installment is 340.07. The borrower pays the last installment on 4/15, after maturity. A new installment is created as of 4/15; it collects the installment interest due to the maturity date plus interest for the 14 extra days on the overdue principal, so the final payment is higher than the scheduled final installment.</p>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest to maturity</th>
+<th>Extra-days interest</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+<th>Installment total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>0.00</td>
+<td>330.00</td>
+<td>670.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>3/1</td>
+<td>Installment 2 due</td>
+<td>670.00</td>
+<td>6.70</td>
+<td>0.00</td>
+<td>333.30</td>
+<td>336.70</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>4/15</td>
+<td>Last installment paid after maturity</td>
+<td>336.70</td>
+<td>3.37</td>
+<td>1.57</td>
+<td>336.70</td>
+<td>0.00</td>
+<td>341.64</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td>20.07</td>
+<td>1.57</td>
+<td>1,000.00</td>
+<td></td>
+<td>1,021.64</td>
+</tr>
+</tbody></table>
+<p>Paying after maturity adds 1.57 of extra-days interest, so the final payment is 341.64 instead of 340.07.</p>
+<p>A loan of 1,000 at 12% annually with 3 monthly installments and 30-day months has level installments of 340.00 due on the first of each month. After the first installment is paid on 2/1, the balance is 670.00. The borrower pays 340.00 early on 2/15. With the advance applied to the next installment, interest for the 15 days to the payment date is collected and the balance falls; with the advance applied to the last installment, only principal is collected and no interest is taken on the early payment.</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Date</th>
+<th>Event</th>
+<th>Opening balance</th>
+<th>Interest collected</th>
+<th>Principal paid</th>
+<th>Closing balance</th>
+<th>Installment total</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Adjust to next</td>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Adjust to next</td>
+<td>2/15</td>
+<td>Early payment of installment 2</td>
+<td>670.00</td>
+<td>3.35</td>
+<td>336.65</td>
+<td>333.35</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Adjust to next</td>
+<td>4/1</td>
+<td>Final installment</td>
+<td>333.35</td>
+<td>5.00</td>
+<td>333.35</td>
+<td>0.00</td>
+<td>338.35</td>
+</tr>
+<tr>
+<td>Adjust to last</td>
+<td>2/1</td>
+<td>Installment 1 due</td>
+<td>1,000.00</td>
+<td>10.00</td>
+<td>330.00</td>
+<td>670.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Adjust to last</td>
+<td>2/15</td>
+<td>Early payment of installment 2</td>
+<td>670.00</td>
+<td>0.00</td>
+<td>340.00</td>
+<td>330.00</td>
+<td>340.00</td>
+</tr>
+<tr>
+<td>Adjust to last</td>
+<td>4/1</td>
+<td>Final installment</td>
+<td>330.00</td>
+<td>4.95</td>
+<td>330.00</td>
+<td>0.00</td>
+<td>334.95</td>
+</tr>
+<tr>
+<td>Totals</td>
+<td></td>
+<td></td>
+<td></td>
+<td>18.35 / 14.95</td>
+<td>1,000.00 / 1,000.00</td>
+<td></td>
+<td>1,018.35 / 1,014.95</td>
+</tr>
+</tbody></table>
+<p>With adjust to last installment, the early payment collects principal only, so total interest falls to 14.95 and the final installment is 334.95, lower than 338.35 under adjust to next.</p>
+<p>See also: <ac:link><ri:page ri:content-title="Backdated Loans"/><ac:plain-text-link-body><![CDATA[Backdated Loans]]></ac:plain-text-link-body></ac:link>.</p>

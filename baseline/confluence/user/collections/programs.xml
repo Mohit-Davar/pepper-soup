@@ -1,0 +1,88 @@
+<p>A recovery payment lets you collect money on a loan account that is written off. The loan balance stays at zero and the account remains written off after the payment. You can reverse a recovery payment, and its accounting entry is a mirror of the original recovery payment entry.</p>
+<p>Recovery payment rules:</p>
+<ul>
+<li>The total recovery payment cannot exceed the amount of the written-off transaction.</li>
+<li>You can backdate a recovery payment, but not to a date before the write-off date.</li>
+</ul>
+<p>Working capital loan settings:</p>
+<ul>
+<li>Payment type is optional for monetary transactions on working capital loans.</li>
+<li>You can provide a payment type id, which is assigned to and stored with monetary transactions on working capital loans.</li>
+<li>You can override delinquency bucket configuration during loan creation for working capital loans.</li>
+<li>You can override breach bucket configuration during loan creation for working capital loans.</li>
+<li>Loan level overrides for delinquency bucket and breach bucket take precedence over product level defaults.</li>
+<li>Updating repayment percent affects delinquency and breach evaluation for working capital loans.</li>
+</ul>
+<p>Working capital loan account balance field:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Total recovery payment</td>
+<td>The total amount recovered on the written-off loan account.</td>
+</tr>
+</tbody></table>
+<p>A working capital loan with an original principal of 1,000 is written off. The write-off reduces the loan balance to 0 and sets the loan status to Written-off. The borrower later makes a recovery payment of 400; the payment type is optional for this transaction. The figures in this example are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Payment amount</th>
+<th>Cumulative recovery</th>
+<th>Loan balance</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Write-off</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>Written-off</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Recovery payment</td>
+<td>400.00</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>Written-off</td>
+</tr>
+</tbody></table>
+<p>The recovery payment stays within the written-off amount, so it is accepted. The loan balance remains 0 and the loan remains Written-off.</p>
+<p>The 400 recovery payment is reversed. The reversal posts a mirror accounting entry, and the payment type remains optional for the reversal.</p>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Action</th>
+<th>Payment amount</th>
+<th>Cumulative recovery</th>
+<th>Loan balance</th>
+<th>Loan status</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Recovery payment</td>
+<td>400.00</td>
+<td>400.00</td>
+<td>0.00</td>
+<td>Written-off</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Reversal of recovery</td>
+<td>-400.00</td>
+<td>0.00</td>
+<td>0.00</td>
+<td>Written-off</td>
+</tr>
+</tbody></table>
+<p>Reversing the payment mirrors the original entry and leaves the balance at 0 and the status at Written-off.</p>

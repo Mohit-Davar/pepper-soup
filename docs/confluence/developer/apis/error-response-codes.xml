@@ -1,0 +1,51 @@
+<p>The API returns standard HTTP status codes to show whether a request succeeded or failed, with a response body that explains the failure when one occurs.</p>
+<p>Error response codes by situation:</p>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>HTTP status</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Issue caused by business logic</td>
+<td>403</td>
+<td>FAIL plus reason</td>
+</tr>
+<tr>
+<td>External id already exists</td>
+<td>403</td>
+<td>FAIL plus reason</td>
+</tr>
+<tr>
+<td>Duplication related error</td>
+<td>403</td>
+<td>FAIL plus reason</td>
+</tr>
+<tr>
+<td>Functionality not enabled</td>
+<td>403</td>
+<td>FAIL plus reason</td>
+</tr>
+<tr>
+<td>Removal attempted when the originator is already mapped</td>
+<td>403</td>
+<td>FAIL plus reason</td>
+</tr>
+<tr>
+<td>TransactionId not for the loan (transaction reversal, chargeback, undo loan charge transaction, fetch loan details)</td>
+<td>404</td>
+<td>Not specified</td>
+</tr>
+<tr>
+<td>Targeted loan does not exist</td>
+<td>404</td>
+<td>Not specified</td>
+</tr>
+<tr>
+<td>POST /loan-originators missing required parameter or incorrect data format</td>
+<td>400</td>
+<td>Not specified</td>
+</tr>
+</tbody></table>

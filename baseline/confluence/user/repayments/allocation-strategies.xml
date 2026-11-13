@@ -1,0 +1,185 @@
+<h2>Payment allocation strategies</h2>
+<p>A payment allocation strategy decides the order in which a payment is applied to amounts owed on a loan. It applies to credit adjustments, repayments, refunds, goodwill credits and waivers.</p>
+<table>
+<thead>
+<tr>
+<th>Product and region</th>
+<th>Payment allocation order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>PayIn30 in DE region</td>
+<td>DuePenalties, DueInterest, DuePrincipal, DueFees, InAdvancePenalties, InAdvanceInterest, InAdvancePrincipal, InAdvanceFees</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Note:</strong> For pin30, the payment allocation order remains the same for all transaction types.</p>
+</blockquote>
+<h2>Set the advance payment allocation order</h2>
+<p>Use this screen to arrange how early payments are applied across principal, interest, fees, and penalties.</p>
+<ol>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Open the <strong>PAYMENT ALLOCATION</strong> step.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Credit Allocation Strategy</td>
+<td>No</td>
+<td>Choose the credit allocation strategy that determines how payments are distributed.</td>
+</tr>
+<tr>
+<td>Future Installment Allocation Rule</td>
+<td>No</td>
+<td>Set the rule for allocating payments to future installments.</td>
+</tr>
+</tbody></table>
+<p>The system applies your chosen order to credit adjustments, repayments, refunds, goodwill credits, and waivers.</p>
+<h2>Allocation order and categories</h2>
+<p>Allocation uses three timing categories and four charge categories, which combine into twelve allocation rule codes. The predefined allocation rules are DUE PRINCIPAL, DUE FEE, DUE PENALTY, IN ADVANCE PRINCIPAL, IN ADVANCE FEE, and IN ADVANCE PENALTY.</p>
+<table>
+<thead>
+<tr>
+<th>Timing category</th>
+<th>Charge category</th>
+<th>Allocation rule code</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Past due</td>
+<td>Penalty</td>
+<td>PAST_DUE_PENALTY</td>
+</tr>
+<tr>
+<td>Past due</td>
+<td>Fee</td>
+<td>PAST_DUE_FEE</td>
+</tr>
+<tr>
+<td>Past due</td>
+<td>Principal</td>
+<td>PAST_DUE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>Past due</td>
+<td>Interest</td>
+<td>PAST_DUE_INTEREST</td>
+</tr>
+<tr>
+<td>Due</td>
+<td>Penalty</td>
+<td>DUE_PENALTY</td>
+</tr>
+<tr>
+<td>Due</td>
+<td>Fee</td>
+<td>DUE_FEE</td>
+</tr>
+<tr>
+<td>Due</td>
+<td>Principal</td>
+<td>DUE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>Due</td>
+<td>Interest</td>
+<td>DUE_INTEREST</td>
+</tr>
+<tr>
+<td>In advance</td>
+<td>Penalty</td>
+<td>IN_ADVANCE_PENALTY</td>
+</tr>
+<tr>
+<td>In advance</td>
+<td>Fee</td>
+<td>IN_ADVANCE_FEE</td>
+</tr>
+<tr>
+<td>In advance</td>
+<td>Principal</td>
+<td>IN_ADVANCE_PRINCIPAL</td>
+</tr>
+<tr>
+<td>In advance</td>
+<td>Interest</td>
+<td>IN_ADVANCE_INTEREST</td>
+</tr>
+</tbody></table>
+<p>The timing categories are:</p>
+<ul>
+<li>Past due means the amount is overdue.</li>
+<li>Due means the amount is payable now.</li>
+<li>In advance means the amount is payable in the future.</li>
+</ul>
+<p>The charge categories are:</p>
+<ul>
+<li>Penalty applies to late payment.</li>
+<li>Fee is a charge for a service.</li>
+<li>Principal is the original loan amount.</li>
+<li>Interest is the cost of borrowing.</li>
+</ul>
+<h2>Advance payment allocation</h2>
+<p>Advance payment allocation pays off a loan in a fixed order: outstanding penalties first, then accrued interest, then principal, then future installments. A partial payment splits across the components in that order, and each component closes as it is fully satisfied.</p>
+<h2>Charge-back priority</h2>
+<p>You can set the payment allocation priority order for charge-back transactions in the advance payment allocation strategy at the loan product level.</p>
+<p>Select the priority order for charge-back from:</p>
+<ul>
+<li>Penalties</li>
+<li>Fees</li>
+<li>Interest</li>
+<li>Principal</li>
+</ul>
+<h2>Working Capital loan products</h2>
+<p>Payment allocation rules for Working Capital loan products only specify whether a payment pays the principal, fee, or penalty portion. They do not include Past due, due, or in advance rules.</p>
+<h2>New repayment strategy behavior</h2>
+<p>For loans using the new payment strategy due-penalty-fee-interest-principal-in-advance-principal-penalty-fee-interest-strategy, paying only principal keeps the loan status ACTIVE and shows the extra in advance part on both the Transactions tab and the Repayment schedule tab. When all in advance components are taken into account, the In Advance column on the Repayment schedule tab shows principal plus penalty plus fee (1100EUR).</p>
+<h2>Accrual posting</h2>
+<p>Accrual posting creates journal entries for charges based on either the charge created date or the due date, depending on how you configure it. With immediate accrual, multiple accruals can occur on the same day.</p>
+<blockquote>
+<p><strong>Note:</strong> When an accrual transaction is recreated during reverse-replay on the submitted-on date instead of the due date, it uses the same value date as the original accrual to avoid accounting issues.</p>
+</blockquote>
+<h2>Provisional credit</h2>
+<p>Provisional credit applies to the oldest due installments first and triggers a re-amortization across all remaining installments.</p>
+<h2>Goodwill credit</h2>
+<p>Goodwill credit is applied to past due principal first, then to the last installment.</p>
+<h2>Use case payment allocation rule configuration</h2>
+<table>
+<thead>
+<tr>
+<th>Use case</th>
+<th>Payment allocation order</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>UC1</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+<tr>
+<td>UC2</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+<tr>
+<td>UC3</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+<tr>
+<td>UC4</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+<tr>
+<td>UC5</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+<tr>
+<td>UC6</td>
+<td>1 Fees, 2 Penalty, 3 Interest, 4 Principal</td>
+</tr>
+</tbody></table>
