@@ -47,7 +47,9 @@ const state = {
   evidence: new Map(),
   threads: [],
   active: null,
-  sourcesFor: null,
+  popover: null,
+  drawerOpen: false,
+  drawerExpanded: new Set(),
   inline: null,
   changes: new Map(),
   showChanges: false,
@@ -90,24 +92,30 @@ async function authed(url, options = {}) {
   }
 }
 
-// ---------------------------------------------------------------- markdown
+// ---------------------------------------------------------------- markdown & enhancements
 
 const PURIFY = {
   ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|confluence-link):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
 };
 marked.setOptions({ gfm: true });
 
+const CALLOUT_ICONS = {
+  note: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  tip: '<svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2h6c0-.8.4-1.5 1-2A7 7 0 0 0 12 2Z"/></svg>',
+  warning: '<svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.5L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>',
+};
+
 /**
  * Renders markdown. With `blocks`, every top-level block becomes its own
  * `.tok` element that remembers its token index, so review mode can pin
  * review items to it and edit it in place.
  */
-function renderMarkdown(md, target, { blocks = false } = {}) {
+function renderMarkdown(md, target, { blocks = false, readerEnhance = false } = {}) {
   const body = md.replace(/^﻿/, '');
   target.innerHTML = '';
   if (!blocks) {
     target.innerHTML = DOMPurify.sanitize(marked.parse(body.replace(/<!--[\s\S]*?-->/g, '')), PURIFY);
-    enhance(target);
+    enhance(target, { readerEnhance });
     return [];
   }
   const tokens = marked.lexer(body);
@@ -123,23 +131,69 @@ function renderMarkdown(md, target, { blocks = false } = {}) {
     el.innerHTML = html;
     target.append(el);
   });
-  enhance(target);
+  enhance(target, { readerEnhance });
   return tokens;
 }
 
-function enhance(target) {
+function enhance(target, { readerEnhance = false } = {}) {
+  // 1. Code blocks & Mermaid diagram cards
   target.querySelectorAll('pre > code').forEach((code) => {
     const pre = code.parentElement;
     if (code.classList.contains('language-mermaid')) {
+      const source = code.textContent.trim();
+      const card = document.createElement('div');
+      card.className = 'diagram-card';
+      card.dataset.source = source;
+
+      const actions = document.createElement('div');
+      actions.className = 'diagram-actions';
+      actions.setAttribute('role', 'toolbar');
+      actions.setAttribute('aria-label', 'Diagram tools');
+      actions.innerHTML = `
+        <button type="button" class="diagram-act-btn" data-diagram-act="toggle-view" aria-pressed="false" aria-label="View as Mermaid diagram" title="View as Mermaid diagram" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/><path d="M10 6.5h4.5a2 2 0 0 1 2 2V15"/></svg>
+          <span>Diagram</span>
+        </button>
+        <button type="button" class="diagram-act-btn" data-diagram-act="expand" aria-label="Expand diagram" title="Expand diagram">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          <span>Expand</span>
+        </button>
+        <button type="button" class="diagram-act-btn" data-diagram-act="copy" aria-label="Copy Mermaid source" title="Copy Mermaid source">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Copy</span>
+        </button>
+        <button type="button" class="diagram-act-btn" data-diagram-act="download" aria-label="Download SVG" title="Download SVG">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>SVG</span>
+        </button>`;
+
       const box = document.createElement('div');
       box.className = 'diagram mermaid';
-      box.textContent = code.textContent;
-      pre.replaceWith(box);
+      box.dataset.source = source;
+      box.textContent = source;
+
+      card.append(actions, box);
+      pre.replaceWith(card);
       return;
     }
+
+    const langMatch = code.className.match(/language-([A-Za-z0-9_+#.-]+)/);
+    const lang = langMatch ? langMatch[1] : '';
     try { hljs.highlightElement(code); } catch {}
+
     const wrap = document.createElement('div');
     wrap.className = 'code';
+    if (lang) wrap.dataset.lang = lang;
+
+    const head = document.createElement('div');
+    head.className = 'code-head';
+    if (lang) {
+      const label = document.createElement('span');
+      label.className = 'code-lang';
+      label.textContent = lang;
+      head.append(label);
+    }
+
     const copy = document.createElement('button');
     copy.className = 'copy';
     copy.type = 'button';
@@ -148,10 +202,13 @@ function enhance(target) {
       copy.textContent = 'Copied';
       setTimeout(() => (copy.textContent = 'Copy'), 1500);
     });
+    head.append(copy);
+
     pre.replaceWith(wrap);
-    wrap.append(pre, copy);
+    wrap.append(head, pre);
   });
 
+  // 2. Tables with horizontal scroll container
   target.querySelectorAll('table').forEach((table) => {
     const wrap = document.createElement('div');
     wrap.className = 'table';
@@ -159,19 +216,289 @@ function enhance(target) {
     wrap.append(table);
   });
 
+  // 3. Zoomable content images
+  target.querySelectorAll('img').forEach((img) => {
+    img.classList.add('zoomable');
+  });
+
+  // 4. Callouts (preserve <blockquote> tag for review evidence matching)
+  target.querySelectorAll('blockquote').forEach((bq) => {
+    if (bq.classList.contains('callout')) return;
+    const text = bq.textContent.trim();
+    const match = text.match(/^(Note|Tip|Warning|Caution|Important)\s*:/i);
+    if (!match) return;
+    const rawKind = match[1].toLowerCase();
+    const kind = rawKind === 'warning' || rawKind === 'caution' ? 'warning' : rawKind === 'tip' || rawKind === 'important' ? 'tip' : 'note';
+    bq.classList.add('callout', `callout-${kind}`);
+    const body = document.createElement('div');
+    body.className = 'callout-body';
+    while (bq.firstChild) body.append(bq.firstChild);
+    const icon = document.createElement('span');
+    icon.className = 'callout-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = CALLOUT_ICONS[kind];
+    bq.append(icon, body);
+  });
+
+  // 5. Heading IDs & hover-reveal anchor copy buttons
   const used = {};
   target.querySelectorAll('h1, h2, h3, h4').forEach((h) => {
-    let id = h.textContent.toLowerCase().trim().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
+    const titleText = h.textContent.trim();
+    h.dataset.headingTitle = titleText;
+    let id = titleText.toLowerCase().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '-') || 'section';
     if (used[id]) id += `-${used[id]++}`; else used[id] = 1;
     h.id = id;
+    if (h.tagName !== 'H1' && !h.querySelector('.heading-anchor')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'heading-anchor';
+      btn.dataset.anchor = id;
+      btn.setAttribute('aria-label', `Copy link to ${titleText}`);
+      btn.title = 'Copy link';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+      h.append(btn);
+    }
+  });
+
+  // 6. Reader-mode progressive disclosures & variant/language tabs
+  if (readerEnhance) {
+    groupCodeBlocks(target);
+    collapseConditionLists(target);
+    groupFlagVariants(target);
+  }
+}
+
+/** Groups consecutive multi-language code blocks into a single tabbed code switcher. */
+function groupCodeBlocks(target) {
+  const toks = [...target.children].filter((el) => el.classList.contains('tok'));
+  let i = 0;
+  while (i < toks.length) {
+    const getCode = (tok) => {
+      if (tok.children.length !== 1) return null;
+      const c = tok.firstElementChild;
+      return c?.classList.contains('code') && c.dataset.lang ? c : null;
+    };
+    const first = getCode(toks[i]);
+    if (!first) { i++; continue; }
+    const run = [{ tok: toks[i], code: first, lang: first.dataset.lang }];
+    let j = i + 1;
+    while (j < toks.length) {
+      const next = getCode(toks[j]);
+      if (!next || run.some((r) => r.lang.toLowerCase() === next.dataset.lang.toLowerCase())) break;
+      run.push({ tok: toks[j], code: next, lang: next.dataset.lang });
+      j++;
+    }
+    if (run.length < 2) { i++; continue; }
+
+    const group = document.createElement('div');
+    group.className = 'code-group';
+    const tablist = document.createElement('div');
+    tablist.className = 'code-tabs';
+    tablist.setAttribute('role', 'tablist');
+
+    run.forEach((item, idx) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', String(idx === 0));
+      tab.setAttribute('tabindex', idx === 0 ? '0' : '-1');
+      tab.textContent = item.lang;
+      const activate = () => {
+        tablist.querySelectorAll('button').forEach((b, k) => {
+          b.setAttribute('aria-selected', String(k === idx));
+          b.setAttribute('tabindex', k === idx ? '0' : '-1');
+        });
+        run.forEach((r, k) => { r.code.hidden = k !== idx; });
+      };
+      tab.onclick = activate;
+      tab.onkeydown = (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const tabs = [...tablist.querySelectorAll('button')];
+        const nextIdx = (idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[nextIdx].click();
+        tabs[nextIdx].focus();
+      };
+      tablist.append(tab);
+      item.code.hidden = idx !== 0;
+    });
+
+    group.append(tablist, ...run.map((r) => r.code));
+    run[0].tok.before(group);
+    run.forEach((r) => r.tok.remove());
+    i = j;
+  }
+}
+
+/** Collapses long condition lists into accessible disclosures (collapsed by default). */
+function collapseConditionLists(target) {
+  const toks = [...target.children].filter((el) => el.classList.contains('tok'));
+  toks.forEach((tok, idx) => {
+    const list = tok.firstElementChild;
+    if (!list || (list.tagName !== 'UL' && list.tagName !== 'OL') || tok.children.length !== 1) return;
+    const count = list.querySelectorAll(':scope > li').length;
+    const prev = idx > 0 ? toks[idx - 1].textContent.trim().toLowerCase() : '';
+    const isConditionLead = /(?:where|when|conditions|criteria|following|rules)\s*:$/i.test(prev) || prev.endsWith(':');
+    if (count < 6 && !(isConditionLead && count >= 4)) return;
+
+    const label = /query|delta|snapshot|filter|where\s*:$/i.test(prev) ? 'Show query conditions' : 'Show conditions';
+    const wrap = document.createElement('div');
+    wrap.className = 'disclosure';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'disclosure-btn';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg><span>${label}</span><span class="disclosure-count">${count} items</span>`;
+
+    const panel = document.createElement('div');
+    panel.className = 'disclosure-panel';
+    const inner = document.createElement('div');
+    inner.className = 'disclosure-inner';
+    inner.append(list);
+    panel.append(inner);
+
+    btn.onclick = () => {
+      const open = wrap.classList.toggle('open');
+      btn.setAttribute('aria-expanded', String(open));
+    };
+
+    wrap.append(btn, panel);
+    tok.innerHTML = '';
+    tok.append(wrap);
   });
 }
 
-async function runMermaid(target) {
-  const nodes = target.querySelectorAll('.mermaid');
-  if (!nodes.length) return;
-  mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: isDark() ? 'dark' : 'neutral', fontFamily: 'Inter' });
-  try { await mermaid.run({ nodes, suppressErrors: true }); } catch {}
+/** Groups consecutive H2/H3 sections that differ only by flag variants ("with Y flag" / "with Y and Y flags") into tabs. */
+function groupFlagVariants(target) {
+  const parseVariant = (title) => {
+    const m = title.match(/^(.+?)\s+((?:with|without)\s+(?:both\s+)?(?:[A-Za-z0-9]+\s+(?:and\s+[A-Za-z0-9]+\s+)?flags?|no\s+flags?))$/i);
+    return m ? { base: m[1].trim(), label: m[2].trim() } : null;
+  };
+
+  const children = [...target.children];
+  const sections = [];
+  let current = null;
+  for (const el of children) {
+    const h = el.classList.contains('tok') ? el.firstElementChild : null;
+    if (h && (h.tagName === 'H2' || h.tagName === 'H3')) {
+      current = { level: h.tagName, headingEl: h, title: h.dataset.headingTitle || h.textContent.trim(), id: h.id, els: [el] };
+      sections.push(current);
+    } else if (current) {
+      current.els.push(el);
+    }
+  }
+
+  let i = 0;
+  while (i < sections.length) {
+    const s = sections[i];
+    const next = sections[i + 1];
+    const sVar = parseVariant(s.title);
+    const nextVar = next && next.level === s.level ? parseVariant(next.title) : null;
+    const base = sVar ? sVar.base : (nextVar && nextVar.base.toLowerCase() === s.title.toLowerCase() ? s.title : null);
+    if (!base) { i++; continue; }
+
+    const run = [];
+    let j = i;
+    while (j < sections.length && sections[j].level === s.level) {
+      const sec = sections[j];
+      const v = parseVariant(sec.title);
+      if (sec.title.toLowerCase() === base.toLowerCase()) {
+        run.push({ sec, label: 'Default' });
+      } else if (v && v.base.toLowerCase() === base.toLowerCase()) {
+        run.push({ sec, label: v.label });
+      } else {
+        break;
+      }
+      j++;
+    }
+    if (run.length < 2) { i++; continue; }
+
+    const box = document.createElement('div');
+    box.className = 'variant-tabs';
+
+    const head = document.createElement('div');
+    head.className = 'variant-head';
+    const mainH = run[0].sec.headingEl.cloneNode(true);
+    const anchorBtn = mainH.querySelector('.heading-anchor');
+    mainH.textContent = base;
+    if (anchorBtn) mainH.append(anchorBtn);
+    mainH.dataset.headingTitle = base;
+
+    const tablist = document.createElement('div');
+    tablist.className = 'variant-tablist';
+    tablist.setAttribute('role', 'tablist');
+    tablist.setAttribute('aria-label', `${base} variants`);
+
+    const panels = [];
+    const activate = (idx) => {
+      tablist.querySelectorAll('button').forEach((b, k) => {
+        b.setAttribute('aria-selected', String(k === idx));
+        b.setAttribute('tabindex', k === idx ? '0' : '-1');
+      });
+      panels.forEach((p, k) => { p.hidden = k !== idx; });
+    };
+
+    run.forEach((item, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.setAttribute('role', 'tab');
+      btn.setAttribute('aria-selected', String(idx === 0));
+      btn.setAttribute('tabindex', idx === 0 ? '0' : '-1');
+      btn.textContent = item.label;
+      btn.onclick = () => activate(idx);
+      btn.onkeydown = (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const tabs = [...tablist.querySelectorAll('button')];
+        const nextIdx = (idx + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        activate(nextIdx);
+        tabs[nextIdx].focus();
+      };
+      tablist.append(btn);
+
+      const panel = document.createElement('div');
+      panel.className = 'variant-panel';
+      panel.setAttribute('role', 'tabpanel');
+      panel.dataset.variantId = item.sec.id;
+      panel.hidden = idx !== 0;
+      // Keep body blocks inside the panel (omit duplicate heading except anchor id on panel)
+      item.sec.els.slice(1).forEach((el) => panel.append(el));
+      panels.push(panel);
+    });
+
+    head.append(mainH, tablist);
+    box.append(head, ...panels);
+
+    const anchorEl = run[0].sec.els[0];
+    anchorEl.before(box);
+    run.forEach((item) => item.sec.els[0].remove());
+    i = j;
+  }
+}
+
+let mermaidModulePromise = null;
+function getMermaidModule() {
+  if (!mermaidModulePromise) mermaidModulePromise = import('/mermaid-init.js');
+  return mermaidModulePromise;
+}
+
+async function runMermaid(target, options) {
+  if (!target.querySelector('.mermaid')) return;
+  try {
+    const mod = await getMermaidModule();
+    await mod.renderMermaidDiagrams(target, options);
+  } catch (err) {
+    console.warn('[mermaid] Failed to initialize mermaid module:', err);
+  }
+}
+
+async function rerenderDiagrams() {
+  try {
+    const mod = await getMermaidModule();
+    await mod.rerenderAllDiagrams();
+  } catch (err) {
+    console.warn('[mermaid] Failed to re-render diagrams:', err);
+  }
 }
 
 /** The Confluence storage format the pipeline writes, rebuilt from edited markdown. */
@@ -220,12 +547,90 @@ function parseHash() {
   return { parts: pathPart.split('/').filter(Boolean).map(decodeURIComponent), params: Object.fromEntries(new URLSearchParams(query)) };
 }
 
+async function renderMermaidTestPage() {
+  showView('doc');
+  clearReview();
+  state.raw = '';
+  state.hash = '';
+  state.tokens = [];
+  updateHeader();
+  renderNav();
+  markActive();
+  $('edit-btn').hidden = true;
+  $('crumbs').innerHTML = `<span>Mermaid ELK Routing Test</span>`;
+  $('pager').innerHTML = '';
+  document.title = 'Mermaid Routing Test · Pepper-Soup';
+
+  const testMarkdown = [
+    '# Mermaid ELK Routing Test',
+    '',
+    'Three reference topologies rendered with `theme: \'base\'`, `layout: \'elk\'`, orthogonal routing (`curve: \'linear\'`), and shared `.key` / `.muted` classes.',
+    '',
+    '## 1. Linear Chain (7 Nodes)',
+    '',
+    '```mermaid',
+    'flowchart LR',
+    '  n1["Loan Created"]:::key --> n2["Parameter Validation"]',
+    '  n2 --> n3["Product Rules Check"]',
+    '  n3 --> n4["Schedule Generated"]',
+    '  n4 --> n5["Approved"]',
+    '  n5 --> n6["Disbursed"]',
+    '  n6 --> n7["Active Repayment"]:::muted',
+    '```',
+    '',
+    '## 2. Branch-and-Merge',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '  start["Incoming Repayment"]:::key --> check{"Loan Status?"}',
+    '  check -->|"Active"| alloc["Allocate Principal & Interest"]',
+    '  check -->|"Delinquent"| fee["Apply Late Fee & Penalty"]',
+    '  check -->|"Overpaid"| credit["Hold in Suspense"]:::muted',
+    '  alloc --> ledger["Post Journal Entries"]',
+    '  fee --> ledger',
+    '  credit --> ledger',
+    '  ledger --> done["Update Balances"]',
+    '```',
+    '',
+    '## 3. Subgraph & Cross-Boundary Flow',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '  trigger["COB Trigger"]:::key --> part',
+    '  subgraph part["Batch Partitioning"]',
+    '    p1["Select Eligible Loans"] --> p2["Partition by Account ID"]',
+    '    p2 --> p3["Acquire Partition Lock"]',
+    '  end',
+    '  subgraph exec["Sequential Execution"]',
+    '    e1["Run Interest Accrual"] --> e2["Evaluate Delinquency"]',
+    '    e2 --> e3["Persist Loan State"]',
+    '  end',
+    '  p3 --> e1',
+    '  e3 --> finish["Update COB Watermark"]:::muted',
+    '```',
+  ].join('\n');
+
+  $('content').classList.add('prose');
+  renderMarkdown(testMarkdown, $('content'), { blocks: true, readerEnhance: false });
+  $('content').querySelectorAll('.diagram-card').forEach((card) => { card.dataset.noStepper = 'true'; });
+  animatePageEnter();
+  await runMermaid($('content'), { stepper: false });
+  renderToc();
+  window.scrollTo(0, 0);
+}
+
 async function route() {
   if (state.editing && !leaveEditor()) return;
   if (state.inline && !cancelInlineEdit(true)) return;
-  closeSheet();
+  closePopover();
+  closeDrawer();
   closeSidebar();
   const { parts, params } = parseHash();
+
+  if (parts[0] === 'mermaid-test') {
+    await renderMermaidTestPage();
+    return;
+  }
 
   if (parts[0] === 'review') {
     if (!isReview()) {
@@ -234,7 +639,8 @@ async function route() {
     }
     updateHeader();
     renderNav();
-    showDashboard();
+    if (!$('content').innerHTML.trim()) await loadPage();
+    openDrawer();
     return;
   }
 
@@ -254,13 +660,37 @@ async function route() {
 
 // ---------------------------------------------------------------- header / nav
 
+function updateTabsIndicator() {
+  const indicator = $('tabs-indicator');
+  const active = document.querySelector('#space-tabs button.active');
+  if (!indicator) return;
+  if (!active) {
+    indicator.classList.remove('visible');
+    return;
+  }
+  indicator.style.width = `${active.offsetWidth}px`;
+  indicator.style.transform = `translateX(${active.offsetLeft}px)`;
+  indicator.classList.add('visible');
+}
+
 function updateHeader() {
   document.documentElement.dataset.source = state.source;
   document.body.classList.toggle('mode-review', isReview());
-  document.querySelectorAll('#source-switch button').forEach((b) => b.classList.toggle('active', b.dataset.source === state.source));
-  document.querySelectorAll('#space-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.space === state.space && state.view !== 'dashboard'));
-  document.querySelectorAll('#mode-switch button').forEach((b) => b.classList.toggle('active', b.dataset.mode === (isReview() ? 'review' : 'reader')));
-  $('review-link').classList.toggle('active', state.view === 'dashboard');
+  document.querySelectorAll('#source-switch button').forEach((b) => {
+    const on = b.dataset.source === state.source;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  document.querySelectorAll('#space-tabs button').forEach((b) => {
+    b.classList.toggle('active', b.dataset.space === state.space);
+  });
+  updateTabsIndicator();
+  document.querySelectorAll('#mode-switch button').forEach((b) => {
+    const on = b.dataset.mode === (isReview() ? 'review' : 'reader');
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+  $('issues-btn')?.setAttribute('aria-expanded', String(state.drawerOpen));
   updateChangesButton();
   updateCounts();
 }
@@ -292,38 +722,50 @@ function updateCounts() {
   $('open-count').textContent = open;
 }
 
+function getSavedOpenGroups() {
+  const raw = store.get('localStorage', `navOpen:${spaceKey()}`);
+  if (!raw) return null;
+  try { return new Set(JSON.parse(raw)); } catch { return null; }
+}
+
+function saveOpenGroups() {
+  const open = [...document.querySelectorAll('#nav .nav-group:not(.closed)')].map((g) => g.dataset.path);
+  store.set('localStorage', `navOpen:${spaceKey()}`, JSON.stringify(open));
+}
+
 function renderNav() {
   const s = space();
   state.pages = [{ title: 'Overview', path: '', section: '' }];
   state.nodeByPath = new Map();
   state.parentOf = new Map();
   const counts = isReview() ? openCounts() : new Map();
-  const badge = (path) => {
+  const savedOpen = getSavedOpenGroups();
+  const dot = (path) => {
     const n = counts.get(`${state.space}/${path}`);
-    return n ? `<span class="nav-badge" title="${n} open">${n}</span>` : '';
+    return n
+      ? `<span class="nav-dot-wrap" title="${n} open issue${n === 1 ? '' : 's'}"><span class="nav-dot-count">${n}</span><span class="nav-dot" aria-hidden="true"></span></span>`
+      : '';
   };
-  const groupCount = (node) => node.children.reduce((sum, child) => sum + (child.children.length ? groupCount(child) : counts.get(`${state.space}/${child.path}`) || 0), 0);
 
   const walk = (nodes, parent) => nodes.map((node) => {
     state.nodeByPath.set(node.path, node);
     if (parent) state.parentOf.set(node.path, parent);
     if (node.children.length) {
       const inner = walk(node.children, node);
-      const n = groupCount(node);
-      return `<div class="nav-group closed" data-path="${esc(node.path)}">
-        <button class="nav-head" type="button" aria-expanded="false"><span>${esc(node.title)}</span>${n ? `<span class="nav-badge">${n}</span>` : ''}<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
-        <div class="nav-pages">${inner}</div></div>`;
+      const isOpen = savedOpen ? savedOpen.has(node.path) : false;
+      return `<div class="nav-group${isOpen ? '' : ' closed'}" data-path="${esc(node.path)}">
+        <button class="nav-head" type="button" aria-expanded="${isOpen ? 'true' : 'false'}"><span>${esc(node.title)}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="nav-pages"><div class="nav-pages-inner">${inner}</div></div></div>`;
     }
     state.pages.push({ ...node, section: parent?.title || '' });
     const edited = state.showChanges && state.changes.has(`${s.base}/${node.path}`);
-    return `<a class="nav-link" href="${linkTo(state.source, state.space, node.path)}" data-path="${esc(node.path)}"><span>${esc(node.title)}</span>${edited ? '<i class="nav-chg" title="Edited"></i>' : ''}${badge(node.path)}</a>`;
+    return `<a class="nav-link" href="${linkTo(state.source, state.space, node.path)}" data-path="${esc(node.path)}"><span>${esc(node.title)}</span>${edited ? '<i class="nav-chg" title="Edited"></i>' : ''}${dot(node.path)}</a>`;
   }).join('');
 
   $('nav').innerHTML = `
     <a class="nav-link nav-overview" href="${linkTo(state.source, state.space, '')}" data-path="">
-      <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg><span>Overview</span></a>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1Z"/></svg><span>Overview</span></a>
     ${walk(s.tree, null)}`;
-  if ($('filter').value) filterNav($('filter').value.trim());
 }
 
 function markActive() {
@@ -332,7 +774,11 @@ function markActive() {
     a.classList.toggle('active', on);
     if (on) {
       let group = a.closest('.nav-group');
-      while (group) { group.classList.remove('closed'); group.querySelector('.nav-head')?.setAttribute('aria-expanded', 'true'); group = group.parentElement.closest('.nav-group'); }
+      while (group) {
+        group.classList.remove('closed');
+        group.querySelector(':scope > .nav-head')?.setAttribute('aria-expanded', 'true');
+        group = group.parentElement.closest('.nav-group');
+      }
       const sb = $('sidebar');
       const top = a.offsetTop - sb.offsetTop;
       if (top < sb.scrollTop || top > sb.scrollTop + sb.clientHeight - 60) sb.scrollTop = top - sb.clientHeight / 3;
@@ -341,25 +787,11 @@ function markActive() {
   document.querySelectorAll('.nav-group').forEach((g) => {
     const on = state.view === 'doc' && g.dataset.path === state.path;
     g.classList.toggle('current', on);
-    if (on) g.classList.remove('closed');
+    if (on) {
+      g.classList.remove('closed');
+      g.querySelector(':scope > .nav-head')?.setAttribute('aria-expanded', 'true');
+    }
   });
-}
-
-function filterNav(q) {
-  q = q.toLowerCase();
-  const visit = (group) => {
-    let any = false;
-    const headHit = group.querySelector(':scope > .nav-head').textContent.toLowerCase().includes(q);
-    group.querySelectorAll(':scope > .nav-pages > .nav-link, :scope > .nav-pages > .nav-group').forEach((child) => {
-      const hit = child.classList.contains('nav-group') ? visit(child) : (!q || headHit || child.textContent.toLowerCase().includes(q));
-      child.hidden = !hit;
-      any = any || hit;
-    });
-    group.hidden = !!q && !any && !headHit;
-    if (q) group.classList.remove('closed');
-    return any || headHit;
-  };
-  document.querySelectorAll('#nav > .nav-group').forEach(visit);
 }
 
 // ---------------------------------------------------------------- pages
@@ -367,9 +799,6 @@ function filterNav(q) {
 function showView(view) {
   state.view = view;
   $('page').hidden = view !== 'doc';
-  $('dashboard').hidden = view !== 'dashboard';
-  document.body.classList.toggle('view-dashboard', view === 'dashboard');
-  if (view !== 'doc') $('threads-fab').hidden = true;
   updateHeader();
 }
 
@@ -413,7 +842,9 @@ function updateChangesButton() {
   const n = [...state.changes.keys()].filter((p) => p.startsWith(`docs/${state.source}/`) && p.endsWith('.md')).length;
   $('changes-btn').classList.toggle('active', state.showChanges);
   $('changes-btn').setAttribute('aria-pressed', String(state.showChanges));
+  $('changes-btn').setAttribute('aria-checked', String(state.showChanges));
   $('changes-count').textContent = n;
+  $('more-dot').hidden = n === 0;
 }
 
 const DIFF_WORDS = new Set(['paragraph', 'heading', 'list', 'blockquote']);
@@ -450,7 +881,6 @@ function renderChanges(before, after, target) {
     const next = part.removed && parts[k + 1]?.added ? parts[++k] : part.added ? part : null;
     const added = next ? now.slice(j, j + next.count) : [];
     i += removed.length; j += added.length;
-    // a block that was reworded shows its word changes; anything else shows whole blocks
     const pairs = Math.min(removed.length, added.length);
     for (let n = 0; n < Math.max(removed.length, added.length); n++) {
       const r = removed[n];
@@ -465,6 +895,37 @@ function renderChanges(before, after, target) {
   }
   target.innerHTML = blocks.join('');
   enhance(target);
+}
+
+function animatePageEnter() {
+  const page = $('page');
+  page.classList.remove('page-enter');
+  void page.offsetWidth;
+  page.classList.add('page-enter');
+}
+
+function scrollToTarget(id) {
+  if (!id) return;
+  const el = document.getElementById(id);
+  if (el) {
+    const panel = el.closest('.variant-panel');
+    if (panel && panel.hidden) {
+      const box = panel.closest('.variant-tabs');
+      const idx = [...box.querySelectorAll('.variant-panel')].indexOf(panel);
+      box.querySelectorAll('.variant-tablist button')[idx]?.click();
+    }
+    const disc = el.closest('.disclosure');
+    if (disc && !disc.classList.contains('open')) disc.querySelector('.disclosure-btn')?.click();
+    el.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
+  const variantPanel = document.querySelector(`.variant-panel[data-variant-id="${CSS.escape(id)}"]`);
+  if (variantPanel) {
+    const box = variantPanel.closest('.variant-tabs');
+    const idx = [...box.querySelectorAll('.variant-panel')].indexOf(variantPanel);
+    box.querySelectorAll('.variant-tablist button')[idx]?.click();
+    box.scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 async function loadPage() {
@@ -497,7 +958,7 @@ async function loadPage() {
           <span class="chg-counts"><b class="plus">+${change.added}</b> <b class="minus">−${change.removed}</b> lines</span>
           <span class="muted">Green is added, red is removed.</span></div>`);
       } else {
-        state.tokens = renderMarkdown(state.raw, $('content'), { blocks: true });
+        state.tokens = renderMarkdown(state.raw, $('content'), { blocks: true, readerEnhance: !isReview() });
       }
     } catch {
       if (token !== loadToken) return;
@@ -507,8 +968,9 @@ async function loadPage() {
     }
   }
 
+  animatePageEnter();
   const h1 = $('content').querySelector('h1');
-  document.title = `${h1 ? h1.textContent : page?.title || space().title} · Pepper-Soup`;
+  document.title = `${h1 ? h1.dataset.headingTitle || h1.textContent : page?.title || space().title} · Pepper-Soup`;
   renderCrumbs(page, node);
   renderPager();
   markActive();
@@ -521,16 +983,19 @@ async function loadPage() {
   if (token !== loadToken) return;
 
   if (state.params.t) focusThread(state.params.t);
-  else if (state.params.a) document.getElementById(state.params.a)?.scrollIntoView();
+  else if (state.params.a) scrollToTarget(state.params.a);
   else window.scrollTo(0, 0);
 }
 
 function renderCrumbs(page, node) {
-  const parts = [`<a href="${linkTo(state.source, state.space, '')}">${esc(space().title)}</a>`];
+  const parts = [
+    `<span>${esc(SOURCE_LABEL[state.source])}</span>`,
+    `<a href="${linkTo(state.source, state.space, '')}">${esc(space().title)}</a>`,
+  ];
   const parent = state.parentOf.get(state.path);
   if (parent) parts.push(`<a href="${linkTo(state.source, state.space, parent.path)}">${esc(parent.title)}</a>`);
   if (state.path) parts.push(`<span>${esc(page?.title || node?.title || '')}</span>`);
-  $('crumbs').innerHTML = `<span class="crumb-source">${esc(SOURCE_LABEL[state.source])}</span>${parts.join('<span class="sep">/</span>')}`;
+  $('crumbs').innerHTML = parts.join('<span class="sep">/</span>');
 }
 
 function leafCount(nodes) {
@@ -553,10 +1018,10 @@ function renderHome() {
     collect(group.children.length ? group.children : [group]);
     const issues = leaves.reduce((n, leaf) => n + (counts.get(`${state.space}/${leaf.path}`) || 0), 0);
     return `<section class="group-card">
-      <a class="group-card-head" href="${linkTo(state.source, state.space, group.children.length ? group.path : group.path)}">
+      <a class="group-card-head" href="${linkTo(state.source, state.space, group.path)}">
         <h3>${esc(group.title)}</h3>
         <span class="muted">${leaves.length} page${leaves.length === 1 ? '' : 's'}</span>
-        ${issues ? `<span class="pill pill-open">${issues} open</span>` : ''}
+        ${issues ? `<span class="page-issues"><span class="dot"></span>${issues} open</span>` : ''}
       </a>
       <ul>${leaves.slice(0, 6).map((leaf) => `<li><a href="${linkTo(state.source, state.space, leaf.path)}">${esc(leaf.title)}</a></li>`).join('')}
       ${leaves.length > 6 ? `<li class="more"><a href="${linkTo(state.source, state.space, group.path)}">${leaves.length - 6} more</a></li>` : ''}</ul>
@@ -571,7 +1036,7 @@ function renderHome() {
       <div class="hero-stats">
         <span><b>${s.tree.length}</b> topics</span>
         <span><b>${leafCount(s.tree)}</b> pages</span>
-        ${isReview() ? `<a href="#/review"><b>${spaceOpen}</b> open review items</a>` : ''}
+        ${isReview() ? `<button type="button" data-open-drawer="true"><b>${spaceOpen}</b> open review items</button>` : ''}
       </div>
     </div>
     <div class="group-grid">${groups}</div>`;
@@ -583,7 +1048,7 @@ function renderGroup(node) {
   const cards = node.children.map((child) => {
     const n = counts.get(`${state.space}/${child.path}`);
     return `<a class="page-card" href="${linkTo(state.source, state.space, child.path)}">
-      <div class="page-card-title">${esc(child.title)}${n ? `<span class="pill pill-open">${n} open</span>` : ''}</div>
+      <div class="page-card-title">${esc(child.title)}${n ? `<span class="page-issues"><span class="dot"></span>${n}</span>` : ''}</div>
       <div class="page-card-text">${esc(pageSummary(child.path)) || '&nbsp;'}</div>
     </a>`;
   }).join('');
@@ -602,17 +1067,53 @@ function renderPager() {
 
 let tocObserver;
 function renderToc() {
-  const heads = $('content').classList.contains('prose') ? [...$('content').querySelectorAll('h2, h3')] : [];
-  $('toc').classList.toggle('empty', heads.length < 2);
-  $('toc-list').innerHTML = heads.map((h) =>
-    `<li><a href="#" data-id="${h.id}" class="${h.tagName === 'H3' ? 'sub' : ''}">${esc(h.textContent)}</a></li>`).join('');
+  const heads = $('content').classList.contains('prose')
+    ? [...$('content').querySelectorAll('h2, h3')].filter((h) => !h.closest('.variant-panel[hidden]'))
+    : [];
+  const h2Count = heads.filter((h) => h.tagName === 'H2').length;
+  $('toc').classList.toggle('empty', h2Count < 2 && heads.length < 2);
+
+  // Build H2 -> nested H3 tree (H3s only expand under active H2)
+  const items = [];
+  let currentH2 = null;
+  for (const h of heads) {
+    const title = h.dataset.headingTitle || h.textContent.trim();
+    if (h.tagName === 'H2' || !currentH2) {
+      currentH2 = { id: h.id, title, children: [] };
+      items.push(currentH2);
+    } else {
+      currentH2.children.push({ id: h.id, title, parentId: currentH2.id });
+    }
+  }
+
+  $('toc-list').innerHTML = items.map((item, idx) => `
+    <li class="toc-item${idx === 0 ? ' expanded' : ''}" data-h2="${esc(item.id)}">
+      <a href="#${esc(item.id)}" data-id="${esc(item.id)}" title="${esc(item.title)}">${esc(item.title)}</a>
+      ${item.children.length
+        ? `<ul class="toc-sub">${item.children.map((c) => `<li><a href="#${esc(c.id)}" data-id="${esc(c.id)}" data-parent="${esc(item.id)}" title="${esc(c.title)}">${esc(c.title)}</a></li>`).join('')}</ul>`
+        : ''}
+    </li>`).join('');
+
+  const setActiveToc = (id) => {
+    let parentId = id;
+    document.querySelectorAll('#toc-list a').forEach((a) => {
+      const match = a.dataset.id === id;
+      a.classList.toggle('active', match);
+      if (match && a.dataset.parent) parentId = a.dataset.parent;
+    });
+    document.querySelectorAll('#toc-list .toc-item').forEach((li) => {
+      li.classList.toggle('expanded', li.dataset.h2 === parentId);
+    });
+  };
+
+  if (heads[0]) setActiveToc(heads[0].id);
+
   tocObserver?.disconnect();
   tocObserver = new IntersectionObserver((entries) => {
     const visible = entries.filter((e) => e.isIntersecting);
     if (!visible.length) return;
-    const id = visible[0].target.id;
-    document.querySelectorAll('#toc-list a').forEach((a) => a.classList.toggle('active', a.dataset.id === id));
-  }, { rootMargin: '-80px 0px -70% 0px' });
+    setActiveToc(visible[0].target.id);
+  }, { rootMargin: '-76px 0px -68% 0px' });
   heads.forEach((h) => tocObserver.observe(h));
 }
 
@@ -626,8 +1127,70 @@ function resolveRelative(file) {
 }
 
 function onContentClick(e) {
+  const anchorBtn = e.target.closest('.heading-anchor');
+  if (anchorBtn) {
+    e.preventDefault();
+    const url = `${location.origin}${location.pathname}${linkTo(state.source, state.space, state.path, { a: anchorBtn.dataset.anchor })}`;
+    navigator.clipboard?.writeText(url).then(() => toast('Link copied'));
+    return;
+  }
+
+  const diagramAct = e.target.closest('[data-diagram-act]');
+  if (diagramAct) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = diagramAct.closest('.diagram-card');
+    const act = diagramAct.dataset.diagramAct;
+    const source = card?.dataset.source || '';
+    const svg = card?.querySelector('.diagram svg');
+
+    if (act === 'toggle-view' && card) {
+      getMermaidModule().then((mod) => mod.toggleDiagramView(card)).catch((err) => toast(err.message));
+    } else if (act === 'expand' && svg) {
+      openLightbox(svg.cloneNode(true), svg.getAttribute('aria-label') || 'Diagram');
+    } else if (act === 'copy') {
+      navigator.clipboard?.writeText(source).then(() => toast('Copied Mermaid source'));
+    } else if (act === 'download' && svg) {
+      const serializer = new XMLSerializer();
+      const xml = serializer.serializeToString(svg);
+      const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${(state.path || 'diagram').split('/').pop().replace(/\.md$/, '')}-diagram.svg`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    return;
+  }
+
+  const diagramTarget = e.target.closest('.diagram');
+  if (diagramTarget && !e.target.closest('.diagram-error, .diagram-stepper')) {
+    e.preventDefault();
+    const svg = diagramTarget.querySelector('svg');
+    if (svg) openLightbox(svg.cloneNode(true), svg.getAttribute('aria-label') || 'Diagram');
+    return;
+  }
+
+  const imgTarget = e.target.closest('img.zoomable');
+  if (imgTarget && !e.target.closest('a')) {
+    e.preventDefault();
+    const clone = document.createElement('img');
+    clone.src = imgTarget.src;
+    clone.alt = imgTarget.alt || 'Image preview';
+    openLightbox(clone, imgTarget.alt || 'Image');
+    return;
+  }
+
+  const drawerTrigger = e.target.closest('[data-open-drawer]');
+  if (drawerTrigger) {
+    e.preventDefault();
+    openDrawer();
+    return;
+  }
+
   const a = e.target.closest('a');
-  if (!a || a.closest('.card, .tok-tools')) return;
+  if (!a || a.closest('.issue-popover')) return;
   const href = a.getAttribute('href') || '';
   if (href.startsWith('#/')) return;
   if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; return; }
@@ -643,7 +1206,7 @@ function onContentClick(e) {
   }
   if (href.startsWith('#')) {
     e.preventDefault();
-    document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    scrollToTarget(href.slice(1));
     return;
   }
   const [file, anchor] = href.split('#');
@@ -651,6 +1214,56 @@ function onContentClick(e) {
     e.preventDefault();
     go(state.source, state.space, resolveRelative(file), anchor ? { a: anchor } : {});
   }
+}
+
+// ---------------------------------------------------------------- lightbox (zoom & pan)
+
+let lastLightboxFocus = null;
+const lbView = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
+
+function updateLightboxTransform() {
+  const stage = $('lightbox-stage');
+  if (!stage) return;
+  stage.style.transform = `translate(${lbView.x}px, ${lbView.y}px) scale(${lbView.scale})`;
+  const pct = $('lightbox-zoom-reset');
+  if (pct) pct.textContent = `${Math.round(lbView.scale * 100)}%`;
+}
+
+function setLightboxZoom(nextScale) {
+  lbView.scale = Math.max(0.4, Math.min(4, nextScale));
+  updateLightboxTransform();
+}
+
+function resetLightboxView() {
+  lbView.scale = 1;
+  lbView.x = 0;
+  lbView.y = 0;
+  updateLightboxTransform();
+}
+
+function openLightbox(node, title = 'Diagram') {
+  lastLightboxFocus = document.activeElement;
+  $('lightbox-title').textContent = title;
+  const stage = $('lightbox-stage');
+  stage.innerHTML = '';
+  stage.append(node);
+  resetLightboxView();
+  $('lightbox-modal').hidden = false;
+  requestAnimationFrame(() => $('lightbox-modal').classList.add('open'));
+  document.body.classList.add('modal-open');
+  $('lightbox-close').focus();
+}
+
+function closeLightbox() {
+  if ($('lightbox-modal').hidden) return;
+  $('lightbox-modal').classList.remove('open');
+  $('lightbox-modal').hidden = true;
+  $('lightbox-stage').innerHTML = '';
+  $('lightbox-body').classList.remove('panning');
+  lbView.dragging = false;
+  document.body.classList.remove('modal-open');
+  lastLightboxFocus?.focus?.();
+  lastLightboxFocus = null;
 }
 
 // ---------------------------------------------------------------- review mode
@@ -711,11 +1324,12 @@ async function setMode(mode) {
   } else {
     state.mode = 'reader';
     store.set('localStorage', 'mode', 'reader');
+    closeDrawer();
+    closePopover();
   }
-  if (state.view === 'dashboard' && mode === 'reader') { go(state.source, state.space, ''); return; }
   updateHeader();
   renderNav();
-  if (state.view === 'dashboard') showDashboard(); else await loadPage();
+  await loadPage();
 }
 
 function signOut() {
@@ -731,12 +1345,9 @@ async function getEvidence(rel) {
 }
 
 function clearReview() {
-  $('rail').innerHTML = '';
-  $('rail').style.minHeight = '';
+  closePopover();
   state.threads = [];
   state.active = null;
-  state.sourcesFor = null;
-  $('threads-fab').hidden = true;
   $('page-issues').hidden = true;
 }
 
@@ -746,7 +1357,7 @@ function pageSections() {
   let current = null;
   for (const el of $('content').querySelectorAll(':scope > .tok')) {
     if (el.firstElementChild?.tagName === 'H2') {
-      current = { title: el.firstElementChild.textContent, head: el, toks: [] };
+      current = { title: el.firstElementChild.dataset.headingTitle || el.firstElementChild.textContent, head: el, toks: [] };
       sections.push(current);
     } else if (current) current.toks.push(el);
   }
@@ -766,7 +1377,7 @@ function attachEvidence(sections, evidence) {
       case 'paragraph': return c.tagName === 'P';
       case 'note': return c.tagName === 'BLOCKQUOTE';
       case 'heading': return /^H[3-6]$/.test(c.tagName);
-      case 'diagram': return c.classList.contains('diagram');
+      case 'diagram': return c.classList.contains('diagram-card') || c.classList.contains('diagram');
       case 'bullets': case 'steps': return c.tagName === 'UL' || c.tagName === 'OL';
       case 'table': return c.classList.contains('table');
       default: return false;
@@ -811,28 +1422,12 @@ async function annotate(token) {
     attachEvidence(sections, await getEvidence(rel));
     if (token !== loadToken) return;
     threads = threads.map((t) => ({ ...t, anchor: findAnchor(t, sections) })).filter((t) => t.anchor);
-    decorateBlocks();
   } else threads = [];
   state.threads = threads.sort((a, b) => a.anchor.el.offsetTop - b.anchor.el.offsetTop || a.rank - b.rank);
   renderThreads();
 }
 
-function decorateBlocks() {
-  $('content').querySelectorAll(':scope > .tok').forEach((el) => {
-    el.querySelector(':scope > .tok-tools')?.remove();
-    if (el.firstElementChild?.tagName === 'H1') return;
-    if (el._group && el._group[0] !== el) return;
-    const facts = el._facts || [];
-    const tools = document.createElement('div');
-    tools.className = 'tok-tools';
-    tools.innerHTML = `
-      ${facts.length ? `<button type="button" data-tool="sources" title="Where this text comes from"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>${facts.length}</button>` : ''}
-      <button type="button" data-tool="edit" title="Edit this block"><svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>`;
-    el.prepend(tools);
-  });
-}
-
-// ---------------------------------------------------------------- threads: pins, rail, sheet
+// ---------------------------------------------------------------- threads: margin markers & anchored popover
 
 function relTime(iso) {
   if (!iso) return '';
@@ -849,62 +1444,36 @@ function relTime(iso) {
 
 const textHtml = (s) => esc(s).replace(/\n/g, '<br>');
 
-function sourcesHtml(sources) {
-  if (!sources.length) return '';
-  return `<details class="card-sources"><summary>${sources.length} source${sources.length === 1 ? '' : 's'}</summary>
-    <ol>${sources.map((s) => `<li><div class="src-where">${esc(s.where)}</div>${s.quote ? `<blockquote>${esc(s.quote)}</blockquote>` : ''}</li>`).join('')}</ol></details>`;
+function issueSummary(t) {
+  if (t.section) return t.section;
+  const firstLine = (t.text || '').split(/\n|\.\s+/)[0].trim();
+  return firstLine || t.kindLabel;
 }
 
-/** One review item. `context` is where it shows: beside the text, in the phone sheet, or on the review list. */
-function cardHtml(t, context = 'rail') {
-  const closed = t.status !== 'open';
-  const where = context !== 'rail'
-    ? `<div class="card-where">${t.page ? `${esc(pageTitleOf(t.page))}${t.section ? ` <span class="sep">›</span> ${esc(t.section)}` : ''}` : esc(t.file || 'Not on a page')}${t.notPublished && t.page ? ' <span class="pill">Not published</span>' : ''}</div>`
-    : '';
-  const anchored = t.anchor ? t.anchor.exact : true;
-  const fixable = (context === 'rail' || context === 'sheet') && t.anchor?.exact && state.raw;
-  const statusNote = closed && t.by ? `<div class="status-note">${esc(STATUS_LABEL[t.status])} by ${esc(t.by)}, ${esc(relTime(t.at))}</div>` : '';
-
-  return `<article class="card card-${t.kind} status-${t.status}${state.active === t.id ? ' active' : ''}" data-id="${esc(t.id)}" tabindex="0">
-    <header class="card-head">
-      <span class="kind kind-${t.kind}">${esc(t.kindLabel)}</span>
-      <button type="button" class="card-id" data-act="copy" title="Copy id">${esc(t.id)}</button>
-      <span class="status status-${t.status}">${esc(STATUS_LABEL[t.status])}</span>
-    </header>
-    ${where}
-    ${t.published && (context !== 'rail' || !anchored) ? `<div class="card-quote">“${esc(mdText(t.published).slice(0, 220))}${t.published.length > 220 ? '…' : ''}”</div>` : ''}
-    <div class="card-text">${textHtml(t.text)}</div>
-    ${sourcesHtml(t.sources)}
-    ${statusNote}
-    <div class="card-actions">
-      ${fixable ? '<button type="button" class="btn sm primary" data-act="fix">Fix text</button>' : ''}
-      ${context === 'dash' && t.page && !t.notPublished ? '<button type="button" class="btn sm primary" data-act="open">Show on page</button>' : ''}
-      ${closed
-        ? '<button type="button" class="btn sm" data-act="reopen">Reopen</button>'
-        : '<button type="button" class="btn sm" data-act="resolve">Resolve</button><button type="button" class="btn sm ghost" data-act="ignore">Won\'t fix</button>'}
-    </div>
-  </article>`;
-}
-
-function sourcesCardHtml(el) {
-  const facts = el._facts || [];
+function popoverSourcesHtml(t, el) {
+  const sources = t.sources || [];
+  const facts = el?._facts || [];
+  if (!sources.length && !facts.length) return '';
+  const total = sources.length + facts.length;
   const where = (s) => [s.title, s.sheet && `sheet ${s.sheet}`, s.rows?.length && `rows ${s.rows.join(', ')}`, s.ticket].filter(Boolean).join(' · ');
-  return `<article class="card card-evidence active" data-id="sources">
-    <header class="card-head"><span class="kind kind-sources">Sources</span><span class="muted small">${facts.length} fact${facts.length === 1 ? '' : 's'}</span>
-      <button type="button" class="icon-btn sm" data-act="close-sources" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button></header>
-    <ol class="facts">${facts.map((f) => `<li>
-      <div class="fact-statement">${esc(f.statement)}</div>
-      ${f.quote ? `<blockquote>${esc(f.quote)}</blockquote>` : ''}
-      <div class="src-where">${esc(where(f.source))}${f.status && f.status !== 'confirmed' ? ` <span class="pill">${esc(f.status)}</span>` : ''}</div>
-    </li>`).join('')}</ol>
-  </article>`;
+  return `<div class="ip-sources">
+    <button type="button" class="ip-sources-btn" id="ip-sources-toggle" aria-expanded="false" aria-controls="ip-sources-list">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      <span>Sources (${total})</span>
+    </button>
+    <ol class="ip-sources-list" id="ip-sources-list" hidden>
+      ${sources.map((s) => `<li><div class="src-where">${esc(s.where)}</div>${s.quote ? `<blockquote>${esc(s.quote)}</blockquote>` : ''}</li>`).join('')}
+      ${facts.map((f) => `<li><div class="src-where">${esc(where(f.source))}</div><div>${esc(f.statement)}</div>${f.quote ? `<blockquote>${esc(f.quote)}</blockquote>` : ''}</li>`).join('')}
+    </ol>
+  </div>`;
 }
 
 function renderThreads() {
   const content = $('content');
   content.querySelectorAll('.pin').forEach((p) => p.remove());
-  content.querySelectorAll('.has-thread, .thread-active').forEach((el) => {
-    el.classList.remove('has-thread', 'thread-active', ...[...el.classList].filter((c) => c.startsWith('hl-')));
+  content.querySelectorAll('.has-thread, .thread-active, .resolving').forEach((el) => {
+    el.classList.remove('has-thread', 'thread-active', 'resolving');
+    delete el.dataset.threadIds;
   });
 
   const byAnchor = new Map();
@@ -912,105 +1481,179 @@ function renderThreads() {
     if (!byAnchor.has(t.anchor.el)) byAnchor.set(t.anchor.el, []);
     byAnchor.get(t.anchor.el).push(t);
   }
+
+  let markerIndex = 0;
   for (const [el, threads] of byAnchor) {
     const open = threads.filter((t) => t.status === 'open');
-    const top = (open.length ? open : threads).reduce((a, b) => (a.rank <= b.rank ? a : b));
     const els = threads[0].anchor.els;
-    if (open.length) els.forEach((x) => x.classList.add('has-thread', `hl-${top.kind}`));
+    const ids = threads.map((t) => t.id).join(',');
+    if (open.length) {
+      markerIndex += 1;
+      els.forEach((x) => {
+        x.classList.add('has-thread');
+        x.dataset.threadIds = ids;
+      });
+    }
     const pin = document.createElement('button');
     pin.type = 'button';
-    pin.className = `pin kind-${top.kind}${open.length ? '' : ' done'}`;
-    pin.dataset.ids = threads.map((t) => t.id).join(',');
-    pin.title = `${threads.length} review item${threads.length === 1 ? '' : 's'}`;
-    pin.innerHTML = open.length ? `${open.length}` : '<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+    pin.className = `pin${open.length ? '' : ' done'}`;
+    pin.dataset.ids = ids;
+    pin.setAttribute('aria-label', open.length
+      ? `Review issue ${markerIndex} (${open.length} open)`
+      : `Resolved review item (${threads.length})`);
+    pin.title = open.length
+      ? `${open.length} open issue${open.length === 1 ? '' : 's'}`
+      : `${threads.length} closed issue${threads.length === 1 ? '' : 's'}`;
+    pin.innerHTML = open.length
+      ? String(markerIndex)
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
     el.append(pin);
   }
 
-  const open = state.threads.filter((t) => t.status === 'open').length;
-  $('page-issues').hidden = !state.threads.length;
-  $('page-issues').innerHTML = state.threads.length
-    ? `<span class="dot"></span>${open} open${state.threads.length > open ? ` · ${state.threads.length - open} closed` : ''}`
-    : '';
-  $('threads-fab').hidden = !state.threads.length;
-  $('threads-fab-count').textContent = open;
-  renderRail();
-}
-
-function renderRail() {
-  const rail = $('rail');
-  if (!isReview() || !isWide()) { rail.innerHTML = ''; return; }
-  const items = state.threads.map((t) => cardHtml(t, 'rail'));
-  if (state.sourcesFor) items.push(sourcesCardHtml(state.sourcesFor));
-  rail.innerHTML = items.join('');
-  layoutRail();
-}
-
-/** Places each card level with its block; the active card sits exactly beside it. */
-function layoutRail() {
-  const rail = $('rail');
-  const cards = [...rail.querySelectorAll(':scope > .card')];
-  if (!cards.length) { rail.style.minHeight = ''; return; }
-  const railTop = rail.getBoundingClientRect().top;
-  const anchorOf = (card) => {
-    if (card.dataset.id === 'sources') return state.sourcesFor;
-    return state.threads.find((t) => t.id === card.dataset.id)?.anchor.el;
-  };
-  const want = cards.map((card) => {
-    const el = anchorOf(card);
-    return el ? el.getBoundingClientRect().top - railTop : 0;
-  });
-  const order = cards.map((_, i) => i).sort((a, b) => want[a] - want[b]);
-  const sorted = order.map((i) => ({ card: cards[i], want: want[i], h: cards[i].offsetHeight }));
-  const gap = 10;
-  let pivot = sorted.findIndex((c) => c.card.classList.contains('active'));
-  if (pivot < 0) pivot = 0;
-  sorted[pivot].top = sorted[pivot].want;
-  for (let i = pivot + 1; i < sorted.length; i++) sorted[i].top = Math.max(sorted[i].want, sorted[i - 1].top + sorted[i - 1].h + gap);
-  for (let i = pivot - 1; i >= 0; i--) sorted[i].top = Math.min(sorted[i].want, sorted[i + 1].top - sorted[i].h - gap);
-  const shift = Math.min(0, ...sorted.map((c) => c.top));
-  let bottom = 0;
-  for (const c of sorted) {
-    c.card.style.top = `${c.top - shift}px`;
-    bottom = Math.max(bottom, c.top - shift + c.h);
+  const openCount = state.threads.filter((t) => t.status === 'open').length;
+  const closedCount = state.threads.length - openCount;
+  const pageIssues = $('page-issues');
+  pageIssues.hidden = !state.threads.length;
+  if (state.threads.length) {
+    pageIssues.setAttribute('role', 'button');
+    pageIssues.setAttribute('tabindex', '0');
+    pageIssues.title = 'View issues for this page';
+    pageIssues.innerHTML = `<span class="dot" aria-hidden="true"></span><span>${openCount} open${closedCount ? ` · ${closedCount} closed` : ''}</span>`;
+  } else {
+    pageIssues.innerHTML = '';
   }
-  rail.style.minHeight = `${bottom + 40}px`;
 }
 
 function setActive(id, { scroll = false } = {}) {
   state.active = id;
   $('content').querySelectorAll('.thread-active').forEach((el) => el.classList.remove('thread-active'));
+  $('content').querySelectorAll('.pin.active').forEach((p) => p.classList.remove('active'));
   const t = state.threads.find((x) => x.id === id);
-  if (t) t.anchor.els.forEach((el) => el.classList.add('thread-active'));
-  document.querySelectorAll('#rail .card').forEach((c) => c.classList.toggle('active', c.dataset.id === id));
-  layoutRail();
-  if (scroll && t) t.anchor.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (t) {
+    t.anchor.els.forEach((el) => el.classList.add('thread-active'));
+    t.anchor.el.querySelector(':scope > .pin')?.classList.add('active');
+    if (scroll) {
+      const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      t.anchor.el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
+    }
+  }
+}
+
+function renderPopoverContent() {
+  const pop = $('issue-popover');
+  if (!state.popover) return;
+  const { threads, index } = state.popover;
+  const t = threads[index] || threads[0];
+  if (!t) { closePopover(); return; }
+
+  const closed = t.status !== 'open';
+  const chipLabel = closed ? STATUS_LABEL[t.status] : t.kindLabel;
+  const chipClass = closed ? `status-${t.status}` : '';
+  const anchored = t.anchor ? t.anchor.exact : false;
+  const fixable = !!t.anchor?.exact && !!state.raw;
+  const statusNote = closed && t.by ? `<div class="ip-status-note">${esc(STATUS_LABEL[t.status])} by ${esc(t.by)}, ${esc(relTime(t.at))}</div>` : '';
+  const stepper = threads.length > 1
+    ? `<div class="ip-stepper">
+        <button type="button" class="icon-btn sm" data-act="prev-issue" aria-label="Previous issue on this block"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <span>${index + 1} / ${threads.length}</span>
+        <button type="button" class="icon-btn sm" data-act="next-issue" aria-label="Next issue on this block"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>`
+    : '';
+
+  pop.innerHTML = `
+    <div class="ip-head">
+      <span class="ip-chip ${chipClass}">${esc(chipLabel)}</span>
+      <button type="button" class="ip-id" data-act="copy" title="Copy issue ID">${esc(t.id)}</button>
+      ${stepper}
+      <button type="button" class="icon-btn sm ip-close" data-act="close-popover" aria-label="Close issue popover">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="ip-summary">${esc(issueSummary(t))}</div>
+    ${t.published && !anchored ? `<div class="ip-quote">“${esc(mdText(t.published).slice(0, 200))}${t.published.length > 200 ? '…' : ''}”</div>` : ''}
+    <div class="ip-text">${textHtml(t.text)}</div>
+    ${popoverSourcesHtml(t, t.anchor?.el)}
+    ${statusNote}
+    <div class="ip-actions">
+      ${fixable ? '<button type="button" class="btn sm primary" data-act="fix">Fix text <kbd>F</kbd></button>' : (state.raw ? '<button type="button" class="btn sm primary" data-act="edit-page">Edit page <kbd>F</kbd></button>' : '')}
+      ${closed
+        ? '<button type="button" class="btn sm ghost" data-act="reopen">Reopen <kbd>R</kbd></button>'
+        : '<button type="button" class="btn sm ghost" data-act="resolve">Resolve <kbd>R</kbd></button><button type="button" class="btn sm ghost" data-act="ignore">Won\'t fix <kbd>W</kbd></button>'}
+    </div>`;
+}
+
+function positionPopover() {
+  const pop = $('issue-popover');
+  if (pop.hidden || !state.popover) return;
+  const anchorEl = state.popover.anchorEl;
+  const pin = anchorEl.querySelector(':scope > .pin') || anchorEl;
+  const rect = pin.getBoundingClientRect();
+  const blockRect = anchorEl.getBoundingClientRect();
+  const margin = 12;
+  const headerBottom = 56 + 8;
+  const popWidth = Math.min(360, window.innerWidth - margin * 2);
+  const popHeight = pop.offsetHeight || 260;
+
+  let left;
+  if (window.innerWidth - rect.right >= popWidth + 16) {
+    left = rect.right + 10;
+  } else if (rect.left >= popWidth + 16) {
+    left = rect.left - popWidth - 10;
+  } else {
+    left = Math.max(margin, Math.min(window.innerWidth - popWidth - margin, blockRect.right - popWidth));
+  }
+
+  let top = Math.max(headerBottom, rect.top - 8);
+  if (top + popHeight > window.innerHeight - margin) {
+    top = Math.max(headerBottom, window.innerHeight - popHeight - margin);
+  }
+
+  pop.style.left = `${Math.round(left)}px`;
+  pop.style.top = `${Math.round(top)}px`;
+}
+
+function openPopover(anchorEl, threads, initialIndex = 0) {
+  if (!threads.length) return;
+  const sorted = [...threads].sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1) || a.rank - b.rank);
+  const idx = Math.max(0, Math.min(initialIndex, sorted.length - 1));
+  state.popover = { anchorEl, threads: sorted, index: idx };
+  setActive(sorted[idx].id);
+  renderPopoverContent();
+  const pop = $('issue-popover');
+  pop.hidden = false;
+  positionPopover();
+  pop.querySelector('.ip-actions .btn.primary, #ip-sources-toggle, .ip-close')?.focus({ preventScroll: true });
+}
+
+function closePopover() {
+  const pop = $('issue-popover');
+  if (pop && !pop.hidden) pop.hidden = true;
+  state.popover = null;
+  state.active = null;
+  $('content').querySelectorAll('.thread-active').forEach((el) => el.classList.remove('thread-active'));
+  $('content').querySelectorAll('.pin.active').forEach((p) => p.classList.remove('active'));
 }
 
 function focusThread(id) {
   const t = state.threads.find((x) => x.id === id);
   if (!t) { window.scrollTo(0, 0); return; }
-  if (isWide()) setActive(id, { scroll: true });
-  else {
-    t.anchor.el.scrollIntoView({ block: 'center' });
-    setActive(id);
-    openSheet('Review', [t]);
-  }
-}
+  const sameAnchor = state.threads.filter((x) => x.anchor.el === t.anchor.el);
+  const sorted = [...sameAnchor].sort((a, b) => (a.status === 'open' ? 0 : 1) - (b.status === 'open' ? 0 : 1) || a.rank - b.rank);
+  const idx = Math.max(0, sorted.findIndex((x) => x.id === id));
 
-function openSheet(title, threads, extraHtml = '') {
-  $('sheet-title').textContent = title;
-  $('sheet-body').innerHTML = threads.map((t) => cardHtml(t, 'sheet')).join('') + extraHtml
-    || '<p class="muted pad">Nothing to review on this page.</p>';
-  $('sheet').hidden = false;
-  $('sheet-backdrop').hidden = false;
-  document.body.classList.add('sheet-open');
-  $('sheet-body').querySelector('textarea')?.focus();
-}
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  t.anchor.el.scrollIntoView({ block: 'center', behavior: reduced ? 'auto' : 'smooth' });
 
-function closeSheet() {
-  $('sheet').hidden = true;
-  $('sheet-backdrop').hidden = true;
-  document.body.classList.remove('sheet-open');
+  t.anchor.els.forEach((el) => {
+    el.classList.remove('pulse-once');
+    void el.offsetWidth;
+    el.classList.add('pulse-once');
+    setTimeout(() => el.classList.remove('pulse-once'), 750);
+  });
+
+  setTimeout(() => {
+    openPopover(t.anchor.el, sameAnchor, idx);
+  }, reduced ? 0 : 180);
 }
 
 // ---------------------------------------------------------------- review actions
@@ -1027,10 +1670,10 @@ async function reviewAction(body) {
   return res;
 }
 
-async function refreshThreads(keepActive = state.active) {
+async function refreshThreads() {
   renderNav();
   markActive();
-  if (state.view === 'dashboard') { renderDashboardList(); return; }
+  if (state.drawerOpen) renderDrawer();
   const anchors = new Map(state.threads.map((t) => [t.id, t.anchor]));
   const sections = pageSections();
   state.threads = threadsAll()
@@ -1038,91 +1681,127 @@ async function refreshThreads(keepActive = state.active) {
     .map((t) => ({ ...t, anchor: anchors.get(t.id) || findAnchor(t, sections) }))
     .filter((t) => t.anchor)
     .sort((a, b) => a.anchor.el.offsetTop - b.anchor.el.offsetTop || a.rank - b.rank);
-  state.active = keepActive;
   renderThreads();
-  if (!$('sheet').hidden) {
-    const ids = [...$('sheet-body').querySelectorAll('.card')].map((c) => c.dataset.id);
-    const shown = state.threads.filter((t) => ids.includes(t.id));
-    if (shown.length) openSheet($('sheet-title').textContent, shown); else closeSheet();
-  }
 }
 
 function threadById(id) {
   return state.threads.find((t) => t.id === id) || threadsAll().find((t) => t.id === id);
 }
 
-async function onCardAction(e) {
-  const button = e.target.closest('[data-act]');
-  const card = e.target.closest('.card');
-  if (!card) return;
-  if (!button) {
-    if (card.closest('#rail') && card.dataset.id !== 'sources' && state.active !== card.dataset.id) setActive(card.dataset.id);
-    return;
+async function setThreadStatusWithFade(t, status, message) {
+  const prevStatus = t.status;
+  const fadingOut = status !== 'open' && t.anchor;
+  if (fadingOut) {
+    t.anchor.els.forEach((el) => el.classList.add('resolving'));
+    t.anchor.el.querySelector(':scope > .pin')?.classList.add('resolving');
   }
-  const id = card.dataset.id;
-  const act = button.dataset.act;
-  const t = threadById(id);
-  const setStatus = async (status, message) => {
-    button.disabled = true;
-    try { const res = await reviewAction({ id, status }); if (!res.warning) toast(message); await refreshThreads(); }
-    catch (error) { toast(error.message); button.disabled = false; }
-  };
-
-  switch (act) {
-    case 'copy':
-      navigator.clipboard?.writeText(id).then(() => toast(`Copied ${id}`));
-      break;
-    case 'resolve': await setStatus('resolved', 'Marked resolved'); break;
-    case 'reopen': await setStatus('open', 'Reopened'); break;
-    case 'ignore': await setStatus('ignored', "Marked won't fix"); break;
-    case 'fix':
-      closeSheet();
-      startInlineEdit(t.anchor.el);
-      break;
-    case 'open':
-      go(state.source, t.page.split('/')[0], t.page.split('/').slice(1).join('/'), { t: id });
-      break;
-    case 'close-sources':
-      state.sourcesFor = null;
-      closeSheet();
-      renderRail();
-      break;
+  closePopover();
+  const fadeMs = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 200;
+  try {
+    const [res] = await Promise.all([
+      reviewAction({ id: t.id, status }),
+      fadingOut ? new Promise((r) => setTimeout(r, fadeMs)) : Promise.resolve(),
+    ]);
+    await refreshThreads();
+    if (!res.warning) {
+      toast(message, status !== 'open' ? {
+        undo: async () => {
+          await reviewAction({ id: t.id, status: prevStatus });
+          await refreshThreads();
+          toast('Restored issue');
+        },
+      } : undefined);
+    }
+  } catch (error) {
+    t.anchor?.els.forEach((el) => el.classList.remove('resolving'));
+    t.anchor?.el.querySelector(':scope > .pin')?.classList.remove('resolving');
+    toast(error.message);
   }
 }
 
-function showSources(el) {
-  el = (el._group || [el])[0];
-  state.sourcesFor = el;
-  if (isWide()) { renderRail(); return; }
-  $('sheet-title').textContent = 'Sources';
-  $('sheet-body').innerHTML = sourcesCardHtml(el);
-  $('sheet').hidden = false;
-  $('sheet-backdrop').hidden = false;
-  document.body.classList.add('sheet-open');
+async function onPopoverClick(e) {
+  const sourcesToggle = e.target.closest('#ip-sources-toggle');
+  if (sourcesToggle) {
+    const list = $('ip-sources-list');
+    const open = list.hidden;
+    list.hidden = !open;
+    sourcesToggle.setAttribute('aria-expanded', String(open));
+    positionPopover();
+    return;
+  }
+
+  const btn = e.target.closest('[data-act]');
+  if (!btn || !state.popover) return;
+  const { threads, index } = state.popover;
+  const t = threads[index];
+  if (!t) return;
+  const act = btn.dataset.act;
+
+  switch (act) {
+    case 'close-popover':
+      closePopover();
+      break;
+    case 'prev-issue':
+      state.popover.index = (index - 1 + threads.length) % threads.length;
+      setActive(threads[state.popover.index].id);
+      renderPopoverContent();
+      positionPopover();
+      break;
+    case 'next-issue':
+      state.popover.index = (index + 1) % threads.length;
+      setActive(threads[state.popover.index].id);
+      renderPopoverContent();
+      positionPopover();
+      break;
+    case 'copy':
+      navigator.clipboard?.writeText(t.id).then(() => toast(`Copied ${t.id}`));
+      break;
+    case 'fix':
+      closePopover();
+      startInlineEdit(t.anchor.el);
+      break;
+    case 'edit-page':
+      closePopover();
+      openEditor();
+      break;
+    case 'resolve':
+      btn.disabled = true;
+      await setThreadStatusWithFade(t, 'resolved', 'Marked resolved');
+      break;
+    case 'ignore':
+      btn.disabled = true;
+      await setThreadStatusWithFade(t, 'ignored', "Marked won't fix");
+      break;
+    case 'reopen':
+      btn.disabled = true;
+      await setThreadStatusWithFade(t, 'open', 'Reopened issue');
+      break;
+  }
 }
 
 function onContentReviewClick(e) {
   if (!isReview()) return;
-  const tool = e.target.closest('[data-tool]');
   const pin = e.target.closest('.pin');
-  if (tool) {
-    e.preventDefault();
-    const el = tool.closest('.tok');
-    if (tool.dataset.tool === 'edit') startInlineEdit(el);
-    if (tool.dataset.tool === 'sources') showSources(el);
-    return;
-  }
   if (pin) {
     e.preventDefault();
+    e.stopPropagation();
+    const el = pin.closest('.tok');
+    if (state.popover && state.popover.anchorEl === el) {
+      closePopover();
+      return;
+    }
     const ids = pin.dataset.ids.split(',');
-    if (isWide()) setActive(ids[0]);
-    else openSheet(ids.length > 1 ? `${ids.length} review items` : 'Review', state.threads.filter((t) => ids.includes(t.id)));
+    openPopover(el, state.threads.filter((t) => ids.includes(t.id)));
     return;
   }
-  const tok = e.target.closest('.tok');
-  if (tok && !isWide() && !e.target.closest('a')) {
-    $('content').querySelectorAll('.tok.selected').forEach((x) => x !== tok && x.classList.remove('selected'));
-    tok.classList.toggle('selected');
+
+  if (e.target.closest('a, button, .inline-editor')) return;
+  const tok = e.target.closest('.tok.has-thread');
+  if (tok && tok.dataset.threadIds) {
+    e.preventDefault();
+    const ids = tok.dataset.threadIds.split(',');
+    const threads = state.threads.filter((t) => ids.includes(t.id));
+    if (threads.length) openPopover(threads[0].anchor.el, threads);
   }
 }
 
@@ -1156,7 +1835,7 @@ function startInlineEdit(el) {
 
   const grow = () => { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight + 4, innerHeight * 0.6)}px`; };
   let timer;
-  const update = () => { grow(); clearTimeout(timer); timer = setTimeout(() => { renderMarkdown(input.value, preview); runMermaid(preview); layoutRail(); }, 200); };
+  const update = () => { grow(); clearTimeout(timer); timer = setTimeout(() => { renderMarkdown(input.value, preview); runMermaid(preview); }, 200); };
   input.addEventListener('input', update);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
@@ -1169,7 +1848,6 @@ function startInlineEdit(el) {
   grow();
   box.scrollIntoView({ block: 'center', behavior: 'smooth' });
   input.focus({ preventScroll: true });
-  layoutRail();
 }
 
 function cancelInlineEdit(ask = false) {
@@ -1180,7 +1858,6 @@ function cancelInlineEdit(ask = false) {
   edit.box.remove();
   edit.group.forEach((g) => (g.hidden = false));
   state.inline = null;
-  layoutRail();
   return true;
 }
 
@@ -1239,15 +1916,21 @@ async function saveContent(content) {
 function openEditor() {
   if (!state.raw) return;
   if (state.inline && !cancelInlineEdit(true)) return;
+  closePopover();
+  closeDrawer();
   state.editing = true;
   document.body.classList.add('editing');
   $('page').hidden = true;
   $('editor').hidden = false;
   $('editor-path').textContent = filePath();
   $('editor-input').value = state.raw.replace(/^﻿/, '');
-  setEditorPane('write');
+  $('editor-input').scrollTop = 0;
+  $('editor-preview').scrollTop = 0;
+  const defaultPane = matchMedia('(max-width: 900px)').matches ? 'write' : 'split';
+  setEditorPane(defaultPane);
   renderMarkdown($('editor-input').value, $('editor-preview'));
   runMermaid($('editor-preview'));
+  updateEditorDirty();
   window.scrollTo(0, 0);
   $('editor-input').setSelectionRange(0, 0);
   $('editor-input').focus({ preventScroll: true });
@@ -1262,11 +1945,63 @@ function closeEditor() {
 
 function setEditorPane(pane) {
   $('editor-body').dataset.pane = pane;
-  document.querySelectorAll('#editor-tabs button').forEach((b) => b.classList.toggle('active', b.dataset.pane === pane));
-  if (pane === 'preview') { renderMarkdown($('editor-input').value, $('editor-preview')); runMermaid($('editor-preview')); }
+  document.querySelectorAll('#editor-tabs button').forEach((b) => {
+    const on = b.dataset.pane === pane;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  if (pane === 'preview' || pane === 'split') {
+    renderMarkdown($('editor-input').value, $('editor-preview'));
+    runMermaid($('editor-preview'));
+  }
 }
 
 const isDirty = () => state.editing && $('editor-input').value !== state.raw.replace(/^﻿/, '');
+
+function updateEditorDirty() {
+  const dirty = isDirty();
+  $('editor-dirty').hidden = !dirty;
+  $('save-btn').disabled = !dirty;
+}
+
+function applyEditorFormat(fmt) {
+  const input = $('editor-input');
+  const val = input.value;
+  const start = input.selectionStart;
+  const end = input.selectionEnd;
+  const sel = val.slice(start, end);
+
+  if (fmt === 'bold') {
+    const text = sel || 'bold text';
+    input.setRangeText(`**${text}**`, start, end, 'select');
+    if (!sel) input.setSelectionRange(start + 2, start + 2 + text.length);
+  } else if (fmt === 'link') {
+    const label = sel || 'link text';
+    const inserted = `[${label}](url)`;
+    input.setRangeText(inserted, start, end, 'end');
+    const urlStart = start + label.length + 3;
+    input.setSelectionRange(urlStart, urlStart + 3);
+  } else if (fmt === 'heading') {
+    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+    const lineEndIdx = val.indexOf('\n', start);
+    const lineEnd = lineEndIdx === -1 ? val.length : lineEndIdx;
+    const line = val.slice(lineStart, lineEnd);
+    const nextLine = line.startsWith('## ') ? line.slice(3) : `## ${line.replace(/^#+\s*/, '')}`;
+    input.setRangeText(nextLine, lineStart, lineEnd, 'end');
+  } else if (fmt === 'list') {
+    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+    const block = val.slice(lineStart, end);
+    const lines = block.split('\n').map((l) => (l.startsWith('- ') ? l : `- ${l}`));
+    input.setRangeText(lines.join('\n'), lineStart, end, 'end');
+  } else if (fmt === 'table') {
+    const prefix = start > 0 && val[start - 1] !== '\n' ? '\n\n' : '';
+    const table = `${prefix}| Column 1 | Column 2 | Column 3 |\n| --- | --- | --- |\n| Value | Value | Value |\n`;
+    input.setRangeText(table, start, end, 'end');
+  }
+
+  input.dispatchEvent(new Event('input'));
+  input.focus();
+}
 
 function leaveEditor() {
   if (isDirty() && !confirm('Discard unsaved changes?')) {
@@ -1278,6 +2013,7 @@ function leaveEditor() {
 }
 
 async function saveEditor() {
+  if (!isDirty()) return;
   $('save-btn').disabled = true;
   $('save-btn').textContent = 'Saving…';
   try {
@@ -1287,113 +2023,132 @@ async function saveEditor() {
     await loadPage();
   } catch (error) {
     toast(error.message);
+    $('save-btn').disabled = !isDirty();
   } finally {
-    $('save-btn').disabled = false;
     $('save-btn').textContent = 'Save';
   }
 }
 
-// ---------------------------------------------------------------- review dashboard
+// ---------------------------------------------------------------- issues drawer
 
-function showDashboard() {
-  showView('dashboard');
-  document.title = 'Review · Pepper-Soup';
-  markActive();
-  const all = threadsAll();
-  const count = (fn) => all.filter(fn).length;
-  const open = count((t) => t.status === 'open');
-  const resolved = count((t) => t.status === 'resolved');
-  const ignored = count((t) => t.status === 'ignored');
-  const done = resolved + ignored;
-  const pct = all.length ? Math.round((done / all.length) * 100) : 0;
-  const kindOptions = Object.values(KINDS).map((k) => `<option value="${k.key}">${esc(k.label)}</option>`).join('');
-
-  $('dashboard').innerHTML = `
-    <div class="dash">
-      <header class="dash-head">
-        <div>
-          <div class="eyebrow">Review</div>
-          <h1>Review items</h1>
-          <p class="lead">Places where the docs need a person: the sources disagree, a check still fails after the automatic fixes, or a topic has no source. Fix the text on the page, then mark the item resolved.</p>
-        </div>
-      </header>
-      <div class="stats">
-        <div class="stat"><span>Open</span><b>${open}</b></div>
-        <div class="stat"><span>Resolved</span><b>${resolved}</b></div>
-        <div class="stat"><span>Won't fix</span><b>${ignored}</b></div>
-        <div class="stat wide"><span>Progress</span><b>${pct}%</b><div class="bar"><i style="width:${pct}%"></i></div></div>
-      </div>
-      <div class="dash-filters">
-        <input type="search" id="dash-q" placeholder="Search problems, pages, sources" value="${esc(state.dash.q)}">
-        <select id="dash-kind" aria-label="Kind"><option value="all">All kinds</option>${kindOptions}</select>
-        <select id="dash-space" aria-label="Space"><option value="all">All spaces</option><option value="user">User Guide</option><option value="developer">Developer Reference</option></select>
-        <div class="seg" id="dash-status">
-          ${['open', 'resolved', 'ignored', 'all'].map((s) => `<button type="button" data-status="${s}">${s === 'all' ? 'All' : STATUS_LABEL[s]}</button>`).join('')}
-        </div>
-      </div>
-      <div id="dash-list"></div>
-    </div>`;
-  $('dash-kind').value = state.dash.kind;
+function initDrawerFilters() {
+  const kindSel = $('dash-kind');
+  if (!kindSel || kindSel.options.length) return;
+  kindSel.innerHTML = `<option value="all">All types</option>${Object.values(KINDS).map((k) => `<option value="${k.key}">${esc(k.label)}</option>`).join('')}`;
+  $('dash-q').value = state.dash.q;
   $('dash-space').value = state.dash.space;
-  $('dash-q').oninput = (e) => { state.dash.q = e.target.value; renderDashboardList(); };
-  $('dash-kind').onchange = (e) => { state.dash.kind = e.target.value; renderDashboardList(); };
-  $('dash-space').onchange = (e) => { state.dash.space = e.target.value; renderDashboardList(); };
-  $('dash-status').onclick = (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    state.dash.status = b.dataset.status;
-    renderDashboardList();
-  };
-  renderDashboardList();
-  window.scrollTo(0, 0);
+  $('dash-kind').value = state.dash.kind;
+  $('dash-status').value = state.dash.status;
 }
 
-function renderDashboardList() {
-  if (state.view !== 'dashboard' || !$('dash-list')) return;
-  document.querySelectorAll('#dash-status button').forEach((b) => b.classList.toggle('active', b.dataset.status === state.dash.status));
+function openDrawer() {
+  if (!isReview()) return;
+  closePopover();
+  closeSidebar();
+  initDrawerFilters();
+  state.drawerOpen = true;
+  $('drawer-backdrop').hidden = false;
+  $('issues-drawer').hidden = false;
+  requestAnimationFrame(() => $('issues-drawer').classList.add('open'));
+  document.body.classList.add('drawer-open');
+  $('issues-btn')?.setAttribute('aria-expanded', 'true');
+  renderDrawer();
+  $('dash-q')?.focus({ preventScroll: true });
+}
+
+function closeDrawer() {
+  if (!state.drawerOpen) return;
+  state.drawerOpen = false;
+  $('issues-drawer').classList.remove('open');
+  $('issues-drawer').hidden = true;
+  $('drawer-backdrop').hidden = true;
+  document.body.classList.remove('drawer-open');
+  $('issues-btn')?.setAttribute('aria-expanded', 'false');
+  if (location.hash.startsWith('#/review')) {
+    history.replaceState(null, '', linkTo(state.source, state.space, state.path));
+  }
+}
+
+function renderDrawer() {
+  if (!state.drawerOpen || !$('dash-list')) return;
+  const all = threadsAll();
+  const totalOpen = all.filter((t) => t.status === 'open').length;
   const q = state.dash.q.trim().toLowerCase();
-  const items = threadsAll()
+  const curRel = pageRel();
+
+  const items = all
     .filter((t) => state.dash.status === 'all' || t.status === state.dash.status)
     .filter((t) => state.dash.kind === 'all' || t.kind === state.dash.kind)
-    .filter((t) => state.dash.space === 'all' || t.page.startsWith(`${state.dash.space}/`))
+    .filter((t) => {
+      if (state.dash.space === 'all') return true;
+      if (state.dash.space === 'current') return curRel && t.page === curRel;
+      return t.page.startsWith(`${state.dash.space}/`);
+    })
     .filter((t) => !q || [t.text, t.published, t.section, t.page, pageTitleOf(t.page || ''), t.id, ...(t.sources || []).map((s) => s.where)]
       .join(' ').toLowerCase().includes(q))
     .sort((a, b) => (a.page.startsWith('user/') ? 0 : 1) - (b.page.startsWith('user/') ? 0 : 1) || pageTitleOf(a.page || '').localeCompare(pageTitleOf(b.page || '')) || a.rank - b.rank);
 
+  $('drawer-summary').textContent = `${items.length} shown · ${totalOpen} open`;
+
   if (!items.length) {
-    $('dash-list').innerHTML = '<div class="empty-state small"><h3>Nothing here</h3><p class="muted">No review items match these filters.</p></div>';
+    $('dash-list').innerHTML = '<div class="empty-state small"><h3>Nothing matches</h3><p class="muted">Try adjusting the filters above.</p></div>';
     return;
   }
+
+  const openByPage = openCounts();
   const groups = new Map();
   for (const t of items) {
     const key = t.page || '';
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(t);
   }
+
   $('dash-list').innerHTML = [...groups].map(([page, threads]) => {
     const [spaceId] = page.split('/');
     const title = page ? pageTitleOf(page) : 'Not on a page';
-    const href = page && !threads[0].notPublished ? linkTo(state.source, spaceId, page.split('/').slice(1).join('/')) : '';
-    return `<section class="dash-group">
-      <header><div><span class="muted small">${esc(page ? (spaceId === 'user' ? 'User Guide' : 'Developer Reference') : 'Inputs')}</span>
-        <h2>${href ? `<a href="${href}">${esc(title)}</a>` : esc(title)}</h2></div><span class="pill">${threads.length}</span></header>
-      <div class="dash-cards">${threads.map((t) => cardHtml(t, 'dash')).join('')}</div>
+    const prefix = page ? (spaceId === 'user' ? 'User Guide' : 'Developer') : 'Inputs';
+    const openCount = page ? (openByPage.get(page) || 0) : threads.filter((t) => t.status === 'open').length;
+    const isExpanded = state.drawerExpanded.has(page);
+    return `<section class="drawer-group${isExpanded ? ' open' : ''}" data-page="${esc(page)}">
+      <button type="button" class="drawer-group-btn" aria-expanded="${isExpanded ? 'true' : 'false'}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <span class="drawer-group-title">${esc(title)} <span class="muted small">· ${esc(prefix)}</span></span>
+        <span class="drawer-group-count">${openCount} open</span>
+      </button>
+      <div class="drawer-group-panel">
+        <div class="drawer-group-inner">
+          ${threads.map((t) => `
+            <button type="button" class="drawer-item" data-id="${esc(t.id)}" data-page="${esc(t.page)}">
+              <div class="drawer-item-top">
+                <span class="drawer-item-kind">${esc(t.kindLabel)}</span>
+                <span class="drawer-item-id">${esc(t.id)}</span>
+                <span class="drawer-item-status">${esc(STATUS_LABEL[t.status])}</span>
+              </div>
+              <div class="drawer-item-text">${esc(t.text)}</div>
+            </button>`).join('')}
+        </div>
+      </div>
     </section>`;
   }).join('');
 }
 
-// ---------------------------------------------------------------- search
+// ---------------------------------------------------------------- search command palette
 
 let hits = [];
 let hitIndex = 0;
 
 function openSearch() {
   $('search-modal').hidden = false;
+  document.body.classList.add('modal-open');
   $('search-input').value = '';
   $('search-results').innerHTML = '<div class="no-hits">Type to search page titles, headings and text.</div>';
   $('search-input').focus();
 }
-function closeSearch() { $('search-modal').hidden = true; }
+
+function closeSearch() {
+  $('search-modal').hidden = true;
+  if ($('lightbox-modal').hidden) document.body.classList.remove('modal-open');
+}
 
 function search(q) {
   const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -1443,16 +2198,16 @@ function moveHit(d) {
 function renderMoreMenu() {
   const srcName = SOURCE_LABEL[state.source];
   const onPage = state.view === 'doc' && !!state.raw;
-  $('more-menu').innerHTML = `
-    <button type="button" data-menu="theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>${isDark() ? 'Light theme' : 'Dark theme'}</button>
-    <hr>
-    <div class="menu-label">Download</div>
-    ${onPage ? '<button type="button" data-menu="page">This page (.md)</button>' : ''}
-    ${onPage && state.source === 'confluence' ? '<button type="button" data-menu="xml">This page (.xml)</button>' : ''}
-    <a href="/api/download?scope=${spaceKey()}">${srcName} · ${esc(space().title)} (.zip)</a>
-    <a href="/api/download?scope=${state.source}">All ${srcName} docs (.zip)</a>
-    <a href="/api/download?scope=all">Everything (.zip)</a>
-    ${isReview() ? `<hr><div class="menu-label">Signed in as ${esc(getAuthor() || 'Reviewer')}</div><button type="button" data-menu="signout">Sign out</button>` : ''}`;
+  $('more-dynamic').innerHTML = `
+    <div class="menu-section">
+      <div class="menu-label">Download</div>
+      ${onPage ? '<button type="button" class="menu-action" data-menu="page" role="menuitem"><span>This page (.md)</span></button>' : ''}
+      ${onPage && state.source === 'confluence' ? '<button type="button" class="menu-action" data-menu="xml" role="menuitem"><span>This page (.xml)</span></button>' : ''}
+      <a class="menu-action" href="/api/download?scope=${spaceKey()}" role="menuitem"><span>${srcName} · ${esc(space().title)} (.zip)</span></a>
+      <a class="menu-action" href="/api/download?scope=${state.source}" role="menuitem"><span>All ${srcName} docs (.zip)</span></a>
+      <a class="menu-action" href="/api/download?scope=all" role="menuitem"><span>Everything (.zip)</span></a>
+    </div>
+    ${isReview() ? `<div class="menu-section"><div class="menu-label">Signed in as ${esc(getAuthor() || 'Reviewer')}</div><button type="button" class="menu-action" data-menu="signout" role="menuitem"><span>Sign out</span></button></div>` : ''}`;
 }
 
 async function downloadFile(path) {
@@ -1465,31 +2220,74 @@ async function downloadFile(path) {
 }
 
 const isDark = () => document.documentElement.dataset.theme === 'dark';
-function applyTheme(theme) {
+function applyTheme(theme, { persist = true } = {}) {
   document.documentElement.dataset.theme = theme;
-  store.set('localStorage', 'theme', theme);
+  if (persist) store.set('localStorage', 'theme', theme);
   $('hl-light').disabled = theme === 'dark';
   $('hl-dark').disabled = theme !== 'dark';
+  $('theme-btn')?.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+}
+
+function closeMenu() {
+  $('more-menu').classList.remove('open');
+  $('more-btn').setAttribute('aria-expanded', 'false');
 }
 
 function closeSidebar() {
   $('sidebar').classList.remove('open');
   $('backdrop').classList.remove('open');
+  $('menu-btn')?.setAttribute('aria-expanded', 'false');
 }
 
-function toast(msg) {
-  $('toast').textContent = msg;
-  $('toast').hidden = false;
+function toast(msg, opts = {}) {
+  const el = $('toast');
+  el.innerHTML = '';
+  const span = document.createElement('span');
+  span.textContent = msg;
+  el.append(span);
+  if (typeof opts.undo === 'function') {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'toast-undo';
+    btn.textContent = 'Undo';
+    btn.onclick = async () => {
+      el.hidden = true;
+      clearTimeout(toast.t);
+      try { await opts.undo(); } catch (err) { toast(err.message); }
+    };
+    el.append(btn);
+  }
+  el.hidden = false;
   clearTimeout(toast.t);
-  toast.t = setTimeout(() => ($('toast').hidden = true), 4500);
+  toast.t = setTimeout(() => { el.hidden = true; }, opts.undo ? 6500 : 4500);
 }
 
 // ---------------------------------------------------------------- events
 
 function bind() {
-  document.querySelectorAll('#source-switch button').forEach((b) => (b.onclick = () => go(b.dataset.source, state.space, state.view === 'doc' ? state.path : '')));
+  const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+  if ($('search-kbd')) $('search-kbd').textContent = isMac ? '⌘K' : 'Ctrl K';
+
+  document.querySelectorAll('#source-switch button').forEach((b) => (b.onclick = () => {
+    closeMenu();
+    go(b.dataset.source, state.space, state.view === 'doc' ? state.path : '');
+  }));
   document.querySelectorAll('#space-tabs button').forEach((b) => (b.onclick = () => go(state.source, b.dataset.space, '')));
-  document.querySelectorAll('#mode-switch button').forEach((b) => (b.onclick = () => setMode(b.dataset.mode)));
+  document.querySelectorAll('#mode-switch button').forEach((b) => (b.onclick = () => {
+    closeMenu();
+    setMode(b.dataset.mode);
+  }));
+
+  $('theme-btn').onclick = () => {
+    applyTheme(isDark() ? 'light' : 'dark', { persist: true });
+    rerenderDiagrams();
+  };
+
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (store.get('localStorage', 'theme')) return;
+    applyTheme(e.matches ? 'dark' : 'light', { persist: false });
+    rerenderDiagrams();
+  });
 
   $('nav').addEventListener('click', (e) => {
     const head = e.target.closest('.nav-head');
@@ -1497,9 +2295,15 @@ function bind() {
     const group = head.parentElement;
     group.classList.toggle('closed');
     head.setAttribute('aria-expanded', String(!group.classList.contains('closed')));
+    saveOpenGroups();
   });
-  $('filter').oninput = (e) => filterNav(e.target.value.trim());
-  $('menu-btn').onclick = () => { $('sidebar').classList.add('open'); $('backdrop').classList.add('open'); };
+
+  $('menu-btn').onclick = () => {
+    const opening = !$('sidebar').classList.contains('open');
+    $('sidebar').classList.toggle('open', opening);
+    $('backdrop').classList.toggle('open', opening);
+    $('menu-btn').setAttribute('aria-expanded', String(opening));
+  };
   $('backdrop').onclick = closeSidebar;
 
   $('content').addEventListener('click', onContentClick);
@@ -1508,33 +2312,80 @@ function bind() {
     const a = e.target.closest('a');
     if (!a) return;
     e.preventDefault();
-    document.getElementById(a.dataset.id)?.scrollIntoView({ behavior: 'smooth' });
+    scrollToTarget(a.dataset.id);
   });
 
-  for (const host of [$('rail'), $('sheet-body'), $('dashboard')]) {
-    host.addEventListener('click', onCardAction);
-  }
-  $('rail').addEventListener('toggle', () => layoutRail(), true);
-  $('threads-fab').onclick = () => openSheet('Review on this page', state.threads);
-  $('sheet-close').onclick = closeSheet;
-  $('sheet-backdrop').onclick = closeSheet;
+  // Anchored issue popover & outside click dismiss
+  $('issue-popover').addEventListener('click', onPopoverClick);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.dropdown')) closeMenu();
+    if (state.popover && !e.target.closest('#issue-popover, .pin, .tok.has-thread')) {
+      closePopover();
+    }
+  });
+
+  // Page header issue summary opens drawer filtered to current page
+  $('page-issues').onclick = () => {
+    state.dash.space = 'current';
+    if ($('dash-space')) $('dash-space').value = 'current';
+    openDrawer();
+  };
+  $('page-issues').onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      $('page-issues').click();
+    }
+  };
+
+  // Issues drawer events
+  $('issues-btn').onclick = () => (state.drawerOpen ? closeDrawer() : openDrawer());
+  $('drawer-close').onclick = closeDrawer;
+  $('drawer-backdrop').onclick = closeDrawer;
+  $('dash-q').oninput = (e) => { state.dash.q = e.target.value; renderDrawer(); };
+  $('dash-space').onchange = (e) => { state.dash.space = e.target.value; renderDrawer(); };
+  $('dash-kind').onchange = (e) => { state.dash.kind = e.target.value; renderDrawer(); };
+  $('dash-status').onchange = (e) => { state.dash.status = e.target.value; renderDrawer(); };
+  $('dash-list').addEventListener('click', (e) => {
+    const groupBtn = e.target.closest('.drawer-group-btn');
+    if (groupBtn) {
+      const group = groupBtn.closest('.drawer-group');
+      const key = group.dataset.page;
+      const opening = !group.classList.contains('open');
+      group.classList.toggle('open', opening);
+      groupBtn.setAttribute('aria-expanded', String(opening));
+      if (opening) state.drawerExpanded.add(key);
+      else state.drawerExpanded.delete(key);
+      return;
+    }
+    const item = e.target.closest('.drawer-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    const page = item.dataset.page;
+    closeDrawer();
+    if (!page) { toast('This item is not attached to a published page.'); return; }
+    if (page === pageRel()) {
+      focusThread(id);
+    } else {
+      const [sp, ...rest] = page.split('/');
+      go(state.source, sp, rest.join('/'), { t: id });
+    }
+  });
 
   $('more-btn').onclick = (e) => {
     e.stopPropagation();
-    renderMoreMenu();
-    $('more-menu').classList.toggle('open');
+    const opening = !$('more-menu').classList.contains('open');
+    if (opening) renderMoreMenu();
+    $('more-menu').classList.toggle('open', opening);
+    $('more-btn').setAttribute('aria-expanded', String(opening));
   };
   $('more-menu').onclick = (e) => {
-    const kind = e.target.closest('[data-menu]')?.dataset.menu;
-    if (kind === 'theme') {
-      applyTheme(isDark() ? 'light' : 'dark');
-      if (state.view === 'doc' && !state.editing) loadPage();
-    }
+    const item = e.target.closest('[data-menu]');
+    if (!item) return;
+    const kind = item.dataset.menu;
     if (kind === 'page' || kind === 'xml') downloadFile(kind === 'xml' ? filePath().replace(/\.md$/, '.xml') : filePath()).catch((err) => toast(err.message));
     if (kind === 'signout') signOut();
-    $('more-menu').classList.remove('open');
+    closeMenu();
   };
-  document.addEventListener('click', (e) => { if (!e.target.closest('.dropdown')) $('more-menu').classList.remove('open'); });
 
   $('search-btn').onclick = openSearch;
   $('search-modal').onclick = (e) => { if (e.target.id === 'search-modal' || e.target.closest('.hit')) closeSearch(); };
@@ -1548,34 +2399,128 @@ function bind() {
     }
   };
 
+  $('lightbox-close').onclick = closeLightbox;
+  $('lightbox-modal').onclick = (e) => { if (e.target.id === 'lightbox-modal') closeLightbox(); };
+  $('lightbox-zoom-in').onclick = () => setLightboxZoom(lbView.scale * 1.25);
+  $('lightbox-zoom-out').onclick = () => setLightboxZoom(lbView.scale / 1.25);
+  $('lightbox-zoom-reset').onclick = resetLightboxView;
+
+  const lbBody = $('lightbox-body');
+  lbBody.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+    setLightboxZoom(lbView.scale * factor);
+  }, { passive: false });
+  lbBody.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    lbView.dragging = true;
+    lbView.startX = e.clientX - lbView.x;
+    lbView.startY = e.clientY - lbView.y;
+    lbBody.classList.add('panning');
+    lbBody.setPointerCapture?.(e.pointerId);
+  });
+  lbBody.addEventListener('pointermove', (e) => {
+    if (!lbView.dragging) return;
+    lbView.x = e.clientX - lbView.startX;
+    lbView.y = e.clientY - lbView.startY;
+    updateLightboxTransform();
+  });
+  const endPan = () => {
+    if (!lbView.dragging) return;
+    lbView.dragging = false;
+    lbBody.classList.remove('panning');
+  };
+  lbBody.addEventListener('pointerup', endPan);
+  lbBody.addEventListener('pointercancel', endPan);
+  lbBody.addEventListener('dblclick', () => (lbView.scale === 1 && lbView.x === 0 && lbView.y === 0 ? setLightboxZoom(1.6) : resetLightboxView()));
+
+  // Focus-mode editor events: dirty state, formatting toolbar, split scroll sync
   $('edit-btn').onclick = openEditor;
   $('cancel-btn').onclick = () => { if (!isDirty() || confirm('Discard unsaved changes?')) closeEditor(); };
   $('save-btn').onclick = saveEditor;
   $('editor-tabs').onclick = (e) => { const b = e.target.closest('button'); if (b) setEditorPane(b.dataset.pane); };
-  let timer;
-  $('editor-input').oninput = () => {
-    clearTimeout(timer);
-    timer = setTimeout(() => { renderMarkdown($('editor-input').value, $('editor-preview')); runMermaid($('editor-preview')); }, 300);
+  $('editor-toolbar').onclick = (e) => {
+    const btn = e.target.closest('button[data-fmt]');
+    if (btn) applyEditorFormat(btn.dataset.fmt);
   };
-  $('editor-input').onkeydown = (e) => {
+
+  let timer;
+  const editorInput = $('editor-input');
+  const editorPreview = $('editor-preview');
+  editorInput.oninput = () => {
+    updateEditorDirty();
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      renderMarkdown(editorInput.value, editorPreview);
+      runMermaid(editorPreview);
+    }, 240);
+  };
+  editorInput.onkeydown = (e) => {
     if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); }
   };
+
+  let syncingFrom = null;
+  let syncRelease;
+  const syncScroll = (src, dst, name) => {
+    if (syncingFrom && syncingFrom !== name) return;
+    if ($('editor-body').dataset.pane !== 'split') return;
+    const maxSrc = src.scrollHeight - src.clientHeight;
+    const maxDst = dst.scrollHeight - dst.clientHeight;
+    if (maxSrc <= 0 || maxDst <= 0) return;
+    syncingFrom = name;
+    dst.scrollTop = (src.scrollTop / maxSrc) * maxDst;
+    clearTimeout(syncRelease);
+    syncRelease = setTimeout(() => { syncingFrom = null; }, 50);
+  };
+  editorInput.addEventListener('scroll', () => syncScroll(editorInput, editorPreview, 'input'));
+  editorPreview.addEventListener('scroll', () => syncScroll(editorPreview, editorInput, 'preview'));
 
   document.addEventListener('keydown', (e) => {
     const mod = e.ctrlKey || e.metaKey;
     const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '');
     if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); openSearch(); }
-    if (mod && e.key.toLowerCase() === 's' && state.editing) { e.preventDefault(); saveEditor(); }
-    if (e.key === 'Escape') { closeSearch(); closeSidebar(); closeSheet(); $('more-menu').classList.remove('open'); }
+    if (mod && e.key.toLowerCase() === 's' && state.editing) {
+      e.preventDefault();
+      if (isDirty() && !$('save-btn').disabled) saveEditor();
+    }
+    if (e.key === 'Escape') {
+      closePopover();
+      closeDrawer();
+      closeSearch();
+      closeLightbox();
+      closeSidebar();
+      closeMenu();
+    }
+    if (!$('lightbox-modal').hidden && !typing && !mod && !e.altKey) {
+      if (e.key === '+' || e.key === '=') { e.preventDefault(); setLightboxZoom(lbView.scale * 1.25); }
+      else if (e.key === '-' || e.key === '_') { e.preventDefault(); setLightboxZoom(lbView.scale / 1.25); }
+      else if (e.key === '0') { e.preventDefault(); resetLightboxView(); }
+    }
+    if (state.popover && !typing && !mod && !e.altKey) {
+      const k = e.key.toLowerCase();
+      if (k === 'f') {
+        e.preventDefault();
+        ($('issue-popover').querySelector('[data-act="fix"]') || $('issue-popover').querySelector('[data-act="edit-page"]'))?.click();
+      } else if (k === 'r') {
+        e.preventDefault();
+        ($('issue-popover').querySelector('[data-act="resolve"]') || $('issue-popover').querySelector('[data-act="reopen"]'))?.click();
+      } else if (k === 'w') {
+        e.preventDefault();
+        $('issue-popover').querySelector('[data-act="ignore"]')?.click();
+      } else if (e.key === 'ArrowLeft') {
+        $('issue-popover').querySelector('[data-act="prev-issue"]')?.click();
+      } else if (e.key === 'ArrowRight') {
+        $('issue-popover').querySelector('[data-act="next-issue"]')?.click();
+      }
+    }
     if (e.key === '/' && !state.editing && !typing) { e.preventDefault(); openSearch(); }
   });
 
-  let wide = isWide();
+  addEventListener('scroll', () => { if (state.popover) positionPopover(); }, { passive: true });
   addEventListener('resize', () => {
-    if (wide !== isWide()) { wide = isWide(); if (isReview() && state.view === 'doc') { closeSheet(); renderRail(); } }
-    else layoutRail();
+    updateTabsIndicator();
+    if (state.popover) positionPopover();
   });
-  new ResizeObserver(() => layoutRail()).observe($('content'));
   addEventListener('beforeunload', (e) => { if (isDirty() || state.inline) e.preventDefault(); });
   addEventListener('hashchange', route);
 }
@@ -1583,7 +2528,8 @@ function bind() {
 // ---------------------------------------------------------------- start
 
 (async () => {
-  applyTheme(isDark() ? 'dark' : 'light');
+  const savedTheme = store.get('localStorage', 'theme');
+  applyTheme(savedTheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), { persist: false });
   bind();
   try {
     state.data = await api('/api/manifest');
@@ -1594,7 +2540,10 @@ function bind() {
   state.showChanges = store.get('localStorage', 'changes') === '1';
   await loadChanges();
   updateChangesButton();
-  $('changes-btn').onclick = () => setShowChanges(!state.showChanges);
+  $('changes-btn').onclick = () => {
+    setShowChanges(!state.showChanges);
+    closeMenu();
+  };
   if (store.get('localStorage', 'mode') === 'review' && getPassword()) {
     try { await loadReview(); state.mode = 'review'; } catch { state.mode = 'reader'; }
   }

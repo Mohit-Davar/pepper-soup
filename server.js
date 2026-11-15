@@ -43,15 +43,11 @@ const SPACE_TITLES = {
 const AUDIENCE_SPACE = { end_user: "user", contributor: "developer" };
 
 export function loadConfig(env = process.env) {
-  function required(name) {
-    const value = env[name]?.trim();
-    if (!value) {
-      throw new Error(`Required environment variable ${name} is not set`);
-    }
-    return value;
+  function optional(name) {
+    return env[name]?.trim() || "";
   }
 
-  const portValue = required("PORT");
+  const portValue = optional("PORT") || "3000";
   if (!/^\d+$/.test(portValue)) {
     throw new Error("PORT must be an integer");
   }
@@ -62,10 +58,10 @@ export function loadConfig(env = process.env) {
 
   return {
     port,
-    editPassword: required("EDIT_PASSWORD"),
-    githubToken: required("GITHUB_TOKEN"),
-    githubRepo: required("GITHUB_REPO"),
-    githubBranch: required("GITHUB_BRANCH"),
+    editPassword: optional("EDIT_PASSWORD"),
+    githubToken: optional("GITHUB_TOKEN"),
+    githubRepo: optional("GITHUB_REPO"),
+    githubBranch: optional("GITHUB_BRANCH"),
   };
 }
 
@@ -419,6 +415,12 @@ async function githubCommit(config, files, message) {
 }
 
 async function commitOrWarn(config, files, message) {
+  if (!config.githubToken || !config.githubRepo || !config.githubBranch) {
+    return {
+      commit: null,
+      warning: "Saved on the server (GitHub sync disabled: GITHUB_TOKEN, GITHUB_REPO, or GITHUB_BRANCH not set).",
+    };
+  }
   try {
     return { commit: await githubCommit(config, files, message), warning: null };
   } catch (error) {
@@ -456,6 +458,10 @@ export function createApp(config) {
 
   /** Reviewer-only routes: the edit password is sent in X-Password. */
   const requireReviewer = (request, response, next) => {
+    if (!config.editPassword) {
+      response.status(503).json({ error: "Review mode is disabled (EDIT_PASSWORD is not set)" });
+      return;
+    }
     if (!passwordsMatch(request.get("X-Password") || "", config.editPassword)) {
       setTimeout(() => response.status(401).json({ error: "Wrong password" }), 500);
       return;
@@ -707,6 +713,14 @@ export function createApp(config) {
   for (const name of PUBLISHED) {
     app.use(`/docs/${name}`, express.static(path.join(DOCS, name), { fallthrough: true, index: false }));
   }
+  app.use(
+    "/vendor/mermaid",
+    express.static(path.join(ROOT, "node_modules/mermaid/dist"), { fallthrough: true, index: false }),
+  );
+  app.use(
+    "/vendor/mermaid-layout-elk",
+    express.static(path.join(ROOT, "node_modules/@mermaid-js/layout-elk/dist"), { fallthrough: true, index: false }),
+  );
   app.use(express.static(FRONTEND, { fallthrough: true }));
   app.use((request, response, next) => {
     if (request.path.startsWith("/docs/") || request.path.startsWith("/api/")) {
