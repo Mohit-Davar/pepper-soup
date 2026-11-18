@@ -136,9 +136,14 @@ flowchart TD
 Use this screen to turn on accrual activity posting at loan product level so the system can create accrual activity transactions on installment due dates.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **ACCOUNTING**.
+
+   ![Where to find ACCOUNTING](images/interest-accruals-1-step3.png "ui-shot")
+
 4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Accrual Activity on Installment Dates screen with the fields described below outlined](images/interest-accruals-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -194,8 +199,14 @@ Use this screen to pause interest for a chosen period so that no interest accrue
 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
-3. Select **Add Interest Pause**.
-4. Enter the details described below, then select **Submit**.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Add Interest Pause**.
+
+   ![Where to find Add Interest Pause](images/interest-accruals-2-step4.png "ui-shot")
+
+5. Enter the details described below, then select **Submit**.
+
+![The Pausing and Resuming Accruals screen with the fields described below outlined](images/interest-accruals-2-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

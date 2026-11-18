@@ -8,16 +8,21 @@ A down payment is an amount collected at disbursement. You can enable it at the 
 
 You configure down payments at the loan product level so the system collects a down-payment amount at disbursement, and the setting applies to all new loan accounts and disbursements of that product.
 
-1. Select **Admin** > **Products**.
-2. Select **Create Loan Product**.
-3. Select **Classic**.
-4. Select **SETTINGS**.
-5. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create** > **Create Loan Product (Classic)**.
+3. Select **SETTINGS**.
+
+   ![Where to find SETTINGS](../.gitbook/assets/loan-origination-down-payments-1-step3.png "ui-shot")
+
+4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Set up down payments for a loan product screen with the fields described below outlined](../.gitbook/assets/loan-origination-down-payments-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
-| Disbursed Amount Percentage Down Payment | Yes | Enter the percentage of the disbursed amount to collect as the down payment. |
-| Enable or disable the auto repayment of down-payment. When “auto repayment for the down-payments“ is enabled,  the disbursements will trigger an auto down payment transaction for the down payment amount | No | Enable or disable automatic repayment of the down payment; when enabled, disbursements trigger an automatic down-payment transaction for the down-payment amount. |
+| Enable Down Payment | No | Select this to collect a down payment when the loan is disbursed. The fields below appear once it is on. |
+| Disbursed Amount Percentage Down Payment (%) | Yes | Enter the percentage of the disbursed amount to collect as the down payment. |
+| Enable Auto Repayment for Down Payment | No | Enable or disable automatic repayment of the down payment; when enabled, disbursements trigger an automatic down-payment transaction for the down-payment amount. |
 
 The down payment is collected at disbursement as a down-payment transaction, and the configuration applies to all new loan accounts and disbursements of the product.
 

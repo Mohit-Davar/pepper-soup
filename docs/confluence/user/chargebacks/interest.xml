@@ -11,7 +11,7 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>View Transaction</strong> screen.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Charge back a transaction screen" ac:width="900"><ri:attachment ri:filename="chargebacks-interest-1-screen.png"/></ac:image></p>
 <p>The system creates a chargeback transaction for the selected linked transaction, crediting back the paid balances according to the chargeback allocation rule or increasing due principal only when no rule applies.</p>
 <h2>Chargeback amount and target transaction</h2>
 <p>A chargeback transaction is dated the current date. Its amount can be equal to or lower than the target transaction, but cannot exceed the amount of the related payment transaction.</p>

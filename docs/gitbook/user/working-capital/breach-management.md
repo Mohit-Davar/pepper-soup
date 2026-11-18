@@ -10,15 +10,20 @@ Use this screen to set up breach parameters that identify and monitor violations
 
 1. Select **Admin** > **Products**.
 2. Select **Breach Configuration**.
+
+   ![Where to find Breach Configuration](../.gitbook/assets/working-capital-breach-management-1-step2.png "ui-shot")
+
 3. Enter the details described below, then select **Submit**.
+
+![The Create a breach configuration screen with the fields described below outlined](../.gitbook/assets/working-capital-breach-management-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
-| Name (create breach configuration create breach configuration) | Yes | Enter a unique name for the breach configuration. |
-| Frequency (create breach configuration create breach configuration) | Yes | Enter the numeric range interval for the breach period. |
-| Frequency Type (create breach configuration create breach configuration) | Yes | Select the time unit for the range interval, such as days, weeks, or months. |
-| Calculation Type (create breach configuration create breach configuration) | Yes | Choose whether the breach amount is a percentage of the loan amount or a flat amount. |
-| Amount (create breach configuration create breach configuration) | Yes | Enter the breach amount. |
+| Name | Yes | Enter a unique name for the breach configuration. |
+| Frequency | Yes | Enter the numeric range interval for the breach period. |
+| Frequency Type | Yes | Select the time unit for the range interval, such as days, weeks, or months. |
+| Calculation Type | Yes | Choose whether the breach amount is a percentage of the loan amount or a flat amount. |
+| Amount | Yes | Enter the breach amount. |
 
 The breach configuration is saved and can be mapped to the relevant loan product.
 
@@ -29,6 +34,10 @@ Use the loan breach schedule tab to see breach periods, totals, timeline severit
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Breach Schedule** tab.
+
+![The View the breach schedule screen](../.gitbook/assets/working-capital-breach-management-2-screen.png "ui-shot")
+
+   ![Where to find Breach Schedule](../.gitbook/assets/working-capital-breach-management-2-step3.png "ui-shot")
 
 The screen shows breach periods, total days in breach, peak outstanding, past due amount, average gap, counts for in breach, near breach, resolved, and compliant periods, the breach timeline by severity, and any recorded resets.
 

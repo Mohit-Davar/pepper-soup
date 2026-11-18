@@ -10,8 +10,14 @@ Use the loan re-aging screen to create a new set of installments for the same lo
 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
-3. Select **Re-Age**.
-4. Enter the details described below, then select **Submit**.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Re-Age**.
+
+   ![Where to find Re-Age](../.gitbook/assets/restructuring-re-aging-1-step4.png "ui-shot")
+
+5. Enter the details described below, then select **Submit**.
+
+![The Set up a loan re-aging schedule screen with the fields described below outlined](../.gitbook/assets/restructuring-re-aging-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

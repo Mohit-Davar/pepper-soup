@@ -17,6 +17,8 @@ Use the View Transaction screen to reverse a linked transaction by creating a ch
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **View Transaction** screen.
 
+![The Charge back a transaction screen](images/chargebacks-interest-1-screen.png "ui-shot")
+
 The system creates a chargeback transaction for the selected linked transaction, crediting back the paid balances according to the chargeback allocation rule or increasing due principal only when no rule applies.
 
 ## Chargeback amount and target transaction

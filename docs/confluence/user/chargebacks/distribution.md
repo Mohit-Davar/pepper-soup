@@ -12,6 +12,8 @@ Use this screen to initiate a chargeback on a previous repayment or refund, whic
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **View Transaction** screen.
 
+![The Charge back a transaction screen](images/chargebacks-distribution-1-screen.png "ui-shot")
+
 The chargeback amount is added to the next installment in the repayment schedule, and the loan balances and repayment schedule are updated accordingly.
 
 ## Supported transaction types

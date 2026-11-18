@@ -15,8 +15,12 @@ A payment allocation strategy decides the order in which a payment is applied to
 Use this screen to arrange how early payments are applied across principal, interest, fees, and penalties.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Open the **PAYMENT ALLOCATION** step.
+
+![The Set the advance payment allocation order screen with the fields described below outlined](../.gitbook/assets/repayments-allocation-strategies-1-screen.png "ui-shot")
+
+   ![Where to find PAYMENT ALLOCATION](../.gitbook/assets/repayments-allocation-strategies-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

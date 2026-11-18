@@ -11,9 +11,9 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
-<li>Select <strong>Sell Loan</strong> or <strong>Buy Back Loan</strong>.</li>
+<li>Select <strong>Sell Loan</strong> or <strong>Buy Back Loan</strong>.<br/><br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Sell Loan > Buy Back Loan" ac:width="900"><ri:attachment ri:filename="assets-investors-asset-externalization-1-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Transfer a loan to an investor screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="assets-investors-asset-externalization-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -49,8 +49,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Select <strong>External Asset Owner</strong>.</li>
-</ol>
+<li>Select <strong>External Asset Owner</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find External Asset Owner" ac:width="900"><ri:attachment ri:filename="assets-investors-asset-externalization-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Sell a loan to an investor screen" ac:width="900"><ri:attachment ri:filename="assets-investors-asset-externalization-2-screen.png"/></ac:image></p>
 <p>The transfer is initiated and stored with the external owner it relates to, and ownership changes at Close of Business.</p>
 <h2>Enabling and configuring the investor module</h2>
 <p>The Investor module has two global settings: one turns the module on or off, and the other controls whether owners are created automatically. Automatic owner creation is enabled by default.</p>

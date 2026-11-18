@@ -5,10 +5,11 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
 <li>Select <strong>Prepay Loan</strong>.</li>
-<li>Open the <strong>Prepay Loan</strong> screen.</li>
+<li>Open the <strong>Prepay Loan</strong> screen.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Prepay Loan" ac:width="900"><ri:attachment ri:filename="repayments-payoff-1-step5.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Prepay a loan screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="repayments-payoff-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

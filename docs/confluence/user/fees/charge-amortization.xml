@@ -5,8 +5,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Buy Down Fees</strong> tab.</li>
-</ol>
+<li>Open the <strong>Buy Down Fees</strong> tab.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Buy Down Fees" ac:width="900"><ri:attachment ri:filename="fees-charge-amortization-1-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The View deferred income for an amortized charge screen" ac:width="900"><ri:attachment ri:filename="fees-charge-amortization-1-screen.png"/></ac:image></p>
 <h2>Eligibility and product setup</h2>
 <p>Only loan fees can be amortized; penalties cannot.</p>
 <p>A loan product can use charge amortization only when its enable charge amortization flag is on.</p>

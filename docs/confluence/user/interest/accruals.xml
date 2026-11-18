@@ -207,10 +207,10 @@
 <p>Use this screen to turn on accrual activity posting at loan product level so the system can create accrual activity transactions on installment due dates.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Select <strong>ACCOUNTING</strong>.</li>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>ACCOUNTING</strong>.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find ACCOUNTING" ac:width="900"><ri:attachment ri:filename="interest-accruals-1-step3.png"/></ac:image></li>
 <li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Accrual Activity on Installment Dates screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="interest-accruals-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -363,9 +363,10 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Select <strong>Add Interest Pause</strong>.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Add Interest Pause</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Add Interest Pause" ac:width="900"><ri:attachment ri:filename="interest-accruals-2-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Pausing and Resuming Accruals screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="interest-accruals-2-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

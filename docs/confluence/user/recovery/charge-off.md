@@ -12,7 +12,12 @@ Use this screen to write off a delinquent loan's outstanding balances for accoun
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Charge-Off**.
+
+   ![Where to find Charge-Off](images/recovery-charge-off-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Charge off a loan screen with the fields described below outlined](images/recovery-charge-off-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -31,7 +36,12 @@ Use this screen to write off a delinquent loan's outstanding balances for accoun
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Charge-Off**.
+
+   ![Where to find Charge-Off](images/recovery-charge-off-2-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Charge off a loan screen with the fields described below outlined](images/recovery-charge-off-2-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

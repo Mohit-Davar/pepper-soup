@@ -35,8 +35,12 @@ Allocation order for any payment:
 Use this screen to choose how an advance payment is split between the next installment and the last installment.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Open the **PAYMENT ALLOCATION** step.
+
+![The Set advance payment allocation to next and last installments screen with the fields described below outlined](../.gitbook/assets/repayments-next-last-instalment-1-screen.png "ui-shot")
+
+   ![Where to find PAYMENT ALLOCATION](../.gitbook/assets/repayments-next-last-instalment-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

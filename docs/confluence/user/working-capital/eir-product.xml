@@ -4,10 +4,10 @@
 <p>Use this screen to set the principal, payment rate, annual EIR, payment amount, number of repayments, interest rates, floating rate, and repayment timing for an Effective Interest Rate loan product.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Select <strong>TERMS</strong>.</li>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>TERMS</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find TERMS" ac:width="900"><ri:attachment ri:filename="working-capital-eir-product-1-step3.png"/></ac:image></li>
 <li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Configure effective interest rate product terms screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="working-capital-eir-product-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

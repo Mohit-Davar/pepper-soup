@@ -9,9 +9,14 @@ The Working Capital loan product is a zero-interest, single-disbursement product
 Use this screen to set the principal, payment rate, annual EIR, payment amount, number of repayments, interest rates, floating rate, and repayment timing for an Effective Interest Rate loan product.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **TERMS**.
+
+   ![Where to find TERMS](images/working-capital-eir-product-1-step3.png "ui-shot")
+
 4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Configure effective interest rate product terms screen with the fields described below outlined](images/working-capital-eir-product-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

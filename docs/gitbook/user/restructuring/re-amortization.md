@@ -14,8 +14,14 @@ Re-amortization spreads the past due balance of the loan over the remaining inst
 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
-3. Select **Re-Amortize**.
-4. Enter the details described below, then select **Submit**.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Re-Amortize**.
+
+   ![Where to find Re-Amortize](../.gitbook/assets/restructuring-re-amortization-1-step4.png "ui-shot")
+
+5. Enter the details described below, then select **Submit**.
+
+![The Re-amortize a loan screen with the fields described below outlined](../.gitbook/assets/restructuring-re-amortization-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

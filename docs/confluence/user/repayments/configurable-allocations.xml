@@ -4,9 +4,9 @@
 <p>Use this screen to set the order in which payments are allocated across installments and balances for a loan product with Advanced payment allocation selected.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Open the <strong>PAYMENT ALLOCATION</strong> step.</li>
-</ol>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Open the <strong>PAYMENT ALLOCATION</strong> step.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find PAYMENT ALLOCATION" ac:width="900"><ri:attachment ri:filename="repayments-configurable-allocations-1-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Configure advanced payment allocation screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="repayments-configurable-allocations-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

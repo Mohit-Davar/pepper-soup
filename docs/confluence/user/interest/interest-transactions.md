@@ -20,7 +20,12 @@ Use this screen to waive interest on active and closed loan accounts by entering
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Waive Interest**.
+
+   ![Where to find Waive Interest](images/interest-interest-transactions-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Interest Waivers screen with the fields described below outlined](images/interest-interest-transactions-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -76,8 +81,12 @@ An Interest Refund is a system-calculated credit for interest charged to a progr
 Use this screen to choose which refund transaction types trigger an interest refund for a progressive, interest bearing loan product.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **INTEREST REFUND**.
+
+![The Interest Refunds screen with the fields described below outlined](images/interest-interest-transactions-2-screen.png "ui-shot")
+
+   ![Where to find INTEREST REFUND](images/interest-interest-transactions-2-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

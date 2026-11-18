@@ -12,6 +12,10 @@ The loan deferred income tab shows how much of an amortized charge is still defe
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Buy Down Fees** tab.
 
+![The View deferred income for an amortized charge screen](../.gitbook/assets/fees-charge-amortization-1-screen.png "ui-shot")
+
+   ![Where to find Buy Down Fees](../.gitbook/assets/fees-charge-amortization-1-step3.png "ui-shot")
+
 ## Eligibility and product setup
 
 Only loan fees can be amortized; penalties cannot.

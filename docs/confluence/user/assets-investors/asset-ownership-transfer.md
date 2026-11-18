@@ -12,7 +12,12 @@ Use this screen to submit a loan ownership transfer so the asset can move to an 
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Sell Loan** or **Buy Back Loan**.
+
+   ![Where to find Sell Loan > Buy Back Loan](images/assets-investors-asset-ownership-transfer-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Transfer asset ownership on a loan screen with the fields described below outlined](images/assets-investors-asset-ownership-transfer-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -30,6 +35,10 @@ Use the external asset owner tab to sell a loan to an external investor and star
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Select **External Asset Owner**.
+
+![The Sell a loan to an external asset owner screen](images/assets-investors-asset-ownership-transfer-2-screen.png "ui-shot")
+
+   ![Where to find External Asset Owner](images/assets-investors-asset-ownership-transfer-2-step3.png "ui-shot")
 
 The transfer starts as PENDING and moves to ACTIVE at close of business if the loan balance is greater than zero, otherwise it is declined.
 

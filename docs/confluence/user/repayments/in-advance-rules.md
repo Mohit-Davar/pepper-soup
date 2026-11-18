@@ -23,8 +23,12 @@ Select the future installment allocation rule from the dropdown on the loan prod
 Use this screen to choose how unprocessed amounts are allocated to upcoming installments for loans using the New DueInAdvance payment strategy.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Open the **PAYMENT ALLOCATION** step.
+
+![The Set the future installment allocation rule screen with the fields described below outlined](images/repayments-in-advance-rules-1-screen.png "ui-shot")
+
+   ![Where to find PAYMENT ALLOCATION](images/repayments-in-advance-rules-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

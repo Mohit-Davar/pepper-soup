@@ -85,9 +85,14 @@ Loan products and accounts with no stored strategy use LAST_DAY_OF_MONTH, so the
 Use this screen to choose how monthly repayment due dates are handled when the original repayment day does not exist in a target month, so the loan product applies a consistent month-end rule to new loans.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **TERMS**.
+
+   ![Where to find TERMS](images/loan-products-repayment-schedule-1-step3.png "ui-shot")
+
 4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Set the monthly repayment due date strategy screen with the fields described below outlined](images/loan-products-repayment-schedule-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

@@ -12,6 +12,10 @@ The Loan Originators tab lists the originators attached to the loan so you can s
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Buy Down Fees** tab.
 
+![The View loan originators screen](images/loan-origination-loan-originator-1-screen.png "ui-shot")
+
+   ![Where to find Buy Down Fees](images/loan-origination-loan-originator-1-step3.png "ui-shot")
+
 The screen shows each originator's ID, external ID, name, status, originator type, and channel type, or an empty state when no originators are attached.
 
 ## Attach an originator to a loan
@@ -22,7 +26,12 @@ Use this screen to link a loan originator to a loan so that loan income can be a
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Attach Loan Originator**.
+
+   ![Where to find Attach Loan Originator](images/loan-origination-loan-originator-2-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Attach an originator to a loan screen with the fields described below outlined](images/loan-origination-loan-originator-2-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -37,7 +46,12 @@ Use this screen to record the merchant or channel that originated the loan so lo
 1. Select **Institution** > **Clients** and open the client.
 2. Open the client actions menu (the ☰ button next to the client name) and select **Applications** > **New Loan Account**.
 3. Select **DETAILS**.
+
+   ![Where to find DETAILS](images/loan-origination-loan-originator-3-step3.png "ui-shot")
+
 4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Enter loan originator details screen with the fields described below outlined](images/loan-origination-loan-originator-3-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

@@ -4,9 +4,9 @@
 <p>Use this screen to set up income capitalization and buy-down fees for a loan product so merchant fees can be collected at disbursement and amortized into interest income over the loan lifecycle.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Select <strong>DEFERRED INCOME RECOGNITION</strong>.</li>
-</ol>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>DEFERRED INCOME RECOGNITION</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find DEFERRED INCOME RECOGNITION" ac:width="900"><ri:attachment ri:filename="fees-buy-down-fees-1-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Configure capitalized income on a loan product screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="fees-buy-down-fees-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -67,8 +67,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Buy Down Fees</strong> tab.</li>
-</ol>
+<li>Open the <strong>Buy Down Fees</strong> tab.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Buy Down Fees" ac:width="900"><ri:attachment ri:filename="fees-buy-down-fees-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Add a buy-down fee to a loan screen" ac:width="900"><ri:attachment ri:filename="fees-buy-down-fees-2-screen.png"/></ac:image></p>
 <p>The system creates a new buy-down fees transaction with the amount you entered, and the fee is amortized daily into interest income over the loan lifecycle without affecting the loan schedule or interest calculation.</p>
 <h2>Eligibility and Timing</h2>
 <p>Buy-Down fees apply only to progressive loans. You can add them once the loan is active, using any transaction date on or after the first disbursement date.</p>

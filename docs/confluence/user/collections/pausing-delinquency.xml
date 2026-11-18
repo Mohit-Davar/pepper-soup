@@ -12,9 +12,9 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>Delinquency Tags</strong> tab.</li>
-<li>Select <strong>Create Delinquency Action</strong>.</li>
+<li>Select <strong>Pause Delinquency Classification</strong>.<br/><br/><br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Pause Delinquency Classification" ac:width="900"><ri:attachment ri:filename="collections-pausing-delinquency-1-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Pause delinquency on a loan screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="collections-pausing-delinquency-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -40,8 +40,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Loan Delinquency Tags</strong> tab.</li>
-</ol>
+<li>Open the <strong>Delinquency Tags</strong> tab.<br/><br/><br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Delinquency Tags" ac:width="900"><ri:attachment ri:filename="collections-pausing-delinquency-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Pause delinquency classification screen" ac:width="900"><ri:attachment ri:filename="collections-pausing-delinquency-2-screen.png"/></ac:image></p>
 <p>Delinquency evaluation is disabled for the loan and the pause appears as active on the tab until you resume it or the pause period ends.</p>
 <h2>Eligibility and timing</h2>
 <p>A pause starts today or later and must last at least one day, so the start date must be before the end date. If no pause period exists yet, the start date cannot be before the loan&#39;s first disbursement date. If a pause period already exists, the start date cannot be before that period&#39;s end date. The end date cannot be the same as the start date. Delinquency recalculation happens on the last day of the pause. If the loan is repaid, the delinquency pause stops.</p>

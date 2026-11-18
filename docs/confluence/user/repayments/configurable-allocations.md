@@ -9,8 +9,12 @@ Configurable payment allocations let you set how payments are applied by transac
 Use this screen to set the order in which payments are allocated across installments and balances for a loan product with Advanced payment allocation selected.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Open the **PAYMENT ALLOCATION** step.
+
+![The Configure advanced payment allocation screen with the fields described below outlined](images/repayments-configurable-allocations-1-screen.png "ui-shot")
+
+   ![Where to find PAYMENT ALLOCATION](images/repayments-configurable-allocations-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

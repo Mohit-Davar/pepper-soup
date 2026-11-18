@@ -12,17 +12,21 @@ When a later tranche is captured mid-term after an earlier installment:
 
 Use this screen to set up a loan product so each tranche disbursement follows the full loan term schedule instead of fitting within the remaining term.
 
-1. Select **Admin** > **Products**.
-2. Select **Create Loan Product**.
-3. Select **Classic**.
-4. Select **SETTINGS**.
-5. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create** > **Create Loan Product (Classic)**.
+3. Select **SETTINGS**.
+
+   ![Where to find SETTINGS](../.gitbook/assets/loan-origination-delayed-captures-1-step3.png "ui-shot")
+
+4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Enable full term tranches for delayed captures screen with the fields described below outlined](../.gitbook/assets/loan-origination-delayed-captures-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
-| Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. See additional fields for additional information required for this type of loan. | No | Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. |
+| Enable Multiple Disbursals | No | Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. |
 | Maximum Tranche count | Yes | Enter the maximum number of tranches allowed for the loan product. |
-| When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type. | No | When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type. |
+| Allow full term for each tranche | No | When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type. |
 
 Each tranche disbursement follows the full loan term schedule instead of fitting within the remaining term.
 
@@ -33,6 +37,10 @@ Use this screen to set whether each tranche disbursement follows the full loan t
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Select **Loan Tranche Details**.
+
+![The Allow full term for each tranche screen](../.gitbook/assets/loan-origination-delayed-captures-2-screen.png "ui-shot")
+
+   ![Where to find Loan Tranche Details](../.gitbook/assets/loan-origination-delayed-captures-2-step3.png "ui-shot")
 
 When enabled, each tranche disbursement follows the full loan term schedule; when disabled, the system works normally.
 

@@ -12,7 +12,12 @@ Use this screen to mark a loan as written-off and close it with that status.
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Write Off**.
+
+   ![Where to find Write Off](images/recovery-write-off-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Write off a loan screen with the fields described below outlined](images/recovery-write-off-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -31,7 +36,12 @@ Use the write-off screen to close a loan with a written-off status and record th
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Write Off**.
+
+   ![Where to find Write Off](images/recovery-write-off-2-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Write off a loan screen with the fields described below outlined](images/recovery-write-off-2-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

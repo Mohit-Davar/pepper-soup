@@ -9,8 +9,12 @@ Buy-down fees are a unique transaction type used to post the buy-down fee to the
 Use this screen to set up income capitalization and buy-down fees for a loan product so merchant fees can be collected at disbursement and amortized into interest income over the loan lifecycle.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **DEFERRED INCOME RECOGNITION**.
+
+![The Configure capitalized income on a loan product screen with the fields described below outlined](../.gitbook/assets/fees-buy-down-fees-1-screen.png "ui-shot")
+
+   ![Where to find DEFERRED INCOME RECOGNITION](../.gitbook/assets/fees-buy-down-fees-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -33,6 +37,10 @@ Use this screen to add a buy-down fee to an active progressive loan after disbur
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Buy Down Fees** tab.
+
+![The Add a buy-down fee to a loan screen](../.gitbook/assets/fees-buy-down-fees-2-screen.png "ui-shot")
+
+   ![Where to find Buy Down Fees](../.gitbook/assets/fees-buy-down-fees-2-step3.png "ui-shot")
 
 The system creates a new buy-down fees transaction with the amount you entered, and the fee is amortized daily into interest income over the loan lifecycle without affecting the loan schedule or interest calculation.
 

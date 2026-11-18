@@ -17,8 +17,13 @@ Use the Loan Delinquency Actions dialog to pause delinquency for an active loan 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Delinquency Tags** tab.
-4. Select **Create Delinquency Action**.
+4. Select **Pause Delinquency Classification**.
+
+   ![Where to find Pause Delinquency Classification](../.gitbook/assets/collections-pausing-delinquency-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Pause delinquency on a loan screen with the fields described below outlined](../.gitbook/assets/collections-pausing-delinquency-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -33,7 +38,11 @@ Use the loan delinquency tags tab to stop delinquency evaluation for an active l
 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
-3. Open the **Loan Delinquency Tags** tab.
+3. Open the **Delinquency Tags** tab.
+
+![The Pause delinquency classification screen](../.gitbook/assets/collections-pausing-delinquency-2-screen.png "ui-shot")
+
+   ![Where to find Delinquency Tags](../.gitbook/assets/collections-pausing-delinquency-2-step3.png "ui-shot")
 
 Delinquency evaluation is disabled for the loan and the pause appears as active on the tab until you resume it or the pause period ends.
 

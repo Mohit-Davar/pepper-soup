@@ -15,9 +15,9 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
-<li>Select <strong>Waive Interest</strong>.</li>
+<li>Select <strong>Waive Interest</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Waive Interest" ac:width="900"><ri:attachment ri:filename="interest-interest-transactions-1-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Interest Waivers screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="interest-interest-transactions-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -189,9 +189,9 @@
 <p>Use this screen to choose which refund transaction types trigger an interest refund for a progressive, interest bearing loan product.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Select <strong>INTEREST REFUND</strong>.</li>
-</ol>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>INTEREST REFUND</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find INTEREST REFUND" ac:width="900"><ri:attachment ri:filename="interest-interest-transactions-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Interest Refunds screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="interest-interest-transactions-2-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

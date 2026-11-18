@@ -9,9 +9,10 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Select <strong>Re-Amortize</strong>.</li>
+<li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
+<li>Select <strong>Re-Amortize</strong>.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Re-Amortize" ac:width="900"><ri:attachment ri:filename="restructuring-re-amortization-1-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Re-amortize a loan screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="restructuring-re-amortization-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

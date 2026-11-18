@@ -12,7 +12,12 @@ Use this screen to record an early termination of an existing loan as a loan wit
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Withdrawn by Client**.
+
+   ![Where to find Withdrawn by Client](images/recovery-future-dated-termination-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Withdraw a loan screen with the fields described below outlined](images/recovery-future-dated-termination-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

@@ -4,9 +4,9 @@
 <p>Use this screen to set up breach parameters that identify and monitor violations of predefined loan conditions for Working Capital loan products.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong>.</li>
-<li>Select <strong>Breach Configuration</strong>.</li>
+<li>Select <strong>Breach Configuration</strong>.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Breach Configuration" ac:width="900"><ri:attachment ri:filename="working-capital-breach-management-1-step2.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Create a breach configuration screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="working-capital-breach-management-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -16,27 +16,27 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>Name (create breach configuration create breach configuration)</td>
+<td>Name</td>
 <td>Yes</td>
 <td>Enter a unique name for the breach configuration.</td>
 </tr>
 <tr>
-<td>Frequency (create breach configuration create breach configuration)</td>
+<td>Frequency</td>
 <td>Yes</td>
 <td>Enter the numeric range interval for the breach period.</td>
 </tr>
 <tr>
-<td>Frequency Type (create breach configuration create breach configuration)</td>
+<td>Frequency Type</td>
 <td>Yes</td>
 <td>Select the time unit for the range interval, such as days, weeks, or months.</td>
 </tr>
 <tr>
-<td>Calculation Type (create breach configuration create breach configuration)</td>
+<td>Calculation Type</td>
 <td>Yes</td>
 <td>Choose whether the breach amount is a percentage of the loan amount or a flat amount.</td>
 </tr>
 <tr>
-<td>Amount (create breach configuration create breach configuration)</td>
+<td>Amount</td>
 <td>Yes</td>
 <td>Enter the breach amount.</td>
 </tr>
@@ -47,8 +47,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Breach Schedule</strong> tab.</li>
-</ol>
+<li>Open the <strong>Breach Schedule</strong> tab.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Breach Schedule" ac:width="900"><ri:attachment ri:filename="working-capital-breach-management-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The View the breach schedule screen" ac:width="900"><ri:attachment ri:filename="working-capital-breach-management-2-screen.png"/></ac:image></p>
 <p>The screen shows breach periods, total days in breach, peak outstanding, past due amount, average gap, counts for in breach, near breach, resolved, and compliant periods, the breach timeline by severity, and any recorded resets.</p>
 <h2>Manage breach actions for a loan</h2>
 <p>Use the loan breach actions tab to view and act on breach actions recorded for a loan, including pauses and near breach actions.</p>

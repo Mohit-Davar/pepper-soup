@@ -9,16 +9,23 @@ Delinquency Management monitors overdue loan payments using customized buckets. 
 Use this screen to set up a delinquency bucket with overdue days defined per bucket for monitoring overdue payments on loans.
 
 1. Select **Admin** > **Products**.
-2. Select **Manage Delinquency Buckets**.
-3. Enter the details described below, then select **Submit**.
+2. Select **Delinquency Buckets**.
+3. Select **Manage Delinquency Buckets**.
+4. Select **Create** > **Working Capital Delinquency Bucket**.
+
+   ![Where to find Create > Working Capital Delinquency Bucket](images/collections-buckets-1-step4.png "ui-shot")
+
+5. Enter the details described below, then select **Submit**.
+
+![The Create a delinquency bucket screen with the fields described below outlined](images/collections-buckets-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
-| Name (create bucket create bucket) | Yes | Enter the name of the delinquency bucket. |
-| Frequency (create bucket create bucket) | Yes | Enter how often the bucket applies. |
-| Frequency Type (create bucket create bucket) | Yes | Select the type of frequency. |
-| Minimum Payment (create bucket create bucket) | Yes | Enter the minimum payment required for the bucket. |
-| Minimum Payment Type (create bucket create bucket) | Yes | Select the type of minimum payment. |
+| Name | Yes | Enter the name of the delinquency bucket. |
+| Frequency | Yes | Enter how often the bucket applies. |
+| Frequency Type | Yes | Select the type of frequency. |
+| Minimum Payment | Yes | Enter the minimum payment required for the bucket. |
+| Minimum Payment Type | Yes | Select the type of minimum payment. |
 
 The delinquency bucket is created and can be used to classify overdue loans.
 

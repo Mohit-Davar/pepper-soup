@@ -26,7 +26,12 @@ Use this screen to record a prepayment against a loan account, entering the date
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Prepay Loan**.
+
+   ![Where to find Prepay Loan](images/working-capital-transaction-types-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Prepay a loan screen with the fields described below outlined](images/working-capital-transaction-types-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

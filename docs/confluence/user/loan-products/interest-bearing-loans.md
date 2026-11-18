@@ -4,11 +4,15 @@ Interest-bearing loans accrue interest daily until the maturity date is reached.
 
 ## Set up loan product settings
 
-1. Select **Admin** > **Products**.
-2. Select **Create Loan Product**.
-3. Select **Classic**.
-4. Select **SETTINGS**.
-5. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+1. Select **Admin** > **Products** > **Loan Products**.
+2. Select **Create** > **Create Loan Product (Classic)**.
+3. Select **SETTINGS**.
+
+   ![Where to find SETTINGS](images/loan-products-interest-bearing-loans-1-step3.png "ui-shot")
+
+4. Set the fields described below, then select **Next** to continue through the form and save it at the end.
+
+![The Set up loan product settings screen with the fields described below outlined](images/loan-products-interest-bearing-loans-1-screen.png "ui-shot")
 
 | Field | Required |
 | --- | --- |
@@ -31,13 +35,13 @@ Interest-bearing loans accrue interest daily until the maturity date is reached.
 | Loan Schedule Type | Yes |
 | Repayment strategy | Yes |
 | Loan Schedule Processing Type | Yes |
-| Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. See additional fields for additional information required for this type of loan. | No |
+| Enable Multiple Disbursals | No |
 | Maximum Tranche count | Yes |
 | Maximum allowed outstanding balance | No |
 | Disallow Expected Disbursements | No |
-| When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type. | No |
-| Disbursed Amount Percentage Down Payment | Yes |
-| Enable or disable the auto repayment of down-payment. When “auto repayment for the down-payments“ is enabled,  the disbursements will trigger an auto down payment transaction for the down payment amount | No |
+| Allow full term for each tranche | No |
+| Disbursed Amount Percentage Down Payment (%) | Yes |
+| Enable Auto Repayment for Down Payment | No |
 | Loan Charge-off behaviour | Yes |
 | Grace on principal payment | No |
 | Grace on interest payment | No |

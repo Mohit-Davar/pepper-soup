@@ -4,9 +4,11 @@
 <p>Use this screen to set up a delinquency bucket with overdue days defined per bucket for monitoring overdue payments on loans.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong>.</li>
+<li>Select <strong>Delinquency Buckets</strong>.</li>
 <li>Select <strong>Manage Delinquency Buckets</strong>.</li>
+<li>Select <strong>Create</strong> &gt; <strong>Working Capital Delinquency Bucket</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Create > Working Capital Delinquency Bucket" ac:width="900"><ri:attachment ri:filename="collections-buckets-1-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Create a delinquency bucket screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="collections-buckets-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -16,27 +18,27 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>Name (create bucket create bucket)</td>
+<td>Name</td>
 <td>Yes</td>
 <td>Enter the name of the delinquency bucket.</td>
 </tr>
 <tr>
-<td>Frequency (create bucket create bucket)</td>
+<td>Frequency</td>
 <td>Yes</td>
 <td>Enter how often the bucket applies.</td>
 </tr>
 <tr>
-<td>Frequency Type (create bucket create bucket)</td>
+<td>Frequency Type</td>
 <td>Yes</td>
 <td>Select the type of frequency.</td>
 </tr>
 <tr>
-<td>Minimum Payment (create bucket create bucket)</td>
+<td>Minimum Payment</td>
 <td>Yes</td>
 <td>Enter the minimum payment required for the bucket.</td>
 </tr>
 <tr>
-<td>Minimum Payment Type (create bucket create bucket)</td>
+<td>Minimum Payment Type</td>
 <td>Yes</td>
 <td>Select the type of minimum payment.</td>
 </tr>

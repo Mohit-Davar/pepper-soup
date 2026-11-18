@@ -135,7 +135,20 @@ function renderMarkdown(md, target, { blocks = false, readerEnhance = false } = 
   return tokens;
 }
 
+/** Image paths in the markdown are relative to the .md file; point them at the static /docs route. */
+function fixImages(root) {
+  let dir;
+  try { dir = `/${filePath().split('/').slice(0, -1).join('/')}/`; } catch { return; }
+  root.querySelectorAll('img').forEach((img) => {
+    const src = img.getAttribute('src');
+    if (!src || /^(?:[a-z]+:|\/\/|\/|data:)/i.test(src)) return;
+    img.setAttribute('src', new URL(src, location.origin + dir).pathname);
+    img.loading = 'lazy';
+  });
+}
+
 function enhance(target, { readerEnhance = false } = {}) {
+  fixImages(target);
   // 1. Code blocks & Mermaid diagram cards
   target.querySelectorAll('pre > code').forEach((code) => {
     const pre = code.parentElement;

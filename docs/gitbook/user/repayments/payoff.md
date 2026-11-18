@@ -10,9 +10,15 @@ Use this screen to fully settle and close an active loan account by paying the e
 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
-3. Select **Prepay Loan**.
-4. Open the **Prepay Loan** screen.
-5. Enter the details described below, then select **Submit**.
+3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
+4. Select **Prepay Loan**.
+5. Open the **Prepay Loan** screen.
+
+   ![Where to find Prepay Loan](../.gitbook/assets/repayments-payoff-1-step5.png "ui-shot")
+
+6. Enter the details described below, then select **Submit**.
+
+![The Prepay a loan screen with the fields described below outlined](../.gitbook/assets/repayments-payoff-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

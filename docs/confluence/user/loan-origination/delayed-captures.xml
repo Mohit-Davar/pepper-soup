@@ -7,12 +7,11 @@
 <h2>Enable full term tranches for delayed captures</h2>
 <p>Use this screen to set up a loan product so each tranche disbursement follows the full loan term schedule instead of fitting within the remaining term.</p>
 <ol>
-<li>Select <strong>Admin</strong> &gt; <strong>Products</strong>.</li>
-<li>Select <strong>Create Loan Product</strong>.</li>
-<li>Select <strong>Classic</strong>.</li>
-<li>Select <strong>SETTINGS</strong>.</li>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>.</li>
+<li>Select <strong>SETTINGS</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find SETTINGS" ac:width="900"><ri:attachment ri:filename="loan-origination-delayed-captures-1-step3.png"/></ac:image></li>
 <li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Enable full term tranches for delayed captures screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="loan-origination-delayed-captures-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -22,7 +21,7 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan. See additional fields for additional information required for this type of loan.</td>
+<td>Enable Multiple Disbursals</td>
 <td>No</td>
 <td>Leave this checkbox unchecked if the loan is a single disburse loan. Check this checkbox if the loan is a multi disburse loan.</td>
 </tr>
@@ -32,7 +31,7 @@
 <td>Enter the maximum number of tranches allowed for the loan product.</td>
 </tr>
 <tr>
-<td>When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type.</td>
+<td>Allow full term for each tranche</td>
 <td>No</td>
 <td>When enabled, each tranche disbursement will follow the full loan term schedule instead of fitting within the remaining term. Only available for PROGRESSIVE loan schedule type.</td>
 </tr>
@@ -43,8 +42,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Select <strong>Loan Tranche Details</strong>.</li>
-</ol>
+<li>Select <strong>Loan Tranche Details</strong>.<br/><br/><br/><br/><br/><br/><br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Loan Tranche Details" ac:width="900"><ri:attachment ri:filename="loan-origination-delayed-captures-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Allow full term for each tranche screen" ac:width="900"><ri:attachment ri:filename="loan-origination-delayed-captures-2-screen.png"/></ac:image></p>
 <p>When enabled, each tranche disbursement follows the full loan term schedule; when disabled, the system works normally.</p>
 <h2>Enabling full term tranche</h2>
 <p>You can enable or disable it at the loan product and account level. It is disabled by default and works only with the progressive repayment strategy. The full term length option is available when tranche disbursement is enabled at the loan product.</p>

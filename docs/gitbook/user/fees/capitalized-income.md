@@ -15,8 +15,12 @@ Charge-off charges off the Capitalized income and no amortization is done after 
 Use this screen to turn on capitalized income for a loan product so the income is added to the loan account at disbursement and treated as principal for schedule and interest calculations.
 
 1. Select **Admin** > **Products** > **Loan Products**.
-2. Select **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
+2. Select **Create** > **Create Loan Product (Classic)**, or open an existing product and select **Edit**.
 3. Select **DEFERRED INCOME RECOGNITION**.
+
+![The Set up capitalized income on a loan product screen with the fields described below outlined](../.gitbook/assets/fees-capitalized-income-1-screen.png "ui-shot")
+
+   ![Where to find DEFERRED INCOME RECOGNITION](../.gitbook/assets/fees-capitalized-income-1-step3.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -39,6 +43,10 @@ The loan deferred income tab shows the capitalized income amount, amortized amou
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Buy Down Fees** tab.
+
+![The View capitalized income screen](../.gitbook/assets/fees-capitalized-income-2-screen.png "ui-shot")
+
+   ![Where to find Buy Down Fees](../.gitbook/assets/fees-capitalized-income-2-step3.png "ui-shot")
 
 You can review the capitalized income balances and see how much has been amortized, how much remains unrecognized, and what adjustments have been applied.
 

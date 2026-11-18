@@ -7,9 +7,9 @@
 <p>Use this screen to turn on capitalized income for a loan product so the income is added to the loan account at disbursement and treated as principal for schedule and interest calculations.</p>
 <ol>
 <li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
-<li>Select <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
-<li>Select <strong>DEFERRED INCOME RECOGNITION</strong>.</li>
-</ol>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>, or open an existing product and select <strong>Edit</strong>.</li>
+<li>Select <strong>DEFERRED INCOME RECOGNITION</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find DEFERRED INCOME RECOGNITION" ac:width="900"><ri:attachment ri:filename="fees-capitalized-income-1-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Set up capitalized income on a loan product screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="fees-capitalized-income-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -70,8 +70,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Buy Down Fees</strong> tab.</li>
-</ol>
+<li>Open the <strong>Buy Down Fees</strong> tab.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find Buy Down Fees" ac:width="900"><ri:attachment ri:filename="fees-capitalized-income-2-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The View capitalized income screen" ac:width="900"><ri:attachment ri:filename="fees-capitalized-income-2-screen.png"/></ac:image></p>
 <p>You can review the capitalized income balances and see how much has been amortized, how much remains unrecognized, and what adjustments have been applied.</p>
 <p>You can add capitalized income after disbursement once the loan is active, and the transaction date can be any date on or after the first disbursement date. Payment type, note, and external ID are supported, and whatever amount you give is the transaction amount.</p>
 <p>The following limits apply to capitalized income transactions:</p>

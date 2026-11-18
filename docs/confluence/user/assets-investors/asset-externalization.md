@@ -17,7 +17,12 @@ Use this screen to initiate a sale or buyback of a loan account asset from one o
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Sell Loan** or **Buy Back Loan**.
+
+   ![Where to find Sell Loan > Buy Back Loan](images/assets-investors-asset-externalization-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Transfer a loan to an investor screen with the fields described below outlined](images/assets-investors-asset-externalization-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -35,6 +40,10 @@ Use the external asset owner tab to transfer ownership of a loan to an investor 
 1. Select **Institution** > **Clients** and open the client.
 2. Under **Loan Accounts**, select the loan account.
 3. Select **External Asset Owner**.
+
+![The Sell a loan to an investor screen](images/assets-investors-asset-externalization-2-screen.png "ui-shot")
+
+   ![Where to find External Asset Owner](images/assets-investors-asset-externalization-2-step3.png "ui-shot")
 
 The transfer is initiated and stored with the external owner it relates to, and ownership changes at Close of Business.
 

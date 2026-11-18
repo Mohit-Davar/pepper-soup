@@ -14,7 +14,12 @@ Use the loan reschedule screen to change the interest rate for the rest of an ac
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Reschedule**.
+
+   ![Where to find Reschedule](../.gitbook/assets/interest-rate-changes-1-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Overview screen with the fields described below outlined](../.gitbook/assets/interest-rate-changes-1-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |
@@ -99,7 +104,12 @@ Use the loan reschedule screen to modify the interest rate from a backdated date
 2. Under **Loan Accounts**, select the loan account.
 3. Open the **Loan Account Actions** menu (the ☰ button next to the account name).
 4. Select **Reschedule**.
+
+   ![Where to find Reschedule](../.gitbook/assets/interest-rate-changes-2-step4.png "ui-shot")
+
 5. Enter the details described below, then select **Submit**.
+
+![The Backdated Rate Changes screen with the fields described below outlined](../.gitbook/assets/interest-rate-changes-2-screen.png "ui-shot")
 
 | Field | Required | Description |
 | --- | --- | --- |

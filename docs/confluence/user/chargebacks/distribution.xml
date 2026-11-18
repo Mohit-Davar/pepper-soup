@@ -6,7 +6,7 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>View Transaction</strong> screen.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Charge back a transaction screen" ac:width="900"><ri:attachment ri:filename="chargebacks-distribution-1-screen.png"/></ac:image></p>
 <p>The chargeback amount is added to the next installment in the repayment schedule, and the loan balances and repayment schedule are updated accordingly.</p>
 <h2>Supported transaction types</h2>
 <p>You can create a chargeback for goodwill credit, payout refund, merchant refund, and down-payment transactions using the UI.</p>

@@ -5,8 +5,8 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
-<li>Open the <strong>Buy Down Fees</strong> tab.</li>
-</ol>
+<li>Open the <strong>Buy Down Fees</strong> tab.<br/><br/><br/><br/><br/><br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Buy Down Fees" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-1-step3.png"/></ac:image></li>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The View loan originators screen" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-1-screen.png"/></ac:image></p>
 <p>The screen shows each originator&#39;s ID, external ID, name, status, originator type, and channel type, or an empty state when no originators are attached.</p>
 <h2>Attach an originator to a loan</h2>
 <p>Use this screen to link a loan originator to a loan so that loan income can be attributed to that merchant or channel for revenue share and reporting.</p>
@@ -14,9 +14,9 @@
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Under <strong>Loan Accounts</strong>, select the loan account.</li>
 <li>Open the <strong>Loan Account Actions</strong> menu (the ☰ button next to the account name).</li>
-<li>Select <strong>Attach Loan Originator</strong>.</li>
+<li>Select <strong>Attach Loan Originator</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find Attach Loan Originator" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-2-step4.png"/></ac:image></li>
 <li>Enter the details described below, then select <strong>Submit</strong>.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Attach an originator to a loan screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-2-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -37,9 +37,9 @@
 <ol>
 <li>Select <strong>Institution</strong> &gt; <strong>Clients</strong> and open the client.</li>
 <li>Open the client actions menu (the ☰ button next to the client name) and select <strong>Applications</strong> &gt; <strong>New Loan Account</strong>.</li>
-<li>Select <strong>DETAILS</strong>.</li>
+<li>Select <strong>DETAILS</strong>.<br/><ac:image ac:title="ui-shot" ac:alt="Where to find DETAILS" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-3-step3.png"/></ac:image></li>
 <li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Enter loan originator details screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="loan-origination-loan-originator-3-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>

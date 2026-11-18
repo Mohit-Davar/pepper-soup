@@ -3,12 +3,11 @@
 <h2>Set up down payments for a loan product</h2>
 <p>You configure down payments at the loan product level so the system collects a down-payment amount at disbursement, and the setting applies to all new loan accounts and disbursements of that product.</p>
 <ol>
-<li>Select <strong>Admin</strong> &gt; <strong>Products</strong>.</li>
-<li>Select <strong>Create Loan Product</strong>.</li>
-<li>Select <strong>Classic</strong>.</li>
-<li>Select <strong>SETTINGS</strong>.</li>
+<li>Select <strong>Admin</strong> &gt; <strong>Products</strong> &gt; <strong>Loan Products</strong>.</li>
+<li>Select <strong>Create</strong> &gt; <strong>Create Loan Product (Classic)</strong>.</li>
+<li>Select <strong>SETTINGS</strong>.<br/><br/><ac:image ac:title="ui-shot" ac:alt="Where to find SETTINGS" ac:width="900"><ri:attachment ri:filename="loan-origination-down-payments-1-step3.png"/></ac:image></li>
 <li>Set the fields described below, then select <strong>Next</strong> to continue through the form and save it at the end.</li>
-</ol>
+</ol><p><ac:image ac:title="ui-shot" ac:alt="The Set up down payments for a loan product screen with the fields described below outlined" ac:width="900"><ri:attachment ri:filename="loan-origination-down-payments-1-screen.png"/></ac:image></p>
 <table>
 <thead>
 <tr>
@@ -18,12 +17,17 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>Disbursed Amount Percentage Down Payment</td>
+<td>Enable Down Payment</td>
+<td>No</td>
+<td>Select this to collect a down payment when the loan is disbursed. The fields below appear once it is on.</td>
+</tr>
+<tr>
+<td>Disbursed Amount Percentage Down Payment (%)</td>
 <td>Yes</td>
 <td>Enter the percentage of the disbursed amount to collect as the down payment.</td>
 </tr>
 <tr>
-<td>Enable or disable the auto repayment of down-payment. When “auto repayment for the down-payments“ is enabled,  the disbursements will trigger an auto down payment transaction for the down payment amount</td>
+<td>Enable Auto Repayment for Down Payment</td>
 <td>No</td>
 <td>Enable or disable automatic repayment of the down payment; when enabled, disbursements trigger an automatic down-payment transaction for the down-payment amount.</td>
 </tr>

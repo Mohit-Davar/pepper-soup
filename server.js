@@ -711,7 +711,7 @@ export function createApp(config) {
 
   // Only the published folders are reachable as static files.
   for (const name of PUBLISHED) {
-    app.use(`/docs/${name}`, express.static(path.join(DOCS, name), { fallthrough: true, index: false }));
+    app.use(`/docs/${name}`, express.static(path.join(DOCS, name), { fallthrough: true, index: false, dotfiles: "allow" }));
   }
   app.use(
     "/vendor/mermaid",
